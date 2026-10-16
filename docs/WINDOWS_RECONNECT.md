@@ -91,4 +91,33 @@ Windows Sandbox не поддерживает sleep/hibernate и имеет од
 Windows Go test/vet прошли; 20 повторов lifetime/reconnect — PASS, 4,957 с.
 Итоговый общий `-Full` — PASS, 37,77 с; [отчёт](evidence/fast-validation-build10.json).
 Development NSIS собран; [комплектация](evidence/windows-packaging-build10.json).
-Отчёт +10 добавляется после установки службы и повторной проверки fault suite.
+
+## Установленный +10: результаты без Computer Use
+
+Обычный upgrade +9 → +10 выполнен в Sandbox. Реальный medium-token Flutter UI,
+production IPC и установленная LocalSystem SCM-служба прошли семь вариантов
+VLESS/VMess/Shadowsocks, HTTPS по IP/имени, TUN DNS и рост счётчиков. Обрыв
+synthetic-сервера блокирует защищаемое приложение и сохраняет HTTPS исключения.
+Hard kill службы блокирует оба приложения; после SCM restart сохраняется
+`guard_recovered`, явное отключение восстанавливает HTTPS. Полный сценарий —
+**150,28 с**; [обезличенный отчёт](evidence/windows-runtime-faults-build10.json).
+
+Отдельный прогон на внешнем XHTTP/REALITY профиле отключил и включил только
+guest Ethernet. Guard сохранился, независимый HTTPS в offline отказал. После
+возврата сети тот же профиль автоматически подтвердил HTTPS200, DNS и
+HTTPS204 по имени с отличающимся от baseline внешним IPv4. Успешный `connected`
+получил новый таймер. Интервал от начала Up action до завершения отчёта составил
+48,51 с, **включая** включение адаптера, повторы, все проверки, screenshot и
+disconnect; это верхняя граница, а не точная latency reconnect.
+[Отчёт с сохранённым сравнением +9](evidence/windows-network-recovery-build10.json).
+
+Независимый watchdog подтвердил готовность до отключения NIC; fallback по
+дедлайну не понадобился и этим запуском не проверен. После обоих прогонов
+исходные DNS/routes совпали по хешу, адаптер включён, TUN/guard отсутствуют,
+production binding и SCMRunning восстановлены. Сеть Windows-хоста не менялась.
+
+[Offline](evidence/windows-network-offline-build10.png) и
+[восстановленное подключение](evidence/windows-network-recovered-build10.png)
+содержат только обезличенные названия. Это прокрученный runtime viewport,
+не полный дизайн-аудит. Реальные Trojan/Hy2, разные физические интерфейсы,
+sleep/resume, IPv6 и полная проверка утечек остаются открытыми.

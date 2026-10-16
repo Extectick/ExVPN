@@ -203,6 +203,19 @@ Refresh и запуск UI; управляет только тремя фикс�
 `cleanupPassed` и нулевой exit code. Каждый повтор использует свежий nonce и
 новые эфемерные credentials; stale output не считается текущим результатом.
 
+## Отключение и возврат сети
+
+Для отдельной проверки отключения/возврата guest Ethernet используется
+`prepare-app-sandbox.ps1 -Installer <development-exe> -Unelevated -ProviderMatrix
+-NetworkRecovery`, с приватными файлами по [provider-контракту](PROVIDER_COMPATIBILITY.md).
+После обычных mapping/Setup шагов координатор
+`run-app-network-sandbox.ps1 -SandboxId <id> -BundleDirectory <path>` запускает
+UI, подтверждает готовность независимого watchdog, отключает и включает только
+гостевой адаптер, затем восстанавливает baseline в `finally`. Он отвергает
+чужой/stale nonce и не принимает отчёт без successful framework/cleanup.
+Для повторения +10 нужен подтверждённый provider node4 в приватном cases-файле;
+исходный selection после проверки восстановлен. [Контракт и результаты](WINDOWS_RECONNECT.md).
+
 ## Повреждение и восстановление policy
 
 Для отдельного storage/UI сценария подготовить bundle командой

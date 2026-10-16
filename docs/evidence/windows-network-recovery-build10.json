@@ -1,0 +1,81 @@
+{
+  "format": 1,
+  "date": "2026-10-17",
+  "sourceCommit": "924493a511547bb2b4c93262ab93df82fe127479",
+  "version": "0.1.0+10",
+  "installerSha256": "4860899a8698d379deba1e6de3dbf30f4c24bc1badd14c3e2ae774e351a11fd7",
+  "runId": "4e3c1a4c-1f30-4b35-a0a9-e3a940b614e7",
+  "environment": "Windows Sandbox; installed LocalSystem SCM service and real Flutter UI",
+  "computerUse": false,
+  "nativeVpnMocked": false,
+  "hostNetworkChanged": false,
+  "ordinaryUserTokenTested": true,
+  "fixture": "Anonymized provider node 4; VLESS XHTTP REALITY",
+  "durationSeconds": 158.56,
+  "initial": {
+    "numericHttpsStatus": 200,
+    "tunDnsPassed": true,
+    "hostnameHttpsStatus": 204,
+    "distinctProviderEgress": true
+  },
+  "networkLoss": {
+    "sameGuestAdapterDisabled": true,
+    "guardRetained": true,
+    "independentHttpsRejected": true,
+    "rejectedDurationMs": 3,
+    "uiDetected": true,
+    "watchdogStarted": true,
+    "watchdogReadyBeforeDisable": true,
+    "watchdogFallbackInvoked": false
+  },
+  "recovery": {
+    "sameGuestAdapterEnabled": true,
+    "systemDnsCacheCleared": true,
+    "guardRetained": true,
+    "sameProfileWithoutUserAction": true,
+    "newConnectedAtVerified": true,
+    "numericHttpsStatus": 200,
+    "tunDnsPassed": true,
+    "hostnameHttpsStatus": 204,
+    "distinctProviderEgress": true,
+    "observationUpperBoundSeconds": 48.51,
+    "timingMethod": "Guest Up action start UTC to completed Flutter report UTC. Includes adapter enable, retries, successful HTTPS/DNS probes, screenshot and explicit disconnect; this is an upper bound, not exact reconnect latency.",
+    "upActionStartedUtc": "2026-10-16T21:34:20.3839468Z",
+    "flutterReportFinishedUtc": "2026-10-16T21:35:08.89092Z"
+  },
+  "previousBuild": {
+    "version": "0.1.0+9",
+    "runId": "8cd42aff-0447-42ad-9fe0-1c1bb82f6186",
+    "automaticRecoveryWithin75Seconds": false,
+    "finalState": "reconnecting",
+    "code": "transport_unreachable",
+    "guardRetained": true,
+    "cleanupPassed": true,
+    "originalEvidencePreserved": true
+  },
+  "cleanup": {
+    "passed": true,
+    "originalAdapterRestored": true,
+    "adapterUp": true,
+    "guardArmed": false,
+    "tunnelAbsent": true,
+    "networkRestored": true,
+    "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+    "productionBindingRestored": true,
+    "serviceRunning": true,
+    "installedBuild": 10
+  },
+  "limitations": [
+    "The same virtual guest Ethernet adapter was disabled and enabled; physical interface migration was not tested.",
+    "Sandbox does not support the required sleep/hibernate states; sleep/resume remains open.",
+    "Native IPv6 egress, a physical Android device and long-duration upstream cache lifetime remain open.",
+    "The independent watchdog acknowledged readiness but its deadline fallback path was not triggered.",
+    "Screenshots show a scrolled runtime test viewport and do not constitute full design acceptance.",
+    "Development installer is unsigned; this evidence does not authorize a stable protection claim."
+  ],
+  "screenshots": [
+    "windows-network-offline-build10.png",
+    "windows-network-recovered-build10.png"
+  ],
+  "rawEvidence": "artifacts/windows/app-qa-20261016-154225-f321ed9c/output/archive-build10-network-4e3c1a4c-1f30-4b35-a0a9-e3a940b614e7"
+}

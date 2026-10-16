@@ -1,0 +1,136 @@
+{
+  "format": 1,
+  "date": "2026-10-17",
+  "sourceCommit": "924493a511547bb2b4c93262ab93df82fe127479",
+  "version": "0.1.0+10",
+  "installerSha256": "4860899a8698d379deba1e6de3dbf30f4c24bc1badd14c3e2ae774e351a11fd7",
+  "runId": "f893594a-57b3-44ec-9811-2e619872a97b",
+  "environment": "Windows Sandbox; installed LocalSystem SCM service and real Flutter UI",
+  "computerUse": false,
+  "nativeVpnMocked": false,
+  "durationSeconds": 150.28,
+  "upgrade": {
+    "from": 9,
+    "to": 10,
+    "passed": true
+  },
+  "ordinaryUser": {
+    "tested": true,
+    "administratorToken": false,
+    "elevated": false,
+    "mediumIntegrity": true,
+    "privilegedAccessDenied": true
+  },
+  "protocols": [
+    {
+      "name": "VLESS TCP",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "tunDnsPassed": true,
+      "hostnameHttpsStatus": 204,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true,
+      "protectionClaimed": false
+    },
+    {
+      "name": "VLESS REALITY",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "tunDnsPassed": true,
+      "hostnameHttpsStatus": 204,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true,
+      "protectionClaimed": false
+    },
+    {
+      "name": "VLESS Vision",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "tunDnsPassed": true,
+      "hostnameHttpsStatus": 204,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true,
+      "protectionClaimed": false
+    },
+    {
+      "name": "VLESS XHTTP",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "tunDnsPassed": true,
+      "hostnameHttpsStatus": 204,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true,
+      "protectionClaimed": false
+    },
+    {
+      "name": "XHTTP REALITY",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "tunDnsPassed": true,
+      "hostnameHttpsStatus": 204,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true,
+      "protectionClaimed": false
+    },
+    {
+      "name": "VMess",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "tunDnsPassed": true,
+      "hostnameHttpsStatus": 204,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true,
+      "protectionClaimed": false
+    },
+    {
+      "name": "Shadowsocks",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "tunDnsPassed": true,
+      "hostnameHttpsStatus": 204,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true,
+      "protectionClaimed": false
+    }
+  ],
+  "serverOutage": {
+    "protectedBlocked": true,
+    "excludedHttpsStatus": 200,
+    "uiDetected": true,
+    "code": "transport_unreachable"
+  },
+  "serviceCrash": {
+    "protectedBlocked": true,
+    "excludedTemporarilyBlocked": true,
+    "uiDetected": true
+  },
+  "serviceRestart": {
+    "guardArmed": true,
+    "remainedBlocked": true,
+    "code": "guard_recovered",
+    "exclusionsRestored": true
+  },
+  "explicitDisconnect": {
+    "protectedHttpsStatus": 200,
+    "excludedHttpsStatus": 200,
+    "exclusionsRetained": true
+  },
+  "cleanup": {
+    "passed": true,
+    "guardArmed": false,
+    "tunnelAbsent": true,
+    "networkRestored": true,
+    "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+    "productionBindingRestored": true,
+    "serviceRunning": true,
+    "fixtureStopped": true
+  },
+  "limitations": [
+    "Synthetic peers use the host virtual switch and same public egress; distinct provider egress is a separate test.",
+    "This run does not test physical adapter migration, sleep/resume or native IPv6 egress.",
+    "IME and persistent user storage are not validated by injected Flutter test events.",
+    "Pinned upstream gRPC/XHTTP client-cache lifetime remains open.",
+    "Development installer is unsigned; this evidence does not authorize a stable protection claim."
+  ],
+  "rawEvidence": "artifacts/windows/app-qa-20261016-154225-f321ed9c/output/archive-build10-faults-f893594a-57b3-44ec-9811-2e619872a97b"
+}
