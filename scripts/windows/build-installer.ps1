@@ -41,9 +41,17 @@ else {
     $previousProxy,$previousSum = $env:GOPROXY,$env:GOSUMDB
     try {
         if ($Offline) { $env:GOPROXY='off'; $env:GOSUMDB='off' }
-        & (Join-Path $repository 'scripts/release/collect-notices.ps1') -Target Windows -OutputDirectory (Join-Path $payload 'control/notices')
+        & (Join-Path $repository 'scripts/release/collect-notices.ps1') -Target Windows `
+            -NativeBinaries (Join-Path $payload 'service/exvpn-service.exe') `
+            -WintunLicensePath (Join-Path $payload 'service/Wintun-LICENSE.txt') `
+            -OutputDirectory (Join-Path $payload 'control/notices')
     } finally { $env:GOPROXY=$previousProxy; $env:GOSUMDB=$previousSum }
 }
+. (Join-Path $repository 'scripts/release/notice-inputs.ps1')
+$noticesInventory = Get-Content -LiteralPath (Join-Path $payload 'control/notices/inventory.json') -Raw | ConvertFrom-Json
+$nativeHashes = @{ 'service/exvpn-service.exe' = (Get-FileHash -LiteralPath (Join-Path $payload 'service/exvpn-service.exe') -Algorithm SHA256).Hash.ToLowerInvariant() }
+Assert-NoticePackageBinding $noticesInventory "$version+$build" `
+    (Get-FileHash -LiteralPath (Join-Path $repository 'apps/exvpn/pubspec.lock') -Algorithm SHA256).Hash.ToLowerInvariant() $nativeHashes
 $metadata = [ordered]@{ format=1; version=$version; build=$build; installer=$pin; development=$true; trees=[ordered]@{} }
 foreach ($tree in @('ui','service','control')) { $metadata.trees[$tree] = @(Get-TreeManifest (Join-Path $payload $tree)) }
 $metadata | ConvertTo-Json -Depth 9 | Set-Content -LiteralPath (Join-Path $payload 'package.json') -Encoding utf8

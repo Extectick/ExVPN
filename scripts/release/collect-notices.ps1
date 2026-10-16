@@ -2,6 +2,8 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Windows', 'Android')][string]$Target = 'Windows',
+    [Parameter(Mandatory)][string[]]$NativeBinaries,
+    [string]$WintunLicensePath = '',
     [string]$OutputDirectory = ''
 )
 
@@ -9,7 +11,15 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $repository 'scripts/bootstrap/enter-environment.ps1')
+. (Join-Path $PSScriptRoot 'notice-inputs.ps1')
 $go = Join-Path $repository '.tools/go/bin/go.exe'
+$lock = Get-Content -LiteralPath (Join-Path $repository 'scripts/bootstrap/toolchain.lock.json') -Raw | ConvertFrom-Json
+$appVersion = Get-NoticeAppVersion (Get-Content -LiteralPath (Join-Path $repository 'apps/exvpn/pubspec.yaml') -Raw) (Get-Content -LiteralPath (Join-Path $repository 'apps/exvpn/lib/build_identity.dart') -Raw)
+$pubLockPath = Join-Path $repository 'apps/exvpn/pubspec.lock'
+$packageConfigPath = Join-Path $repository 'apps/exvpn/.dart_tool/package_config.json'
+$dartInputs = @(Get-NoticeDartInputs $repository (Get-Content -LiteralPath $pubLockPath -Raw) $packageConfigPath)
+if ($NativeBinaries.Count -ne $(if ($Target -eq 'Windows') { 1 } else { 2 })) { throw 'Supply the exact staged Windows service or both Android ABI libraries.' }
+if ($Target -eq 'Windows' -and !(Test-Path -LiteralPath $WintunLicensePath -PathType Leaf)) { throw 'Supply the Wintun license staged with the Windows native payload.' }
 if (!$OutputDirectory) { $OutputDirectory = Join-Path $repository "artifacts/notices/$($Target.ToLowerInvariant())" }
 $output = [IO.Path]::GetFullPath($OutputDirectory)
 # Never delete an earlier evidence bundle; callers can choose a fresh destination.
@@ -49,17 +59,17 @@ function Add-SingleNotice([string]$Name, [string]$Version, [string]$Path, [strin
     $components.Add([ordered]@{ name = $Name; version = $Version; scope = 'runtime-or-asset'; source = $SourceUrl; notices = @([ordered]@{ path = "$folder/NOTICE.txt"; sha256 = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant() }) })
 }
 
-$binaries = if ($Target -eq 'Windows') { @('artifacts/windows/exvpn-service.exe') } else {
-    @('.tools/artifacts/android-jni/arm64-v8a/libexvpn.so', '.tools/artifacts/android-jni/x86_64/libexvpn.so')
-}
 $modules = @{}
-foreach ($binary in $binaries) {
-    $binaryPath = Join-Path $repository $binary
-    if (!(Test-Path -LiteralPath $binaryPath -PathType Leaf)) { throw "Build the native binary first: $binary" }
+$binaryNames = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+foreach ($binaryPathInput in $NativeBinaries) {
+    $binaryPath = [IO.Path]::GetFullPath($binaryPathInput)
+    if (!(Test-Path -LiteralPath $binaryPath -PathType Leaf)) { throw 'A required staged native binary is missing.' }
     $buildInfo = (& $go version -m -json $binaryPath) -join "`n"
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect Go binary build information.' }
     $info = $buildInfo | ConvertFrom-Json -AsHashtable
     if (!$info.Deps.Count) { throw 'Go module build information is missing.' }
+    $binary = Get-NoticeBinaryName $Target $info $lock.go.version
+    if (!$binaryNames.Add($binary)) { throw 'Duplicate native ABI supplied; one required ABI would be missing.' }
     $binaryEvidence.Add([ordered]@{ name = $binary; sha256 = (Get-FileHash -LiteralPath $binaryPath -Algorithm SHA256).Hash.ToLowerInvariant(); go = $info.GoVersion; modules = $info.Deps })
     foreach ($dependency in $info.Deps) {
         if ($dependency.Path.StartsWith('github.com/Extectick/ExVPN/')) { continue }
@@ -87,16 +97,15 @@ foreach ($key in @($modules.Keys | Sort-Object)) {
     }
 }
 
-$lock = Get-Content -LiteralPath (Join-Path $repository 'scripts/bootstrap/toolchain.lock.json') -Raw | ConvertFrom-Json
-Add-SingleNotice 'ExVPN' '0.1.0+1' (Join-Path $repository 'LICENSE') 'https://github.com/Extectick/ExVPN'
-Add-SingleNotice 'ExVPN copyright' '0.1.0+1' (Join-Path $repository 'NOTICE')
+Add-SingleNotice 'ExVPN' $appVersion (Join-Path $repository 'LICENSE') 'https://github.com/Extectick/ExVPN'
+Add-SingleNotice 'ExVPN copyright' $appVersion (Join-Path $repository 'NOTICE')
 Add-SingleNotice 'Go runtime' $lock.go.version (Join-Path $repository '.tools/go/LICENSE') 'https://go.dev/LICENSE'
 Add-SingleNotice 'Flutter framework' $lock.flutter.version (Join-Path $repository '.tools/flutter/LICENSE') 'https://github.com/flutter/flutter'
 Add-SingleNotice 'Dart runtime' $lock.flutter.dartVersion (Join-Path $repository '.tools/flutter/bin/cache/dart-sdk/LICENSE') 'https://github.com/dart-lang/sdk'
 if ($Target -eq 'Windows') {
     Add-SingleNotice 'Flutter Windows engine' $lock.flutter.revision (Join-Path $repository '.tools/flutter/bin/cache/artifacts/engine/windows-x64/license.windows_flutter.md')
     $wintun = Get-Content -LiteralPath (Join-Path $repository 'scripts/windows/wintun.lock.json') -Raw | ConvertFrom-Json
-    Add-SingleNotice 'Wintun prebuilt DLL' $wintun.version (Join-Path $repository 'artifacts/windows/Wintun-LICENSE.txt') $wintun.source
+    Add-SingleNotice 'Wintun prebuilt DLL' $wintun.version $WintunLicensePath $wintun.source
 } else {
     foreach ($abi in @('android-arm64', 'android-x64')) {
         Add-SingleNotice "Flutter engine $abi" $lock.flutter.revision (Join-Path $repository ".tools/flutter/bin/cache/artifacts/engine/$abi/license.flutter_jar_zip.md")
@@ -108,19 +117,19 @@ Add-SingleNotice 'Cupertino Icons' '1.0.9' (Join-Path $repository 'apps/exvpn/as
 
 # A conservative superset from pub's resolved graph includes development-only
 # packages too. Native binary modules above are exact; this is not a full SBOM.
-$packageConfig = Get-Content -LiteralPath (Join-Path $repository 'apps/exvpn/.dart_tool/package_config.json') -Raw | ConvertFrom-Json
-$configUri = [Uri]::new((Join-Path $repository 'apps/exvpn/.dart_tool/package_config.json'))
-foreach ($package in $packageConfig.packages) {
-    $packageRoot = [Uri]::new($configUri, $package.rootUri).LocalPath
-    if (!$packageRoot.StartsWith((Join-Path $repository '.tools/cache/pub/hosted/'), [StringComparison]::OrdinalIgnoreCase)) { continue }
-    $spec = Get-Content -LiteralPath (Join-Path $packageRoot 'pubspec.yaml') -Raw
-    $versionMatch = [regex]::Match($spec, '(?m)^version:\s*([^\s#]+)')
-    if (!$versionMatch.Success) { throw "Missing resolved package version: $($package.name)" }
-    Add-Notice $package.name $versionMatch.Groups[1].Value.Trim("'", '"') $packageRoot 'resolved-dart-package' "https://pub.dev/packages/$($package.name)"
+foreach ($package in $dartInputs) {
+    Add-Notice $package.name $package.version $package.root 'resolved-dart-package' "https://pub.dev/packages/$($package.name)"
 }
 
 Copy-Item -LiteralPath (Join-Path $repository 'apps/exvpn/assets/SOURCES.md') -Destination (Join-Path $output 'ASSET_SOURCES.md')
-$manifest = [ordered]@{ schema = 1; target = $Target; nativeBinaries = $binaryEvidence.ToArray(); components = $components.ToArray(); limitations = @('Dart list conservatively includes resolved development packages.', 'Android Gradle/Maven and installer components require their own release inventory.', 'This inventory does not assert release acceptance or code signing.') }
+$manifest = [ordered]@{
+    schema = 1; target = $Target; app = [ordered]@{ version=$appVersion }
+    dartLockSha256 = (Get-FileHash -LiteralPath $pubLockPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    dartPackageConfigSha256 = (Get-FileHash -LiteralPath $packageConfigPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    dartPackages = @($dartInputs | ForEach-Object { [ordered]@{ name=$_.name; version=$_.version; source='hosted'; sha256=$_.archiveSha256 } })
+    nativeBinaries = $binaryEvidence.ToArray(); components = $components.ToArray()
+    limitations = @('Dart list conservatively includes resolved development packages; it is not a linker inventory.', 'Pub archive checksums are compared with local cache metadata, not a fresh archive/content verification.', 'Android Gradle/Maven and installer components require their own release inventory.', 'This inventory does not assert release acceptance or code signing.')
+}
 $manifest | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $output 'inventory.json') -Encoding utf8NoBOM
 @'
 ExVPN third-party notices
