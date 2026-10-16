@@ -285,15 +285,71 @@ VPN transport оставался активен, UI перешёл в Blocked / 
 на новом: API36 QR, другие протоколы, OTA, DNS/IPv6, crash/lockdown и физическое
 устройство требуют соответствующей отдельной приёмки.
 
+## Lifecycle API30, обычная сборка 0.1.0+9 (2026-10-17)
+
+Отдельный UID10168 проверял настоящий HTTPS через ранее подтверждённый
+XHTTP/REALITY профиль. Подписка и адреса остаются только локально.
+[Обезличенный отчёт](evidence/android-lifecycle-build9.json) привязан к SHA-256
+APK и исходникам [f5901bc](https://github.com/Extectick/ExVPN/commit/f5901bc7d0b61d22f555bc760cbfcb5e3c85de81).
+Управление выполнено ADB, без Computer Use; production-код в этой проверке
+не менялся.
+
+- После закрытия Activity (подтверждено dumpsys) HTTPS204 продолжался через VPN.
+- При отключении Wi-Fi и mobile data запрос отказал, VPN transport сохранился.
+  После возврата сети HTTPS200 восстановился без действий приложения за **3509 мс**,
+  с тем же туннельным внешним IPv4.
+- С системными Always-on/lockdown перезагрузка эмулятора восстановила VPN и
+  HTTPS200 до открытия UI; пользователь уже был разблокирован. Secure pre-unlock
+  storage этим не проверен.
+- `am crash` и настоящий SIGKILL завершили процесс. Независимый UID получил
+  сетевой отказ, tx/rx=0; lockdown сохранил блокировку. **Автоматический рестарт
+  не наблюдался:** 128169 мс после Java crash и 60264 мс после отдельного SIGKILL
+  на чистом boot. Промежуточная попытка после crash также сохранена (62870 мс).
+  Ручное подключение через обычный UI восстановило HTTPS.
+
+Диагностика не обнаружила background restriction: startRequested=true,
+stopIfKilled=false, но service app=null и restart не запланирован. Logcat показал
+DeadObjectException в VPN unbind перед process-death event. Цепочка finishing
+cleanup в [закреплённом AOSP Android11](https://github.com/aosp-mirror/platform_frameworks_base/blob/8551ec363dcd7c2d7c82c45e89db4922156766ab/services/core/java/com/android/server/am/ActiveServices.java)
+объясняет удаление записи службы из учёта рестарта. Это объяснение наблюдения
+конкретного API30-стенда по стеку и исходникам, не утверждение обо всех OEM.
+Обход через слепой watchdog или изменение системной политики не добавлен.
+
+Для SIGKILL потребовался временный `adb root` только эмулятора; HTTPS-проба
+оставалась обычным независимым UID. В конце все шесть исходных настроек ОС
+восстановлены точно, ADB снова UID2000, VPN отключён, исходный прямой IPv4
+подтверждён. Windows-хост не менялся. Конечные пробы не заменяют непрерывный
+packet capture, IPv6/DNS leak audit или физический Android.
+
+## Обновление +9 → +10 и повтор HTTPS (2026-10-17)
+
+Исправленный development APK +10 установлен обычным `adb install -r` за 1560 мс,
+без удаления данных. Проверены фактические versionCode/SHA-256 и прежний debug
+signer. Сохранились три группы (1/26/30 профилей) и выбранный XHTTP/REALITY узел,
+в том числе после cold restart. Через обычный UI выполнено подключение;
+независимый UID10168 подтвердил HTTPS204 и HTTPS200 с другим внешним IPv4.
+После отключения вернулся исходный IPv4, VPN transport/service отсутствовали,
+четыре наблюдаемых настройки ОС не изменились, ADB остался UID2000.
+[Обезличенный отчёт](evidence/android-upgrade-build10.json),
+[проверка содержимого APK](evidence/android-packaging-build10.json),
+исходники [b8dd91d](https://github.com/Extectick/ExVPN/commit/b8dd91da531c09449f98e17bcc9cfa2d5f7444da).
+
+Обновление началось с отключённым VPN; непрерывность защиты при замене активного
+клиента не проверена. DNS разрешался, но это не packet-capture аудит. Протоколы
+вне выбранного узла, физическое устройство и прежнее ограничение рестарта
+процесса остаются открытыми.
+
 ## Незакрытые границы
 
-- Физический Android11+ и полный regression минимальной ОС; API30 проверен только
-  указанным сетевым smoke, QR-наблюдение API30-QR-001 остаётся открытым.
-- Пользовательский провайдер, Trojan/Hysteria2 Android TUN и другие сочетания
-  протокольных параметров за пределами семи проверенных вариантов.
+- Физический Android11+ и полный regression минимальной ОС; перечисленные API30
+  smoke/lifecycle проверки частичные, QR-наблюдение API30-QR-001 остаётся открытым.
+- Внешние Trojan/Hysteria2 и другие сочетания параметров за пределами проверенных
+  вариантов; пользовательский XHTTP/REALITY подтверждён в +9, четыре новых
+  Encryption/Sudoku профиля пока не подтвердили внешний HTTPS.
 - Полный IPv4/IPv6/DNS packet-capture аудит с холодным DNS cache; edge cases
   неизвестного/shared UID и lifecycle установленных приложений.
-- Автовосстановление после SIGKILL, reboot/unlock, sleep/resume и обновление пакета.
+- Автовосстановление после SIGKILL (наблюдавшийся API30 gap), secure pre-unlock,
+  sleep/resume и полная приёмка обновления пакета.
 - Подписанный release, installer, production OTA/Dart OTA и полный набор лицензий/SBOM.
 
 Все ограничения остаются открытыми в CHECKLIST.md.

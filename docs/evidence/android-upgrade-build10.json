@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "dateUtc": "2026-10-16T21:08:33.0518749Z",
+  "applicationVersion": "0.1.0+10",
+  "apkSha256": "51903e3e943fe1608ed375eeaf46d5730369566ed119ab28d12b782a1699448c",
+  "target": "Android 11 / API30 x86_64 emulator",
+  "computerUse": false,
+  "qaUid": 10168,
+  "upgrade": {
+    "ordinaryUpgrade": true,
+    "fromBuild": 9,
+    "toBuild": 10,
+    "candidateSha256": "51903e3e943fe1608ed375eeaf46d5730369566ed119ab28d12b782a1699448c",
+    "signerSha256": "5d2aaeb2fb744b9d92666f0c926ceb42076610ab41e006a6b0569169d52cc740",
+    "signerPreserved": true,
+    "installerResult": "Success",
+    "installMs": 1560
+  },
+  "persistence": {
+    "installedBuild": 10,
+    "installedSha256": "51903e3e943fe1608ed375eeaf46d5730369566ed119ab28d12b782a1699448c",
+    "groupsPreserved": true,
+    "groupCount": 3,
+    "profileCounts": [
+      1,
+      26,
+      30
+    ],
+    "selectedProfilePreserved": true,
+    "selectedProtocol": "VLESS · XHTTP · Reality",
+    "coldRestartGroupsPreserved": true,
+    "coldRestartSelectionPreserved": true,
+    "initialColdStateWasChecking": true,
+    "disconnected": true
+  },
+  "baseline": {
+    "bodySha256": "61b73da320115105ca01dd677fa7889cd00d6247bb10af1ac81b39b42a7bce3c",
+    "durationMs": 871,
+    "httpStatus": 200,
+    "publicIpFamily": 4,
+    "publicIpSha256": "ad6a86a4507e238e530f921ba9c96a2205e1375c1f0cb1d4a752fce9d8eed913",
+    "responseBytes": 257,
+    "success": true,
+    "uid": 10168,
+    "uidRxBytes": 4436,
+    "uidTxBytes": 1004,
+    "vpnTransport": false
+  },
+  "connected": {
+    "health": {
+      "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "durationMs": 2573,
+      "httpStatus": 204,
+      "responseBytes": 0,
+      "success": true,
+      "uid": 10168,
+      "uidRxBytes": 5589,
+      "uidTxBytes": 1514,
+      "vpnTransport": true
+    },
+    "trace4": {
+      "bodySha256": "3417588bd8371b9b3055f0ecba8481952bc8664f27ee4b1b7d290e0df02f53ed",
+      "durationMs": 250,
+      "httpStatus": 200,
+      "publicIpFamily": 4,
+      "publicIpSha256": "6ccf88be1077b38bfce6692ef94fbfd5c0d9e47a0f51b1c9a0d6c8fe9a0c506f",
+      "responseBytes": 258,
+      "success": true,
+      "uid": 10168,
+      "uidRxBytes": 4573,
+      "uidTxBytes": 1176,
+      "vpnTransport": true
+    },
+    "dns": {
+      "durationMs": 220,
+      "ipv4Answers": 2,
+      "ipv6Answers": 2,
+      "success": true,
+      "uid": 10168,
+      "uidRxBytes": 202,
+      "uidTxBytes": 114,
+      "vpnTransport": true
+    }
+  },
+  "cleanup": {
+    "trace4": {
+      "bodySha256": "9764a9fb1290e22ba6e46155ca0dd29098f43b719cd9d6be7941e0b3e49a3654",
+      "durationMs": 851,
+      "httpStatus": 200,
+      "publicIpFamily": 4,
+      "publicIpSha256": "ad6a86a4507e238e530f921ba9c96a2205e1375c1f0cb1d4a752fce9d8eed913",
+      "responseBytes": 258,
+      "success": true,
+      "uid": 10168,
+      "uidRxBytes": 4476,
+      "uidTxBytes": 1044,
+      "vpnTransport": false
+    },
+    "originalDirectIpv4Restored": true,
+    "exactOsSettingsUnchanged": true,
+    "adbUid": 2000,
+    "vpnServiceAbsent": true,
+    "uiDisconnected": true
+  },
+  "limits": [
+    "Only emulator API30 tested; physical Android acceptance remains open.",
+    "Upgrade started disconnected; continuity of active VPN protection during replacement was not tested.",
+    "One provider VLESS XHTTP + REALITY session; other protocol variants not retested.",
+    "DNS reachability is not a packet-level leak audit; actual IPv6 egress not tested.",
+    "Development debug signature preserved; no beta/release readiness claim.",
+    "Earlier unattended process restart limitation remains open; this run did not alter production code."
+  ],
+  "sourceState": "Android source committed; later Windows changes do not alter this APK",
+  "sourceCommit": "b8dd91da531c09449f98e17bcc9cfa2d5f7444da"
+}

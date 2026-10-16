@@ -1,0 +1,302 @@
+{
+  "schema": 1,
+  "fixturesPassed": 41,
+  "schemaValidation": "CycloneDX 1.6 official schema with local external references",
+  "schemaSha256": "3e92dddbc30cf7f6a02b80f0942b1a4cfd4fb1c26f1dfc4310afa9d613cafb93",
+  "identicalRepeatedOutputs": [
+    "audit.json",
+    "sbom.cdx.json",
+    "audit.txt"
+  ],
+  "artifacts": [
+    {
+      "report": "artifacts\\release-audit\\build9-windows-v2",
+      "target": "Windows",
+      "appVersion": "0.1.0+9",
+      "artifactSha256": "59eb0829dfcbf4269cc3ba39e8aa5d240cbfa334f306b096f3f658e7f7c93bef",
+      "counts": {
+        "files": 262,
+        "nativeBinaries": 1,
+        "noticeComponents": 140
+      },
+      "signature": {
+        "verified": false,
+        "trustedSignerMatched": false,
+        "debug": false,
+        "certificateSha256": []
+      },
+      "noticeSource": "staged-payload",
+      "xraySourceMatches": true,
+      "exitCode": 2,
+      "complete": false,
+      "releaseReady": false,
+      "findings": [
+        {
+          "code": "dart_flutter_runtime_link_inventory_incomplete",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "development_package",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "license_expressions_and_distribution_obligations_not_fully_reviewed",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "notice_app_identity_missing_or_mismatch",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "notice_component_version_stale",
+          "subject": "ExVPN",
+          "severity": "blocker"
+        },
+        {
+          "code": "notice_component_version_stale",
+          "subject": "ExVPN copyright",
+          "severity": "blocker"
+        },
+        {
+          "code": "notice_dart_lock_missing_or_mismatch",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "notice_dart_package_checksums_missing",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "notice_native_path_not_bound",
+          "subject": "service/exvpn-service.exe",
+          "severity": "blocker"
+        },
+        {
+          "code": "nsis_embedded_payload_not_independently_verified",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "release_signer_not_pinned",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "windows_signature_not_valid",
+          "subject": "",
+          "severity": "blocker"
+        }
+      ],
+      "auditSha256": "78a7709adf97ae9046b9fe23c4f087c94511f7451d469d28d44d0dfc381c45ea",
+      "sbomSha256": "438406215e99b96ac238e696ee0f8539c7497133572405f0ac4d325a27ad6e0d"
+    },
+    {
+      "report": "artifacts\\release-audit\\build9-android-v2",
+      "target": "Android",
+      "appVersion": "0.1.0+9",
+      "artifactSha256": "04c988d3a9441c3a5f61a67b307d96c81870b0e3027df6a7c35f43f994a15f6c",
+      "counts": {
+        "files": 173,
+        "nativeBinaries": 2,
+        "noticeComponents": 0
+      },
+      "signature": {
+        "verified": true,
+        "trustedSignerMatched": false,
+        "debug": true,
+        "certificateSha256": [
+          "5d2aaeb2fb744b9d92666f0c926ceb42076610ab41e006a6b0569169d52cc740"
+        ]
+      },
+      "noticeSource": "missing",
+      "xraySourceMatches": false,
+      "exitCode": 2,
+      "complete": false,
+      "releaseReady": false,
+      "findings": [
+        {
+          "code": "android_debug_signer",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "android_gradle_maven_runtime_inventory_missing",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "apk_debuggable",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "apk_notice_bundle_missing",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "dart_flutter_runtime_link_inventory_incomplete",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "license_expressions_and_distribution_obligations_not_fully_reviewed",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "notice_inventory_missing",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "release_signer_not_pinned",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "xray_corresponding_source_missing",
+          "subject": "",
+          "severity": "blocker"
+        }
+      ],
+      "auditSha256": "7723b1ed10ed9f2d05feab97aefe2e076ec8c754f2884251cd29b65bb7c436f9",
+      "sbomSha256": "7a46cd55c73808aa93af3b534b647c82d8aa190c15dc20ede934be4576f35590"
+    },
+    {
+      "report": "artifacts\\release-audit\\build9-windows-sidecar-v2",
+      "target": "Windows",
+      "appVersion": "0.1.0+9",
+      "artifactSha256": "59eb0829dfcbf4269cc3ba39e8aa5d240cbfa334f306b096f3f658e7f7c93bef",
+      "counts": {
+        "files": 262,
+        "nativeBinaries": 1,
+        "noticeComponents": 140
+      },
+      "signature": {
+        "verified": false,
+        "trustedSignerMatched": false,
+        "debug": false,
+        "certificateSha256": []
+      },
+      "noticeSource": "external-sidecar",
+      "xraySourceMatches": true,
+      "exitCode": 2,
+      "complete": false,
+      "releaseReady": false,
+      "findings": [
+        {
+          "code": "dart_flutter_runtime_link_inventory_incomplete",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "development_package",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "external_notices_are_not_artifact_contents",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "license_expressions_and_distribution_obligations_not_fully_reviewed",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "nsis_embedded_payload_not_independently_verified",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "release_signer_not_pinned",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "windows_signature_not_valid",
+          "subject": "",
+          "severity": "blocker"
+        }
+      ],
+      "auditSha256": "acdb0857a75d35f1fc31c71e3a5e0cc5bae334a06602988bb1bb5d3c498de8e2",
+      "sbomSha256": "8d0173aba0b49201728f2ed2d9ea6c73319ea5fd005d6f168783a28ca133284e"
+    },
+    {
+      "report": "artifacts\\release-audit\\build9-android-sidecar-v2",
+      "target": "Android",
+      "appVersion": "0.1.0+9",
+      "artifactSha256": "04c988d3a9441c3a5f61a67b307d96c81870b0e3027df6a7c35f43f994a15f6c",
+      "counts": {
+        "files": 173,
+        "nativeBinaries": 2,
+        "noticeComponents": 139
+      },
+      "signature": {
+        "verified": true,
+        "trustedSignerMatched": false,
+        "debug": true,
+        "certificateSha256": [
+          "5d2aaeb2fb744b9d92666f0c926ceb42076610ab41e006a6b0569169d52cc740"
+        ]
+      },
+      "noticeSource": "external-sidecar",
+      "xraySourceMatches": true,
+      "exitCode": 2,
+      "complete": false,
+      "releaseReady": false,
+      "findings": [
+        {
+          "code": "android_debug_signer",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "android_gradle_maven_runtime_inventory_missing",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "apk_debuggable",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "apk_notice_bundle_missing",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "dart_flutter_runtime_link_inventory_incomplete",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "external_notices_are_not_artifact_contents",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "license_expressions_and_distribution_obligations_not_fully_reviewed",
+          "subject": "",
+          "severity": "blocker"
+        },
+        {
+          "code": "release_signer_not_pinned",
+          "subject": "",
+          "severity": "blocker"
+        }
+      ],
+      "auditSha256": "bf2665ec0c1fc13e17dea13e40eb49fd2f485f97230f0ae4a973cafc261d6936",
+      "sbomSha256": "35390edc6bb711094f9b8451a146c6f5125e464792c9e7013450bcb3201d6224"
+    }
+  ],
+  "sourceCommit": "dd7a2214a4894993698c7cc79083c4d50bcb455c"
+}

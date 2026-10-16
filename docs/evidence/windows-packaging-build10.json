@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "sourceCommit": "924493a511547bb2b4c93262ab93df82fe127479",
+  "scope": "Final installer SHA/signature and separate staged payload; EXE contents are not independently extracted.",
+  "artifact": {
+    "file": "ExVPN-0.1.0-10-windows-x64-development.exe",
+    "sha256": "4860899a8698d379deba1e6de3dbf30f4c24bc1badd14c3e2ae774e351a11fd7",
+    "bytes": 35055955
+  },
+  "appVersion": "0.1.0+10",
+  "releaseReady": false,
+  "counts": {
+    "files": 262,
+    "nativeBinaries": 1,
+    "noticeComponents": 140
+  },
+  "noticeEvidence": {
+    "source": "staged-payload",
+    "fileCount": 219,
+    "inventorySha256": "95dc39710dd7f0babace892464b4f6b7b7b26c362b505763ac299fc612cf708f",
+    "fileSetSha256": "7e112169b3e4de15fd9add86788c12f58625e7d2674c05dc2e7527aa37e896e4",
+    "xraySource": {
+      "present": true,
+      "zipSha256": "7d3dcd882361a1e9112c021339135b150e50e01aefec26df2801a5a8c2cc921c",
+      "linkedModuleSum": "h1:Am/9Pzw5PZr7+hMN1Vs5faeSXRoutnrwMAgtUDnh/J8=",
+      "actualGoSum": "h1:Am/9Pzw5PZr7+hMN1Vs5faeSXRoutnrwMAgtUDnh/J8=",
+      "matched": true
+    }
+  },
+  "nativeBinaries": [
+    {
+      "path": "service/exvpn-service.exe",
+      "sha256": "4269551d142464f9a325e1f472e55eecd857e0016a67efa8f07e9347aea2eac0"
+    }
+  ],
+  "findings": [
+    {
+      "code": "dart_flutter_runtime_link_inventory_incomplete",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "development_package",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "license_expressions_and_distribution_obligations_not_fully_reviewed",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "nsis_embedded_payload_not_independently_verified",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "release_signer_not_pinned",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "windows_signature_not_valid",
+      "subject": "",
+      "severity": "blocker"
+    }
+  ],
+  "auditSha256": "5246a8bba49a47dbd0deeed7f5193d64ebde39eb65bb0d9caf55f85170b4e6fa",
+  "sbomSha256": "517fb59d82a839973bfcfafe195c6e759d167658d6c3652b5f9999f3edd98309"
+}

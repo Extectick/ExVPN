@@ -5,6 +5,13 @@ Workflow `.github/workflows/verify.yml` подготовлен для push, pull
 из одного checkout. Первый успешный run и границы его проверки приведены ниже;
 успех сборки не является системной приёмкой VPN.
 
+Push, изменяющий только `docs/**`, `design/**`, `README.md`, `AGENTS.md` или
+`CONTRIBUTING.md`, не запускает заново долгие native-сборки и не отменяет уже
+идущий прогон кода. Любой исходник, build/CI-скрипт, lock-файл или упаковываемое
+лицензионное уведомление запускает оба job. Для pull request фильтра нет:
+обязательные проверки всегда получают результат; ручной запуск сохранён.
+Семантика фильтра: [GitHub workflow paths-ignore](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpushpull_requestpull_request_targetpathspaths-ignore).
+
 Скрипт `scripts/ci/verify.ps1 -Target Checks|Android|Windows` проверяет точные
 Flutter/Go pins, lock-файлы Dart, анализ, все unit/widget/loopback-тесты,
 Go checksums и vet. Android дополнительно собирает обе JNI ABI и APK;
@@ -40,6 +47,19 @@ fixture, ошибки обоих вызовов и настоящий закре
 на commit `f6cd4c4`: Android и Windows прошли проверки, сборку и выгрузку
 development artifacts. Последующие изменения требуют собственного CI run;
 эта проверка не подтверждает системные VPN-права, установщик или release signing.
+
+2026-10-17: полный [run 38961456222](https://github.com/Extectick/ExVPN/actions/runs/38961456222)
+на [f2c5c5e](https://github.com/Extectick/ExVPN/commit/f2c5c5e795782adbded8b6e30817d58bf3b88a45)
+для **0.1.0+9** завершился **SUCCESS** в обоих jobs, включая Android/Windows
+development artifacts. Он покрывает VLESS Encryption/Sudoku и состояние этого
+commit. Последующие lifecycle QA scripts и release audit требуют собственного
+прогона; зелёный CI не закрывает протокольную/сетевую приёмку и подпись beta.
+
+Для **+10** опубликованы [924493a](https://github.com/Extectick/ExVPN/commit/924493a511547bb2b4c93262ab93df82fe127479)
+и [run 38969281066](https://github.com/Extectick/ExVPN/actions/runs/38969281066).
+На момент записи он выполняется; успех ещё не заявляется. Локальные native
+builds и итоговые быстрые проверки прошли: [37,77 с, девять наборов](evidence/fast-validation-build10.json).
+Android +10 также прошёл [обновление и настоящий HTTPS в эмуляторе](evidence/android-upgrade-build10.json).
 
 Локальный общий прогон 2026-10-16 после QR/OTA/installer исправлений завершился
 успешно: 113 domain, 25 state, 31 updates и 124 Flutter tests, чистый анализ;

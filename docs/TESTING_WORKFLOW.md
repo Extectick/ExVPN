@@ -143,7 +143,7 @@ verify/test/vet трёх Go-модулей, installer fixtures и 26 planner reg
 failure regressions и исправления empty-array режима `-Full`. Это измерение
 локального цикла, а не коэффициент ускорения старого CI или времени сборки APK/EXE.
 
-Финальный актуальный `-Full` после сведения исходников всех агентов прошёл за
+Финальный `-Full` для **+9** после сведения исходников всех агентов прошёл за
 **29,08 с**, с `-count=1` для Go (0 cached test packages) и совпадающим source
 fingerprint. 192 domain +46 state +31 updates +155 Flutter tests, Go checks,
 installer fixtures, 26 planner, 2 coordinator и 38 JVM QA checks прошли.
@@ -159,3 +159,24 @@ readback и независимое чтение UI совпали; систем�
 
 Исходники инструмента: [24901d4](https://github.com/Extectick/ExVPN/commit/24901d4121b578ccc87cff590d1b9791e21085b4).
 Правила разделения работы закреплены в [AGENTS.md](../AGENTS.md).
+
+## Повторное измерение на +10
+
+2026-10-17 итоговый `-Full` на исходниках
+[924493a](https://github.com/Extectick/ExVPN/commit/924493a511547bb2b4c93262ab93df82fe127479)
+прошёл за **37,77 с**. Все девять наборов PASS, Go `-count=1`, ни одного cached
+test package; fingerprint до/после совпал. Одновременно собирались Windows
+service/installer. Это измерение на более широком наборе проверок и при другой
+нагрузке, поэтому оно не сравнивается как регрессия скорости с +9.
+[Обезличенный отчёт](evidence/fast-validation-build10.json).
+
+Сохранились 192 domain +46 state +31 updates +155 Flutter tests, Go verify/test/vet,
+installer, planner/coordinator и JVM QA checks. Добавлены 23 проверки входов
+notices, 41 проверка audit и 29 snapshot/APK-проверок. Windows suite дополнительно
+проверяет отмену reconnect, ошибки cleanup, смену поколения и реальный loopback
+обмен TCP/WS/gRPC/XHTTP/Hysteria2 с запретом DNS старого поколения. Это по-прежнему
+не заменяет проверку установленного VPN.
+
+В CI [84489a2](https://github.com/Extectick/ExVPN/commit/84489a2) исключает только
+push с документацией/дизайн-изображениями из повторной native-сборки. Pull request
+не фильтруются. [Точные пути и ограничения](CI.md).

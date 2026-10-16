@@ -1,0 +1,120 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "sourceCommit": "b8dd91da531c09449f98e17bcc9cfa2d5f7444da",
+  "scope": "Android package composition; not VPN or release acceptance",
+  "fixtures": {
+    "androidSnapshotsAndApk": 29,
+    "noticeInputs": 23,
+    "artifactAudit": 41
+  },
+  "gradleMissingSnapshotRejected": true,
+  "jvmTests": {
+    "freshRun": "first candidate; unchanged Kotlin tests cached for candidate2",
+    "passed": 8,
+    "failures": 0
+  },
+  "failedCandidate": {
+    "artifact": {
+      "file": "ExVPN-0.1.0-10-android-development.apk",
+      "sha256": "5a1a80428b557176b4c7a1ebc0812577cdfa63b12eaf8852a9737589bc19bd8a",
+      "bytes": 220403657
+    },
+    "installed": false,
+    "findings": [
+      {
+        "code": "notice_native_binary_not_in_artifact",
+        "subject": "lib/arm64-v8a/libexvpn.so",
+        "severity": "blocker"
+      },
+      {
+        "code": "notice_native_binary_not_in_artifact",
+        "subject": "lib/x86_64/libexvpn.so",
+        "severity": "blocker"
+      },
+      {
+        "code": "notice_native_hash_not_bound",
+        "subject": "lib/arm64-v8a/libexvpn.so",
+        "severity": "blocker"
+      },
+      {
+        "code": "notice_native_hash_not_bound",
+        "subject": "lib/x86_64/libexvpn.so",
+        "severity": "blocker"
+      }
+    ]
+  },
+  "correctedCandidate": {
+    "sbomSha256": "2956433baaef95b06f85578d9b8b305d9080768622da6324d63388c467f604af",
+    "findings": [
+      {
+        "code": "android_debug_signer",
+        "subject": "",
+        "severity": "blocker"
+      },
+      {
+        "code": "android_gradle_maven_runtime_inventory_missing",
+        "subject": "",
+        "severity": "blocker"
+      },
+      {
+        "code": "apk_debuggable",
+        "subject": "",
+        "severity": "blocker"
+      },
+      {
+        "code": "dart_flutter_runtime_link_inventory_incomplete",
+        "subject": "",
+        "severity": "blocker"
+      },
+      {
+        "code": "license_expressions_and_distribution_obligations_not_fully_reviewed",
+        "subject": "",
+        "severity": "blocker"
+      },
+      {
+        "code": "release_signer_not_pinned",
+        "subject": "",
+        "severity": "blocker"
+      }
+    ],
+    "appVersion": "0.1.0+10",
+    "releaseReady": false,
+    "nativeBinaries": [
+      {
+        "sha256": "1808b1dfbd5c7cb0dca07aed69fc8298319fa6b0c108f089e83c9fa23abf872c",
+        "path": "lib/arm64-v8a/libexvpn.so"
+      },
+      {
+        "sha256": "30adfed83172164aab8179bb538e734841260b489391d162293e28d30c13436e",
+        "path": "lib/x86_64/libexvpn.so"
+      }
+    ],
+    "artifact": {
+      "file": "ExVPN-0.1.0-10-android-development.apk",
+      "sha256": "51903e3e943fe1608ed375eeaf46d5730369566ed119ab28d12b782a1699448c",
+      "bytes": 259977322
+    },
+    "auditSha256": "4bea86e6620c1ba94ea47b4604a487d4dc992ed62b8ef1532adf162c4d6bebf0",
+    "noticeSource": "actual-apk-entries",
+    "counts": {
+      "files": 391,
+      "nativeBinaries": 2,
+      "noticeComponents": 139
+    },
+    "exitCode": 2,
+    "noticeEvidence": {
+      "source": "actual-apk-entries",
+      "fileCount": 218,
+      "inventorySha256": "aff43c8d4180b53cef385acfb688dda3e79d452cc775d4629c27bacb5029d9fc",
+      "fileSetSha256": "c5e8718f9520f148155cbcc602fcbfe8575454c2e912be09c27fdd00c0de980b",
+      "xraySource": {
+        "present": true,
+        "zipSha256": "7d3dcd882361a1e9112c021339135b150e50e01aefec26df2801a5a8c2cc921c",
+        "linkedModuleSum": "h1:Am/9Pzw5PZr7+hMN1Vs5faeSXRoutnrwMAgtUDnh/J8=",
+        "actualGoSum": "h1:Am/9Pzw5PZr7+hMN1Vs5faeSXRoutnrwMAgtUDnh/J8=",
+        "matched": true
+      }
+    }
+  }
+}

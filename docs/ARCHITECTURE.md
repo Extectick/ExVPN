@@ -32,7 +32,7 @@ flowchart TD
     BRIDGE --> WINDOWS[Go-служба Windows]
     BRIDGE -. последующие этапы .-> LINUX[Служба Linux]
     BRIDGE -. последующие этапы .-> IOS[Swift Packet Tunnel]
-    ANDROID --> CORE[Xray / libXray]
+    ANDROID --> CORE[Xray через собственный Go-адаптер]
     WINDOWS --> CORE
     LINUX --> CORE
     IOS --> CORE

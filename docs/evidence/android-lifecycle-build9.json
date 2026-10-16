@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "status": "completed_with_lifecycle_gap",
+  "applicationVersion": "0.1.0+9",
+  "sourceCommit": "f5901bc7d0b61d22f555bc760cbfcb5e3c85de81",
+  "apkSha256": "04c988d3a9441c3a5f61a67b307d96c81870b0e3027df6a7c35f43f994a15f6c",
+  "platform": "Android",
+  "target": "API30 x86_64 emulator",
+  "dateUtc": "2026-10-16T20:43:21.2317758Z",
+  "computerUse": false,
+  "independentProbeUid": 10168,
+  "results": {
+    "uiActivityClosed": {
+      "result": "PASS",
+      "activityAbsent": true,
+      "httpStatus": 204,
+      "vpnTransport": true
+    },
+    "networkLoss": {
+      "result": "PASS",
+      "wifiAndDataDisabled": true,
+      "requestFailed": true,
+      "vpnTransportRetained": true
+    },
+    "networkRecovery": {
+      "result": "PASS",
+      "manualApplicationAction": false,
+      "verifiedWithinMs": 3509,
+      "httpStatus": 200,
+      "vpnTransport": true,
+      "sameTunneledIpv4": true
+    },
+    "bootRecovery": {
+      "result": "PASS",
+      "dataRetained": true,
+      "userUnlocked": true,
+      "beforeApplicationUi": true,
+      "httpStatus": 200,
+      "vpnTransport": true,
+      "sameTunneledIpv4": true
+    },
+    "forcedJavaCrash": {
+      "injection": "am crash",
+      "failClosed": "PASS",
+      "firstProbeError": "network",
+      "firstProbeTxBytes": 0,
+      "firstProbeRxBytes": 0,
+      "automaticRestart": "NOT_OBSERVED",
+      "observedForMs": 128169,
+      "manualRecovery": "PASS"
+    },
+    "postCrashSigkill": {
+      "injection": "privileged SIGKILL",
+      "cleanBootBefore": false,
+      "failClosed": "PASS",
+      "automaticRestart": "NOT_OBSERVED",
+      "observedForMs": 62870
+    },
+    "cleanSigkill": {
+      "injection": "privileged SIGKILL",
+      "cleanBootBefore": true,
+      "failClosed": "PASS",
+      "firstProbeError": "network",
+      "firstProbeTxBytes": 0,
+      "firstProbeRxBytes": 0,
+      "automaticRestart": "FAIL",
+      "observedForMs": 60264,
+      "manualRecovery": "PASS"
+    },
+    "cleanup": {
+      "result": "PASS",
+      "exactInitialOsSettingsRestored": true,
+      "adbUid": 2000,
+      "uiDisconnected": true,
+      "vpnTransport": false,
+      "originalDirectIpv4Restored": true
+    }
+  },
+  "diagnosis": {
+    "classification": "API30 framework lifecycle limitation",
+    "evidence": "DeadObjectException during VPN interfaceRemoved/unbind precedes process-death event; matching AOSP finishing cleanup removes the service from process restart accounting.",
+    "confidence": "Explanation from observed stack and AOSP control flow; not proof for all Android or OEM builds.",
+    "startRequested": true,
+    "stopIfKilled": false,
+    "restartScheduled": false,
+    "backgroundAppOps": "allow",
+    "source": "https://github.com/aosp-mirror/platform_frameworks_base/blob/8551ec363dcd7c2d7c82c45e89db4922156766ab/services/core/java/com/android/server/am/ActiveServices.java",
+    "productionChanged": false,
+    "watchdogWorkaroundAdded": false
+  },
+  "limits": [
+    "No physical Android acceptance",
+    "IPv6 traffic and packet-level DNS/IPv4/IPv6 leak audit not performed",
+    "Unattended process restart remains open",
+    "SIGKILL injection required root on the disposable emulator; probes still ran as ordinary independent app UID",
+    "Boot test used an unlocked emulator, not secure pre-unlock storage",
+    "Finite failure observations do not prove absence of packets at every instant"
+  ],
+  "testedCheckoutCommit": "f2c5c5e"
+}
