@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "sourceScript": "scripts/core/test-xray-patch.ps1",
+  "sourceScriptSha256": "c1dff93f3448ac387258b2742992370eb1a50431938027389d741c058aec8616",
+  "checkoutSimulation": "Exact UTF-8 CRLF script text parsed and dot-sourced by PowerShell with original filename metadata; original source bytes untouched",
+  "result": "PASS",
+  "exitCode": 0,
+  "negativeCrlfCaseRetained": true,
+  "productionValidatorChanged": false,
+  "originalSourceUnchanged": true
+}

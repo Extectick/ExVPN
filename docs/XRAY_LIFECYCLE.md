@@ -1,6 +1,6 @@
 # Жизненный цикл gRPC и XHTTP
 
-Задача **EXVPN-E1-011**, подготовка сборки **0.1.0+11**. Состояние исходников:
+Задача **EXVPN-E1-011**, сборка **0.1.0+11**. Состояние исходников:
 [ad9b257](https://github.com/Extectick/ExVPN/commit/ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f). Платформенные результаты добавляются после
 проверки конкретных пакетов; E1 в целом остаётся открытым.
 
@@ -67,6 +67,25 @@ pwsh -NoProfile -File scripts/qa/test-xray-lifecycle.ps1 -Race -Count 5
 и отдельный race ×5 для четырёх пакетов (26 test functions), затем `go vet`.
 Stock red и итоговый результат сохранены в
 [обезличенном отчёте](evidence/xray-lifecycle-build11.json).
+
+APK обеих ABI/JVM tests, Windows service/UI/NSIS собраны локально. Аудит
+[APK](evidence/android-packaging-build11.json) и
+[Windows payload](evidence/windows-packaging-build11.json) подтвердил точный
+module h1, полный соответствующий ZIP, patch и lock внутри комплекта notices.
+На каждой платформе остаются шесть известных release blockers подписи и
+полноты учёта компонентов; проверка исходников их не отменяет.
+
+Android API30 прошёл шесть connect/disconnect в одном app/service процессе:
+три gRPC h2c и три XHTTP packet-up. Независимый UID подтвердил HTTPS, после
+отключения peer sockets закрылись и вернулся прямой IPv4. Cold restore и
+удаление только временных тестовых данных прошли. [Отчёт](evidence/android-lifecycle-build11.json).
+
+Первый Windows runtime +11 остановлен на первом из 15 циклов: HTTPS/DNS,
+обычный UI token и восстановление TUN/WFP/routes/DNS прошли, но один peer socket
+оставался после 10,86 с ожидания. Его TCP state в первом прогоне не записывался;
+причину проверяет отдельный диагностический запуск. Cleanup восстановил
+production binding и сеть, fixture остановлен. Этот прогон остаётся FAIL:
+[доказательство](evidence/windows-lifecycle-build11-first-failure.json).
 
 Android и Windows требуют проверки нескольких connect/disconnect в **одном
 процессе**: перезапуск процесса между циклами скрывает retained globals.

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "taskId": "EXVPN-E1-011",
+  "date": "2026-10-17",
+  "status": "FAIL",
+  "appVersion": "0.1.0+11",
+  "installerSha256": "eb071b0ad883e73842eb32bacdd23d7ce1005b5b20e8e312708296d6613b3333",
+  "productionCodeCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f",
+  "runtime": {
+    "plannedCycles": 15,
+    "disconnectObservations": 1,
+    "transport": "VLESS gRPC h2c",
+    "independentHttpsPassed": true,
+    "dnsPassed": true,
+    "ordinaryUiToken": true,
+    "sameServiceProcess": true,
+    "tunnelAbsent": true,
+    "guardArmed": false,
+    "networkRestored": true,
+    "fixturePeerCount": 1,
+    "drainMs": 10859,
+    "peerTcpState": "not recorded"
+  },
+  "cleanup": {
+    "passed": true,
+    "productionBindingRestored": true,
+    "networkRestored": true,
+    "ownedFixtureStopped": true
+  },
+  "interpretation": "Peer did not drain within the deadline; runtime acceptance failed. TCP state and cause require a separate diagnostic run; no retrospective PASS."
+}

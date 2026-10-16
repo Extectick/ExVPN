@@ -17,7 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
 const _input = r'C:\ExVPN-App-QA';
-const _output = r'C:\ExVPN-App-QA-Results';
+var _output = r'C:\ExVPN-App-QA-Results';
 const _private = r'C:\ExVPN-App-QA-Private';
 const _installed = r'C:\Program Files\ExVPN UI QA';
 const _fixtureNames = [
@@ -41,6 +41,23 @@ Future<void> main() async {
     marker = jsonDecode(
       await File('$_input\\sandbox-bundle.json').readAsString(),
     ) as Map<String, dynamic>;
+    final requestedCycles = marker['transportCycles'] ?? 0;
+    if (requestedCycles is! int ||
+        (requestedCycles != 0 &&
+            (requestedCycles < 3 || requestedCycles > 20))) {
+      exit(78);
+    }
+    transportCycles = requestedCycles;
+    if (transportCycles > 0) {
+      final runId = marker['runId'];
+      if (runId is! String ||
+          !RegExp(r'^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$')
+              .hasMatch(runId) ||
+          runId == '00000000-0000-0000-0000-000000000000') {
+        exit(78);
+      }
+      _output = '${r'C:\ExVPN-Lifecycle-QA-Results'}\\$runId';
+    }
     if (!Platform.isWindows ||
         Platform.resolvedExecutable.toLowerCase() !=
             '$_installed\\exvpn.exe'.toLowerCase() ||
@@ -77,13 +94,6 @@ Future<void> main() async {
         (marker['providerMatrix'] != true || marker['unelevated'] != true)) {
       exit(78);
     }
-    final requestedCycles = marker['transportCycles'] ?? 0;
-    if (requestedCycles is! int ||
-        (requestedCycles != 0 &&
-            (requestedCycles < 3 || requestedCycles > 20))) {
-      exit(78);
-    }
-    transportCycles = requestedCycles;
     if (transportCycles > 0) {
       if (marker['unelevated'] != true ||
           marker['providerMatrix'] == true ||

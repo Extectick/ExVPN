@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "mode": "Full",
+  "scope": "behavioral checks only; excludes builds and real VPN/security/release acceptance",
+  "startedAt": "2026-10-16T22:53:18.8356976+00:00",
+  "endedAt": "2026-10-16T22:54:30.7478153+00:00",
+  "durationSeconds": 71.91,
+  "status": "passed",
+  "sourceFingerprintBefore": "573a903b8d46d9f8481c1a70e697a05acae53d6acfd4b7bb3d01c265ffeaf27c",
+  "sourceFingerprintAfter": "573a903b8d46d9f8481c1a70e697a05acae53d6acfd4b7bb3d01c265ffeaf27c",
+  "sourceUnchanged": true,
+  "toolchain": {
+    "go": "1.27.2",
+    "flutter": "abaf9c523780a608bd46686fd5e53740a07077f8",
+    "dart": "3.13.5"
+  },
+  "changedFileCount": 0,
+  "selectedLanes": [
+    "domain",
+    "state",
+    "updates",
+    "app",
+    "core",
+    "android",
+    "windows",
+    "xray",
+    "installer",
+    "scripts"
+  ],
+  "selectionReasons": [
+    "full behavioral suite requested"
+  ],
+  "goResultCacheAllowed": false,
+  "maxParallel": 3,
+  "testConcurrency": 2,
+  "lanes": [
+    {
+      "lane": "android",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 7.58,
+      "cachedGoPackages": 0,
+      "log": "android.log"
+    },
+    {
+      "lane": "app",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 26.4,
+      "cachedGoPackages": 0,
+      "log": "app.log"
+    },
+    {
+      "lane": "core",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 20.64,
+      "cachedGoPackages": 0,
+      "log": "core.log"
+    },
+    {
+      "lane": "domain",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 6.11,
+      "cachedGoPackages": 0,
+      "log": "domain.log"
+    },
+    {
+      "lane": "installer",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 7.63,
+      "cachedGoPackages": 0,
+      "log": "installer.log"
+    },
+    {
+      "lane": "scripts",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 33.93,
+      "cachedGoPackages": 0,
+      "log": "scripts.log"
+    },
+    {
+      "lane": "state",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 5.88,
+      "cachedGoPackages": 0,
+      "log": "state.log"
+    },
+    {
+      "lane": "updates",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 9.22,
+      "cachedGoPackages": 0,
+      "log": "updates.log"
+    },
+    {
+      "lane": "windows",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 8.86,
+      "cachedGoPackages": 0,
+      "log": "windows.log"
+    },
+    {
+      "lane": "xray",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 10.57,
+      "cachedGoPackages": 0,
+      "log": "xray.log"
+    }
+  ],
+  "failure": null,
+  "requiredNextGates": [
+    "Android JNI/APK and JVM tests",
+    "Windows native/UI build",
+    "isolated VPN/IPv4/IPv6/DNS/fault acceptance",
+    "signed release and upgrade acceptance"
+  ]
+}

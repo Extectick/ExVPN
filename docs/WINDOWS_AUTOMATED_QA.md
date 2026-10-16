@@ -216,6 +216,42 @@ UI, подтверждает готовность независимого watch
 Для повторения +10 нужен подтверждённый provider node4 в приватном cases-файле;
 исходный selection после проверки восстановлен. [Контракт и результаты](WINDOWS_RECONNECT.md).
 
+## Повторные подключения gRPC/XHTTP
+
+`scripts/windows/prepare-app-sandbox.ps1 -Installer <development-exe>
+-Unelevated -TransportCycles 5` собирает отдельный Flutter integration bundle.
+Тест выполняет по пять gRPC, XHTTP и XHTTP/REALITY циклов в одном UI/SCM процессе.
+Значение cycles ограничено 3–20; смешивать этот режим с fault/provider/policy
+сценариями нельзя. Installer и production UI/service не пересобираются.
+
+Координатор `scripts/qa/run-windows-transport-lifecycle.ps1` принимает
+`-SandboxId`, `-BundleDirectory`, `-FixtureDirectory`, `-FixtureExecutable`,
+`-FixtureProcessId` и `-FixtureStartedUtc`. Fixture должен быть отдельно запущен
+по методике выше, содержать восемь synthetic profiles, включая VLESS gRPC, и не
+обслуживать другой тест. Процесс проверяется по точному executable и start time.
+Он будет остановлен при завершении принадлежащего координатору прогона.
+
+Сначала вызвать координатор с `-PrepareOnly`: это проверяет read-only input
+mapping и резервирует результат, не меняя службу или сеть. Если требуется
+обновление, запустить `guest-app-upgrade.ps1` из подготовленного bundle в госте
+с повышенными правами, затем вызвать координатор с теми же аргументами без
+`-PrepareOnly`. Разрешён только успешный upgrade-report этого runId/build.
+
+CLI Sandbox не позволяет переназначить уже существующую writable mapping.
+Поэтому `.private/windows-lifecycle-results` подключается один раз в
+`C:\ExVPN-Lifecycle-QA-Results`, а каждый bundle использует свою GUID-папку.
+Nonce read/write challenge подтверждает, что mapping относится к нужному хосту
+и доступна для записи. Неизвестная mapping, повторный запуск начатого runId,
+изменённая reservation или чужой upgrade-report приводят к отказу; прежние
+результаты сохраняются. Для повторения нужно подготовить новый bundle/runId.
+
+После каждого disconnect проверяются прежний PID службы, отсутствие TUN/WFP
+guard, точный DNS/routes baseline и закрытие server-side peer sockets. В конце
+восстанавливается production client binding. HTTPS/DNS и рост счётчиков
+подтверждаются независимо от статуса UI. Memory/handle/thread samples являются
+наблюдениями ОС, а не подсчётом внутренних Go кешей. Этот сценарий не заменяет
+внешний IP, полную leak/fault matrix, sleep/resume или подписанный выпуск.
+
 ## Повреждение и восстановление policy
 
 Для отдельного storage/UI сценария подготовить bundle командой

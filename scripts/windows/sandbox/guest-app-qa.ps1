@@ -11,6 +11,12 @@ $serviceExe = 'C:\Program Files\ExVPN Service\exvpn-service.exe'
 $uiExe = 'C:\Program Files\ExVPN\exvpn.exe'
 if (!$ConfirmDisposableGuest -or [Security.Principal.WindowsIdentity]::GetCurrent().User.Value -ne 'S-1-5-18' -or [IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\') -ine $inputRoot) { throw 'Disposable System runner required.' }
 $marker = Get-Content -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Raw | ConvertFrom-Json
+if ($marker.PSObject.Properties['transportCycles'] -and $marker.transportCycles -ne 0) {
+    if (($marker.transportCycles -isnot [int] -and $marker.transportCycles -isnot [long]) -or $marker.transportCycles -lt 3 -or $marker.transportCycles -gt 20) { throw 'Invalid transport cycle count.' }
+    $parsedRun = [guid]::Empty
+    if (![guid]::TryParseExact($marker.runId,'D',[ref]$parsedRun) -or $parsedRun -eq [guid]::Empty) { throw 'Invalid lifecycle run ID.' }
+    $outputRoot = Join-Path 'C:\ExVPN-Lifecycle-QA-Results' $marker.runId
+}
 if (!$marker.forbiddenHost -or $env:COMPUTERNAME -ieq $marker.forbiddenHost -or !(Test-Path -LiteralPath $outputRoot -PathType Container)) { throw 'Guest isolation failed.' }
 # Verify this helper before importing it, then verify the whole read-only bundle.
 $common = @($marker.files | Where-Object path -CEQ 'package-common.ps1')

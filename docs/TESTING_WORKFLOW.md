@@ -135,6 +135,17 @@ readback длины/SHA-256; production APK не получает тестовы
 
 ## Первые измерения, 2026-10-17
 
+После исправления повторного использования Sandbox и Windows CRLF fixture
+`-Full` прошёл за 71,91 с. Review затем обнаружил ошибку каталога диагностики
+при неверном marker: исправлена публикация пути только после проверки, добавлена
+регрессия. Итоговый `-Full` прошёл за **73,70 с**: десять наборов, Go `-count=1`,
+одинаковый fingerprint до/после. Windows helpers расширены до 78 проверок;
+исходники production APK/установщика не менялись.
+[Итоговый отчёт](evidence/fast-validation-build11-qa-final.json).
+CI отдельно выявил CRLF в valid synthetic patch here-string; нормализован только
+этот пример, 61 проверка прошла и при разборе LF, и при разборе CRLF исходника.
+[Проверка](evidence/xray-patch-crlf-build11.json), [первый CI отказ](evidence/ci-build11-first-failure.json).
+
 Для +11 расширенный `-Full` содержит **10 наборов** и прошёл за **70,74 с**:
 192 domain, 46 state, 31 updates, 156 Flutter tests, Go verify/test/vet,
 26 upstream lifecycle test functions, installer/tooling fixtures. Go test-result
@@ -148,9 +159,21 @@ Windows lifecycle driver — `scripts/qa/run-windows-transport-lifecycle.ps1`:
 готовый Flutter integration runner выполняет циклы в одном UI/SCM процессе,
 CLI Sandbox наблюдает очистку TUN/WFP/DNS/routes и завершение peer sockets.
 Android использует отдельный ADB/probe driver и
-`scripts/qa/android-lifecycle-tools.ps1`. 51 Windows и 19 Android синтетических
+`scripts/qa/android-lifecycle-tools.ps1`. 78 Windows и 19 Android синтетических
 проверок этих helpers входят в `scripts` и CI; они сами не запускают VPN.
 Результаты настоящих циклов привязываются к хешу APK/установщика отдельно.
+
+Windows lifecycle повторно использует одну writable mapping, проверенную
+nonce read/write challenge; каждый запуск пишет в собственную папку runId.
+Готовая reservation допускает upgrade перед запуском, но начатые/завершённые
+результаты нельзя перезаписать. Это устраняет необходимость пересоздавать
+Sandbox из-за запрета CLI переназначать существующую writable mapping.
+[Порядок запуска](WINDOWS_AUTOMATED_QA.md#повторные-подключения-grpcxhttp).
+
+Android +11 выполнил шесть циклов gRPC/XHTTP за 181,99 с суммарно, включая
+проверку независимым HTTPS probe и очистку после каждого отключения.
+Ввод двух synthetic profiles занял 417 мс с проверкой точного readback.
+[Runtime evidence](evidence/android-lifecycle-build11.json).
 
 Два последовательных `-Changed` на одном неизменном рабочем дереве выбрали все
 девять наборов, потому что добавлялись сами QA-скрипты. Оба завершились PASS:

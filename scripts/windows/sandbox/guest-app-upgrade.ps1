@@ -8,6 +8,12 @@ $outputRoot = 'C:\ExVPN-App-QA-Results'
 $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
 if (!$ConfirmDisposableGuest -or $identity.User.Value -eq 'S-1-5-18' -or [IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\') -ine $inputRoot) { throw 'Disposable desktop administrator required.' }
 $marker = Get-Content -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Raw | ConvertFrom-Json
+if ($marker.PSObject.Properties['transportCycles'] -and $marker.transportCycles -ne 0) {
+    if (($marker.transportCycles -isnot [int] -and $marker.transportCycles -isnot [long]) -or $marker.transportCycles -lt 3 -or $marker.transportCycles -gt 20) { throw 'Invalid transport cycle count.' }
+    $parsedRun = [guid]::Empty
+    if (![guid]::TryParseExact($marker.runId,'D',[ref]$parsedRun) -or $parsedRun -eq [guid]::Empty) { throw 'Invalid lifecycle run ID.' }
+    $outputRoot = Join-Path 'C:\ExVPN-Lifecycle-QA-Results' $marker.runId
+}
 if (!$marker.forbiddenHost -or $env:COMPUTERNAME -ieq $marker.forbiddenHost -or !(Test-Path -LiteralPath $outputRoot -PathType Container)) { throw 'Guest isolation failed.' }
 if (![Security.Principal.WindowsPrincipal]::new($identity).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) -or $identity.Owner.Value -ne 'S-1-5-32-544') { throw 'An elevated administrator token with protected default ownership is required.' }
 $common = @($marker.files | Where-Object path -CEQ 'package-common.ps1')
@@ -25,5 +31,5 @@ foreach ($process in Get-Process -Name exvpn -ErrorAction SilentlyContinue) {
 $install = Start-Process -FilePath (Join-Path $inputRoot 'installer.exe') -ArgumentList @('/S',('/OWNER_SID=' + $before.ownerSid),'/NETWORK_TESTING=1') -PassThru -Wait -WindowStyle Hidden
 $after = Get-Content -LiteralPath 'C:\Program Files\ExVPN Installer\install-state.json' -Raw | ConvertFrom-Json
 $passed = $install.ExitCode -eq 0 -and $after.build -eq $marker.build -and $after.ownerSid -ceq $before.ownerSid
-[ordered]@{passed=$passed;exitCode=$install.ExitCode;upgradedFromBuild=$before.build;installedBuild=$after.build} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $outputRoot 'upgrade-report.json') -Encoding utf8
+[ordered]@{runId=$marker.runId;passed=$passed;exitCode=$install.ExitCode;upgradedFromBuild=$before.build;installedBuild=$after.build} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $outputRoot 'upgrade-report.json') -Encoding utf8
 if (!$passed) { throw 'Development upgrade failed.' }

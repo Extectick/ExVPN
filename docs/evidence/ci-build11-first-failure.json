@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "appVersion": "0.1.0+11",
+  "runId": 38976988751,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/38976988751",
+  "headCommit": "e36b4a2a6f8780ff37a374c8ce2a30aa71360412",
+  "codeCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f",
+  "conclusion": "failure",
+  "failedStep": "Analyze, test, and build",
+  "reason": "Synthetic valid patch fixture inherited CRLF from Windows checkout; production patch requires UTF-8/LF",
+  "jobs": [
+    {
+      "id": 117228705248,
+      "conclusion": "failure",
+      "platform": "Android"
+    },
+    {
+      "id": 117228705472,
+      "conclusion": "failure",
+      "platform": "Windows"
+    }
+  ],
+  "completedChecks": [
+    "native unit/loopback/vet",
+    "pinned Xray lifecycle",
+    "Windows race detector"
+  ],
+  "scope": "Failure before complete native application build/upload; not a release acceptance"
+}

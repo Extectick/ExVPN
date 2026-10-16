@@ -8,7 +8,7 @@ param(
     [Parameter(Mandatory)][string]$FixtureExecutable,
     [Parameter(Mandatory)][int]$FixtureProcessId,
     [Parameter(Mandatory)][DateTimeOffset]$FixtureStartedUtc,
-    [string]$ResultDirectory=''
+    [switch]$PrepareOnly
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
@@ -46,24 +46,36 @@ function Assert-OwnedFixture {
     $process
 }
 [void](Assert-OwnedFixture)
-function Get-FixturePeerCount {
+function Get-FixturePeers {
     [void](Assert-OwnedFixture)
     @(Get-NetTCPConnection -ErrorAction Stop | Where-Object {
         $_.OwningProcess -eq $FixtureProcessId -and $_.LocalPort -in $fixturePorts -and $_.State -notin @('Listen','TimeWait','Closed','Bound')
-    }).Count
+    } | ForEach-Object {
+        [ordered]@{fixtureIndex=([array]::IndexOf($fixturePorts,[int]$_.LocalPort)+1);state=$_.State.ToString();localAddress=$_.LocalAddress;localPort=$_.LocalPort;remoteAddress=$_.RemoteAddress;remotePort=$_.RemotePort}
+    })
 }
-if ((Get-FixturePeerCount) -ne 0) { throw 'transport_fixture_already_in_use' }
-if (!$ResultDirectory) { $ResultDirectory=Join-Path $repository ('.private/windows-lifecycle-'+[DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,8)) }
-$outputRoot=[IO.Path]::GetFullPath($ResultDirectory)
-if (!$outputRoot.StartsWith($privatePrefix,[StringComparison]::OrdinalIgnoreCase) -or (Test-Path -LiteralPath $outputRoot)) { throw 'transport_new_private_output_required' }
-[IO.Directory]::CreateDirectory($outputRoot) | Out-Null
-Assert-AuditNoLinks $outputRoot
+if (@(Get-FixturePeers).Count -ne 0) { throw 'transport_fixture_already_in_use' }
 $wsb=Join-Path $env:LOCALAPPDATA 'Microsoft/WindowsApps/wsb.exe'
 $inventory=& $wsb list --raw | ConvertFrom-Json
 if ($LASTEXITCODE -ne 0 -or @($inventory.WindowsSandboxEnvironments | Where-Object Id -EQ $SandboxId.ToString()).Count -ne 1) { throw 'transport_live_sandbox_required' }
+$mapping=& (Join-Path $PSScriptRoot 'ensure-windows-lifecycle-mapping.ps1') -SandboxId $SandboxId
+$outputRoot=Join-Path $mapping.root $marker.runId
+$reservation=[ordered]@{
+    format=1;runId=$marker.runId;build=$marker.build;cycles=$marker.transportCycles
+    bundleManifestSha256=(Get-AuditSha256 (Join-Path $inputRoot 'sandbox-bundle.json'))
+    fixtureExecutableSha256=(Get-AuditSha256 $fixtureExecutable);fixtureProcessId=$FixtureProcessId
+    fixtureStartedUtcTicks=$FixtureStartedUtc.UtcTicks
+    fixtureManifestSha256=(Get-AuditSha256 $fixtureManifest);subscriptionSha256=(Get-AuditSha256 (Join-Path $fixture 'subscription.txt'))
+}
+if (!(Test-Path -LiteralPath $outputRoot)) {
+    [IO.Directory]::CreateDirectory($outputRoot) | Out-Null
+    $file=[IO.File]::Open((Join-Path $outputRoot 'transport-reservation.json'),[IO.FileMode]::CreateNew,[IO.FileAccess]::Write)
+    try { $bytes=[Text.Encoding]::UTF8.GetBytes(($reservation | ConvertTo-Json)); $file.Write($bytes,0,$bytes.Length) } finally { $file.Dispose() }
+}
+Assert-AuditNoLinks $outputRoot
+Assert-TransportPreparedResults $outputRoot $reservation
 foreach ($mapping in @(
     @{source=$inputRoot;target='C:\ExVPN-App-QA';write=$false},
-    @{source=$outputRoot;target='C:\ExVPN-App-QA-Results';write=$true},
     @{source=$fixture;target='C:\ExVPN-App-QA-Private';write=$false}
 )) {
     $arguments=@('share','--id',$SandboxId.ToString(),'--host-path',$mapping.source,'--sandbox-path',$mapping.target,'--raw')
@@ -71,6 +83,12 @@ foreach ($mapping in @(
     $null=& $wsb @arguments
     if ($LASTEXITCODE -ne 0) { throw 'transport_mapping_failed' }
 }
+if ($PrepareOnly) {
+    [ordered]@{runId=$marker.runId;output=$outputRoot;prepared=$true;serviceChanged=$false;networkChanged=$false}
+    return
+}
+$startedFile=[IO.File]::Open((Join-Path $outputRoot 'transport-started.json'),[IO.FileMode]::CreateNew,[IO.FileAccess]::Write)
+try { $bytes=[Text.Encoding]::UTF8.GetBytes(([ordered]@{runId=$marker.runId;startedUtc=[DateTime]::UtcNow.ToString('o')} | ConvertTo-Json)); $startedFile.Write($bytes,0,$bytes.Length) } finally { $startedFile.Dispose() }
 $invocation=0
 function Start-Guest([string]$Script,[string]$Arguments='', [string]$RunAs='System') {
     if ($Script -cnotin @('guest-app-qa.ps1','guest-app-launch.ps1','guest-transport-observe.ps1') -or $Arguments -notmatch '^(?:-Action (?:Refresh|Restore|Baseline|Observe|Finish)(?: -Step [1-6]?[0-9])?)?$') { throw 'transport_guest_action_rejected' }
@@ -126,12 +144,19 @@ try {
                 $sample=Get-Content -LiteralPath (Join-Path $outputRoot "transport-observe-$step.json") -Raw | ConvertFrom-Json -AsHashtable
                 Assert-TransportSample $sample $marker.runId $step
                 $drain=[Diagnostics.Stopwatch]::StartNew()
+                $peerSnapshots=[Collections.Generic.List[object]]::new()
                 do {
-                    $peers=Get-FixturePeerCount
+                    $peerDetails=@(Get-FixturePeers)
+                    $peers=$peerDetails.Count
+                    $peerSnapshots.Add([ordered]@{elapsedMs=[int]$drain.Elapsed.TotalMilliseconds;peers=$peerDetails})
                     if ($peers -eq 0) { break }
                     Start-Sleep -Milliseconds 200
                 } while ($drain.Elapsed.TotalSeconds -lt 10)
+                # Connection tuples remain only in this private run directory.
+                # Preserve the failed sample without weakening the zero-peer gate.
+                $peerSnapshots | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $outputRoot "transport-peers-$step.json") -Encoding utf8NoBOM
                 $sample.fixturePeerCount=$peers; $sample.fixtureDrainMs=[int]$drain.Elapsed.TotalMilliseconds
+                $sample.fixturePeerStates=@($peerDetails | ForEach-Object { $_.state } | Sort-Object)
                 $report.samples+=@($sample)
                 if ($peers -ne 0) { throw 'transport_fixture_connections_remain' }
                 Write-TransportAck $step $true

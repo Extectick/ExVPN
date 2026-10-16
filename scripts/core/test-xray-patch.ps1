@@ -54,6 +54,9 @@ diff --git a/dependency.go b/dependency.go
 +func Value() string { return "after" }
 
 '@
+# A here-string inherits the checkout's newlines. Canonicalize only this valid
+# fixture; the explicit CRLF negative case below must still reach the validator.
+$patchText=$patchText.Replace("`r`n","`n")
 $fixtureCounter=0
 function New-Fixture {
     $script:fixtureCounter++

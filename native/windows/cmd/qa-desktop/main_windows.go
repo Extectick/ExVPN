@@ -22,7 +22,9 @@ import (
 )
 
 const inputRoot = `C:\ExVPN-App-QA`
-const outputRoot = `C:\ExVPN-App-QA-Results`
+
+var outputRoot = standardOutputRoot
+
 const qaRoot = `C:\Program Files\ExVPN UI QA`
 const controlRoot = `C:\Program Files\ExVPN UI QA Control`
 
@@ -249,10 +251,11 @@ func run() (uint32, error) {
 		return 2, errors.New("guest path required")
 	}
 	var marker struct {
-		Format        int
-		ForbiddenHost string
-		RunID         string
-		Unelevated    bool
+		Format          int
+		ForbiddenHost   string
+		RunID           string
+		Unelevated      bool
+		TransportCycles int
 	}
 	stage = "read-marker"
 	data, err := os.ReadFile(inputRoot + `\sandbox-bundle.json`)
@@ -264,6 +267,9 @@ func run() (uint32, error) {
 		return 2, errors.New("guest isolation required")
 	}
 	runID = marker.RunID
+	if err = selectTransportOutput(marker.TransportCycles, marker.RunID); err != nil {
+		return 2, err
+	}
 	var state struct{ OwnerSID string }
 	stage = "read-installer-owner"
 	data, err = os.ReadFile(controlRoot + `\state.json`)

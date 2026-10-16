@@ -10,11 +10,13 @@ param(
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version Latest
 $inputRoot='C:\ExVPN-App-QA'
-$outputRoot='C:\ExVPN-App-QA-Results'
 $serviceExe='C:\Program Files\ExVPN Service\exvpn-service.exe'
 if (!$ConfirmDisposableGuest -or [Security.Principal.WindowsIdentity]::GetCurrent().User.Value -cne 'S-1-5-18' -or [IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\') -ine $inputRoot) { throw 'transport_disposable_system_runner_required' }
 $marker=Get-Content -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Raw | ConvertFrom-Json
 if (!$marker.forbiddenHost -or $env:COMPUTERNAME -ieq $marker.forbiddenHost -or !$marker.unelevated -or $marker.faults -or $marker.providerMatrix -or $marker.networkRecovery -or $marker.transportCycles -lt 3 -or $marker.transportCycles -gt 20 -or $marker.runId -notmatch '^[a-f0-9-]{36}$') { throw 'transport_guest_marker_rejected' }
+$parsedRun=[guid]::Empty
+if (![guid]::TryParseExact($marker.runId,'D',[ref]$parsedRun) -or $parsedRun -eq [guid]::Empty) { throw 'transport_run_id_rejected' }
+$outputRoot=Join-Path 'C:\ExVPN-Lifecycle-QA-Results' $marker.runId
 if (($Action -eq 'Observe' -and ($Step -lt 1 -or $Step -gt 3*$marker.transportCycles)) -or ($Action -ne 'Observe' -and $Step -ne 0)) { throw 'transport_step_rejected' }
 $common=@($marker.files | Where-Object path -CEQ 'package-common.ps1')
 if ($common.Count -ne 1 -or $common[0].sha256 -cne (Get-FileHash -LiteralPath (Join-Path $inputRoot 'package-common.ps1')).Hash.ToLowerInvariant()) { throw 'transport_helper_hash_mismatch' }

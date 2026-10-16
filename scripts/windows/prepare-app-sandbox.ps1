@@ -20,11 +20,13 @@ $build = [int]$Matches[2]
 if ($artifact.build -ne $build -or $artifact.version -cne $Matches[1]) { throw 'QA source and installer versions differ.' }
 $testTarget = if ($PolicyRecovery) { 'integration_test/windows_policy_test.dart' } else { 'integration_test/windows_sandbox_test.dart' }
 $stamp = [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N').Substring(0,8)
+$runId = [Guid]::NewGuid().ToString()
 $output = Join-Path $repository ('artifacts/windows/app-qa-' + $stamp)
 $inputRoot = Join-Path $output 'input'
-$resultRoot = Join-Path $output 'output'
+$resultRoot = if ($TransportCycles) { Join-Path $repository ('.private/windows-lifecycle-results/' + $runId) } else { Join-Path $output 'output' }
 $sourceRoot = Join-Path $output 'source'
-New-Item -ItemType Directory -Path $inputRoot,$resultRoot,$sourceRoot | Out-Null
+New-Item -ItemType Directory -Path $inputRoot,$sourceRoot | Out-Null
+if (!$TransportCycles) { New-Item -ItemType Directory -Path $resultRoot | Out-Null }
 # Isolate the test target from the ordinary release build directory. Only Git
 # source files are copied, never caches, SDKs, credentials or private fixtures.
 $files = @(& git -C $repository ls-files --cached --others --exclude-standard -- apps/exvpn packages | Sort-Object -Unique)
@@ -75,6 +77,6 @@ if ($TransportCycles) {
     Copy-Item -LiteralPath (Join-Path $repository 'scripts/qa/guest-transport-observe.ps1') -Destination $inputRoot
 }
 $manifest = @(Get-TreeManifest $inputRoot)
-[ordered]@{format=1;forbiddenHost=$env:COMPUTERNAME;build=$build;runId=[Guid]::NewGuid().ToString();faults=[bool]($IncludeFaults -or $PolicyRecovery);policyRecovery=$(if ($PolicyRecovery) { 'reset' } else { $null });unelevated=[bool]$Unelevated;providerMatrix=[bool]$ProviderMatrix;networkRecovery=[bool]$NetworkRecovery;transportCycles=$TransportCycles;files=$manifest} | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Encoding utf8NoBOM
+[ordered]@{format=1;forbiddenHost=$env:COMPUTERNAME;build=$build;runId=$runId;faults=[bool]($IncludeFaults -or $PolicyRecovery);policyRecovery=$(if ($PolicyRecovery) { 'reset' } else { $null });unelevated=[bool]$Unelevated;providerMatrix=[bool]$ProviderMatrix;networkRecovery=[bool]$NetworkRecovery;transportCycles=$TransportCycles;files=$manifest} | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Encoding utf8NoBOM
 [ordered]@{directory=$output;input=$inputRoot;output=$resultRoot} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $repository 'artifacts/windows/app-qa-latest.json') -Encoding utf8
 Write-Host "Prepared only, not executed: $output"
