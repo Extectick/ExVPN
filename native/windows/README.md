@@ -78,6 +78,13 @@ platform thread. Before transmitting a profile the UI checks the server PID
 against SCM, its LocalSystem account and the expected Program Files executable.
 Closing the UI does not disconnect the service.
 
+At startup the SYSTEM service grants its installer-bound user exactly
+`PROCESS_QUERY_LIMITED_INFORMATION` on its own process, preserving other ACEs.
+This is required to authenticate the real SCM/pipe process from an unelevated UI.
+It grants no memory, handle-duplication, termination or process-control access.
+The ACL is read back before IPC starts; failure stops startup with service code 7.
+See [the reproduced +5 defect and +6 validation](../../docs/WINDOWS_UNELEVATED.md).
+
 One UI writer is enforced across sessions with `Global\\ExVPN.UI.v1.<user SID>`.
 The mutex ACL grants only that user and SYSTEM access; failure to acquire it
 does not open subscription storage. A second launch restores the existing

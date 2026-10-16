@@ -1,0 +1,214 @@
+{
+  "format": 1,
+  "date": "2026-10-17",
+  "sourceCommit": "a617aad16c6e1803fcd6e1557d1c500861732e74",
+  "qaSourceCommit": "59bbcdfc85dc1a99c43703445ae491154b78167a",
+  "appVersion": "0.1.0+6",
+  "installerSha256": "0a7654dd5cd12baedb6381b9d85a6cad0da5b74c06bf21db74dc72bd2449f00e",
+  "serviceSha256": "f4d70fa40f54e6250f79c12cc025ee40581be01a8321c5dca443bc60cd97e088",
+  "qaAotSha256": "485eec5563c720623262f6e85000caef6bb2df46a7e896cf453661441eac725d",
+  "startedUtc": "2026-10-16T18:26:40.7281336Z",
+  "finishedUtc": "2026-10-16T18:30:35.7179201Z",
+  "computerUse": false,
+  "nativeVpnMocked": false,
+  "passed": true,
+  "frameworkPassed": true,
+  "allSevenProtocolVariantsPassed": true,
+  "upgrade": {
+    "passed": true,
+    "fromBuild": 5,
+    "toBuild": 6,
+    "exitCode": 0
+  },
+  "ordinaryUserTokenTested": true,
+  "tokenMethod": "restricted-medium-same-user",
+  "token": {
+    "administratorToken": false,
+    "elevated": false,
+    "mediumIntegrity": true,
+    "adminPrivilegesAbsent": true,
+    "sameInstallerOwner": true,
+    "processTokenVerified": true,
+    "restrictingSidCount": 0,
+    "privilegedAccessDenied": true
+  },
+  "deniedAccess": [
+    "service-change-config",
+    "HKLM-policy-write",
+    "protected-QA-metadata-write",
+    "process-terminate",
+    "process-VM-read",
+    "process-VM-write",
+    "process-duplicate-handle",
+    "process-create-thread",
+    "process-set-information",
+    "process-query-information",
+    "process-write-DACL",
+    "process-write-owner"
+  ],
+  "initialState": "disconnected",
+  "initialErrorCode": null,
+  "exclusionSelectedThroughUi": true,
+  "protocolVariants": [
+    {
+      "name": "VLESS TCP",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true
+    },
+    {
+      "name": "VLESS REALITY",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true
+    },
+    {
+      "name": "VLESS Vision",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true
+    },
+    {
+      "name": "VLESS XHTTP",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true
+    },
+    {
+      "name": "XHTTP REALITY",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true
+    },
+    {
+      "name": "VMess",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true
+    },
+    {
+      "name": "Shadowsocks",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true
+    }
+  ],
+  "results": {
+    "connected": {
+      "protected": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 578
+      },
+      "excluded": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 610
+      }
+    },
+    "serverOutage": {
+      "protected": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 8005
+      },
+      "excluded": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 573
+      }
+    },
+    "serviceCrash": {
+      "protected": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 3
+      },
+      "excluded": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 3
+      }
+    },
+    "serviceRestart": {
+      "protected": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 3
+      },
+      "excluded": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 4
+      }
+    },
+    "explicitRecovery": {
+      "protected": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 654
+      },
+      "excluded": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 622
+      }
+    }
+  },
+  "outageCode": "transport_unreachable",
+  "restartCode": "guard_recovered",
+  "scmProcessTerminated": true,
+  "guardObservedAfterCrash": true,
+  "guardObservedAfterRestart": true,
+  "settingsPersistenceAfterCrashTested": true,
+  "exclusionsRetainedAfterDisconnect": true,
+  "cleanup": {
+    "passed": true,
+    "guardArmed": false,
+    "tunnelAbsent": true,
+    "networkRestored": true,
+    "productionBindingRestored": true,
+    "serviceRunning": true,
+    "fixtureStopped": true,
+    "hostNetworkChanged": false
+  },
+  "separateStandardAccountLogonTested": false,
+  "distinctEgressTested": false,
+  "fullIpv6DnsPacketCaptureTested": false,
+  "trojanHysteria2Tested": false,
+  "rebootSleepNetworkChangeTested": false,
+  "nativeImeTested": false,
+  "corruptionResetThroughUiTested": false,
+  "stableRelease": false
+}

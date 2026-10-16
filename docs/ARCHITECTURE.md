@@ -56,6 +56,13 @@ DPAPI работает в пользовательском контексте Lo
 VPN. Сохранение настроек после аварии подтверждено на +4; guard остаётся blocked.
 Контракт, отказы и доказательства: [WINDOWS_POLICY.md](WINDOWS_POLICY.md).
 
+Начиная с +6 LocalSystem-служба перед открытием IPC выдаёт привязанному owner SID
+только `PROCESS_QUERY_LIMITED_INFORMATION` на собственный процесс и проверяет
+DACL обратно. Это позволяет обычному UI проверить реальный executable/PID
+сервера по SCM; права управления процессом не выдаются. Ошибка ACL останавливает
+запуск службы. Проверка из medium token и её ограничения описаны в
+[WINDOWS_UNELEVATED.md](WINDOWS_UNELEVATED.md).
+
 ## 2. Контракты общей части
 
 ### VpnBridge
