@@ -55,12 +55,26 @@ foreach ($module in @('native/core', 'native/android', 'native/windows')) {
     } finally { Pop-Location }
 }
 
+# Read-only release tooling fixtures: stale notice versions/locks/payloads must
+# fail before any installer is published. No actual package is installed here.
+Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
+    '-NoProfile', '-NonInteractive', '-File',
+    (Join-Path $repository 'scripts/release/test-notice-inputs.ps1')
+)
+Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
+    '-NoProfile', '-NonInteractive', '-File',
+    (Join-Path $repository 'scripts/release/test-artifact-audit.ps1')
+)
+Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
+    '-NoProfile', '-NonInteractive', '-File',
+    (Join-Path $repository 'scripts/release/test-android-notices.ps1')
+)
+
 if ($Target -eq 'Android') {
     & (Join-Path $repository 'native/android/build.ps1')
-    & (Join-Path $repository 'scripts/bootstrap/build-android-debug.ps1')
-    Push-Location (Join-Path $repository 'apps/exvpn/android')
-    try { Invoke-Checked './gradlew.bat' @(':app:testDebugUnitTest', '--no-daemon') }
-    finally { Pop-Location }
+    # Keep Gradle's mandatory native/notices input snapshot alive for both the
+    # APK and JVM tests; the wrapper restores the environment on completion.
+    & (Join-Path $repository 'scripts/bootstrap/build-android-debug.ps1') -RunUnitTests
 }
 if ($Target -in @('Checks', 'Windows')) {
     # Exercise the actual installer PowerShell runtime, not pwsh-only semantics.

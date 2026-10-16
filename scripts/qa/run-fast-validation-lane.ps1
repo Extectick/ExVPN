@@ -71,6 +71,12 @@ switch ($Lane) {
         if (!$?) { throw 'Validation coordinator regression failed.' }
         & (Join-Path $PSScriptRoot 'android-https-probe/test.ps1')
         if (!$?) { throw 'Android QA probe parser regression failed.' }
+        & (Join-Path $repository 'scripts/release/test-notice-inputs.ps1')
+        if (!$?) { throw 'Release notice input regression failed.' }
+        & (Join-Path $repository 'scripts/release/test-artifact-audit.ps1')
+        if (!$?) { throw 'Release artifact audit regression failed.' }
+        & (Join-Path $repository 'scripts/release/test-android-notices.ps1')
+        if (!$?) { throw 'Android notice snapshot regression failed.' }
         break
     }
 }

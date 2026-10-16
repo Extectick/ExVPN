@@ -1,4 +1,4 @@
 // Keep in sync with pubspec.yaml; scripts/ci/verify.ps1 enforces this identity.
 const appVersion = '0.1.0';
-const appBuild = 9;
+const appBuild = 10;
 const appVersionLabel = '$appVersion+$appBuild';

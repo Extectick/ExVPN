@@ -1,8 +1,16 @@
+import java.io.File
+import org.gradle.api.tasks.Exec
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// A build selects one fresh, verified snapshot. No fallback to mutable global
+// JNI or an old notice directory is allowed when the environment is absent.
+val exVpnPackageInputs = providers.environmentVariable("EXVPN_ANDROID_PACKAGE_INPUTS")
+    .orNull?.takeIf { it.isNotBlank() }?.let { file(it) }
 
 android {
     namespace = "ru.exvpn.exvpn"
@@ -37,19 +45,32 @@ android {
             signingConfig = null
         }
     }
-    sourceSets.getByName("main").jniLibs.srcDir(rootProject.file("../../../.tools/artifacts/android-jni"))
+    sourceSets.getByName("main").jniLibs.setSrcDirs(
+        exVpnPackageInputs?.let { listOf(it.resolve("jniLibs")) } ?: emptyList<File>()
+    )
+    sourceSets.getByName("main").assets.setSrcDirs(
+        exVpnPackageInputs?.let { listOf(it.resolve("assets")) } ?: emptyList<File>()
+    )
+    // JNI is already stripped by the pinned native build. Preserve its exact
+    // bytes so the delivered library remains bound to the notice inventory.
+    packaging.jniLibs.keepDebugSymbols += "**/libexvpn.so"
 }
 
-val verifyExVpnCore by tasks.registering {
-    doLast {
-        for (abi in listOf("arm64-v8a", "x86_64")) {
-            check(rootProject.file("../../../.tools/artifacts/android-jni/$abi/libexvpn.so").isFile) {
-                "Missing ExVPN JNI for $abi. Run native/android/build.ps1 from the repository first."
-            }
+val verifyExVpnPackageInputs by tasks.registering(Exec::class) {
+    outputs.upToDateWhen { false }
+    doFirst {
+        val inputs = checkNotNull(exVpnPackageInputs) {
+            "Missing ExVPN package snapshot. Use scripts/bootstrap/build-android-debug.ps1; direct Gradle packaging requires EXVPN_ANDROID_PACKAGE_INPUTS."
         }
+        commandLine(
+            "pwsh", "-NoProfile", "-File",
+            rootProject.file("../../../scripts/release/verify-android-notices.ps1").absolutePath,
+            "-InputDirectory", inputs.absolutePath,
+            "-ExpectedVersion", "${flutter.versionName}+${flutter.versionCode}"
+        )
     }
 }
-tasks.named("preBuild").configure { dependsOn(verifyExVpnCore) }
+tasks.named("preBuild").configure { dependsOn(verifyExVpnPackageInputs) }
 
 kotlin {
     compilerOptions {
