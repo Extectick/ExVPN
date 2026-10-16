@@ -140,10 +140,17 @@ func outbound(p Profile) object {
 		stream["hysteriaSettings"] = object{"version": 2, "auth": p.Password}
 	}
 	var settings object
+	if s := p.Transport.TCPSudoku; s != nil {
+		stream["finalmask"] = object{"tcp": []object{{"type": "sudoku", "settings": s}}}
+	}
 	protocol := p.Protocol
 	switch protocol {
 	case "vless":
-		settings = object{"vnext": []object{{"address": p.Server, "port": p.Port, "users": []object{{"id": p.UUID, "encryption": "none", "flow": p.Flow}}}}}
+		encryption := p.Encryption
+		if encryption == "" {
+			encryption = "none"
+		}
+		settings = object{"vnext": []object{{"address": p.Server, "port": p.Port, "users": []object{{"id": p.UUID, "encryption": encryption, "flow": p.Flow}}}}}
 	case "vmess":
 		cipher := p.Cipher
 		if cipher == "" {

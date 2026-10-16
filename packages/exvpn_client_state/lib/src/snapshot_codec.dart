@@ -76,6 +76,7 @@ ConnectionProfile _profile(Object? value) {
     'password',
     'cipher',
     'flow',
+    'encryption',
     'transport',
     'tls',
   });
@@ -92,9 +93,30 @@ ConnectionProfile _profile(Object? value) {
     'host',
     'serviceName',
     'mode',
+    'tcpSudoku',
   });
   final type = _text(t['type'], max: 16);
-  if (!{'tcp', 'ws', 'grpc', 'xhttp'}.contains(type)) _invalidSnapshot();
+  if (!{'tcp', 'ws', 'grpc', 'xhttp', 'hysteria'}.contains(type)) {
+    _invalidSnapshot();
+  }
+  if ((p.containsKey('encryption') && p['encryption'] == null) ||
+      (t.containsKey('tcpSudoku') && t['tcpSudoku'] == null)) {
+    _invalidSnapshot();
+  }
+  final encryption = p['encryption'] == null
+      ? null
+      : VlessEncryption.parse(_text(p['encryption'], max: 8192));
+  final sudoku = t['tcpSudoku'] == null
+      ? null
+      : SudokuOptions.fromJson(
+          _object(t['tcpSudoku'], {
+            'password',
+            'ascii',
+            'customTables',
+            'paddingMin',
+            'paddingMax',
+          }),
+        );
   final tls = _object(p['tls'], {
     'enabled',
     'serverName',
@@ -103,6 +125,13 @@ ConnectionProfile _profile(Object? value) {
     'reality',
   });
   RealityOptions? reality;
+  if ((encryption != null && protocol != ProxyProtocol.vless) ||
+      (sudoku != null &&
+          (protocol != ProxyProtocol.vless ||
+              type != 'tcp' ||
+              (tls['enabled'] != true && encryption == null)))) {
+    _invalidSnapshot();
+  }
   if (tls['reality'] != null) {
     final r = _object(tls['reality'], {'publicKey', 'shortId', 'spiderX'});
     reality = RealityOptions(
@@ -121,12 +150,14 @@ ConnectionProfile _profile(Object? value) {
     password: _optional(p['password']),
     cipher: _optional(p['cipher'], max: 128),
     flow: _optional(p['flow'], max: 128),
+    encryption: encryption,
     transport: Transport(
       type: type,
       path: _optional(t['path']),
       host: _optional(t['host']),
       serviceName: _optional(t['serviceName']),
       mode: _optional(t['mode'], max: 128),
+      tcpSudoku: sudoku,
     ),
     tls: TlsOptions(
       enabled: _boolean(tls['enabled']),

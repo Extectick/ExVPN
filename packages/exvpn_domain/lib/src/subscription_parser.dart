@@ -139,17 +139,15 @@ final class SubscriptionParser {
       'serviceName',
       'mode',
       'encryption',
+      'fm',
     };
     _checkKeys(q, allowed);
     if (protocol != ProxyProtocol.vless &&
-        ['flow', 'encryption', 'pbk', 'sid', 'spx'].any(q.containsKey)) {
+        ['flow', 'encryption', 'fm', 'pbk', 'sid', 'spx'].any(q.containsKey)) {
       throw const _Rejected(ImportIssueCode.unsupportedFeature);
     }
     if (uri.queryParametersAll.values.any((values) => values.length > 1)) {
       throw const _Rejected(ImportIssueCode.invalidProfile);
-    }
-    if (q['encryption'] != null && q['encryption'] != 'none') {
-      throw const _Rejected(ImportIssueCode.unsupportedFeature);
     }
     final security =
         q['security'] ?? (protocol == ProxyProtocol.vless ? 'none' : 'tls');
@@ -203,6 +201,7 @@ final class SubscriptionParser {
       uuid: protocol == ProxyProtocol.vless ? credentials : null,
       password: protocol == ProxyProtocol.vless ? null : credentials,
       flow: q['flow'],
+      encryption: _encryption(q['encryption']),
       transport: transport,
       tls: TlsOptions(
         enabled: security != 'none',
@@ -387,8 +386,7 @@ final class SubscriptionParser {
             ? {'id', 'security', 'alterId', 'level', 'email'}
             : {'id', 'encryption', 'flow', 'level', 'email'},
       );
-      if (_integer(user['alterId'] ?? 0) != 0 ||
-          (user['encryption'] != null && user['encryption'] != 'none')) {
+      if (_integer(user['alterId'] ?? 0) != 0) {
         throw const _Rejected(ImportIssueCode.unsupportedFeature);
       }
     }
@@ -404,6 +402,7 @@ final class SubscriptionParser {
       'grpcSettings',
       'xhttpSettings',
       'hysteriaSettings',
+      'finalmask',
     });
     final security = _string(stream['security'] ?? 'none');
     if (!{'none', 'tls', 'reality'}.contains(security)) {
@@ -443,6 +442,9 @@ final class SubscriptionParser {
       stream['network'] ?? (isHysteria ? 'hysteria' : 'tcp'),
     );
     final transportData = <String, String>{'type': type};
+    if (stream.containsKey('finalmask')) {
+      transportData['fm'] = jsonEncode(stream['finalmask']);
+    }
     final subKey = switch (type) {
       'ws' => 'wsSettings',
       'grpc' => 'grpcSettings',
@@ -512,6 +514,7 @@ final class SubscriptionParser {
           ? _string(user['security'] ?? 'auto')
           : _optional(server['method']),
       flow: _optional(user['flow']),
+      encryption: _encryption(_optional(user['encryption'])),
       transport: _transport(transportData),
       tls: TlsOptions(
         enabled: security != 'none',
@@ -567,7 +570,29 @@ final class SubscriptionParser {
       host: host,
       serviceName: service,
       mode: mode,
+      tcpSudoku: q.containsKey('fm') ? _sudoku(q['fm']!) : null,
     );
+  }
+
+  static VlessEncryption? _encryption(String? value) =>
+      value == null || value == 'none' ? null : VlessEncryption.parse(value);
+
+  static SudokuOptions _sudoku(String text) {
+    if (utf8.encode(text).length > 16384) {
+      throw const _Rejected(ImportIssueCode.invalidProfile);
+    }
+    final mask = _map(_decodeJson(text));
+    _checkKeys(mask, {'tcp'});
+    final tcp = mask['tcp'];
+    if (tcp is! List || tcp.length != 1) {
+      throw const _Rejected(ImportIssueCode.unsupportedFeature);
+    }
+    final entry = _map(tcp.single);
+    _checkKeys(entry, {'type', 'settings'});
+    if (entry['type'] != 'sudoku') {
+      throw const _Rejected(ImportIssueCode.unsupportedFeature);
+    }
+    return SudokuOptions.fromJson(_map(entry['settings']));
   }
 
   ConnectionProfile _make({
@@ -581,6 +606,7 @@ final class SubscriptionParser {
     String? password,
     String? cipher,
     String? flow,
+    VlessEncryption? encryption,
   }) {
     if (server.startsWith('[') && server.endsWith(']')) {
       server = server.substring(1, server.length - 1);
@@ -602,7 +628,14 @@ final class SubscriptionParser {
         (protocol != ProxyProtocol.vless ||
             flow != 'xtls-rprx-vision' ||
             transport.type != 'tcp' ||
-            !tls.enabled)) {
+            (!tls.enabled && encryption == null))) {
+      throw const _Rejected(ImportIssueCode.unsupportedFeature);
+    }
+    if ((encryption != null && protocol != ProxyProtocol.vless) ||
+        (transport.tcpSudoku != null &&
+            (protocol != ProxyProtocol.vless ||
+                transport.type != 'tcp' ||
+                (!tls.enabled && encryption == null)))) {
       throw const _Rejected(ImportIssueCode.unsupportedFeature);
     }
     if (protocol == ProxyProtocol.shadowsocks &&
@@ -688,6 +721,7 @@ final class SubscriptionParser {
       'password': password,
       'cipher': cipher,
       'flow': flow,
+      if (encryption != null) 'encryption': encryption.value,
       'transport': transport.toJson(),
       'tls': tls.toJson(),
     };
@@ -701,6 +735,7 @@ final class SubscriptionParser {
       password: password,
       cipher: cipher,
       flow: flow,
+      encryption: encryption,
       transport: transport,
       tls: tls,
     );

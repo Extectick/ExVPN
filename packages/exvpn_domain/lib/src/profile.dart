@@ -1,3 +1,6 @@
+import 'profile_extensions.dart';
+export 'profile_extensions.dart';
+
 enum ProxyProtocol { vless, vmess, trojan, shadowsocks, hysteria2 }
 
 /// Normalized transport. No arbitrary provider configuration is executable.
@@ -8,12 +11,14 @@ final class Transport {
     this.host,
     this.serviceName,
     this.mode,
+    this.tcpSudoku,
   });
   final String type;
   final String? path;
   final String? host;
   final String? serviceName;
   final String? mode;
+  final SudokuOptions? tcpSudoku;
 
   Map<String, Object?> toJson() => {
     'type': type,
@@ -21,6 +26,7 @@ final class Transport {
     if (host != null) 'host': host,
     if (serviceName != null) 'serviceName': serviceName,
     if (mode != null) 'mode': mode,
+    if (tcpSudoku != null) 'tcpSudoku': tcpSudoku!.toJson(),
   };
 }
 
@@ -78,6 +84,7 @@ final class ConnectionProfile {
     this.password,
     this.cipher,
     this.flow,
+    this.encryption,
   });
   final String id;
   final String name;
@@ -88,6 +95,7 @@ final class ConnectionProfile {
   final String? password;
   final String? cipher;
   final String? flow;
+  final VlessEncryption? encryption;
   final Transport transport;
   final TlsOptions tls;
 
@@ -101,6 +109,7 @@ final class ConnectionProfile {
     if (password != null) 'password': password,
     if (cipher != null) 'cipher': cipher,
     if (flow != null) 'flow': flow,
+    if (encryption != null) 'encryption': encryption!.value,
     'transport': transport.toJson(),
     'tls': tls.toJson(),
   };

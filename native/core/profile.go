@@ -21,25 +21,27 @@ type CodeError string
 func (e CodeError) Error() string { return string(e) }
 
 type Profile struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	Protocol  string    `json:"protocol"`
-	Server    string    `json:"server"`
-	Port      int       `json:"port"`
-	UUID      string    `json:"uuid,omitempty"`
-	Password  string    `json:"password,omitempty"`
-	Cipher    string    `json:"cipher,omitempty"`
-	Flow      string    `json:"flow,omitempty"`
-	Transport Transport `json:"transport"`
-	TLS       TLS       `json:"tls"`
+	ID         string    `json:"id"`
+	Name       string    `json:"name"`
+	Protocol   string    `json:"protocol"`
+	Server     string    `json:"server"`
+	Port       int       `json:"port"`
+	UUID       string    `json:"uuid,omitempty"`
+	Password   string    `json:"password,omitempty"`
+	Cipher     string    `json:"cipher,omitempty"`
+	Flow       string    `json:"flow,omitempty"`
+	Encryption string    `json:"encryption,omitempty"`
+	Transport  Transport `json:"transport"`
+	TLS        TLS       `json:"tls"`
 }
 
 type Transport struct {
-	Type        string `json:"type"`
-	Path        string `json:"path,omitempty"`
-	Host        string `json:"host,omitempty"`
-	ServiceName string `json:"serviceName,omitempty"`
-	Mode        string `json:"mode,omitempty"`
+	Type        string  `json:"type"`
+	Path        string  `json:"path,omitempty"`
+	Host        string  `json:"host,omitempty"`
+	ServiceName string  `json:"serviceName,omitempty"`
+	Mode        string  `json:"mode,omitempty"`
+	TCPSudoku   *Sudoku `json:"tcpSudoku,omitempty"`
 }
 
 type TLS struct {
@@ -70,7 +72,7 @@ func DecodeProfile(r io.Reader) (Profile, error) {
 	if json.Unmarshal(b, &envelope) != nil {
 		return Profile{}, CodeError("profile_invalid_schema")
 	}
-	if !onlyKeys(envelope, "id", "name", "protocol", "server", "port", "uuid", "password", "cipher", "flow", "transport", "tls") {
+	if !onlyKeys(envelope, "id", "name", "protocol", "server", "port", "uuid", "password", "cipher", "flow", "encryption", "transport", "tls") {
 		return Profile{}, CodeError("profile_invalid_schema")
 	}
 	for _, key := range []string{"protocol", "server", "port", "transport", "tls"} {
@@ -86,8 +88,14 @@ func DecodeProfile(r io.Reader) (Profile, error) {
 		return Profile{}, CodeError("profile_invalid_schema")
 	}
 	var transportFields map[string]json.RawMessage
-	if json.Unmarshal(envelope["transport"], &transportFields) != nil || !onlyKeys(transportFields, "type", "path", "host", "serviceName", "mode") {
+	if json.Unmarshal(envelope["transport"], &transportFields) != nil || !onlyKeys(transportFields, "type", "path", "host", "serviceName", "mode", "tcpSudoku") {
 		return Profile{}, CodeError("profile_invalid_schema")
+	}
+	if raw, ok := transportFields["tcpSudoku"]; ok {
+		var sudokuFields map[string]json.RawMessage
+		if json.Unmarshal(raw, &sudokuFields) != nil || !onlyKeys(sudokuFields, "password", "ascii", "customTables", "paddingMin", "paddingMax") {
+			return Profile{}, CodeError("profile_invalid_schema")
+		}
 	}
 	if raw, ok := tlsFields["reality"]; ok {
 		var realityFields map[string]json.RawMessage
@@ -215,6 +223,12 @@ func (p Profile) Validate() error {
 	if p.Flow != "" && (p.Protocol != "vless" || p.Flow != "xtls-rprx-vision") {
 		return bad("unsupported_flow")
 	}
+	if p.Encryption != "" && (p.Protocol != "vless" || !validVlessEncryption(p.Encryption)) {
+		return bad("invalid_encryption")
+	}
+	if s := p.Transport.TCPSudoku; s != nil && (p.Protocol != "vless" || p.Transport.Type != "tcp" || (!p.TLS.Enabled && p.Encryption == "") || !s.valid()) {
+		return bad("invalid_sudoku")
+	}
 	if p.UUID != "" && !oneOf(p.Protocol, "vless", "vmess") {
 		return bad("unexpected_uuid")
 	}
@@ -272,7 +286,7 @@ func (p Profile) Validate() error {
 	if p.Transport.Mode != "" && (p.Transport.Type != "xhttp" || !oneOf(p.Transport.Mode, "auto", "packet-up", "stream-up", "stream-one")) {
 		return bad("invalid_mode")
 	}
-	if p.Flow != "" && (p.Transport.Type != "tcp" || !p.TLS.Enabled) {
+	if p.Flow != "" && (p.Transport.Type != "tcp" || (!p.TLS.Enabled && p.Encryption == "")) {
 		return bad("invalid_flow_transport")
 	}
 	if p.TLS.ServerName != "" && !validHost(p.TLS.ServerName) {
