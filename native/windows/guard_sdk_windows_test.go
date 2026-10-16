@@ -39,6 +39,9 @@ func TestGuardIdentifiersMatchWindowsSDK(t *testing.T) {
 		"FWPM_CONDITION_IP_LOCAL_INTERFACE":   fieldLocalInterface,
 		"FWPM_CONDITION_IP_NEXTHOP_INTERFACE": fieldNextInterface,
 		"FWPM_CONDITION_IP_ARRIVAL_INTERFACE": fieldArrivalInterface,
+		"FWPM_CONDITION_IP_REMOTE_ADDRESS":    fieldRemoteAddress,
+		"FWPM_CONDITION_IP_REMOTE_PORT":       fieldRemotePort,
+		"FWPM_CONDITION_IP_PROTOCOL":          fieldProtocol,
 	}
 	hex := regexp.MustCompile(`0x[0-9a-fA-F]+`)
 	for name, actual := range identifiers {

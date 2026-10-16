@@ -28,7 +28,8 @@ func (h *Host) Execute(_ []string, requests <-chan svc.ChangeRequest, changes ch
 	if e != nil || u.User.Sid.String() != "S-1-5-18" {
 		return true, 1
 	}
-	c, e := NewController(&WindowsGuard{}, StartTunnel, ValidateExclusions, h.NetworkTesting)
+	guard := &WindowsGuard{}
+	c, e := NewController(guard, WindowsTunnelFactory(guard), ValidateExclusions, h.NetworkTesting)
 	if e != nil {
 		return true, 2
 	}

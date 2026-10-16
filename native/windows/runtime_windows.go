@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/hex"
 	"io"
 	"net"
@@ -62,7 +63,11 @@ func (t *xrayTunnel) Close() error {
 	return nil
 }
 func (t *xrayTunnel) Verify(ctx context.Context) error {
-	tr := &http.Transport{DialContext: t.dialer.DialContext, TLSHandshakeTimeout: 10 * time.Second, ResponseHeaderTimeout: 10 * time.Second, DisableKeepAlives: true}
+	roots, err := offlineNativeRoots()
+	if err != nil {
+		return Code("probe_failed")
+	}
+	tr := &http.Transport{DialContext: t.dialer.DialContext, TLSClientConfig: &tls.Config{RootCAs: roots, MinVersion: tls.VersionTLS12}, TLSHandshakeTimeout: 10 * time.Second, ResponseHeaderTimeout: 10 * time.Second, DisableKeepAlives: true}
 	defer tr.CloseIdleConnections()
 	c := http.Client{Transport: tr, Timeout: 20 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	r, e := http.NewRequestWithContext(ctx, http.MethodGet, "https://www.gstatic.com/generate_204", nil)
@@ -81,6 +86,10 @@ func (t *xrayTunnel) Verify(ctx context.Context) error {
 	return nil
 }
 func StartTunnel(ctx context.Context, p exvpn.Profile, exclusions []string) (Tunnel, error) {
+	return startTunnelResolved(ctx, p, exclusions, nil)
+}
+
+func startTunnelResolved(ctx context.Context, p exvpn.Profile, exclusions []string, resolution *endpointResolution) (Tunnel, error) {
 	if ctx.Err() != nil {
 		return nil, Code("cancelled")
 	}
@@ -101,7 +110,7 @@ func StartTunnel(ctx context.Context, p exvpn.Profile, exclusions []string) (Tun
 		return nil, Code("entropy_failed")
 	}
 	password := hex.EncodeToString(secret)
-	b, e := BuildTunnelConfig(p, exclusions, exvpn.ProbeOptions{Port: port, Username: "exvpn", Password: password})
+	b, e := buildTunnelConfig(p, exclusions, exvpn.ProbeOptions{Port: port, Username: "exvpn", Password: password}, resolution)
 	if e != nil {
 		return nil, e
 	}

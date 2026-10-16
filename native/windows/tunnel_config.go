@@ -17,8 +17,35 @@ type object = map[string]any
 // compiler, replacing only application-owned inbounds and policy. It never
 // accepts provider DNS, routes, listeners or arbitrary Xray configuration.
 func BuildTunnelConfig(p exvpn.Profile, exclusions []string, probe exvpn.ProbeOptions) ([]byte, error) {
-	if _, err := netip.ParseAddr(p.Server); err != nil {
-		return nil, Code("server_ip_required")
+	return buildTunnelConfig(p, exclusions, probe, nil)
+}
+
+// Validation has no resolver, route, listener or WFP side effects. A hostname
+// is allowed here; it still cannot start a tunnel without a trusted resolution.
+func validateTunnelProfile(p exvpn.Profile, exclusions []string) error {
+	if _, err := exvpn.Compile(p); err != nil {
+		return Code("profile_rejected")
+	}
+	if _, err := (exvpn.RoutingPolicy{WindowsExecutablePaths: exclusions}).Rules("vpn"); err != nil {
+		return Code("exclusions_rejected")
+	}
+	return nil
+}
+
+func buildTunnelConfig(p exvpn.Profile, exclusions []string, probe exvpn.ProbeOptions, resolution *endpointResolution) ([]byte, error) {
+	_, literalErr := netip.ParseAddr(p.Server)
+	if literalErr != nil {
+		name, err := endpointName(p.Server)
+		if err != nil || resolution == nil || resolution.name != name || len(resolution.addresses) == 0 || len(resolution.addresses) > maxBootstrapAddresses {
+			return nil, Code("server_ip_required")
+		}
+		for _, address := range resolution.addresses {
+			if !usableEndpointAddress(address) {
+				return nil, Code("bootstrap_address_rejected")
+			}
+		}
+	} else if resolution != nil {
+		return nil, Code("bootstrap_mapping_invalid")
 	}
 	b, err := exvpn.BuildProbeConfig(p, probe)
 	if err != nil {
@@ -27,6 +54,21 @@ func BuildTunnelConfig(p exvpn.Profile, exclusions []string, probe exvpn.ProbeOp
 	var c object
 	if json.Unmarshal(b, &c) != nil {
 		return nil, Code("config_rejected")
+	}
+	if resolution != nil {
+		addresses := make([]string, len(resolution.addresses))
+		for i, address := range resolution.addresses {
+			addresses[i] = address.Unmap().String()
+		}
+		dns := c["dns"].(map[string]any)
+		dns["hosts"] = object{"full:" + resolution.name: addresses}
+		dns["useSystemHosts"] = false
+		for _, raw := range c["outbounds"].([]any) {
+			out := raw.(map[string]any)
+			if out["tag"] == "proxy" {
+				out["streamSettings"].(map[string]any)["sockopt"] = object{"domainStrategy": "ForceIP"}
+			}
+		}
 	}
 	rules, err := (exvpn.RoutingPolicy{WindowsExecutablePaths: exclusions}).Rules("vpn")
 	if err != nil {

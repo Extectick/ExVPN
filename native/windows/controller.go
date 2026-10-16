@@ -127,7 +127,7 @@ func (c *Controller) Handle(r Request) Response {
 			ok = false
 			break
 		}
-		if _, e = BuildTunnelConfig(p, r.Exclusions, exvpn.ProbeOptions{Port: 10808, Username: "validation", Password: "validation"}); e != nil {
+		if e = validateTunnelProfile(p, r.Exclusions); e != nil {
 			code = safeCode(e, "config_rejected")
 			ok = false
 			break
@@ -216,7 +216,7 @@ func (c *Controller) connect(ctx context.Context, generation uint64, p exvpn.Pro
 	}
 	if e != nil {
 		stop()
-		c.set("blocked", "tunnel_start_failed", true)
+		c.set("blocked", safeCode(e, "tunnel_start_failed"), true)
 		c.finishAttempt(generation)
 		return
 	}

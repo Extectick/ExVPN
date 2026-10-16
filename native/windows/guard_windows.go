@@ -179,8 +179,9 @@ func addGuardFilter(h windows.Handle, index int, layer windows.GUID, persistent 
 }
 
 type WindowsGuard struct {
-	mu      sync.Mutex
-	permits windows.Handle
+	mu        sync.Mutex
+	permits   windows.Handle
+	bootstrap windows.Handle
 }
 
 func (g *WindowsGuard) Armed() (bool, error) {
@@ -240,7 +241,7 @@ func (g *WindowsGuard) Arm() error {
 func (g *WindowsGuard) PermitTunnel(luid uint64) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	if luid == 0 || g.permits != 0 {
+	if luid == 0 || g.permits != 0 || g.bootstrap != 0 {
 		return Code("guard_invalid_lifetime")
 	}
 	h, e := openWFP(true)
@@ -304,6 +305,12 @@ func (g *WindowsGuard) PermitTunnel(luid uint64) error {
 func (g *WindowsGuard) Suspend() error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+	if g.bootstrap != 0 {
+		if e := wfpCall(wfpClose, uintptr(g.bootstrap)); e != nil {
+			return e
+		}
+		g.bootstrap = 0
+	}
 	if g.permits == 0 {
 		return nil
 	}
@@ -316,7 +323,7 @@ func (g *WindowsGuard) Suspend() error {
 func (g *WindowsGuard) Disarm() error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	if g.permits != 0 {
+	if g.permits != 0 || g.bootstrap != 0 {
 		return Code("guard_permits_active")
 	}
 	h, e := openWFP(false)
