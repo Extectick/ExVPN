@@ -1,22 +1,69 @@
 # Проверки и сборки CI
 
 Workflow `.github/workflows/verify.yml` подготовлен для push, pull request и
-ручного запуска. Два изолированных `windows-2025` job собирают Android и Windows
-из одного checkout. Первый успешный run и границы его проверки приведены ниже;
+ручного запуска. Два изолированных `windows-2025` job проверяют Android и Windows
+из одного checkout и при необходимости собирают native-пакеты. Первый успешный run и границы его проверки приведены ниже;
 успех сборки не является системной приёмкой VPN.
 
 Push, изменяющий только `docs/**`, `design/**`, `README.md`, `AGENTS.md` или
 `CONTRIBUTING.md`, не запускает заново долгие native-сборки и не отменяет уже
-идущий прогон кода. Любой исходник, build/CI-скрипт, lock-файл или упаковываемое
-лицензионное уведомление запускает оба job. Для pull request фильтра нет:
+идущий прогон кода. Остальные push запускают оба job. Для pull request фильтра нет:
 обязательные проверки всегда получают результат; ручной запуск сохранён.
 Семантика фильтра: [GitHub workflow paths-ignore](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpushpull_requestpull_request_targetpathspaths-ignore).
+
+В запущенном workflow `scripts/ci/build-impact.ps1` разрешает пропустить только
+native-сборку для push, содержащего исключительно известные QA-файлы и
+сопутствующие документы. Хотя бы один QA-файл обязателен. Анализ, Dart/Flutter,
+Go test/vet, lifecycle/race и применимые platform unit tests сохраняются.
+В таком прогоне нет новых APK/EXE и выгрузки native artifacts; успех не является
+новым доказательством сборки приложения.
+
+Selector читает все commits диапазона `before..after`, проверяет точный HEAD,
+полную историю и чистое дерево. Product-код, toolchain/CI/build scripts,
+lock-файлы, notices, неизвестный путь, удаление/переименование, merge,
+недоступная база или ошибка Git требуют полной сборки. Pull request и ручной
+запуск всегда полные. Allowlist находится в `build-impact-lib.ps1`; разрешать
+целые каталоги `scripts/qa` или `native` нельзя.
+
+Граница фильтра событий: GitHub применяет `paths-ignore` к конечному diff до
+запуска selector. Поэтому push, чей конечный diff содержит только документы,
+не запускает workflow даже при промежуточном изменении и откате product-кода.
+Это не даёт нового результата CI. Если конечный diff запускает workflow,
+selector видит промежуточное изменение product-кода и требует полную сборку.
+Это сохраняет прежнее правило: обновление отчёта не отменяет текущую сборку.
+
+Android QA-only выполняет `:app:testDebugUnitTest` отдельным Gradle invocation.
+Единственное исключение — `:app:verifyExVpnPackageInputs`: пакет здесь не
+собирается, а обычные APK-сборки сохраняют эту обязательную проверку. До
+исполнения проверяется task graph, после — свежие JUnit XML без failures,
+errors или skips и отсутствие APK/AAB/`libexvpn.so`. SDK/API/build-tools и
+NDK28 для штатных Flutter dependencies сохраняются; NDK27 и обе ExVPN JNI ABI
+в этой ветке не собираются.
+
+Локальная проверка 2026-10-17: **92** selector/graph/JUnit fixtures прошли,
+в чистом archive checkout новый helper выполнил **8/8 JVM tests за 43,13 с**
+(включая dry-run). Использованы уже установленные SDK и dependency caches.
+Первый helper-прогон отказался засчитать JUnit XML из-за PowerShell adapter
+collision атрибута `name`; исправление покрыто реалистичным fixture.
+[Доказательство, hashes и ограничения](evidence/ci-build-impact-build11.json).
+Проверка QA-only ветки на холодном GitHub runner пока не выполнена; локальное
+время нельзя выдавать за измеренное ускорение CI.
 
 Скрипт `scripts/ci/verify.ps1 -Target Checks|Android|Windows` проверяет точные
 Flutter/Go pins, lock-файлы Dart, анализ, все unit/widget/loopback-тесты,
 Go checksums и vet. Android дополнительно собирает обе JNI ABI и APK;
 Windows — UI, службу и проверенный Wintun archive. Команды не устанавливают
 службу/драйвер и не меняют WFP, маршруты или DNS хоста.
+
+Для **+11** полный [run 38979241913](https://github.com/Extectick/ExVPN/actions/runs/38979241913)
+на [292d3dc](https://github.com/Extectick/ExVPN/commit/292d3dc05f1b694a26ca9e2cb30953850e5b8373)
+завершился **SUCCESS**: Windows — 9 мин 11 с, Android — 18 мин 48 с.
+Анализ, тесты, native-сборки и выгрузка development artifacts прошли.
+[Точные jobs, длительности и хеши архивов](evidence/ci-build11.json).
+Первый прогон обнаружил CRLF в синтетическом valid-patch fixture; исправление
+нормализует только этот fixture, а production-проверка LF остаётся строгой.
+Windows runtime-проверка закрытия соединений ведётся отдельно; успех CI её
+не подтверждает.
 
 Flutter и Go скачиваются с официальных URL с SHA-256 из toolchain lock.
 Android packages: API36, build-tools36.0.0, NDK27.1.12297006 для собственного

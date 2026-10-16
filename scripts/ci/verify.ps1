@@ -1,10 +1,21 @@
 #requires -Version 7.0
 [CmdletBinding()]
-param([ValidateSet('Checks', 'Android', 'Windows')][string]$Target = 'Checks')
+param(
+    [ValidateSet('Checks', 'Android', 'Windows')][string]$Target = 'Checks',
+    [switch]$SkipNativeBuild
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+# Revalidate before any tools modify the working tree. A flag by itself is
+# insufficient: missing/dirty/unknown event data retains the full build.
+if ($SkipNativeBuild) {
+    . (Join-Path $PSScriptRoot 'build-impact-lib.ps1')
+    $impact = Get-BuildImpactEventDecision -Repository $repository
+    $SkipNativeBuild = [bool]$impact.skipNativeBuild
+    Write-Host "Native build selection rechecked: $($impact.reason); skip=$SkipNativeBuild."
+}
 . (Join-Path $repository 'scripts/bootstrap/enter-environment.ps1')
 
 function Invoke-Checked([string]$Executable, [string[]]$Arguments) {
@@ -72,6 +83,10 @@ Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
     '-NoProfile', '-NonInteractive', '-File',
     (Join-Path $repository 'scripts/qa/test-windows-transport-lifecycle.ps1')
 )
+Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
+    '-NoProfile', '-NonInteractive', '-File',
+    (Join-Path $repository 'scripts/ci/test-build-impact.ps1')
+)
 
 # Read-only release tooling fixtures: stale notice versions/locks/payloads must
 # fail before any installer is published. No actual package is installed here.
@@ -89,10 +104,15 @@ Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
 )
 
 if ($Target -eq 'Android') {
-    & (Join-Path $repository 'native/android/build.ps1')
-    # Keep Gradle's mandatory native/notices input snapshot alive for both the
-    # APK and JVM tests; the wrapper restores the environment on completion.
-    & (Join-Path $repository 'scripts/bootstrap/build-android-debug.ps1') -RunUnitTests
+    if ($SkipNativeBuild) {
+        & (Join-Path $PSScriptRoot 'build-impact-android-tests.ps1')
+        if (!$?) { throw 'Standalone Android JVM tests failed.' }
+    } else {
+        & (Join-Path $repository 'native/android/build.ps1')
+        # Keep Gradle's mandatory native/notices input snapshot alive for both
+        # the APK and JVM tests; the wrapper restores the environment afterward.
+        & (Join-Path $repository 'scripts/bootstrap/build-android-debug.ps1') -RunUnitTests
+    }
 }
 if ($Target -in @('Checks', 'Windows')) {
     # Exercise the actual installer PowerShell runtime, not pwsh-only semantics.
@@ -102,7 +122,7 @@ if ($Target -in @('Checks', 'Windows')) {
         '-File', (Join-Path $repository 'scripts/windows/test-installer.ps1')
     )
 }
-if ($Target -eq 'Windows') {
+if ($Target -eq 'Windows' -and !$SkipNativeBuild) {
     & (Join-Path $repository 'scripts/windows/build.ps1')
     & (Join-Path $repository 'scripts/windows/prepare-wintun.ps1')
     Push-Location (Join-Path $repository 'apps/exvpn')
@@ -110,4 +130,8 @@ if ($Target -eq 'Windows') {
     finally { Pop-Location }
 }
 
-Write-Host "ExVPN $Target checks completed. Build artifacts are development packages, not accepted releases."
+if ($SkipNativeBuild) {
+    Write-Host "ExVPN $Target checks completed for a verified QA-only push. Native APK/EXE packaging was skipped: no new native build proof or build artifacts are supplied."
+} else {
+    Write-Host "ExVPN $Target checks completed. Build artifacts are development packages, not accepted releases."
+}

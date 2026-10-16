@@ -80,6 +80,8 @@ switch ($Lane) {
         if (!$?) { throw 'Android lifecycle QA helper regression failed.' }
         & (Join-Path $PSScriptRoot 'test-windows-transport-lifecycle.ps1')
         if (!$?) { throw 'Windows transport lifecycle QA helper regression failed.' }
+        & (Join-Path $repository 'scripts/ci/test-build-impact.ps1')
+        if (!$?) { throw 'CI native build-impact regression failed.' }
         & (Join-Path $repository 'scripts/release/test-notice-inputs.ps1')
         if (!$?) { throw 'Release notice input regression failed.' }
         & (Join-Path $repository 'scripts/release/test-artifact-audit.ps1')

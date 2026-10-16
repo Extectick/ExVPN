@@ -1,0 +1,202 @@
+{
+  "schema": 1,
+  "checkedUtc": "2026-10-16T23:22:21.268Z",
+  "appVersion": "0.1.0+11",
+  "sourceCommit": "292d3dc05f1b694a26ca9e2cb30953850e5b8373",
+  "qaCodeCommit": "932cd0f04b4bc1e2ed0ae80a98f04d425b419eea",
+  "productionCodeCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f",
+  "runId": 38979241913,
+  "runAttempt": 1,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/38979241913",
+  "status": "completed",
+  "conclusion": "success",
+  "createdAt": "2026-10-16T23:02:33Z",
+  "completedAt": "2026-10-16T23:21:27Z",
+  "jobs": [
+    {
+      "id": 117235949121,
+      "name": "Windows",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/38979241913/job/117235949121",
+      "runnerLabels": [
+        "windows-2025"
+      ],
+      "startedAt": "2026-10-16T23:02:38Z",
+      "completedAt": "2026-10-16T23:11:49Z",
+      "durationSeconds": 551,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:02:38Z",
+          "completedAt": "2026-10-16T23:02:39Z"
+        },
+        {
+          "name": "Check out source",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:02:39Z",
+          "completedAt": "2026-10-16T23:02:48Z"
+        },
+        {
+          "name": "Install repository-pinned Flutter and Go",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:02:48Z",
+          "completedAt": "2026-10-16T23:03:28Z"
+        },
+        {
+          "name": "Prepare Android SDK packages on the disposable runner",
+          "status": "completed",
+          "conclusion": "skipped",
+          "startedAt": "2026-10-16T23:03:28Z",
+          "completedAt": "2026-10-16T23:03:28Z"
+        },
+        {
+          "name": "Analyze, test, and build",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:03:28Z",
+          "completedAt": "2026-10-16T23:11:32Z"
+        },
+        {
+          "name": "Upload Android development APK",
+          "status": "completed",
+          "conclusion": "skipped",
+          "startedAt": "2026-10-16T23:11:32Z",
+          "completedAt": "2026-10-16T23:11:32Z"
+        },
+        {
+          "name": "Upload Windows development bundle",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:11:32Z",
+          "completedAt": "2026-10-16T23:11:43Z"
+        },
+        {
+          "name": "Post Check out source",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:11:43Z",
+          "completedAt": "2026-10-16T23:11:47Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:11:47Z",
+          "completedAt": "2026-10-16T23:11:47Z"
+        }
+      ]
+    },
+    {
+      "id": 117235949373,
+      "name": "Android",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/38979241913/job/117235949373",
+      "runnerLabels": [
+        "windows-2025"
+      ],
+      "startedAt": "2026-10-16T23:02:38Z",
+      "completedAt": "2026-10-16T23:21:26Z",
+      "durationSeconds": 1128,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:02:39Z",
+          "completedAt": "2026-10-16T23:02:39Z"
+        },
+        {
+          "name": "Check out source",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:02:39Z",
+          "completedAt": "2026-10-16T23:02:50Z"
+        },
+        {
+          "name": "Install repository-pinned Flutter and Go",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:02:50Z",
+          "completedAt": "2026-10-16T23:03:26Z"
+        },
+        {
+          "name": "Prepare Android SDK packages on the disposable runner",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:03:26Z",
+          "completedAt": "2026-10-16T23:05:26Z"
+        },
+        {
+          "name": "Analyze, test, and build",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:05:26Z",
+          "completedAt": "2026-10-16T23:21:02Z"
+        },
+        {
+          "name": "Upload Android development APK",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:21:02Z",
+          "completedAt": "2026-10-16T23:21:19Z"
+        },
+        {
+          "name": "Upload Windows development bundle",
+          "status": "completed",
+          "conclusion": "skipped",
+          "startedAt": "2026-10-16T23:21:19Z",
+          "completedAt": "2026-10-16T23:21:19Z"
+        },
+        {
+          "name": "Post Check out source",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:21:20Z",
+          "completedAt": "2026-10-16T23:21:24Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-16T23:21:24Z",
+          "completedAt": "2026-10-16T23:21:24Z"
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 12081460262,
+      "name": "exvpn-android-debug-292d3dc05f1b694a26ca9e2cb30953850e5b8373",
+      "sizeInBytes": 99829909,
+      "archiveDigest": "sha256:a036ef14bcb0cabadc33372c8bf946f29d0e634a382895e021668b0a797c2002",
+      "createdAt": "2026-10-16T23:21:19Z",
+      "expiresAt": "2026-10-23T23:21:10Z",
+      "expiredAtObservation": false,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/38979241913/artifacts/12081460262"
+    },
+    {
+      "id": 12080980945,
+      "name": "exvpn-windows-debug-292d3dc05f1b694a26ca9e2cb30953850e5b8373",
+      "sizeInBytes": 72132295,
+      "archiveDigest": "sha256:67ba91840f294af5432c000bb85057c2a8e282323f9d225e3a2154316b59636c",
+      "createdAt": "2026-10-16T23:11:43Z",
+      "expiresAt": "2026-10-23T23:11:36Z",
+      "expiredAtObservation": false,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/38979241913/artifacts/12080980945"
+    }
+  ],
+  "limits": [
+    "Development artifacts only; CI success does not close E1 or device/network/security/release acceptance.",
+    "Windows artifact is a debug UI/service/Wintun bundle, not an installed or runtime-validated production package.",
+    "Android APK uses the disposable runner debug signer; it is not a compatible update channel for the local debug-signed installation.",
+    "Artifact digests refer to uploaded GitHub artifact archives, not individual APK or executable digests.",
+    "Runtime lifecycle reports and the Windows retained-peer investigation are separate evidence; no runtime pass is inferred from this CI run."
+  ]
+}

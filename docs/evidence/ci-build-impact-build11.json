@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "taskId": "EXVPN-E7-006",
+  "date": "2026-10-17",
+  "status": "LOCAL_PASS",
+  "sourceState": "working tree; commit pending",
+  "applicationSourceCommit": "292d3dc05f1b694a26ca9e2cb30953850e5b8373",
+  "selectorChecks": 92,
+  "fixtureLogSha256": "805d47b6fcb164fcdd0fd049f2bc38b6b2cb854a9484649109c3b0e587b82d69",
+  "firstHelperAttempt": {
+    "status": "FAIL",
+    "reason": "android_jvm_junit_report_invalid; PowerShell XML adapter name collision",
+    "gradleSucceeded": true,
+    "correction": "DOM get_Name() plus named testsuite fixture"
+  },
+  "finalHelperAttempt": {
+    "result": {
+      "status": "PASS",
+      "junit": {
+        "reports": 1,
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "taskGraphCount": 143,
+      "excludedTask": ":app:verifyExVpnPackageInputs",
+      "elapsedSeconds": 43.126,
+      "apkAabExvpnJniCount": 0,
+      "packageSnapshotAbsent": true,
+      "nativeBuildProof": false,
+      "observedAtUtc": "2026-10-17T06:34:38.7628913+07:00"
+    },
+    "resultSha256": "5ec27b3bdea67dcc2e4246bcf73ec6226939df6ec977743d694bc7799ed610d8",
+    "graphSha256": "1470b6d717ba4dfdd01439b166a21122f329f6d316b241bbb1b69c327309c2db"
+  },
+  "sourceFiles": [
+    {
+      "path": ".github/workflows/verify.yml",
+      "sha256": "9e48713647840646cecfa2654a95cfe2b5541ff9d8d90286ad7994282c052be3"
+    },
+    {
+      "path": "scripts/ci/verify.ps1",
+      "sha256": "d4c1bb539f2993ba95d78960becc37316379cc05ec8b6817824ae3c2c72a37f0"
+    },
+    {
+      "path": "scripts/ci/build-impact.ps1",
+      "sha256": "e3bc569bd9b42c20671f717550a37b4b7883d1af888ba1370627e4eed231373c"
+    },
+    {
+      "path": "scripts/ci/build-impact-lib.ps1",
+      "sha256": "891f0b5ba3361801d63b234a6b1b7ae8025312b9223cb5d7086e3f7c83659edd"
+    },
+    {
+      "path": "scripts/ci/build-impact-android-tests.ps1",
+      "sha256": "afce664594eda21139b72f0c5e0a87d9a1e968d151b9f02cc35d583374b7dbc5"
+    },
+    {
+      "path": "scripts/ci/build-impact-android-lib.ps1",
+      "sha256": "e6cf42d1a2e937db3d2b037db314f26971534747f9509ceff360d60711bc36ff"
+    },
+    {
+      "path": "scripts/ci/test-build-impact.ps1",
+      "sha256": "2cfb4c18f90b1234e81b7a8bb445577bf77bdf43df57007560d834455fc4e82f"
+    },
+    {
+      "path": "scripts/qa/run-fast-validation-lane.ps1",
+      "sha256": "35c4accf1e4aa37b5104b3bb91efed0ec96f6c8fbc4d8c6475b19a44d6190cbb"
+    }
+  ],
+  "limitations": [
+    "Existing docs-only push trigger exclusion remains; those pushes supply no new CI proof.",
+    "Proof uses clean archived app source with shared installed SDK/dependency caches, not a cold cloud runner.",
+    "No final GitHub QA-only push run or native packaging performed by this validation."
+  ],
+  "remoteQaOnlyRunVerified": false,
+  "review": "Independent read-only review: no remaining findings; agreed docs-only trigger boundary documented."
+}

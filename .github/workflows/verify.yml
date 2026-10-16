@@ -4,6 +4,8 @@ on:
   push:
     # Documentation-only pushes must not cancel an in-flight native build.
     # Pull requests stay unfiltered so required checks are always reported.
+    # GitHub applies this filter to the final diff: such excluded pushes have
+    # no new CI/build proof. Per-commit impact checks apply to triggered runs.
     paths-ignore:
       - 'docs/**'
       - 'design/**'
@@ -42,10 +44,17 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: Select native build impact (full build on unknown/error)
+        id: build_impact
+        continue-on-error: true
+        run: ./scripts/ci/build-impact.ps1
       - name: Install repository-pinned Flutter and Go
         run: ./scripts/bootstrap/bootstrap.ps1
       - name: Prepare Android SDK packages on the disposable runner
         if: matrix.target == 'Android'
+        env:
+          EXVPN_CI_SKIP_NATIVE_BUILD: ${{ steps.build_impact.outcome == 'success' && steps.build_impact.outputs.skip_native_build == 'true' }}
         run: |
           $ErrorActionPreference = 'Stop'
           if (!$env:JAVA_HOME_21_X64) { throw 'Runner JDK 21 is missing.' }
@@ -58,12 +67,19 @@ jobs:
             throw 'The runner has no Android SDK license; use a prepared runner.'
           }
           $sdkManager = Join-Path $env:ANDROID_HOME 'cmdline-tools/latest/bin/sdkmanager.bat'
-          & $sdkManager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.1.12297006' 'ndk;28.2.13676358'
+          # JVM tests still compile Flutter/plugin dependencies with SDK + NDK
+          # 28. Only the separate ExVPN JNI build requires NDK 27.
+          $packages = @('platforms;android-36', 'build-tools;36.0.0', 'ndk;28.2.13676358')
+          if ($env:EXVPN_CI_SKIP_NATIVE_BUILD -cne 'true') { $packages += 'ndk;27.1.12297006' }
+          & $sdkManager @packages
           if ($LASTEXITCODE -ne 0) { throw 'Pinned Android packages could not be installed.' }
       - name: Analyze, test, and build
-        run: ./scripts/ci/verify.ps1 -Target '${{ matrix.target }}'
+        env:
+          EXVPN_CI_SKIP_NATIVE_BUILD: ${{ steps.build_impact.outcome == 'success' && steps.build_impact.outputs.skip_native_build == 'true' }}
+          EXVPN_CI_TARGET: ${{ matrix.target }}
+        run: ./scripts/ci/verify.ps1 -Target $env:EXVPN_CI_TARGET -SkipNativeBuild:($env:EXVPN_CI_SKIP_NATIVE_BUILD -ceq 'true')
       - name: Upload Android development APK
-        if: matrix.target == 'Android'
+        if: matrix.target == 'Android' && (steps.build_impact.outcome != 'success' || steps.build_impact.outputs.skip_native_build != 'true')
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: exvpn-android-debug-${{ github.sha }}
@@ -71,7 +87,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - name: Upload Windows development bundle
-        if: matrix.target == 'Windows'
+        if: matrix.target == 'Windows' && (steps.build_impact.outcome != 'success' || steps.build_impact.outputs.skip_native_build != 'true')
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: exvpn-windows-debug-${{ github.sha }}
