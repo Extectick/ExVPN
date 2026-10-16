@@ -1,7 +1,7 @@
 name: exvpn
 description: ExVPN cross-platform client interface.
 publish_to: none
-version: 0.1.0+2
+version: 0.1.0+3
 environment:
   sdk: '>=3.13.0 <4.0.0'
 dependencies:

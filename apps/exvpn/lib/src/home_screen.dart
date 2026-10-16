@@ -382,7 +382,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final label = checking
         ? 'Проверка'
         : stop
-        ? (phase == VpnPhase.connected ? 'Отключить' : 'Отменить')
+        ? switch (phase) {
+            VpnPhase.connected ||
+            VpnPhase.reconnecting ||
+            VpnPhase.blocked => 'Отключить',
+            _ => 'Отменить',
+          }
         : 'Подключить';
     final stateText = checking
         ? 'Проверка состояния VPN…'

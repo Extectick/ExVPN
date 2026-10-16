@@ -34,7 +34,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Трафик заблокирован'), findsOneWidget);
-    expect(find.text('Отменить'), findsOneWidget);
+    expect(find.text('Отключить'), findsOneWidget);
     expect(
       find.textContaining('Код: native_storage_unavailable'),
       findsOneWidget,

@@ -342,7 +342,13 @@ Future<void> main() async {
           () => vpn.status.phase == VpnPhase.reconnecting,
           40,
         );
+        expect(vpn.lastErrorCode, 'transport_unreachable');
+        expect(
+          find.textContaining('Связь с VPN-сервером потеряна.'),
+          findsOneWidget,
+        );
         faults['outageDetectedByUi'] = true;
+        faults['outageCode'] = vpn.lastErrorCode;
         await snapshot('server-outage');
         await progress('crashing SCM service');
         await _coordinate(tester, marker, 2, 'crash-service');
@@ -362,6 +368,9 @@ Future<void> main() async {
         await progress('restarting SCM service');
         await _coordinate(tester, marker, 3, 'restart-service');
         await _until(tester, () => vpn.status.phase == VpnPhase.blocked, 20);
+        expect(vpn.lastErrorCode, 'guard_recovered');
+        expect(find.textContaining('Служба VPN перезапущена.'), findsOneWidget);
+        expect(find.text('Отключить'), findsOneWidget);
         final recovered = await _probePair();
         faults['serviceRestart'] = recovered;
         for (final value in recovered.values.cast<Map>()) {
@@ -369,6 +378,7 @@ Future<void> main() async {
           expect(value['error'], 'network');
         }
         faults['restartRemainedBlocked'] = true;
+        faults['restartCode'] = vpn.lastErrorCode;
         await snapshot('service-restarted-blocked');
         await progress('explicit recovery disconnect');
         await _tap(tester, find.byKey(const Key('connect-button')));

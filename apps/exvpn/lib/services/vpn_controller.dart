@@ -277,6 +277,9 @@ String vpnErrorText(String? code) => switch (code) {
   'network_unavailable' =>
     'Нет доступной сети. Проверьте подключение к интернету.',
   'reconnect_required' => 'Сначала отключите VPN, затем измените исключения.',
+  'transport_unreachable' =>
+    'Связь с VPN-сервером потеряна. Проверяем его доступность.',
+  'guard_recovered' => 'Служба VPN перезапущена. Доступ к сети остаётся заблокирован. Отключите VPN, затем подключитесь снова.',
   'invalid_profile' ||
   'profile_rejected' ||
   'core_config_rejected' ||
@@ -284,7 +287,10 @@ String vpnErrorText(String? code) => switch (code) {
   'invalid_config' => 'Параметры этого сервера не поддерживаются.',
   'profile_required' => 'Выберите сервер для восстановления соединения.',
   'vpn_permission_revoked' => 'Разрешение VPN отозвано в системе.',
-  'tunnel_https_failed' || 'tunnel_health_failed' || 'tunnel_https_status' => 'Сервер не прошёл проверку HTTPS. Попробуйте подключиться к другому серверу.',
+  'tunnel_https_failed' ||
+  'tunnel_health_failed' ||
+  'tunnel_https_status' ||
+  'tunnel_unreachable' => 'Сервер не прошёл проверку HTTPS. Попробуйте подключиться к другому серверу.',
   'endpoint_resolution_failed' => 'Не удалось определить адрес VPN-сервера.',
   'invalid_exclusion' ||
   'shared_uid_requires_all_packages' ||

@@ -71,6 +71,28 @@ void main() {
   );
 
   test(
+    'Windows transport failure and recovered guard retain only stable codes',
+    () {
+      for (final entry in {
+        'transport_unreachable': 'reconnecting',
+        'guard_recovered': 'blocked',
+        'tunnel_unreachable': 'blocked',
+      }.entries) {
+        final status = NativeVpnBridge.decodeStatus({
+          'phase': entry.value,
+          'processCrashProtection': false,
+          'errorCode': entry.key,
+          'message': 'private native diagnostic',
+        });
+        expect(status.errorCode, entry.key);
+        expect(status.phase.name, entry.value);
+        expect(status.processCrashProtection, isFalse);
+        expect(safeVpnCode('${entry.key}: private endpoint'), 'native_failure');
+      }
+    },
+  );
+
+  test(
     'bridge transmits only normalized profile and reads actual exclusions',
     () async {
       final calls = <MethodCall>[];
