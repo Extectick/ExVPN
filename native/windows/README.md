@@ -30,6 +30,9 @@ the automated checks below. Keep E1-007–010 and E5 open.
   traffic through the chosen proxy. The first/default outbound is blackhole.
   Only the service constructs listeners/routes/DNS/policy. The current native
   config requires a literal server IP: protected hostname bootstrap is pending.
+  Its researched lifecycle, DNS boundaries and acceptance gates are recorded in
+  [the Windows bootstrap plan](../../docs/WINDOWS_DNS_BOOTSTRAP.md); it is not
+  implemented in the prepared installer.
   Direct exclusions use `ForceIP`; failed core DNS resolution cannot fall back
   to the Windows resolver for a domain target.
 - Windows exceptions use ExVPN's `application-policy` outbound adapter, installed
@@ -88,6 +91,12 @@ produces a stable error state. The service is not installed during this
 development check. The native Flutter host has compiled and launched
 successfully; see evidence below.
 
+The service `status` response already includes `coreVersion`. The Flutter host's
+`coreVersion` method currently returns the bundled `26.10.10` pin without a pipe
+request; it does not confirm the installed service's version. Reading the actual
+service identity through authenticated status IPC is a separate pending change,
+described in the [bootstrap/version notes](../../docs/WINDOWS_DNS_BOOTSTRAP.md).
+
 ## Build and non-networking checks
 
 From the repository root, Go 1.27.2:
@@ -134,8 +143,36 @@ Verified **2026-10-16** in the working tree (commit pending):
   [Windows native empty state](../../design/qa/windows-native/2026-10-16-service-unavailable.png).
 - All Windows PowerShell scripts parsed. `stage-client.ps1 -CheckOnly` validated
   the complete 26-file debug bundle without copying/installing it.
+- `flutter build windows --release --no-pub` also passed. The ICO exports the
+  existing approved squirrel mask at native Windows icon sizes; the actual release
+  window was checked with the new title-bar icon:
+  [release squirrel](../../design/qa/windows-native/2026-10-16-release-squirrel.jpg).
+- NSIS 3.13 compiled the full unsigned development installer offline, including
+  service, release UI and the generated component notices/source inventory. Windows
+  PowerShell 5.1 manifest/cleanup/rollback-path tests and payload inspection passed.
+  Thirteen replacement/uninstall/recovery scenarios also passed with real filesystem/Windows
+  sharing locks and mocked SCM/ACL/registration. Partial previous-file deletion
+  restores missing verified files. Uninstall backs up before SCM/file deletion
+  and restores after a locked second DLL or registration-removal failure;
+  unknown/modified/locked replacement survivors
+  retain backup and produce an explicit incomplete-recovery error.
+  [Installer and guest QA instructions](INSTALLER.md) distinguish these build
+  checks from the still-open installation/network acceptance.
 
 ## Controlled integration / recovery
+
+The preferred complete test package is now the [NSIS installer](INSTALLER.md).
+Its administrator-only custom service control 128 explicitly disconnects before
+stopping for package maintenance. Ordinary SCM stop/shutdown still preserves the
+guard. The standalone scripts below remain useful for a separately reviewed
+development setup; an unmanaged script-based installation is not silently adopted
+by NSIS.
+
+Package maintenance serializes all users through a separate machine-wide global
+mutex before reading installed state. SYSTEM/Admin owner and exact ACL are checked
+before a nonblocking acquisition; a precreated untrusted mutex fails closed. The
+per-user UI mutex is retained. Mock cross-owner/hijack tests pass; elevated Windows
+object behavior remains part of guest acceptance.
 
 `scripts/windows/stage-client.ps1 -SourceExecutable <built exvpn.exe>` prepares
 a fresh protected `Program Files/ExVPN` UI bundle. `-CheckOnly` performs a
@@ -185,8 +222,10 @@ These scripts are prepared and syntax checked, not elevated/install tested.
   statistics and full installed-app picker. Owner snapshots are not an atomic
   kernel flow-attestation mechanism: stress tests for rapid socket/PID reuse and
   UDP performance remain part of the controlled system acceptance.
-- NSIS upgrade/uninstall transaction, binary signing, complete transitive SBOM
-  and notices. Scripts are a controlled development installer, not the final NSIS.
+- NSIS clean install/upgrade/failed upgrade/rollback/uninstall runtime acceptance
+  in the disposable guest, binary signing and complete release SBOM. The compiled
+  package includes notices and exact covered sources, but is unsigned and remains
+  a controlled development artifact.
 
 ## Pinned libraries and primary references
 

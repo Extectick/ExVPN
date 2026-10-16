@@ -43,17 +43,31 @@ The named pipe additionally binds the expected user SID and exact protected UI p
 
 ## Upgrade and rollback
 
-Close ExVPN in all sessions. Maintenance holds its global per-user mutex and
-refuses to kill UI processes. Upgrade requires a larger build number and the same
+Close ExVPN in all sessions. Before reading installed state, maintenance acquires
+the machine-wide `Global\ExVPN.PackageMaintenance.v1` mutex with SYSTEM/Admin-only
+owner/ACL validation. Existing user-owned or unexpected-ACL objects fail closed;
+contention returns immediately. The global per-user UI mutex remains held too,
+and maintenance refuses to kill UI processes. Upgrade requires a larger build number and the same
 IPC owner. The service's explicit maintenance control 128 disconnects the tunnel
 before stopping; ordinary stop/shutdown retains the persistent protection latch.
 
 Before replacement, the installer verifies all owned hashes/ACLs and copies the
 previous package to a protected GUID directory under `Program Files/ExVPN Rollback`.
 Unknown/changed files, foreign service configuration or a remaining TUN adapter
-stop maintenance. If replacement fails after removal, the previous package is
-restored when the known files can be safely cleaned. The rollback copy is retained
-for diagnosis; failure never triggers blanket firewall/DNS resets.
+stop maintenance. The in-memory transaction phase changes before the first service/file
+removal. If removal fails partway, recovery verifies every survivor across all
+trees and restores missing old files without overwriting an unchanged locked DLL.
+If writing the replacement fails, only verified replacement files are cleaned
+before restoring the previous package. Explicit rollback uses the same flow and
+first preserves the currently installed version as a separate protected backup.
+
+An unknown/modified survivor or locked replacement file stops automatic recovery.
+The error explicitly says `automatic recovery is INCOMPLETE` and identifies the
+protected previous package; it never claims that restoration succeeded. Preserve
+the remaining files, protected staging and rollback snapshot for inspection. In
+the disposable test machine, restore the VM snapshot or perform separately
+reviewed recovery after identifying the file owner/lock; do not delete unknown
+files, force-unlock processes, or reset global firewall/DNS settings.
 
 An explicit previous-version rollback uses the installed uninstaller with
 `/ROLLBACK=1`. This restores binaries and service configuration, not private
@@ -69,8 +83,13 @@ script refuses to infer ownership from its name: restore the VM snapshot or
 perform separately reviewed adapter recovery. Do not reset unrelated routes/DNS.
 
 Normal uninstall uses Apps & Features or `Uninstall.exe`. It performs the same
-maintenance checks, deletes only unchanged manifest-owned files and the exact
-service/product registration, and retains encrypted per-user subscriptions.
+maintenance checks and creates a verified protected backup before deleting the
+service or any installed file. It deletes only unchanged manifest-owned files
+and the exact service/product registration, and retains encrypted per-user
+subscriptions. Partial deletion or registration failure restores missing known
+files and the owned service from the backup; an unchanged locked DLL is retained.
+Unknown/modified survivors stop recovery with an explicit `INCOMPLETE` result.
+The backup is retained after successful uninstall too.
 Unknown/modified files cause a preflight failure. Installer extraction and cleanup
 use fixed file lists and protected staging, never `RMDir /r` on an installation root.
 
@@ -105,9 +124,21 @@ stub and built-in plugin files were checked against the pinned archive. Manifest
 tests reject traversal, duplicate targets, foreign rollback paths and cleanup of
 unknown/changed files. Windows PowerShell 5.1 parsed the scripts and inspected the
 complete payload without elevated/system actions. Flutter Windows release and
-Go service builds passed. The real release window displays the approved squirrel
+Go service builds passed. Thirteen package transaction tests run with real temporary
+files and Windows file-sharing locks, with SCM/ACL/registration mocked: partial
+old removal after service deletion, unknown/modified survivors, partial new copy,
+locked replacement, failed explicit rollback, successful upgrade and successful
+explicit rollback, partial uninstall with a locked second DLL, unknown/modified
+uninstall survivors, successful uninstall and registration-removal failure.
+Windows/Checks CI runs the suite through Windows PowerShell 5.1. These prove local
+recovery behavior, not installed SCM/ACL
+acceptance. The real release window displays the approved squirrel
 in its title bar. Installation, upgrade, recovery and uninstall have not yet run
 in a guest; E5-004 remains open. No installer or service was run on the host.
+Mock multi-instance checks cover different IPC owners contending for the same
+maintenance lock, nonblocking busy behavior and hijacked-owner/ACL refusal.
+Actual elevated mutex/ACL and power-loss recovery still require guest tests;
+the transaction phase is not a durable power-loss journal.
 
 Sources: [NSIS](https://nsis.sourceforge.io/Download),
 [licenses](https://nsis.sourceforge.io/License),

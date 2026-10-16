@@ -1,6 +1,44 @@
 # SPDX-License-Identifier: Apache-2.0
 Set-StrictMode -Version Latest
 
+function New-MachineMaintenanceMutex([string]$Name, [Security.AccessControl.MutexSecurity]$Security) {
+    $created = $false
+    [Threading.Mutex]::new($false, $Name, [ref]$created, $Security)
+}
+
+function Assert-MachineMaintenanceMutex($Mutex) {
+    $acl = $Mutex.GetAccessControl()
+    $trusted = @('S-1-5-18','S-1-5-32-544')
+    if (!$acl.AreAccessRulesProtected -or $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -notin $trusted) { throw 'Untrusted maintenance mutex owner or inheritance.' }
+    $seen = @{}
+    foreach ($rule in $acl.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier])) {
+        $sid = $rule.IdentityReference.Value
+        if ($sid -notin $trusted -or $rule.AccessControlType -ne [Security.AccessControl.AccessControlType]::Allow -or
+            $rule.MutexRights -ne [Security.AccessControl.MutexRights]::FullControl -or $rule.IsInherited -or $seen.ContainsKey($sid)) { throw 'Untrusted maintenance mutex ACL.' }
+        $seen[$sid] = $true
+    }
+    if ($seen.Count -ne 2) { throw 'Incomplete maintenance mutex ACL.' }
+}
+
+function Enter-MachineMaintenanceLock {
+    # Installation roots and SCM are machine-wide, independently of IPC owner.
+    # The predictable name is safe only after inspecting the existing object's
+    # owner/DACL. Creation arguments do not replace an existing mutex's security.
+    $acl = [Security.AccessControl.MutexSecurity]::new()
+    $acl.SetOwner([Security.Principal.SecurityIdentifier]::new('S-1-5-32-544'))
+    $acl.SetGroup([Security.Principal.SecurityIdentifier]::new('S-1-5-32-544'))
+    $acl.SetAccessRuleProtection($true,$false)
+    foreach ($sid in @('S-1-5-18','S-1-5-32-544')) { $acl.AddAccessRule([Security.AccessControl.MutexAccessRule]::new([Security.Principal.SecurityIdentifier]::new($sid),[Security.AccessControl.MutexRights]::FullControl,[Security.AccessControl.AccessControlType]::Allow)) }
+    $mutex = New-MachineMaintenanceMutex 'Global\ExVPN.PackageMaintenance.v1' $acl
+    try {
+        Assert-MachineMaintenanceMutex $mutex
+        $acquired = $false
+        try { $acquired = $mutex.WaitOne(0) } catch [Threading.AbandonedMutexException] { $acquired = $true }
+        if (!$acquired) { throw 'Another ExVPN package maintenance operation is active. Retry after it finishes.' }
+        return $mutex
+    } catch { $mutex.Dispose(); throw }
+}
+
 function Get-PackageTree([string]$Root) {
     $absolute = [IO.Path]::GetFullPath($Root).TrimEnd('\')
     $prefix = $absolute + '\'
@@ -93,6 +131,24 @@ function Copy-OwnedTree([string]$Source, [string]$Destination, $Records) {
     }
     foreach ($directory in Get-PackageTree $Destination | Where-Object PSIsContainer) { Set-ProtectedPackageACL $directory.FullName -Directory }
     Assert-TreeManifest $Destination $Records
+}
+
+function Restore-MissingOwnedTree([string]$Source, [string]$Destination, $Records, [string[]]$Ignore = @()) {
+    # A partial removal can leave an unchanged but locked DLL. Verify every
+    # survivor and restore only missing files; never overwrite or unlock it.
+    Assert-TreeManifest $Source $Records
+    Assert-TreeManifest $Destination $Records $Ignore -AllowMissing
+    if (Test-Path -LiteralPath $Destination) { Assert-ProtectedPackage $Destination }
+    else { New-Item -ItemType Directory -Path $Destination | Out-Null; Set-ProtectedPackageACL $Destination -Directory }
+    foreach ($record in @($Records)) {
+        $from = Get-OwnedPath $Source $record.path; $to = Get-OwnedPath $Destination $record.path
+        if (Test-Path -LiteralPath $to -PathType Leaf) { continue }
+        New-Item -ItemType Directory -Force -Path ([IO.Path]::GetDirectoryName($to)) | Out-Null
+        # File.Copy(overwrite:false) preserves a concurrently created file.
+        [IO.File]::Copy($from, $to, $false); Set-ProtectedPackageACL $to
+    }
+    foreach ($directory in Get-PackageTree $Destination | Where-Object PSIsContainer) { Set-ProtectedPackageACL $directory.FullName -Directory }
+    Assert-TreeManifest $Destination $Records $Ignore
 }
 
 function Remove-OwnedTree([string]$Root, $Records, [string[]]$Ignore = @()) {

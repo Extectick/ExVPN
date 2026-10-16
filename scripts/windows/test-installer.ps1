@@ -37,3 +37,5 @@ foreach ($script in Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1' -Re
     if ($parseErrors.Count) { throw "$($script.Name): $parseErrors" }
 }
 Write-Host 'Installer manifest, traversal, duplicate, unknown/changed-file refusal and known-only cleanup passed. No system installation performed.'
+& (Join-Path $PSScriptRoot 'test-package-recovery.ps1')
+& (Join-Path $PSScriptRoot 'test-maintenance-lock.ps1')

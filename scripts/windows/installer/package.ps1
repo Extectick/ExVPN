@@ -134,6 +134,7 @@ function Backup-InstalledTrees($State) {
 }
 function Read-PackageBackup([string]$Backup, [string]$ExpectedOwner) {
     $absolute = Assert-RollbackPath $rollbackRoot $Backup
+    Assert-ProtectedPackage $rollbackRoot
     Assert-ProtectedPackage $absolute
     $old = Read-PackageJson (Join-Path $absolute 'previous-state.json')
     if ($old.format -ne 1 -or $old.ownerSid -cne $ExpectedOwner -or $old.version -notmatch '^\d+\.\d+\.\d+$' -or $old.build -lt 1) { throw 'Invalid rollback package identity.' }
@@ -143,10 +144,105 @@ function Read-PackageBackup([string]$Backup, [string]$ExpectedOwner) {
 function Restore-PackageBackup([string]$Backup, [string]$ExpectedOwner) {
     $absolute = Assert-RollbackPath $rollbackRoot $Backup
     $old = Read-PackageBackup $absolute $ExpectedOwner
-    foreach ($tree in @('ui','service','control')) { Copy-OwnedTree (Join-Path $absolute $tree) $roots[$tree] $old.trees.$tree }
-    Write-InstalledState $old; Create-OwnedService $old; Register-InstalledPackage $old
+    # Validate ALL survivors before copying anything. Unknown/modified files
+    # stop recovery and preserve the protected source for manual inspection.
+    foreach ($tree in @('ui','service','control')) {
+        $ignore = @(); if ($tree -eq 'control') { $ignore = @('install-state.json') }
+        Assert-TreeManifest $roots[$tree] $old.trees.$tree $ignore -AllowMissing
+        if (Test-Path -LiteralPath $roots[$tree]) { Assert-ProtectedPackage $roots[$tree] }
+    }
+    [void](Assert-OwnedService $old)
+    foreach ($tree in @('ui','service','control')) {
+        $ignore = @(); if ($tree -eq 'control') { $ignore = @('install-state.json') }
+        Restore-MissingOwnedTree (Join-Path $absolute $tree) $roots[$tree] $old.trees.$tree $ignore
+    }
+    Write-InstalledState $old
+    $existing = Assert-OwnedService $old
+    if (!$existing) { Create-OwnedService $old }
+    elseif ($existing.State -eq 'Stopped') {
+        Start-Service ExVPNService
+        (Get-Service ExVPNService).WaitForStatus([ServiceProcess.ServiceControllerStatus]::Running,[TimeSpan]::FromSeconds(15))
+    } elseif ($existing.State -ne 'Running') { throw 'Service is transitioning; recovery cannot complete.' }
+    Register-InstalledPackage $old
 }
 
+function Copy-PackagePayload([string]$Source, $State) {
+    foreach ($tree in @('ui','service')) { Copy-OwnedTree (Join-Path $Source $tree) $roots[$tree] $State.trees.$tree }
+    $controlRecords = @($State.trees.control | Where-Object { $_.path -ine 'Uninstall.exe' })
+    Copy-OwnedTree (Join-Path $Source 'control') $roots.control $controlRecords
+    Copy-Item -LiteralPath (Join-Path $Source 'Uninstall.exe') -Destination (Join-Path $roots.control 'Uninstall.exe')
+    Set-ProtectedPackageACL (Join-Path $roots.control 'Uninstall.exe')
+}
+
+function Invoke-PackageReplacement($Current, $Next, [scriptblock]$WriteReplacement, [switch]$RecordPreviousBackup) {
+    $previousBackupPath = $null
+    $phase = 'unchanged'
+    try {
+        if ($Current) {
+            Stop-OwnedService $Current
+            $previousBackupPath = Backup-InstalledTrees $Current
+            if ($RecordPreviousBackup) { $Next.rollbackPath = $previousBackupPath }
+            # Record destructive intent BEFORE the first service/file removal.
+            $phase = 'removing_previous'
+            Remove-InstalledTrees $Current
+        }
+        $phase = 'writing_replacement'
+        & $WriteReplacement $Next
+        Write-InstalledState $Next
+        foreach ($tree in @('ui','service','control')) {
+            $ignore = @(); if ($tree -eq 'control') { $ignore = @('install-state.json') }
+            Assert-TreeManifest $roots[$tree] $Next.trees.$tree $ignore
+        }
+        Create-OwnedService $Next
+        Register-InstalledPackage $Next
+    } catch {
+        if ($phase -eq 'unchanged') {
+            throw 'Package replacement failed before file removal. Existing files were retained; the service may be stopped. Inspect the failure before retrying.'
+        }
+        try {
+            if ($phase -eq 'writing_replacement') {
+                if (Assert-OwnedService $Next) { Stop-OwnedService $Next }
+                # Known replacement files only. A locked, unknown or modified
+                # file aborts cleanup; never force-remove it to make rollback pass.
+                Remove-InstalledTrees $Next -Partial
+                Remove-OwnedRegistration
+            }
+            if ($previousBackupPath) { Restore-PackageBackup $previousBackupPath $Current.ownerSid }
+        } catch {
+            $recoverySource = 'Protected installer staging remains available.'
+            if ($previousBackupPath) { $recoverySource = "Protected previous package: $previousBackupPath" }
+            throw "Package replacement failed; automatic recovery is INCOMPLETE. $recoverySource Preserve remaining files and the VM snapshot; inspect locked/unknown/modified files before reviewed recovery. No processes were force-unlocked and no global firewall/DNS reset was performed."
+        }
+        if ($previousBackupPath) { throw 'Package replacement failed; the previous package and service were restored from the verified backup.' }
+        throw 'Installation failed; partial known installation files and registration were removed. Protected installer staging remains available.'
+    }
+}
+
+function Invoke-PackageUninstall($Current) {
+    $backup = $null
+    $removalStarted = $false
+    try {
+        Stop-OwnedService $Current
+        $backup = Backup-InstalledTrees $Current
+        # Service deletion and each file removal can fail independently. Keep a
+        # verified complete source before entering this destructive phase.
+        $removalStarted = $true
+        Remove-InstalledTrees $Current
+        Remove-OwnedRegistration
+    } catch {
+        if (!$removalStarted) {
+            throw 'Uninstall failed before service/file removal. Existing files were retained; the service may be stopped. Inspect the failure before retrying.'
+        }
+        try { Restore-PackageBackup $backup $Current.ownerSid }
+        catch {
+            throw "Uninstall failed; automatic recovery is INCOMPLETE. Protected previous package: $backup Preserve remaining files and inspect locked/unknown/modified files before reviewed recovery. No processes were force-unlocked and no global firewall/DNS reset was performed."
+        }
+        throw 'Uninstall failed; the previous package and service were restored from the verified backup. Close the conflicting file owner before retrying uninstall.'
+    }
+}
+
+$maintenanceLock = Enter-MachineMaintenanceLock
+try {
 $current = Read-InstalledState
 if ($Action -eq 'Install') {
     $metadata = Read-Payload $PayloadRoot
@@ -176,46 +272,28 @@ try {
     if (!$acquired) { throw 'Close ExVPN in all sessions before package maintenance.' }
     if ($Action -eq 'Recover') { Stop-OwnedService $current; Write-Host 'Owned ExVPN guard recovered. Service remains stopped; no unrelated network settings were reset.'; return }
     if ($Action -eq 'Uninstall') {
-        Stop-OwnedService $current; Remove-InstalledTrees $current
-        Remove-OwnedRegistration
+        Invoke-PackageUninstall $current
         Write-Host 'Owned ExVPN installation removed. Encrypted user data and protected rollback snapshots retained.'; return
     }
     if ($Action -eq 'Rollback') {
         if (!$current.rollbackPath) { throw 'No previous package is recorded.' }
-        $backup = $current.rollbackPath
+        $rollbackSourcePath = $current.rollbackPath
         # Validate restore source before disconnecting or removing current files.
-        $old = Read-PackageBackup $backup $resolvedOwner
+        $old = Read-PackageBackup $rollbackSourcePath $resolvedOwner
         if ($old.build -ge $current.build) { throw 'Rollback source must precede the installed build.' }
-        Stop-OwnedService $current; Remove-InstalledTrees $current; Restore-PackageBackup $backup $resolvedOwner
+        Invoke-PackageReplacement $current $old {
+            param($State)
+            foreach ($tree in @('ui','service','control')) { Copy-OwnedTree (Join-Path $rollbackSourcePath $tree) $roots[$tree] $State.trees.$tree }
+        }
         Write-Host 'Previous package restored; no subscription data or automatic VPN session was restored.'; return
     }
-    $backup = $null; $removedPrevious = $false
-    $controlRecords = @($metadata.trees.control)
     $new = [pscustomobject]@{ format = 1; version = $metadata.version; build = $metadata.build; ownerSid = $resolvedOwner; networkTesting = [bool]$EnableNetworkTesting; rollbackPath = $null; trees = $metadata.trees }
     # The NSIS-generated uninstaller is written into protected staging after
     # payload extraction; record its actual hash before any installation change.
     $uninstaller = Join-Path $PayloadRoot 'Uninstall.exe'
     if (!(Test-Path -LiteralPath $uninstaller -PathType Leaf)) { throw 'NSIS uninstaller is missing.' }
     $new.trees.control = @($new.trees.control) + @([pscustomobject]@{path='Uninstall.exe';sha256=(Get-FileHash -LiteralPath $uninstaller -Algorithm SHA256).Hash.ToLowerInvariant()})
-    try {
-        if ($current) { Stop-OwnedService $current; $backup = Backup-InstalledTrees $current; $new.rollbackPath = $backup; Remove-InstalledTrees $current; $removedPrevious = $true }
-        foreach ($tree in @('ui','service')) { Copy-OwnedTree (Join-Path $PayloadRoot $tree) $roots[$tree] $new.trees.$tree }
-        # Copy control files, then the generated uninstaller, without treating
-        # any arbitrary source folder as installable content.
-        Copy-OwnedTree (Join-Path $PayloadRoot 'control') $roots.control $controlRecords
-        Copy-Item -LiteralPath $uninstaller -Destination (Join-Path $roots.control 'Uninstall.exe'); Set-ProtectedPackageACL (Join-Path $roots.control 'Uninstall.exe')
-        Write-InstalledState $new
-        Assert-TreeManifest $roots.control $new.trees.control @('install-state.json')
-        Create-OwnedService $new
-        Register-InstalledPackage $new
-        Write-Host "Installed ExVPN $($new.version)+$($new.build). UI starts from the ordinary desktop; network testing is $($new.networkTesting)."
-    } catch {
-        if (Assert-OwnedService $new) { Stop-OwnedService $new }
-        if (!$current -or $removedPrevious) {
-            Remove-InstalledTrees $new -Partial
-            Remove-OwnedRegistration
-            if ($backup) { Restore-PackageBackup $backup $resolvedOwner }
-        }
-        throw 'Installation failed. The previous package was restored when safe; protected rollback data remains available. Do not reset global firewall/DNS settings.'
-    }
+    Invoke-PackageReplacement $current $new { param($State) Copy-PackagePayload $PayloadRoot $State } -RecordPreviousBackup
+    Write-Host "Installed ExVPN $($new.version)+$($new.build). UI starts from the ordinary desktop; network testing is $($new.networkTesting)."
 } finally { if ($acquired) { $mutex.ReleaseMutex() }; $mutex.Dispose() }
+} finally { $maintenanceLock.ReleaseMutex(); $maintenanceLock.Dispose() }

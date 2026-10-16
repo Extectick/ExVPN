@@ -59,6 +59,14 @@ if ($Target -eq 'Android') {
     & (Join-Path $repository 'native/android/build.ps1')
     & (Join-Path $repository 'scripts/bootstrap/build-android-debug.ps1')
 }
+if ($Target -in @('Checks', 'Windows')) {
+    # Exercise the actual installer PowerShell runtime, not pwsh-only semantics.
+    # Filesystem/file-sharing tests use isolated fixtures; SCM/ACL are mocked.
+    Invoke-Checked (Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe') @(
+        '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+        '-File', (Join-Path $repository 'scripts/windows/test-installer.ps1')
+    )
+}
 if ($Target -eq 'Windows') {
     & (Join-Path $repository 'scripts/windows/build.ps1')
     & (Join-Path $repository 'scripts/windows/prepare-wintun.ps1')
