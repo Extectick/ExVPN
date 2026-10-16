@@ -338,6 +338,17 @@ Future<void> main() async {
           } else if (attempt.cycle == 1 || attempt.cycle == transportCycles) {
             await snapshot('connected-${attempt.cycle}-${names.indexOf(name)}');
           }
+          if (transportCycles > 0) {
+            await progress('observing connected sockets');
+            await _coordinate(
+              tester,
+              marker,
+              results.length,
+              'observe-connected',
+              channel: 'transport',
+            );
+            result['connectedObserved'] = true;
+          }
           if (marker['networkRecovery'] == true) {
             final recovery = <String, Object?>{};
             result['networkRecovery'] = recovery;
@@ -736,7 +747,9 @@ Future<void> _coordinate(
     final file = File('$_output\\$channel-ack.json');
     if (await file.exists()) {
       final ack = jsonDecode(await file.readAsString()) as Map;
-      if (ack['runId'] == marker['runId'] && ack['step'] == step) {
+      if (ack['runId'] == marker['runId'] &&
+          ack['step'] == step &&
+          (channel != 'transport' || ack['action'] == action)) {
         if (ack['ok'] != true) throw StateError('fault_coordinator_rejected');
         return;
       }

@@ -91,7 +91,7 @@ $startedFile=[IO.File]::Open((Join-Path $outputRoot 'transport-started.json'),[I
 try { $bytes=[Text.Encoding]::UTF8.GetBytes(([ordered]@{runId=$marker.runId;startedUtc=[DateTime]::UtcNow.ToString('o')} | ConvertTo-Json)); $startedFile.Write($bytes,0,$bytes.Length) } finally { $startedFile.Dispose() }
 $invocation=0
 function Start-Guest([string]$Script,[string]$Arguments='', [string]$RunAs='System') {
-    if ($Script -cnotin @('guest-app-qa.ps1','guest-app-launch.ps1','guest-transport-observe.ps1') -or $Arguments -notmatch '^(?:-Action (?:Refresh|Restore|Baseline|Observe|Finish)(?: -Step [1-6]?[0-9])?)?$') { throw 'transport_guest_action_rejected' }
+    if ($Script -cnotin @('guest-app-qa.ps1','guest-app-launch.ps1','guest-transport-observe.ps1') -or $Arguments -notmatch '^(?:-Action (?:Refresh|Restore|Baseline|Connected|Observe|Finish)(?: -Step [1-6]?[0-9])?)?$') { throw 'transport_guest_action_rejected' }
     $command='powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File C:\ExVPN-App-QA\'+$Script+' -ConfirmDisposableGuest '+$Arguments
     $start=[Diagnostics.ProcessStartInfo]::new($wsb)
     $start.UseShellExecute=$false; $start.CreateNoWindow=$true
@@ -113,16 +113,16 @@ function Complete-Guest($Child,[int]$TimeoutMs=90000) {
     } finally { $Child.process.Dispose() }
 }
 function Invoke-Guest([string]$Script,[string]$Arguments='') { Complete-Guest (Start-Guest $Script $Arguments) }
-function Write-TransportAck([int]$Step,[bool]$Passed) {
+function Write-TransportAck([int]$Step,[string]$Action,[bool]$Passed) {
     $temp=Join-Path $outputRoot 'transport-ack.tmp'
-    [ordered]@{runId=$marker.runId;step=$Step;ok=$Passed} | ConvertTo-Json | Set-Content -LiteralPath $temp -Encoding utf8NoBOM
+    New-TransportAck $marker.runId $Step $Action $Passed | ConvertTo-Json | Set-Content -LiteralPath $temp -Encoding utf8NoBOM
     [IO.File]::Move($temp,(Join-Path $outputRoot 'transport-ack.json'),$true)
 }
 $report=[ordered]@{
     format=1;runId=$marker.runId;build=$marker.build;cycles=$marker.transportCycles
     startedUtc=[DateTime]::UtcNow.ToString('o');computerUse=$false;hostNetworkChanged=$false
     fixtureExecutableSha256=(Get-AuditSha256 $fixtureExecutable);bundleManifestSha256=(Get-AuditSha256 (Join-Path $inputRoot 'sandbox-bundle.json'))
-    internalCacheObjectsObserved=$false;distinctEgressTested=$false;samples=@();passed=$false;cleanupPassed=$false
+    internalCacheObjectsObserved=$false;distinctEgressTested=$false;connectedSamples=@();samples=@();passed=$false;cleanupPassed=$false
 }
 $owned=$false; $baseline=$false; $launcher=$null
 try {
@@ -133,13 +133,33 @@ try {
     $report.baseline=Get-Content -LiteralPath (Join-Path $outputRoot 'transport-baseline.json') -Raw | ConvertFrom-Json -AsHashtable
     if ($report.baseline.runId -cne $marker.runId -or !$report.baseline.passed) { throw 'transport_baseline_failed' }
     $launcher=Start-Guest 'guest-app-launch.ps1' '' 'ExistingLogin'
-    $step=1; $total=3*$marker.transportCycles
+    $step=1; $total=3*$marker.transportCycles; $phase='observe-connected'
     $deadline=[DateTime]::UtcNow.AddMinutes(18)
     while (!$launcher.process.HasExited) {
         if ([DateTime]::UtcNow -gt $deadline) { throw 'transport_runtime_deadline' }
-        $request=Get-TransportRequest (Join-Path $outputRoot 'transport-request.json') $marker.runId $step $total
+        $request=Get-TransportRequest (Join-Path $outputRoot 'transport-request.json') $marker.runId $step $total $phase
         if ($null -ne $request) {
             try {
+                if ($phase -ceq 'observe-connected') {
+                    Invoke-Guest 'guest-transport-observe.ps1' ('-Action Connected -Step '+$step)
+                    $connected=Get-Content -LiteralPath (Join-Path $outputRoot "transport-connected-$step.json") -Raw | ConvertFrom-Json -AsHashtable
+                    Assert-TransportConnectedSample $connected $marker.runId $step
+                    $expectedName=@('VLESS gRPC','VLESS XHTTP','XHTTP REALITY')[($step-1)%3]
+                    $expectedIndex=[array]::IndexOf(@($fixtures.Name),$expectedName)+1
+                    if ($connected.selectedFixtureIndex -ne $expectedIndex) { throw 'transport_connected_fixture_mismatch' }
+                    $peerDetails=@(Get-FixturePeers)
+                    [ordered]@{utc=[DateTime]::UtcNow.ToString('o');peers=$peerDetails} | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $outputRoot "transport-peers-connected-$step.json") -Encoding utf8NoBOM
+                    $connected.fixturePeerCount=@($peerDetails | Where-Object {$_.fixtureIndex -eq $expectedIndex -and $_.state -ceq 'Established'}).Count
+                    # Each side confirms the selected endpoint/port independently.
+                    # Guest source IP/port equality is not assumed across NAT.
+                    $connected.sourceTupleEqualityRequired=$false
+                    $report.connectedSamples+=@($connected)
+                    if ($connected.fixturePeerCount -lt 1) { throw 'transport_connected_fixture_peer_missing' }
+                    Write-TransportAck $step $phase $true
+                    Write-Host "Transport connected $step/${total}: same service, expected endpoint and active peer confirmed on both sides."
+                    $phase='observe-disconnect'
+                    continue
+                }
                 Invoke-Guest 'guest-transport-observe.ps1' ('-Action Observe -Step '+$step)
                 $sample=Get-Content -LiteralPath (Join-Path $outputRoot "transport-observe-$step.json") -Raw | ConvertFrom-Json -AsHashtable
                 Assert-TransportSample $sample $marker.runId $step
@@ -159,11 +179,12 @@ try {
                 $sample.fixturePeerStates=@($peerDetails | ForEach-Object { $_.state } | Sort-Object)
                 $report.samples+=@($sample)
                 if ($peers -ne 0) { throw 'transport_fixture_connections_remain' }
-                Write-TransportAck $step $true
+                Write-TransportAck $step $phase $true
                 Write-Host "Transport disconnect $step/${total}: same service, clean TUN/WFP/DNS/routes, fixture peers drained."
                 $step++
+                $phase='observe-connected'
             } catch {
-                Write-TransportAck $step $false
+                Write-TransportAck $step $phase $false
                 throw
             }
         }
@@ -173,7 +194,7 @@ try {
     $launcher=$null
     $flutter=Get-Content -LiteralPath (Join-Path $outputRoot 'flutter-report.json') -Raw | ConvertFrom-Json -AsHashtable
     Assert-TransportFlutter $flutter $marker.runId $marker.transportCycles
-    if ($step -ne $total+1 -or $report.samples.Count -ne $total) { throw 'transport_incomplete_disconnect_observations' }
+    if ($step -ne $total+1 -or $report.samples.Count -ne $total -or $report.connectedSamples.Count -ne $total) { throw 'transport_incomplete_disconnect_observations' }
     $report.passed=$true
 } catch {
     $report.error='transport_lifecycle_qa_failed'

@@ -245,12 +245,27 @@ Nonce read/write challenge подтверждает, что mapping относи
 изменённая reservation или чужой upgrade-report приводят к отказу; прежние
 результаты сохраняются. Для повторения нужно подготовить новый bundle/runId.
 
-После каждого disconnect проверяются прежний PID службы, отсутствие TUN/WFP
-guard, точный DNS/routes baseline и закрытие server-side peer sockets. В конце
+Перед disconnect UI ожидает отдельное подтверждение: у текущего PID службы
+должен быть Established TCP socket к выбранному synthetic endpoint, у принадлежащего
+стенду server process — соответствующий peer; TUN и WFP guard должны работать.
+ACK связывается с runId, номером цикла и фазой, поэтому старое подтверждение
+connected не может подтвердить disconnect. Raw TCP/netstat snapshots остаются
+только в `.private/`; адреса двух сторон NAT напрямую не сравниваются.
+
+После каждого disconnect проверяются прежний PID/start time службы, отсутствие
+активного клиентского socket к выбранному endpoint, отсутствие TUN/WFP
+guard, точный DNS/routes baseline и закрытие server-side peer sockets за
+прежний предел 10 секунд. Нулевой снимок клиента без положительного снимка
+до disconnect недостаточен. В конце
 восстанавливается production client binding. HTTPS/DNS и рост счётчиков
 подтверждаются независимо от статуса UI. Memory/handle/thread samples являются
 наблюдениями ОС, а не подсчётом внутренних Go кешей. Этот сценарий не заменяет
 внешний IP, полную leak/fault matrix, sleep/resume или подписанный выпуск.
+
+Metadata parser проверяется исполнением самой функции
+наблюдателя в PowerShell 7 и гостевом Windows PowerShell 5.1. Проверка одного
+синтаксиса не обнаруживает различие перечисления JSON arrays между версиями.
+134 synthetic helper checks не вызывают сеть, службу или Sandbox.
 
 ## Повреждение и восстановление policy
 

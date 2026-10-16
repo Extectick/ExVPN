@@ -87,6 +87,18 @@ Android API30 прошёл шесть connect/disconnect в одном app/servi
 production binding и сеть, fixture остановлен. Этот прогон остаётся FAIL:
 [доказательство](evidence/windows-lifecycle-build11-first-failure.json).
 
+Четвёртый Windows прогон добавил положительный контроль перед отключением:
+guest `Get-NetTCPConnection` и `netstat` подтвердили один Established socket
+текущего SCM PID/start time, принадлежащий fixture server также видел peer.
+После Disconnect в госте не осталось соединений ни одного владельца по восьми
+fixture ports, но сервер сохранял один Established в 11 снимках за 10,55 с.
+Прежний 10-секундный drain gate завершился FAIL (10,77 с); причина сохранения
+server-side peer пока не доказана. Cleanup прошёл. Это свидетельство закрытия
+клиентского socket, а не закрытие E1-011 или всей Windows lifecycle-матрицы.
+[Все четыре попытки и точные хеши QA](evidence/windows-lifecycle-build11.json).
+Третья попытка отдельно помечена как ошибка PS5.1 metadata parser до наблюдения
+сокетов; её исправление проверено исполнением функции в PS5.1 и PS7.
+
 Android и Windows требуют проверки нескольких connect/disconnect в **одном
 процессе**: перезапуск процесса между циклами скрывает retained globals.
 Независимый probe должен подтвердить HTTPS и восстановление исходной сети,

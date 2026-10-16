@@ -1,0 +1,422 @@
+{
+  "schemaVersion": 1,
+  "taskId": "EXVPN-E1-011",
+  "date": "2026-10-17",
+  "status": "FAIL",
+  "releaseGateComplete": false,
+  "productionCodeCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f",
+  "artifact": {
+    "name": "ExVPN-0.1.0-11-windows-x64-development.exe",
+    "sha256": "eb071b0ad883e73842eb32bacdd23d7ce1005b5b20e8e312708296d6613b3333",
+    "appVersion": "0.1.0+11",
+    "core": "26.10.10-exvpn.3",
+    "signed": false,
+    "developmentBuild": true
+  },
+  "target": {
+    "kind": "Windows Sandbox",
+    "originalSandboxPreserved": true,
+    "computerUse": false,
+    "ordinaryInstalledService": true,
+    "isolatedIntegrationTestUi": true,
+    "hostNetworkChanged": false,
+    "distinctEgressTested": false,
+    "internalCacheObjectsObserved": false
+  },
+  "fixture": {
+    "sha256": "79c2886d9178781ea47c053d9c1d2e8d4a2bf36e162bc78099c347898d5d540b",
+    "explicitVirtualInterfaceOnly": true,
+    "wildcardListener": false,
+    "hostFirewallOrRoutesChanged": false,
+    "profiles": 8,
+    "newPrivateCredentialsPerAttempt": true
+  },
+  "upgrade": {
+    "status": "PASS",
+    "fromBuild": 10,
+    "toBuild": 11,
+    "ordinaryInstaller": true,
+    "userDataPreservationTested": false
+  },
+  "repeatableRunner": {
+    "stableWritableMappingVerified": true,
+    "secondMappingCallCreated": false,
+    "uniqueRunDirectory": true,
+    "previousAttemptPreserved": true,
+    "oldSandboxNotClosed": true
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "FAIL",
+      "startedUtc": "2026-10-16T22:53:56.8201046Z",
+      "finishedUtc": "2026-10-16T22:55:13.7018512Z",
+      "plannedConnections": 15,
+      "httpsVerifiedConnections": 1,
+      "disconnectObservations": 1,
+      "successfulLifecycleCycles": 0,
+      "remainingConnectionsNotRun": 14,
+      "transport": "VLESS gRPC h2c",
+      "ordinaryUserToken": true,
+      "nativeVpnMocked": false,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsPassed": true,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true,
+      "sameServiceProcess": true,
+      "tunnelAbsent": true,
+      "guardArmed": false,
+      "networkRestored": true,
+      "peerDrainDeadlineMs": 10000,
+      "observedDrainMs": 10859,
+      "fixturePeerCount": 1,
+      "peerTcpState": "not recorded",
+      "cleanup": {
+        "passed": true,
+        "productionBindingRestored": true,
+        "serviceRunning": true,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true,
+        "ownedFixtureStopped": true
+      },
+      "evidenceSha256": {
+        "bundleManifest": "ef59e472e0189b0d0b27f5d4489832bfa91c2cb94cf5fca5ece39e340ace591f",
+        "privateCoordinator": "23334cf2c0a33bf1e50f9fcc725db451fa2aadd57c22533aadb0a3ca28cdec04",
+        "privateFlutterReport": "890160584e4b19b98ac4c11726ed218c9ba01fff525c605a6577631e98ecd326"
+      }
+    },
+    {
+      "attempt": 2,
+      "status": "FAIL",
+      "startedUtc": "2026-10-16T23:01:16.818963Z",
+      "finishedUtc": "2026-10-16T23:02:42.3848639Z",
+      "plannedConnections": 15,
+      "httpsVerifiedConnections": 1,
+      "disconnectObservations": 1,
+      "successfulLifecycleCycles": 0,
+      "remainingConnectionsNotRun": 14,
+      "transport": "VLESS gRPC h2c",
+      "ordinaryUserToken": true,
+      "nativeVpnMocked": false,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsPassed": true,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true,
+      "sameServiceProcess": true,
+      "tunnelAbsent": true,
+      "guardArmed": false,
+      "networkRestored": true,
+      "peerDrainDeadlineMs": 10000,
+      "observedDrainMs": 10932,
+      "fixturePeerCount": 1,
+      "peerTcpState": "Established",
+      "cleanup": {
+        "passed": true,
+        "productionBindingRestored": true,
+        "serviceRunning": true,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true,
+        "ownedFixtureStopped": true
+      },
+      "evidenceSha256": {
+        "bundleManifest": "ca1609e5329ab2668690a4fbe41673b1633f5b568f3dbb7b3c9a89852f575e13",
+        "privateCoordinator": "e7c3ab9228f82a7950f3683d27e32b413353b840ee17fca4f108c35b58aa2c80",
+        "privateFlutterReport": "b5d1dc03ebae0b5c0aa3faa5a1e0f8d0bba050ee8ac7a49cbf56ce135512b2dd"
+      }
+    },
+    {
+      "attempt": 3,
+      "status": "FAIL",
+      "failureClass": "QA observer parser incompatibility",
+      "qaSourceState": "working tree; commit pending",
+      "qaSourceHashes": [
+        {
+          "path": "apps/exvpn/integration_test/windows_sandbox_test.dart",
+          "sha256": "9b6b7e51be40bb5e7beac0b345bce78ac8a8e6ea0492bd3b565ba12b70a51b5d"
+        },
+        {
+          "path": "scripts/qa/guest-transport-observe.ps1",
+          "sha256": "c22f82922a22213752d583c8eeb5e9bbac8c7a629051a777f92a0b3d4573d263"
+        },
+        {
+          "path": "scripts/qa/run-windows-transport-lifecycle.ps1",
+          "sha256": "a8e0e1dd3e013ea93ff99b0d792b2ee7a94b29be18cbfb82b5449a9482f5a231"
+        },
+        {
+          "path": "scripts/qa/windows-transport-lifecycle-lib.ps1",
+          "sha256": "00b34f9689c3664ddec6702bdd72e5261d6e864d9988a7087ced85402c0589bf"
+        },
+        {
+          "path": "scripts/qa/test-windows-transport-lifecycle.ps1",
+          "sha256": "c7dc7dc50beca1fbee802742309215fc3a61a380bbbe97cd25935753e17f7a0b"
+        }
+      ],
+      "productionCodeCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f",
+      "runId": "3e373454-8b3b-430a-a6a2-de1013873ad8",
+      "bundleManifestSha256": "bfe38fbafd914d3913a446fa9bb21d4e40696c8bf64a7b77dab8dd3d2ee2b705",
+      "startedUtc": "2026-10-16T23:16:52.7955465Z",
+      "finishedUtc": "2026-10-16T23:18:10.0444984Z",
+      "plannedConnections": 15,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsPassed": true,
+      "connectedObservations": 0,
+      "disconnectObservations": 0,
+      "positiveControlCaptured": false,
+      "tcpSnapshotWritten": false,
+      "netstatSnapshotWritten": false,
+      "cleanup": {
+        "passed": true,
+        "productionBindingRestored": true,
+        "serviceRunning": true,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true,
+        "ownedFixtureStopped": true
+      },
+      "productionRegressionClaimed": false,
+      "parserCause": "Windows PowerShell 5.1 retains the converted top-level JSON array as one pipeline object; an outer array wrapper therefore nested the eight-entry fixture list. The observer rejected it before TCP or netstat sampling.",
+      "correctedBy": "Assign ConvertFrom-Json directly and validate the actual metadata function under both PowerShell 7 and Windows PowerShell 5.1.",
+      "httpsVerifiedConnections": 1,
+      "successfulLifecycleCycles": 0,
+      "remainingConnectionsNotRun": 14,
+      "evidenceSha256": {
+        "privateSummary": "c4a99cd31ed9326df56a202e7149f232452248e6bead5a40f216e3fe42eaa1ea",
+        "privateCoordinator": "ea19acfa9964e993104f79a570135fc0b4ddb85dcdba710044642844aa3c7a86",
+        "privateFlutterReport": "136cd673b2c5b611529429b265e1a5bd57cd0bff06868402540ac5cd883f4920"
+      }
+    },
+    {
+      "attempt": 4,
+      "status": "FAIL",
+      "failureClass": "Retained host TCP peer after original disconnect deadline",
+      "qaSourceState": "working tree; commit pending",
+      "qaSourceHashes": [
+        {
+          "path": "apps/exvpn/integration_test/windows_sandbox_test.dart",
+          "sha256": "9b6b7e51be40bb5e7beac0b345bce78ac8a8e6ea0492bd3b565ba12b70a51b5d",
+          "savedSnapshotMatches": true
+        },
+        {
+          "path": "scripts/qa/guest-transport-observe.ps1",
+          "sha256": "f91d2070793754456a017c6e668b3233b2605beb4a8e97a84246bc18681a8cb1",
+          "savedSnapshotMatches": true
+        },
+        {
+          "path": "scripts/qa/run-windows-transport-lifecycle.ps1",
+          "sha256": "a8e0e1dd3e013ea93ff99b0d792b2ee7a94b29be18cbfb82b5449a9482f5a231",
+          "savedSnapshotMatches": true
+        },
+        {
+          "path": "scripts/qa/windows-transport-lifecycle-lib.ps1",
+          "sha256": "00b34f9689c3664ddec6702bdd72e5261d6e864d9988a7087ced85402c0589bf",
+          "savedSnapshotMatches": true
+        },
+        {
+          "path": "scripts/qa/test-windows-transport-lifecycle.ps1",
+          "sha256": "01dd408cbd227acf80a706cee6a91a5aaf7670d27adae37342eb00331368f4a3",
+          "savedSnapshotMatches": true
+        }
+      ],
+      "productionCodeCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f",
+      "runId": "c038fe5b-b523-482a-96e6-5e24435af63e",
+      "startedUtc": "2026-10-16T23:24:01.1919209Z",
+      "finishedUtc": "2026-10-16T23:25:46.4900102Z",
+      "elapsedSeconds": 105.298,
+      "plannedConnections": 15,
+      "httpsVerifiedConnections": 1,
+      "connectedObservations": 1,
+      "disconnectObservations": 1,
+      "successfulLifecycleCycles": 0,
+      "remainingConnectionsNotRun": 14,
+      "transport": "VLESS gRPC h2c",
+      "ordinaryUserToken": true,
+      "nativeVpnMocked": false,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsPassed": true,
+      "trafficCountersIncreased": true,
+      "explicitDisconnect": true,
+      "peerDrainDeadlineMs": 10000,
+      "observedDrainMs": 10768,
+      "fixturePeerCount": 1,
+      "peerTcpState": "Established",
+      "connectedPositiveControl": {
+        "passed": true,
+        "phaseAwareAck": true,
+        "ackBindsRunIdStepAndAction": true,
+        "currentScmProcessIdentityVerified": true,
+        "selectedFixtureIndex": 6,
+        "guestTcpServiceEstablished": 1,
+        "guestTcpOtherOwnerEstablished": 0,
+        "guestNetstatSelectedEndpoint": [
+          {
+            "state": "ESTABLISHED",
+            "ownedByService": true,
+            "ownerZero": false
+          }
+        ],
+        "hostEstablishedPeers": 1,
+        "tunnelPresent": true,
+        "guardArmed": true,
+        "tcpQueryMs": 61
+      },
+      "afterDisconnect": {
+        "sameScmProcessIdentity": true,
+        "guestTcpScope": "All owners, all eight fixture ports",
+        "guestTcpRows": 0,
+        "selectedServiceEstablishedConnections": 0,
+        "guestNetstatSelectedEndpoint": [],
+        "tcpQueryMs": 32,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true,
+        "hostSamples": 11,
+        "hostFirstElapsedMs": 767,
+        "hostLastElapsedMs": 10554,
+        "hostAllSamplesOneEstablished": true,
+        "sourceTupleEqualityRequired": false
+      },
+      "cleanup": {
+        "passed": true,
+        "productionBindingRestored": true,
+        "serviceRunning": true,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true,
+        "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+        "ownedFixtureStopped": true
+      },
+      "evidenceSha256": {
+        "bundleManifest": "4bd59471410e34a0d3a45d43f056bc10547eea698f770a1d8837635f1c8f70e1",
+        "privateCoordinator": "7db1394ae368ab2327b0c19eda11b153715955dc3143d7b969ba1d9ce2a507f1",
+        "privateFlutterReport": "b77491ff2665a2652efc630a877bbc3c606193c12996dd7f9093ebfc243b8d24",
+        "privateGuestConnectedTcp": "b5498d3c6f70b9d92a52b1432645c550400dd12d91fd5cd7348af00742ec6385",
+        "privateGuestDisconnectedTcp": "8f3d3ce31d832c3da41fbbb57ad409ba68e1165a228b57d2ef8d5bf312f2770b",
+        "privateGuestConnectedNetstat": "d7cd1a69f6d1006945417358069e4dd2af49eb794e8879038b1f7aff3258cb2b",
+        "privateGuestDisconnectedNetstat": "7353e10e8b5fe37907aabb5415c0384b3f15ba5220d234e77c275936eb430975",
+        "privateConnectedHostPeers": "cfc3acd3dfa85d9a89417dc3d67bf69b102f8dc83f71374b7b784593a61703e3",
+        "privateDisconnectedHostPeers": "2c21796faceaa992676f83024e7eadd5d7066bd4b6d84f65335fb2074bfb424d",
+        "privateValidatedCorrelation": "b2694b9ee9ce158a56ef056c3f0c4d58a85d11511b8674b59a5294b8ed5e0b38",
+        "privateSourceAndBinaryProof": "ce3de4218f549ae954bf41f2dda88b94175bf5bb9a2e17a79256ac692a104f6f"
+      }
+    }
+  ],
+  "secondAttemptDiagnostics": {
+    "hostSamples": 10,
+    "hostFirstElapsedMs": 854,
+    "hostLastElapsedMs": 10718,
+    "hostStates": [
+      "Established"
+    ],
+    "guestSamples": 79,
+    "guestReadFailures": 0,
+    "guestOwnerScope": [
+      "current service",
+      "PID 0"
+    ],
+    "guestMatchedTupleRecords": 0,
+    "guestAfterDisconnectSamplesBeforeRestore": 13,
+    "guestAfterDisconnectMatchedRows": 0,
+    "positiveConnectedControlObserved": false,
+    "clientTeardownConclusion": "inconclusive: no positive connected sample",
+    "finalAfterCleanupAllOwnerConnections": 0,
+    "finalAfterCleanupReadFailed": false,
+    "privateGuestTimelineSha256": "35adba393bb40670170ae81ced799872506ce596cd6e1d12d4fc7ba08d94879f",
+    "privateHostTraceSha256": "672617c3fd2220a82a97c35343631957db9b2837233c6af3f9d46a295f55923e"
+  },
+  "interpretation": "Attempts 1, 2 and 4 fail the unchanged zero-peer deadline. Attempt 3 failed in the QA observer before TCP sampling and is not evidence of a production regression. Attempt 4 validates the connected client transport in both guest TCP tools, then finds no matching guest TCP entry after Disconnect while the host fixture still has one Established peer. This supports client handle release and is not direct proof of a retained gRPC cache. The cause of peer retention is not established; no timeout, WFP policy or acceptance criterion was relaxed.",
+  "remaining": [
+    "Investigate Windows TCP teardown signalling and WFP ordering using targeted packet/WFP evidence; Suspend-before-close is only a hypothesis.",
+    "Repeat all five gRPC, XHTTP, and XHTTP REALITY cycles after the retained-peer cause is fixed.",
+    "These runs do not prove complete leak prevention, native cache counts, physical Windows behavior, or release readiness."
+  ],
+  "secondAttemptQaCodeCommit": "932cd0f04b4bc1e2ed0ae80a98f04d425b419eea",
+  "latestQaSourceState": "working tree; commit pending",
+  "fourthAttemptBinaryReuse": {
+    "preparationWallSeconds": 4.2,
+    "timingScope": "QA bundle preparation only, observed tool wall time",
+    "fromAttempt": 3,
+    "oldBundlePreserved": true,
+    "newUniqueRunId": true,
+    "fromManifestSha256": "bfe38fbafd914d3913a446fa9bb21d4e40696c8bf64a7b77dab8dd3d2ee2b705",
+    "toManifestSha256": "4bd59471410e34a0d3a45d43f056bc10547eea698f770a1d8837635f1c8f70e1",
+    "verifiedPayloadFiles": 41,
+    "onlyPayloadChange": "guest-transport-observe.ps1",
+    "unchangedBinaries": [
+      {
+        "path": "installer.exe",
+        "sha256": "eb071b0ad883e73842eb32bacdd23d7ce1005b5b20e8e312708296d6613b3333",
+        "matchesPreviousPayload": true
+      },
+      {
+        "path": "qa-desktop.exe",
+        "sha256": "52f2111d5def5564baf620397f016c69896caf566c6a8f278e5b20198273e801",
+        "matchesPreviousPayload": true
+      },
+      {
+        "path": "ui\\excluded-probe.exe",
+        "sha256": "95e414a5d0a161fe9bd8fe4d9c64480778b3d1f146db789c033870cc68cb5750",
+        "matchesPreviousPayload": true
+      },
+      {
+        "path": "ui\\exvpn.exe",
+        "sha256": "4a7d93cde7975d2bd7f6ec3015db9901b3f2c8f0bef458f047e3bbecdf57b0b3",
+        "matchesPreviousPayload": true
+      },
+      {
+        "path": "ui\\protected-probe.exe",
+        "sha256": "95e414a5d0a161fe9bd8fe4d9c64480778b3d1f146db789c033870cc68cb5750",
+        "matchesPreviousPayload": true
+      },
+      {
+        "path": "ui\\qa-guard.exe",
+        "sha256": "0edb92ad1b820c8c26ac91ced5a1f4df27103a11d1b7eabe04d7bf3a28481ab1",
+        "matchesPreviousPayload": true
+      }
+    ],
+    "integrationTargetMatchesSavedSnapshot": true,
+    "qaLauncherSourceRevision": "292d3dc05f1b694a26ca9e2cb30953850e5b8373",
+    "allQaLauncherSourcesMatchBinaryRevision": true,
+    "qaLauncherSources": [
+      {
+        "path": "native/windows/cmd/qa-desktop/main_windows.go",
+        "sha256": "25009af919f053a26678f58557fd28896c92925d2ee229b73f20084d6ce9c8f7",
+        "gitBlob": "9ac7aa742afe43feed9ada70a306fede0ee78423",
+        "matchesBinaryRevision": true
+      },
+      {
+        "path": "native/windows/cmd/qa-desktop/output_windows.go",
+        "sha256": "e7ceac9ba480a1da575a8de7dfccb9393fca2dc13e1016b01f40acabdfd8d2ab",
+        "gitBlob": "4ca19ecf578c2125cf623a260d3ea5e2ade84b98",
+        "matchesBinaryRevision": true
+      },
+      {
+        "path": "native/windows/cmd/qa-desktop/output_windows_test.go",
+        "sha256": "c7f1fe4ef070a0175855e250fc95b2901e8abd69693201187597f83ab56275b5",
+        "gitBlob": "cccb249bb24dc8e37eebbc67490487c464c9a0a6",
+        "matchesBinaryRevision": true
+      }
+    ],
+    "allFiveQaSourcesMatchSavedSnapshot": true,
+    "productionArtifactUnchanged": true,
+    "scope": "Verified QA binary reuse; no production build cache reuse",
+    "privateReuseRecordSha256": "6e149f56a2754091896c2e9ec73e1293f88073b59342498b28d35765f348a20f"
+  },
+  "qaValidation": {
+    "syntheticChecks": 134,
+    "status": "PASS",
+    "actualMetadataFunctionCasesPerShell": 15,
+    "shells": [
+      "PowerShell 7",
+      "Windows PowerShell 5.1"
+    ],
+    "networkCommandsInSyntheticTests": false,
+    "privateTestsLogSha256": "78069ee00fde4831b07a718b1467537f00fe83040bc4b38f73dfb0cff45d0587",
+    "latestSourceState": "working tree; commit pending"
+  }
+}
