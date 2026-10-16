@@ -1,0 +1,117 @@
+{
+  "format": 1,
+  "date": "2026-10-16",
+  "sourceCommit": "f83ab845515d7f9a0208422d06458de2076c6d9c",
+  "uiFixCommit": "e22a748dd1fde206dd4fed8208e93b329636b652",
+  "appVersion": "0.1.0+3",
+  "installerSha256": "51b7c1327b3e4dcc58ab5afbba6dc7c46f5837f034135f894e2bda1904661f05",
+  "serviceSha256": "6d93dc9ffb51bd2c34576e89697d8221c88a37e4dd456ddf149be3998f88f952",
+  "qaAotSha256": "d1ac64583c727e46a55adf7c0338e0c7bba366310d2704d66fb25d2ad9ac622a",
+  "startedUtc": "2026-10-16T16:47:39.824403Z",
+  "finishedUtc": "2026-10-16T16:51:26.0588098Z",
+  "computerUse": false,
+  "nativeVpnMocked": false,
+  "passed": true,
+  "frameworkPassed": true,
+  "allSevenProtocolsPassed": true,
+  "exclusionSelectedThroughUi": true,
+  "upgrade": {
+    "passed": true,
+    "fromBuild": 2,
+    "toBuild": 3,
+    "exitCode": 0
+  },
+  "results": {
+    "connected": {
+      "protected": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 633
+      },
+      "excluded": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 599
+      }
+    },
+    "serverOutage": {
+      "protected": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 8006
+      },
+      "excluded": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 629
+      }
+    },
+    "serviceCrash": {
+      "protected": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 3
+      },
+      "excluded": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 3
+      }
+    },
+    "serviceRestart": {
+      "protected": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 4
+      },
+      "excluded": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 4
+      }
+    },
+    "explicitRecovery": {
+      "protected": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 697
+      },
+      "excluded": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 703
+      }
+    }
+  },
+  "outageCode": "transport_unreachable",
+  "restartCode": "guard_recovered",
+  "scmProcessTerminated": true,
+  "guardObservedAfterCrash": true,
+  "guardObservedAfterRestart": true,
+  "cleanup": {
+    "passed": true,
+    "guardArmed": false,
+    "tunnelAbsent": true,
+    "networkRestored": true,
+    "productionBindingRestored": true,
+    "serviceRunning": true,
+    "fixtureStopped": true,
+    "hostNetworkChanged": false
+  },
+  "ordinaryUserTokenTested": false,
+  "distinctEgressTested": false,
+  "fullIpv6DnsPacketCaptureTested": false,
+  "rebootSleepNetworkChangeTested": false,
+  "settingsPersistenceAfterCrashTested": false,
+  "nativeImeTested": false
+}

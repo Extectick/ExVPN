@@ -55,6 +55,22 @@ widget/update tests, 2 теста границ fixture bind, Go vet и PowerShel
 После Restore служба Running с исходным client path; TUN и guard отсутствуют,
 хеш отсортированных маршрутов IPv4/IPv6 и DNS совпадает с исходным.
 
+Повтор **16:47:39–16:51:26 UTC** прошёл после штатного NSIS upgrade
+**0.1.0+2 → 0.1.0+3**, exit 0. Весь сценарий протоколов/отказов повторён;
+`transport_unreachable` и `guard_recovered` теперь доходят до UI как разрешённые
+коды. Вместо общей ошибки показаны причина потери сервера и объяснение блокировки
+после рестарта; для активной блокировки кнопка называется «Отключить».
+[Отчёт +3](evidence/windows-scm-failure-build3.json),
+[обрыв сервера](evidence/windows-server-outage-build3.png),
+[рестарт](evidence/windows-scm-restarted-build3.png).
+Исправление [e22a748](https://github.com/Extectick/ExVPN/commit/e22a748dd1fde206dd4fed8208e93b329636b652);
+стенд после upgrade [f83ab84](https://github.com/Extectick/ExVPN/commit/f83ab845515d7f9a0208422d06458de2076c6d9c).
+18 релевантных Flutter tests, analyze, ordinary/QA Windows Release и NSIS build
+прошли; неизвестные native-коды/сообщения по-прежнему не раскрываются.
+Установщик +3: 34 932 972 байта, SHA-256
+`51b7c1327b3e4dcc58ab5afbba6dc7c46f5837f034135f894e2bda1904661f05`.
+Он остаётся unsigned development; release gate защиты не изменён.
+
 `apps/exvpn/integration_test/windows_sandbox_test.dart` — отдельная точка входа,
 собираемая в отдельной копии исходников под `artifacts/windows/`. Обычный
 установщик содержит `lib/main.dart`, а QA-код не подменяет установленный UI.
@@ -119,6 +135,8 @@ entry point и изменение сети. Полный репозиторий/
 6. `wsb exec --run-as System`: `guest-app-qa.ps1 -Action Setup -ConfirmDisposableGuest`.
    Для повтора с существующим QA tree — `-Action Refresh`; версия службы должна
    оставаться той же. Обычный UI должен быть закрыт, TUN отсутствовать.
+   После обычного UI upgrade Refresh допускает рост build только при сохранённых
+   service SHA-256/owner SID и production binding; downgrade отвергается.
 7. `wsb exec --run-as ExistingLogin`: `guest-app-launch.ps1 -ConfirmDisposableGuest`.
    Ждать завершения, читать `flutter-report.json` и `exit-report.json`.
    Успех требует **frameworkPassed=true, allProtocolsPassed=true, exitCode=0**.
