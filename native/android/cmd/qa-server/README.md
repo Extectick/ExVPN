@@ -1,8 +1,9 @@
-# Android protocol QA server
+# Local protocol QA server
 
-Local fixture for the API36 emulator. This command is not included in the app or
-release packaging. It binds only IPv4 loopback, uses the pinned Xray module, and
-does not change host routes, firewall, DNS or certificate stores.
+Local fixture for Android emulators and Windows Sandbox. This command is not
+included in the app or release packaging. It uses the pinned Xray module and
+does not change host routes, firewall, DNS or certificate stores. By default it
+binds IPv4 loopback and advertises the Android emulator alias `10.0.2.2`.
 
 ```powershell
 . ./scripts/bootstrap/enter-environment.ps1
@@ -18,6 +19,14 @@ VLESS XHTTP, XHTTP REALITY, VMess and Shadowsocks. Import `subscription.b64` usi
 the app's Text dialog. Do not print, commit or capture the populated form. The
 URI host is Android Emulator's host-loopback gateway; this bundle is not intended
 for physical devices. Stop with Ctrl+C and discard the stale test subscription.
+
+For Windows Sandbox, explicitly pass `-listen-address <host-vEthernet-IPv4>` and
+the identical `-client-address`. The address must belong to a local interface;
+wildcards, multicast, IPv6 and mismatched client addresses are rejected. Map only
+the run's private fixture directory read-only into the disposable guest. This
+makes the fixture reachable on that virtual interface, without opening a listener
+on every host interface. Stop the owned fixture process after QA. Guest and host
+may share an external IP; this topology alone cannot prove different egress IPs.
 
 REALITY's camouflage server is an ephemeral local TLS1.3 HTTP/2 endpoint. Its
 certificate is never trusted globally. REALITY peers authenticate using their

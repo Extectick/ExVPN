@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:exvpn/main.dart';
+import 'package:exvpn/build_identity.dart';
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -254,7 +255,7 @@ void main() {
     expect(preview, isNot(contains('PRIVATE_SUBSCRIPTION_NAME')));
     expect(preview, isNot(contains('sample.invalid')));
     expect(preview, isNot(contains('00000000-0000-4000-8000-000000000001')));
-    expect((jsonDecode(preview) as Map)['version'], '0.1.0+1');
+    expect((jsonDecode(preview) as Map)['version'], appVersionLabel);
     await _tap(tester, find.text('Копировать'));
     expect(copied, preview);
     expect(find.text('Отчёт скопирован'), findsOneWidget);

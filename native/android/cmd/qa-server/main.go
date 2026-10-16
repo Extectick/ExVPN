@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Local-only, ephemeral protocol fixtures for Android emulator integration QA.
+// Local, ephemeral protocol fixtures for emulator and Windows Sandbox QA.
 // This executable is not an application/server distribution component.
 package main
 
@@ -46,14 +46,41 @@ type fixture struct {
 
 func main() {
 	output := flag.String("output-dir", "", "Required destination inside an ignored .private directory")
+	listen := flag.String("listen-address", "127.0.0.1", "Explicit local IPv4 address; never a wildcard")
+	client := flag.String("client-address", "10.0.2.2", "Same address, or Android emulator alias for loopback")
 	flag.Parse()
-	if err := run(*output); err != nil {
+	if flag.NArg() != 0 || !validFixtureAddress(*listen, *client) {
+		fmt.Println("qa_fixture_address_rejected")
+		os.Exit(2)
+	}
+	if err := run(*output, *listen, *client); err != nil {
 		fmt.Println("qa_fixture_failed")
 		os.Exit(1)
 	}
 }
 
-func run(output string) error {
+func validFixtureAddress(listen, client string) bool {
+	ip := net.ParseIP(listen)
+	if ip == nil || ip.To4() == nil || ip.IsUnspecified() || ip.IsMulticast() || ip.IsLinkLocalUnicast() {
+		return false
+	}
+	if client != listen && !(listen == "127.0.0.1" && client == "10.0.2.2") {
+		return false
+	}
+	addresses, err := net.InterfaceAddrs()
+	if err != nil {
+		return false
+	}
+	for _, address := range addresses {
+		value, _, err := net.ParseCIDR(address.String())
+		if err == nil && value.Equal(ip) {
+			return true
+		}
+	}
+	return false
+}
+
+func run(output, listen, client string) error {
 	abs, err := filepath.Abs(output)
 	if err != nil || output == "" {
 		return fmt.Errorf("private_output_required")
@@ -82,7 +109,7 @@ func run(output string) error {
 	defer camouflage.Close()
 	var fixtures []fixture
 	for _, name := range []string{"VLESS TCP", "VLESS REALITY", "VLESS Vision", "VLESS XHTTP", "XHTTP REALITY", "VMess", "Shadowsocks"} {
-		f, err := makeFixture(name, strings.TrimPrefix(camouflage.URL, "https://"))
+		f, err := makeFixture(name, strings.TrimPrefix(camouflage.URL, "https://"), listen, client)
 		if err != nil {
 			return err
 		}
@@ -156,8 +183,8 @@ func run(output string) error {
 	}
 }
 
-func makeFixture(name, camouflage string) (fixture, error) {
-	l, err := net.Listen("tcp4", "127.0.0.1:0")
+func makeFixture(name, camouflage, listen, client string) (fixture, error) {
+	l, err := net.Listen("tcp4", net.JoinHostPort(listen, "0"))
 	if err != nil {
 		return fixture{}, err
 	}
@@ -202,11 +229,11 @@ func makeFixture(name, camouflage string) (fixture, error) {
 			query.Set("flow", "xtls-rprx-vision")
 		}
 	}
-	link := (&url.URL{Scheme: "vless", User: url.User(id), Host: net.JoinHostPort("10.0.2.2", strconv.Itoa(port)), RawQuery: query.Encode(), Fragment: name}).String()
+	link := (&url.URL{Scheme: "vless", User: url.User(id), Host: net.JoinHostPort(client, strconv.Itoa(port)), RawQuery: query.Encode(), Fragment: name}).String()
 	if name == "VMess" {
 		protocol = "vmess"
 		settings = object{"clients": []any{object{"id": id, "alterId": 0}}}
-		encoded, _ := json.Marshal(object{"v": "2", "ps": name, "add": "10.0.2.2", "port": strconv.Itoa(port), "id": id, "aid": "0", "scy": "auto", "net": "tcp", "type": "none", "tls": ""})
+		encoded, _ := json.Marshal(object{"v": "2", "ps": name, "add": client, "port": strconv.Itoa(port), "id": id, "aid": "0", "scy": "auto", "net": "tcp", "type": "none", "tls": ""})
 		link = "vmess://" + base64.StdEncoding.EncodeToString(encoded)
 	}
 	if name == "Shadowsocks" {
@@ -218,7 +245,7 @@ func makeFixture(name, camouflage string) (fixture, error) {
 		password := base64.RawURLEncoding.EncodeToString(secret)
 		settings = object{"method": "chacha20-ietf-poly1305", "password": password, "network": "tcp,udp"}
 		userinfo := base64.RawURLEncoding.EncodeToString([]byte("chacha20-ietf-poly1305:" + password))
-		link = "ss://" + userinfo + "@10.0.2.2:" + strconv.Itoa(port) + "#" + name
+		link = "ss://" + userinfo + "@" + net.JoinHostPort(client, strconv.Itoa(port)) + "#" + name
 	}
-	return fixture{Name: name, Port: port, Link: link, Inbound: object{"tag": name, "listen": "127.0.0.1", "port": port, "protocol": protocol, "settings": settings, "streamSettings": stream}}, nil
+	return fixture{Name: name, Port: port, Link: link, Inbound: object{"tag": name, "listen": listen, "port": port, "protocol": protocol, "settings": settings, "streamSettings": stream}}, nil
 }
