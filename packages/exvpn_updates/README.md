@@ -43,7 +43,7 @@ and separate processes fail `busy` immediately when a stage owns the lease.
 POSIX process-level advisory locks do not synchronize Dart isolates. Always
 activate/cancel each stage. The OS releases the file lock after process death.
 
-Validation (Dart 3.13.5, Windows): `dart analyze`, `dart test` — 23 passing tests,
+Validation (Dart 3.13.5, Windows): `dart analyze`, `dart test` — 24 passing tests,
 including real localhost TLS, signature tamper, interrupted transfer, ENOSPC,
 recovery, replay/path denial and concurrent writers. Hardware power-loss,
 Android filesystem and production delivery remain integration acceptance work.
@@ -51,3 +51,7 @@ Android filesystem and production delivery remain integration acceptance work.
 Runtime: `crypto 3.0.7` and `cryptography 2.9.0`. Test-only RSA certificate helper:
 `pointycastle 4.0.0`. Exact versions and hashes are in `pubspec.lock`; license
 texts are in `third_party`. Own source: Apache-2.0.
+
+An offline authoring CLI with 7 additional tests is described in
+[tool/README.md](tool/README.md). It accepts an existing private seed file and
+writes a new signed data directory; it never creates production keys or publishes.
