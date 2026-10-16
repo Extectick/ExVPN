@@ -1,6 +1,26 @@
 # SPDX-License-Identifier: Apache-2.0
 Set-StrictMode -Version Latest
 
+function Assert-ServiceControlAcl([string]$Sddl) {
+    $descriptor = [Security.AccessControl.RawSecurityDescriptor]::new($Sddl.Trim())
+    $dacl = $descriptor.DiscretionaryAcl
+    $expected = @{'S-1-5-18'=0xF01FF; 'S-1-5-32-544'=0xF01FF; 'S-1-5-4'=0x2008D}
+    if (!$dacl -or $dacl.Count -ne $expected.Count) { throw 'Unexpected service control ACL.' }
+    $seen = @{}
+    foreach ($ace in $dacl) {
+        if ($ace -isnot [Security.AccessControl.CommonAce] -or $ace.IsCallback -or
+            $ace.AceQualifier -ne [Security.AccessControl.AceQualifier]::AccessAllowed -or
+            $ace.AceFlags -ne [Security.AccessControl.AceFlags]::None) { throw 'Unexpected service control ACE.' }
+        $sid = $ace.SecurityIdentifier.Value
+        $mask = $ace.AccessMask
+        # SCM expands GENERIC_ALL to SERVICE_ALL_ACCESS on readback. Compare
+        # effective rights, including the exact restricted interactive mask.
+        if ($mask -eq 0x10000000) { $mask = 0xF01FF }
+        if (!$expected.ContainsKey($sid) -or $seen.ContainsKey($sid) -or $mask -ne $expected[$sid]) { throw 'Unexpected service control permissions.' }
+        $seen[$sid] = $true
+    }
+}
+
 function New-MachineMaintenanceMutex([string]$Name, [Security.AccessControl.MutexSecurity]$Security) {
     $created = $false
     [Threading.Mutex]::new($false, $Name, [ref]$created, $Security)

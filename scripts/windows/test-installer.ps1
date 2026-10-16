@@ -12,6 +12,21 @@ function Must-Reject([scriptblock]$Operation, [string]$Name) {
     try { & $Operation } catch { $rejected = $true }
     if (!$rejected) { throw "Expected rejection: $Name" }
 }
+$serviceAcl = 'D:(A;;GA;;;SY)(A;;GA;;;BA)(A;;CCLCSWLORC;;;IU)'
+Assert-ServiceControlAcl $serviceAcl
+# Exact SCM readback from Windows Sandbox; the OS audit SACL is independent.
+Assert-ServiceControlAcl 'D:(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWLORC;;;IU)S:(AU;FA;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;WD)'
+foreach ($bad in @(
+    'D:NO_ACCESS_CONTROL',
+    'D:',
+    'D:(A;;GA;;;SY)(A;;GA;;;BA)',
+    'D:(A;;GA;;;SY)(A;;GA;;;BA)(A;;GA;;;IU)',
+    'D:(A;;GA;;;SY)(A;;GA;;;BA)(A;;CCLCSWLORC;;;IU)(A;;RP;;;WD)',
+    'D:(A;;GA;;;SY)(A;;GA;;;SY)(A;;CCLCSWLORC;;;IU)',
+    'D:(D;;GA;;;SY)(A;;GA;;;BA)(A;;CCLCSWLORC;;;IU)',
+    'D:(A;CI;GA;;;SY)(A;;GA;;;BA)(A;;CCLCSWLORC;;;IU)',
+    'D:(A;;GA;;;SY)(A;;GA;;;BA)(A;;CCLCSWRPLORC;;;IU)'
+)) { Must-Reject { Assert-ServiceControlAcl $bad } 'unsafe service DACL' }
 $known = Join-Path $root 'owned.txt'; Set-Content -LiteralPath $known -Value 'fixture'
 $records = @(Get-TreeManifest $root)
 Assert-TreeManifest $root $records

@@ -86,6 +86,9 @@ function Create-OwnedService($State) {
     New-Service -Name ExVPNService -BinaryPathName (Get-ExpectedServiceCommand $State) -DisplayName 'ExVPN Service' -Description 'ExVPN controlled tunnel service' -StartupType Automatic -DependsOn BFE | Out-Null
     & "$env:SystemRoot\System32\sc.exe" sdset ExVPNService 'D:(A;;GA;;;SY)(A;;GA;;;BA)(A;;CCLCSWLORC;;;IU)' | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Service ACL configuration failed.' }
+    $serviceAcl = & "$env:SystemRoot\System32\sc.exe" sdshow ExVPNService
+    if ($LASTEXITCODE -ne 0) { throw 'Service ACL readback failed.' }
+    Assert-ServiceControlAcl ($serviceAcl -join '')
     Start-Service ExVPNService
     (Get-Service ExVPNService).WaitForStatus([ServiceProcess.ServiceControllerStatus]::Running,[TimeSpan]::FromSeconds(15))
 }

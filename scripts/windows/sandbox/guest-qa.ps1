@@ -86,7 +86,8 @@ try {
     }
     Pass 'install_service_and_protected_manifests'
     $serviceAcl = & "$env:SystemRoot\System32\sc.exe" sdshow ExVPNService
-    if ($LASTEXITCODE -ne 0 -or ($serviceAcl -join '') -notmatch '\(A;;GA;;;SY\)' -or ($serviceAcl -join '') -notmatch '\(A;;GA;;;BA\)') { throw 'Service ACL readback failed.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Service ACL readback failed.' }
+    Assert-ServiceControlAcl ($serviceAcl -join '')
     Pass 'service_control_acl'
     Invoke-Maintenance 'RECOVER'
     if ((Get-Service ExVPNService).Status -ne 'Stopped' -or (Get-NetAdapter -Name 'ExVPN-Tunnel' -ErrorAction SilentlyContinue)) { throw 'Recovery did not leave the owned service stopped with no tunnel.' }

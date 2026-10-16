@@ -120,8 +120,15 @@ func guardKey(index int) windows.GUID {
 func utf16(s string) *uint16 { p, _ := windows.UTF16PtrFromString(s); return p }
 func wfpCall(proc *windows.LazyProc, args ...uintptr) error {
 	r, _, _ := proc.Call(args...)
-	if r != 0 {
-		return windows.Errno(r)
+	return wfpResult(r)
+}
+func wfpResult(r uintptr) error {
+	// Fwpm APIs return a DWORD, not a pointer-sized value. On x64 Windows
+	// FwpmFilterGetByKey0 can sign-extend failure codes into RAX. Only the low
+	// 32 bits belong to the result; preserve comparisons with FWP_E_* codes.
+	code := uint32(r)
+	if code != 0 {
+		return windows.Errno(code)
 	}
 	return nil
 }
