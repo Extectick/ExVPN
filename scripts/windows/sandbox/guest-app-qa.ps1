@@ -112,7 +112,9 @@ if ($Action -eq 'Setup') {
     Assert-ProtectedPackage (Split-Path $stateFile)
     $state = Get-Content -LiteralPath $stateFile -Raw | ConvertFrom-Json
     $service = Get-CimInstance Win32_Service -Filter "Name='ExVPNService'"
-    if ($service.PathName -cne $state.qaCommand -or $service.StartName -ne 'LocalSystem' -or (Get-FileHash -LiteralPath $serviceExe).Hash.ToLowerInvariant() -cne $state.serviceSha256) { throw 'QA service ownership changed; no automatic cleanup.' }
+    # Restore is idempotent for the same protected service/installer identity.
+    # A repeated cleanup may restart the production binding to drop cached trust.
+    if (($service.PathName -cne $state.qaCommand -and $service.PathName -cne $state.original) -or $service.StartName -ne 'LocalSystem' -or (Get-FileHash -LiteralPath $serviceExe).Hash.ToLowerInvariant() -cne $state.serviceSha256) { throw 'QA service ownership changed; no automatic cleanup.' }
     foreach ($process in Get-Process -Name exvpn -ErrorAction SilentlyContinue) {
         if ($process.Path -ine (Join-Path $qaRoot 'exvpn.exe')) { throw 'An unrelated ExVPN process is running.' }
         Stop-Process -Id $process.Id -Force

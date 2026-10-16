@@ -20,7 +20,7 @@ const _input = r'C:\ExVPN-App-QA';
 const _output = r'C:\ExVPN-App-QA-Results';
 const _private = r'C:\ExVPN-App-QA-Private';
 const _installed = r'C:\Program Files\ExVPN UI QA';
-const _names = [
+const _fixtureNames = [
   'VLESS TCP',
   'VLESS REALITY',
   'VLESS Vision',
@@ -33,6 +33,8 @@ const _names = [
 Future<void> main() async {
   // Refuse to initialize any VPN code outside the explicitly staged guest.
   late Map<String, dynamic> marker;
+  var names = _fixtureNames;
+  var importedNames = _fixtureNames;
   try {
     marker = jsonDecode(
       await File('$_input\\sandbox-bundle.json').readAsString(),
@@ -44,8 +46,29 @@ Future<void> main() async {
         Platform.environment['COMPUTERNAME']?.toLowerCase() ==
             (marker['forbiddenHost'] as String).toLowerCase() ||
         !await Directory(_output).exists() ||
-        !await File('$_private\\subscription.txt').exists()) {
+        !await File(
+          '$_private\\${marker['providerMatrix'] == true ? 'provider-subscription.txt' : 'subscription.txt'}',
+        ).exists()) {
       exit(78);
+    }
+    if (marker['providerMatrix'] == true) {
+      if (marker['faults'] == true) exit(78);
+      final cases = jsonDecode(
+        await File('$_private\\provider-cases.json').readAsString(),
+      ) as Map;
+      names = (cases['selected'] as List).cast<String>();
+      importedNames = (cases['imported'] as List).cast<String>();
+      if (names.isEmpty ||
+          names.length > 100 ||
+          importedNames.length > 5000 ||
+          names.toSet().length != names.length ||
+          importedNames.any(
+            (name) =>
+                !RegExp(r'^Provider node [1-9][0-9]{0,3}$').hasMatch(name),
+          ) ||
+          names.any((name) => !importedNames.contains(name))) {
+        exit(78);
+      }
     }
   } catch (_) {
     exit(78);
@@ -65,6 +88,7 @@ Future<void> main() async {
     'faultsRequested': marker['faults'] == true,
     'faultsPassed': false,
     'runId': marker['runId'],
+    'providerMatrix': marker['providerMatrix'] == true,
     'profiles': <Object?>[],
   };
   Future<void> save() => File('$_output\\flutter-report.json').writeAsString(
@@ -171,18 +195,20 @@ Future<void> main() async {
       );
       await tester.enterText(
         find.byKey(const Key('subscription-input')),
-        await File('$_private\\subscription.txt').readAsString(),
+        await File(
+          '$_private\\${marker['providerMatrix'] == true ? 'provider-subscription.txt' : 'subscription.txt'}',
+        ).readAsString(),
       );
       // No image is captured while the private input is displayed.
       await _tap(tester, find.byKey(const Key('import-submit')));
       await _until(tester, () => controller.groups.length == 1, 10);
       expect(
         controller.groups.single.servers.map((e) => e.name).toSet(),
-        _names.toSet(),
+        importedNames.toSet(),
       );
       report['importedCount'] = controller.groups.single.servers.length;
       await snapshot('imported');
-      for (final name in _names) {
+      for (final name in names) {
         final result = <String, Object?>{'name': name, 'passed': false};
         results.add(result);
         await progress('connecting $name');
@@ -237,6 +263,17 @@ Future<void> main() async {
             204,
             reason: 'Independent hostname HTTPS failed',
           );
+          if (marker['providerMatrix'] == true) {
+            final baselineHash = (report['baseline'] as Map)['egressIpSha256'];
+            expect(baselineHash, isA<String>());
+            expect(numeric['egressIpSha256'], isA<String>());
+            expect(
+              numeric['egressIpSha256'],
+              isNot(baselineHash),
+              reason: 'Provider egress must differ from the direct baseline',
+            );
+            result['distinctEgress'] = true;
+          }
           await _until(
             tester,
             () =>
@@ -246,7 +283,7 @@ Future<void> main() async {
             10,
           );
           result['trafficCountersIncreased'] = true;
-          await snapshot('connected-${_names.indexOf(name)}');
+          await snapshot('connected-${names.indexOf(name)}');
           await _tap(tester, find.byKey(const Key('connect-button')));
           await _until(
             tester,
@@ -282,6 +319,9 @@ Future<void> main() async {
       report['allProtocolsPassed'] = results.every(
         (r) => (r as Map)['passed'] == true,
       );
+      report['distinctEgressTested'] =
+          marker['providerMatrix'] == true &&
+          results.every((r) => (r as Map)['distinctEgress'] == true);
       if (marker['faults'] == true && report['allProtocolsPassed'] == true) {
         final faults = <String, Object?>{};
         report['faults'] = faults;

@@ -8,7 +8,9 @@ $outputRoot='C:\ExVPN-App-QA-Results'
 $serviceExe='C:\Program Files\ExVPN Service\exvpn-service.exe'
 if (!$ConfirmDisposableGuest -or [Security.Principal.WindowsIdentity]::GetCurrent().User.Value -ne 'S-1-5-18' -or [IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\') -ine $inputRoot) { throw 'Disposable System runner required.' }
 $marker=Get-Content -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Raw | ConvertFrom-Json
-if (!$marker.forbiddenHost -or $env:COMPUTERNAME -ieq $marker.forbiddenHost -or !$marker.faults -or $marker.runId -notmatch '^[a-f0-9-]{36}$') { throw 'Fault-enabled guest marker required.' }
+$providerOnly = $marker.PSObject.Properties['providerMatrix'] -and $marker.providerMatrix
+if (!$marker.forbiddenHost -or $env:COMPUTERNAME -ieq $marker.forbiddenHost -or (!$marker.faults -and !$providerOnly) -or $marker.runId -notmatch '^[a-f0-9-]{36}$') { throw 'Explicit network QA guest marker required.' }
+if ($providerOnly -and $Action -eq 'Crash') { throw 'Provider QA cannot inject a service crash.' }
 trap {
     if (Test-Path -LiteralPath $outputRoot -PathType Container) {
         [ordered]@{action=$Action;error=$_.Exception.Message} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $outputRoot 'fault-control-error.json') -Encoding utf8

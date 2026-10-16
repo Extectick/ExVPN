@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #requires -Version 7.0
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$Installer,[switch]$IncludeFaults,[switch]$PolicyRecovery,[switch]$Unelevated)
+param([Parameter(Mandatory)][string]$Installer,[switch]$IncludeFaults,[switch]$PolicyRecovery,[switch]$Unelevated,[switch]$ProviderMatrix)
 $ErrorActionPreference = 'Stop'
 if ($IncludeFaults -and $PolicyRecovery) { throw 'Choose either network faults or policy recovery for this QA bundle.' }
+if ($ProviderMatrix -and ($IncludeFaults -or $PolicyRecovery)) { throw 'Provider tests cannot stop external servers or mutate fault fixtures.' }
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $repository 'scripts/bootstrap/enter-environment.ps1')
 . (Join-Path $PSScriptRoot 'installer/package-common.ps1')
@@ -68,6 +69,6 @@ Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'installer/package-common.ps1'),
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'sandbox/guest-app-faults.ps1') -Destination $inputRoot
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'sandbox/guest-app-policy.ps1') -Destination $inputRoot
 $manifest = @(Get-TreeManifest $inputRoot)
-[ordered]@{format=1;forbiddenHost=$env:COMPUTERNAME;build=$build;runId=[Guid]::NewGuid().ToString();faults=[bool]($IncludeFaults -or $PolicyRecovery);policyRecovery=$(if ($PolicyRecovery) { 'reset' } else { $null });unelevated=[bool]$Unelevated;files=$manifest} | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Encoding utf8NoBOM
+[ordered]@{format=1;forbiddenHost=$env:COMPUTERNAME;build=$build;runId=[Guid]::NewGuid().ToString();faults=[bool]($IncludeFaults -or $PolicyRecovery);policyRecovery=$(if ($PolicyRecovery) { 'reset' } else { $null });unelevated=[bool]$Unelevated;providerMatrix=[bool]$ProviderMatrix;files=$manifest} | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Encoding utf8NoBOM
 [ordered]@{directory=$output;input=$inputRoot;output=$resultRoot} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $repository 'artifacts/windows/app-qa-latest.json') -Encoding utf8
 Write-Host "Prepared only, not executed: $output"
