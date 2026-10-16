@@ -42,9 +42,16 @@ type Controller struct {
 	stopping           bool
 	exclusions         []string
 	exclusionsKnown    bool
+	policy             PolicyStore
 }
 
 func NewController(g Guard, f TunnelFactory, validate func([]string) error, networkEnabled bool) (*Controller, error) {
+	return NewControllerWithPolicy(g, f, validate, networkEnabled, nil)
+}
+
+// The installed service always supplies durable storage. A nil store is limited
+// to isolated diagnostic/unit fixtures, whose former in-memory behavior remains.
+func NewControllerWithPolicy(g Guard, f TunnelFactory, validate func([]string) error, networkEnabled bool, policy PolicyStore) (*Controller, error) {
 	armed, err := g.Armed()
 	if err != nil {
 		return nil, Code("guard_inspection_failed")
@@ -55,6 +62,27 @@ func NewController(g Guard, f TunnelFactory, validate func([]string) error, netw
 		c.status.Code = "guard_recovered"
 	}
 	c.exclusionsKnown = !armed
+	c.policy = policy
+	if policy != nil {
+		paths, loadErr := policy.Load()
+		switch {
+		case loadErr == nil && validatePolicyPaths(paths) == nil:
+			c.exclusions = append([]string{}, paths...)
+			c.exclusionsKnown = true
+		case loadErr == policyMissing && !armed:
+			// Seed a genuinely new owner's key once. A later missing value is
+			// corruption, not permission to silently forget prior exclusions.
+			c.exclusionsKnown = policy.Save([]string{}) == nil
+			if !c.exclusionsKnown {
+				c.status.State, c.status.Code = "error", "exclusions_unavailable"
+			}
+		default:
+			c.exclusionsKnown = false
+			if !armed {
+				c.status.State, c.status.Code = "error", "exclusions_unavailable"
+			}
+		}
+	}
 	return c, nil
 }
 func (c *Controller) Status() Status { c.mu.Lock(); defer c.mu.Unlock(); return c.status }
@@ -89,18 +117,8 @@ func (c *Controller) Handle(r Request) Response {
 		}
 		return Response{Version: ProtocolVersion, ID: r.ID, OK: true, Code: "ok", Status: c.Status(), Exclusions: paths}
 	case "setExclusions":
-		if c.validateExclusions != nil && c.validateExclusions(r.Exclusions) != nil {
-			return Response{Version: ProtocolVersion, ID: r.ID, Code: "exclusions_rejected", Status: c.Status()}
-		}
-		c.mu.Lock()
-		busy := c.cancel != nil || c.tunnel != nil || c.stopping
-		if !busy {
-			c.exclusions = append([]string{}, r.Exclusions...)
-			c.exclusionsKnown = true
-		}
-		c.mu.Unlock()
-		if busy {
-			return Response{Version: ProtocolVersion, ID: r.ID, Code: "reconnect_required", Status: c.Status()}
+		if err := c.setExclusions(r.Exclusions); err != nil {
+			return Response{Version: ProtocolVersion, ID: r.ID, Code: safeCode(err, "native_storage_unavailable"), Status: c.Status()}
 		}
 	case "probe":
 		p, e := exvpn.DecodeProfile(bytes.NewReader(r.Profile))
@@ -110,38 +128,21 @@ func (c *Controller) Handle(r Request) Response {
 		result := c.Probe(p.ID)
 		return Response{Version: ProtocolVersion, ID: r.ID, OK: true, Code: "ok", Status: c.Status(), Probe: &result}
 	case "validate", "connect":
-		if r.Exclusions == nil {
-			c.mu.Lock()
-			known := c.exclusionsKnown
-			r.Exclusions = append([]string{}, c.exclusions...)
-			c.mu.Unlock()
-			if !known {
-				code = "exclusions_unavailable"
-				ok = false
-				break
-			}
-		}
 		p, e := exvpn.DecodeProfile(bytes.NewReader(r.Profile))
 		if e != nil {
 			code = "profile_rejected"
 			ok = false
 			break
 		}
-		if e = validateTunnelProfile(p, r.Exclusions); e != nil {
-			code = safeCode(e, "config_rejected")
-			ok = false
-			break
-		}
-		if c.validateExclusions != nil && c.validateExclusions(r.Exclusions) != nil {
-			code = "exclusions_rejected"
-			ok = false
-			break
-		}
 		if r.Command == "connect" {
-			if e = c.Connect(p, r.Exclusions); e != nil {
-				code = safeCode(e, "connect_failed")
-				ok = false
-			}
+			e = c.connectWithPolicy(p, r.Exclusions, r.Exclusions == nil)
+		} else {
+			c.mu.Lock()
+			_, e = c.resolvePolicyLocked(p, r.Exclusions, r.Exclusions == nil)
+			c.mu.Unlock()
+		}
+		if e != nil {
+			code, ok = safeCode(e, "config_rejected"), false
 		}
 	case "disconnect":
 		if e := c.Disconnect(); e != nil {
@@ -161,6 +162,49 @@ func safeCode(err error, fallback string) string {
 	return fallback
 }
 func (c *Controller) Connect(p exvpn.Profile, exclusions []string) error {
+	return c.connectWithPolicy(p, exclusions, false)
+}
+
+func (c *Controller) resolvePolicyLocked(p exvpn.Profile, paths []string, stored bool) ([]string, error) {
+	if stored {
+		if !c.exclusionsKnown {
+			return nil, Code("exclusions_unavailable")
+		}
+		paths = c.exclusions
+	}
+	if err := validateTunnelProfile(p, paths); err != nil {
+		return nil, err
+	}
+	if validatePolicyPaths(paths) != nil || (c.validateExclusions != nil && c.validateExclusions(paths) != nil) {
+		return nil, Code("exclusions_rejected")
+	}
+	return append([]string{}, paths...), nil
+}
+
+func (c *Controller) savePolicyLocked(paths []string) error {
+	if c.policy != nil && c.policy.Save(paths) != nil {
+		// A failed write/flush can have an unknown outcome. Do not publish a
+		// remembered list as confirmed or silently replace it with an empty one.
+		c.exclusionsKnown = false
+		return Code("native_storage_unavailable")
+	}
+	c.exclusions, c.exclusionsKnown = append([]string{}, paths...), true
+	return nil
+}
+
+func (c *Controller) setExclusions(paths []string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.closed || c.cancel != nil || c.tunnel != nil || c.stopping {
+		return Code("reconnect_required")
+	}
+	if validatePolicyPaths(paths) != nil || (c.validateExclusions != nil && c.validateExclusions(paths) != nil) {
+		return Code("exclusions_rejected")
+	}
+	return c.savePolicyLocked(paths)
+}
+
+func (c *Controller) connectWithPolicy(p exvpn.Profile, paths []string, stored bool) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.closed {
@@ -172,11 +216,16 @@ func (c *Controller) Connect(p exvpn.Profile, exclusions []string) error {
 	if c.cancel != nil || c.tunnel != nil || c.stopping {
 		return Code("connection_busy")
 	}
+	exclusions, err := c.resolvePolicyLocked(p, paths, stored)
+	if err != nil {
+		return err
+	}
+	if err = c.savePolicyLocked(exclusions); err != nil {
+		return err
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	c.cancel = cancel
 	c.context = ctx
-	c.exclusions = append([]string{}, exclusions...)
-	c.exclusionsKnown = true
 	c.generation++
 	generation := c.generation
 	c.status.State = "connecting"
@@ -318,7 +367,7 @@ func (c *Controller) Disconnect() error {
 	c.set("disconnected", "explicit_disconnect", false)
 	c.mu.Lock()
 	c.status.ActiveProfileID = ""
-	if !c.exclusionsKnown {
+	if !c.exclusionsKnown && c.policy == nil {
 		c.exclusions = []string{}
 		c.exclusionsKnown = true
 	}

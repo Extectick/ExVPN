@@ -29,7 +29,17 @@ func (h *Host) Execute(_ []string, requests <-chan svc.ChangeRequest, changes ch
 		return true, 1
 	}
 	guard := &WindowsGuard{}
-	c, e := NewController(guard, WindowsTunnelFactory(guard), ValidateExclusions, h.NetworkTesting)
+	var storage PolicyStore
+	policy, policyErr := openWindowsPolicyStore(h.Identity.SID)
+	if policyErr != nil {
+		// Keep IPC/explicit recovery available even if local policy storage is
+		// unavailable. No implicit empty exclusions or unguarded reconnect.
+		storage = unavailablePolicyStore{}
+	} else {
+		defer policy.Close()
+		storage = policy
+	}
+	c, e := NewControllerWithPolicy(guard, WindowsTunnelFactory(guard), ValidateExclusions, h.NetworkTesting, storage)
 	if e != nil {
 		return true, 2
 	}

@@ -16,6 +16,7 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
   final Set<String> _selected = {};
   String? _error;
   bool _saving = false;
+  bool _policyReadFailed = false;
   @override
   void initState() {
     super.initState();
@@ -23,8 +24,20 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
   }
 
   Future<void> _load() async {
+    if (!mounted) return;
+    setState(() {
+      _error = null;
+      _apps = null;
+      _selected.clear();
+      _policyReadFailed = false;
+    });
     try {
-      await widget.vpn.loadExclusions();
+      try {
+        await widget.vpn.loadExclusions();
+      } catch (_) {
+        _policyReadFailed = true;
+        rethrow;
+      }
       final apps = await widget.vpn.bridge.listApplications();
       if (!mounted) return;
       setState(() {
@@ -44,6 +57,26 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
               : 'Не удалось прочитать исключения.',
         );
       }
+    }
+  }
+
+  Future<void> _reset() async {
+    setState(() => _saving = true);
+    try {
+      // Recovery is a deliberate user action; a failed read never writes an
+      // empty list automatically or silently replaces confirmed preferences.
+      await widget.vpn.setExclusions({});
+      await _load();
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error is VpnFailure
+              ? vpnErrorText(error.code)
+              : 'Не удалось сбросить исключения.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -91,6 +124,26 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
               _error!,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
+          ),
+        if (_policyReadFailed)
+          Wrap(
+            alignment: WrapAlignment.center,
+            children: [
+              TextButton(
+                onPressed: _saving ? null : _load,
+                child: const Text('Повторить чтение'),
+              ),
+              TextButton(
+                key: const Key('reset-exclusions'),
+                onPressed:
+                    _saving ||
+                        widget.vpn.canDisconnect ||
+                        widget.vpn.commandPending
+                    ? null
+                    : _reset,
+                child: Text(_saving ? 'Сброс…' : 'Сбросить исключения'),
+              ),
+            ],
           ),
         Expanded(
           child: _apps == null

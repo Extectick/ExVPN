@@ -265,7 +265,7 @@ final class VpnController extends ChangeNotifier {
 
 String vpnErrorText(String? code) => switch (code) {
   'native_storage_unavailable' => 'Не удалось прочитать или сохранить защищённые настройки VPN. Соединение не восстановлено автоматически.',
-  'exclusions_unavailable' => 'Не удалось подтвердить сохранённые исключения. Перезапустите службу и повторите чтение настроек.',
+  'exclusions_unavailable' => 'Не удалось прочитать сохранённые исключения. Перезапустите службу или явно сбросьте список в настройках исключений.',
   'system_testing_required' => 'Эта сборка требует проверки VPN в Windows. Системное подключение ещё не разрешено установщиком.',
   'permission_denied' => 'Разрешите VPN в системном запросе.',
   'permission_cancelled' => 'Запрос подключения отменён.',

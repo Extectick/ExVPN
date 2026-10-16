@@ -371,6 +371,11 @@ Future<void> main() async {
         expect(vpn.lastErrorCode, 'guard_recovered');
         expect(find.textContaining('Служба VPN перезапущена.'), findsOneWidget);
         expect(find.text('Отключить'), findsOneWidget);
+        await vpn.loadExclusions();
+        expect(vpn.exclusions.map(_pathKey).toSet(), {
+          _pathKey('$_installed\\excluded-probe.exe'),
+        });
+        faults['exclusionsRestoredAfterServiceCrash'] = true;
         final recovered = await _probePair();
         faults['serviceRestart'] = recovered;
         for (final value in recovered.values.cast<Map>()) {
@@ -389,6 +394,11 @@ Future<void> main() async {
           30,
         );
         ownedAttempt = false;
+        await vpn.loadExclusions();
+        expect(vpn.exclusions.map(_pathKey).toSet(), {
+          _pathKey('$_installed\\excluded-probe.exe'),
+        });
+        faults['exclusionsRetainedAfterDisconnect'] = true;
         await vpn.setExclusions({});
         expect(vpn.exclusions, isEmpty);
         final restored = await _probePair();
