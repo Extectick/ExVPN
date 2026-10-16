@@ -28,6 +28,9 @@ func (h *Host) Execute(_ []string, requests <-chan svc.ChangeRequest, changes ch
 	if e != nil || u.User.Sid.String() != "S-1-5-18" {
 		return true, 1
 	}
+	if allowClientProcessQuery(h.Identity.SID) != nil {
+		return true, 7
+	}
 	guard := &WindowsGuard{}
 	var storage PolicyStore
 	policy, policyErr := openWindowsPolicyStore(h.Identity.SID)
