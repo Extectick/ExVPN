@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #requires -Version 7.0
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$Installer)
+param([Parameter(Mandatory)][string]$Installer,[switch]$IncludeFaults)
 $ErrorActionPreference = 'Stop'
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $repository 'scripts/bootstrap/enter-environment.ps1')
@@ -48,12 +48,16 @@ foreach ($file in Get-PackageTree $release | Where-Object { !$_.PSIsContainer })
 & (Join-Path $PSScriptRoot 'prepare-msvc-runtime.ps1') -UiDirectory $uiRoot
 & (Join-Path $repository '.tools/go/bin/go.exe') -C (Join-Path $repository 'native/windows') build -trimpath -o (Join-Path $uiRoot 'protected-probe.exe') ./cmd/qa-https
 if ($LASTEXITCODE -ne 0) { throw 'Probe compilation failed.' }
+Copy-Item -LiteralPath (Join-Path $uiRoot 'protected-probe.exe') -Destination (Join-Path $uiRoot 'excluded-probe.exe')
+& (Join-Path $repository '.tools/go/bin/go.exe') -C (Join-Path $repository 'native/windows') build -trimpath -o (Join-Path $uiRoot 'qa-guard.exe') ./cmd/qa-guard
+if ($LASTEXITCODE -ne 0) { throw 'Read-only guard observer compilation failed.' }
 Copy-Item -LiteralPath $installerPath -Destination (Join-Path $inputRoot 'installer.exe')
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'installer/package-common.ps1'),(Join-Path $PSScriptRoot 'sandbox/guest-app-qa.ps1'),(Join-Path $PSScriptRoot 'sandbox/guest-app-launch.ps1'),(Join-Path $PSScriptRoot 'sandbox/guest-app-upgrade.ps1') -Destination $inputRoot
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'sandbox/guest-app-faults.ps1') -Destination $inputRoot
 $version = Get-Content -LiteralPath (Join-Path $repository 'apps/exvpn/pubspec.yaml') -Raw
 if ($version -notmatch '(?m)^version:\s*(\d+\.\d+\.\d+)\+(\d+)\s*$') { throw 'Version missing.' }
 $build = [int]$Matches[2]
 $manifest = @(Get-TreeManifest $inputRoot)
-[ordered]@{format=1;forbiddenHost=$env:COMPUTERNAME;build=$build;files=$manifest} | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Encoding utf8
+[ordered]@{format=1;forbiddenHost=$env:COMPUTERNAME;build=$build;runId=[Guid]::NewGuid().ToString();faults=[bool]$IncludeFaults;files=$manifest} | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Encoding utf8
 [ordered]@{directory=$output;input=$inputRoot;output=$resultRoot} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $repository 'artifacts/windows/app-qa-latest.json') -Encoding utf8
 Write-Host "Prepared only, not executed: $output"

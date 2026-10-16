@@ -32,10 +32,11 @@ const _names = [
 
 Future<void> main() async {
   // Refuse to initialize any VPN code outside the explicitly staged guest.
+  late Map<String, dynamic> marker;
   try {
-    final marker = jsonDecode(
+    marker = jsonDecode(
       await File('$_input\\sandbox-bundle.json').readAsString(),
-    ) as Map;
+    ) as Map<String, dynamic>;
     if (!Platform.isWindows ||
         Platform.resolvedExecutable.toLowerCase() !=
             '$_installed\\exvpn.exe'.toLowerCase() ||
@@ -61,6 +62,9 @@ Future<void> main() async {
     'ordinaryUserTokenTested': false,
     'distinctEgressTested': false,
     'allProtocolsPassed': false,
+    'faultsRequested': marker['faults'] == true,
+    'faultsPassed': false,
+    'runId': marker['runId'],
     'profiles': <Object?>[],
   };
   Future<void> save() => File('$_output\\flutter-report.json').writeAsString(
@@ -187,7 +191,8 @@ Future<void> main() async {
           expect(vpn.status.connectedAt, isNotNull);
           // This is a release-acceptance claim, not the raw WFP latch. The
           // development bridge deliberately keeps it false until E1 is closed.
-          result['releaseProtectionClaimed'] = vpn.status.processCrashProtection;
+          result['releaseProtectionClaimed'] =
+              vpn.status.processCrashProtection;
           expect(vpn.status.processCrashProtection, isFalse);
           await progress('probing $name');
           final numeric = await _probe('numeric');
@@ -254,6 +259,134 @@ Future<void> main() async {
       report['allProtocolsPassed'] = results.every(
         (r) => (r as Map)['passed'] == true,
       );
+      if (marker['faults'] == true && report['allProtocolsPassed'] == true) {
+        final faults = <String, Object?>{};
+        report['faults'] = faults;
+        await progress('selecting exclusion');
+        final holder = await Process.start('$_installed\\excluded-probe.exe', [
+          '-mode',
+          'hold',
+        ]);
+        unawaited(holder.stdout.drain<void>());
+        unawaited(holder.stderr.drain<void>());
+        try {
+          await _tap(tester, find.byKey(const Key('settings-button')));
+          await _tap(tester, find.text('Исключения приложений'));
+          await progress('loading applications');
+          await _until(
+            tester,
+            () => find.byType(CheckboxListTile).evaluate().isNotEmpty,
+            20,
+          );
+          final excluded = find.byWidgetPredicate(
+            (widget) =>
+                widget is CheckboxListTile &&
+                widget.subtitle is Text &&
+                _pathKey((widget.subtitle as Text).data ?? '') ==
+                    _pathKey('$_installed\\excluded-probe.exe'),
+          );
+          await progress('finding excluded application');
+          await tester.scrollUntilVisible(
+            excluded,
+            250,
+            scrollable: find.byType(Scrollable).last,
+            maxScrolls: 40,
+          );
+          await _tap(tester, excluded);
+          await progress('saving exclusion');
+          await _tap(tester, find.text('Сохранить'));
+          await _until(
+            tester,
+            () => find.byType(CheckboxListTile).evaluate().isEmpty,
+            15,
+          );
+          // Outside the 600px settings sheet in the real desktop viewport.
+          await tester.tapAt(const Offset(4, 4));
+          await tester.pump(const Duration(milliseconds: 400));
+          expect(vpn.exclusions.map(_pathKey).toSet(), {
+            _pathKey('$_installed\\excluded-probe.exe'),
+          });
+          faults['exclusionSelectedThroughUi'] = true;
+        } finally {
+          holder.kill();
+          await holder.exitCode.timeout(const Duration(seconds: 10));
+        }
+        final group = controller.groups.single;
+        final server = group.servers.singleWhere((s) => s.name == 'VLESS TCP');
+        await _tap(
+          tester,
+          find.byKey(ValueKey('server-${group.id}-${server.id}')),
+        );
+        ownedAttempt = true;
+        await progress('connecting with exclusion');
+        await _tap(tester, find.byKey(const Key('connect-button')));
+        await _until(
+          tester,
+          () => !vpn.commandPending && vpn.status.phase == VpnPhase.connected,
+          70,
+        );
+        final connected = await _probePair();
+        faults['connected'] = connected;
+        expect((connected['protected'] as Map)['success'], isTrue);
+        expect((connected['excluded'] as Map)['success'], isTrue);
+        await snapshot('exclusion-connected');
+        await progress('stopping fixture');
+        await _coordinate(tester, marker, 1, 'stop-fixture');
+        final outage = await _probePair();
+        faults['serverOutage'] = outage;
+        expect((outage['protected'] as Map)['error'], 'network');
+        expect((outage['protected'] as Map)['success'], isFalse);
+        expect((outage['excluded'] as Map)['success'], isTrue);
+        await _until(
+          tester,
+          () => vpn.status.phase == VpnPhase.reconnecting,
+          40,
+        );
+        faults['outageDetectedByUi'] = true;
+        await snapshot('server-outage');
+        await progress('crashing SCM service');
+        await _coordinate(tester, marker, 2, 'crash-service');
+        final crashed = await _probePair();
+        faults['serviceCrash'] = crashed;
+        for (final value in crashed.values.cast<Map>()) {
+          expect(value['success'], isFalse);
+          expect(
+            value['error'],
+            'network',
+            reason: 'Process/JSON failure must not count as network blocking',
+          );
+        }
+        await _until(tester, () => vpn.status.phase == VpnPhase.error, 15);
+        faults['serviceLossDetectedByUi'] = true;
+        await snapshot('service-crashed');
+        await progress('restarting SCM service');
+        await _coordinate(tester, marker, 3, 'restart-service');
+        await _until(tester, () => vpn.status.phase == VpnPhase.blocked, 20);
+        final recovered = await _probePair();
+        faults['serviceRestart'] = recovered;
+        for (final value in recovered.values.cast<Map>()) {
+          expect(value['success'], isFalse);
+          expect(value['error'], 'network');
+        }
+        faults['restartRemainedBlocked'] = true;
+        await snapshot('service-restarted-blocked');
+        await progress('explicit recovery disconnect');
+        await _tap(tester, find.byKey(const Key('connect-button')));
+        await _until(
+          tester,
+          () =>
+              !vpn.commandPending && vpn.status.phase == VpnPhase.disconnected,
+          30,
+        );
+        ownedAttempt = false;
+        await vpn.setExclusions({});
+        expect(vpn.exclusions, isEmpty);
+        final restored = await _probePair();
+        faults['explicitRecovery'] = restored;
+        expect((restored['protected'] as Map)['success'], isTrue);
+        expect((restored['excluded'] as Map)['success'], isTrue);
+        report['faultsPassed'] = true;
+      }
       report['afterDisconnect'] = await _probe('numeric');
       report['cleanupDisconnected'] = vpn.status.phase == VpnPhase.disconnected;
       await progress('completed');
@@ -263,6 +396,7 @@ Future<void> main() async {
         reason: 'See sanitized per-protocol report',
       );
       expect((report['afterDisconnect'] as Map)['success'], isTrue);
+      if (marker['faults'] == true) expect(report['faultsPassed'], isTrue);
       expect(tester.takeException(), isNull);
     } finally {
       if (ownedAttempt) {
@@ -296,12 +430,13 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.pump(const Duration(milliseconds: 350));
 }
 
-Future<Map<String, dynamic>> _probe(String mode) async {
+Future<Map<String, dynamic>> _probe(
+  String mode, {
+  bool excluded = false,
+}) async {
   try {
-    final process = await Process.start('$_installed\\protected-probe.exe', [
-      '-mode',
-      mode,
-    ]);
+    final name = excluded ? 'excluded-probe.exe' : 'protected-probe.exe';
+    final process = await Process.start('$_installed\\$name', ['-mode', mode]);
     final stdout = process.stdout.transform(utf8.decoder).join();
     // The fixed probe has a 15 s network deadline; enforce a process deadline too.
     final stderr = process.stderr.drain<void>();
@@ -331,4 +466,41 @@ Future<Map<String, dynamic>> _probe(String mode) async {
   } catch (_) {
     return {'success': false, 'error': 'probe_process'};
   }
+}
+
+Future<Map<String, Object?>> _probePair() async {
+  final values = await Future.wait([
+    _probe('numeric'),
+    _probe('numeric', excluded: true),
+  ]);
+  return {'protected': values[0], 'excluded': values[1]};
+}
+
+String _pathKey(String path) => path.replaceAll('\\', '/').toLowerCase();
+
+Future<void> _coordinate(
+  WidgetTester tester,
+  Map<String, dynamic> marker,
+  int step,
+  String action,
+) async {
+  final temporary = File('$_output\\fault-request.tmp');
+  await temporary.writeAsString(
+    jsonEncode({'runId': marker['runId'], 'step': step, 'action': action}),
+    flush: true,
+  );
+  await temporary.rename('$_output\\fault-request.json');
+  final deadline = DateTime.now().add(const Duration(seconds: 70));
+  while (DateTime.now().isBefore(deadline)) {
+    final file = File('$_output\\fault-ack.json');
+    if (await file.exists()) {
+      final ack = jsonDecode(await file.readAsString()) as Map;
+      if (ack['runId'] == marker['runId'] && ack['step'] == step) {
+        if (ack['ok'] != true) throw StateError('fault_coordinator_rejected');
+        return;
+      }
+    }
+    await tester.pump(const Duration(milliseconds: 200));
+  }
+  throw StateError('fault_coordinator_timeout');
 }

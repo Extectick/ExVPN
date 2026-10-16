@@ -19,10 +19,16 @@ import (
 )
 
 func main() {
-	mode := flag.String("mode", "numeric", "numeric, health or dns-tun")
+	mode := flag.String("mode", "numeric", "numeric, health, dns-tun or hold")
 	flag.Parse()
-	if (*mode != "health" && *mode != "numeric" && *mode != "dns-tun") || flag.NArg() != 0 {
+	if (*mode != "health" && *mode != "numeric" && *mode != "dns-tun" && *mode != "hold") || flag.NArg() != 0 {
 		fmt.Println(`{"error":"invalid_mode"}`)
+		return
+	}
+	if *mode == "hold" {
+		// Keep this exact executable discoverable in the real application list.
+		// No network is opened; the test terminates its own child after selection.
+		time.Sleep(90 * time.Second)
 		return
 	}
 	if *mode == "dns-tun" {
