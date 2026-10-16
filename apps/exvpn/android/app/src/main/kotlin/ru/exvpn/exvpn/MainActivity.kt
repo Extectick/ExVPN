@@ -11,11 +11,21 @@ import io.flutter.plugin.common.MethodChannel
 import org.json.JSONObject
 
 class MainActivity : FlutterActivity() {
+    private var qrPicker: QrImagePicker? = null
+    private var qrChannel: MethodChannel? = null
     private var permissionResult: MethodChannel.Result? = null
     private var permissionRequest: ConnectRequest? = null
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
+        qrPicker = QrImagePicker(this)
+        qrChannel = MethodChannel(messenger, "exvpn/qr_import").also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                if (call.method == "pickImage") qrPicker?.pick(result)
+                    ?: result.error("unreadable", "QR image could not be read", null)
+                else result.notImplemented()
+            }
+        }
         EventChannel(messenger, "exvpn/vpn_state").setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(arguments: Any?, events: EventChannel.EventSink) { VpnRuntime.stateSink = events; events.success(VpnRuntime.status()) }
             override fun onCancel(arguments: Any?) { VpnRuntime.stateSink = null }
@@ -88,6 +98,7 @@ class MainActivity : FlutterActivity() {
         result.success(null)
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (qrPicker?.onActivityResult(requestCode, resultCode, data) == true) return
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode != VPN_PERMISSION) return
         val result = permissionResult; val request = permissionRequest
@@ -97,6 +108,13 @@ class MainActivity : FlutterActivity() {
             VpnRuntime.publish("error", error = "permission_denied")
             result.error("permission_denied", "VPN permission was not granted", null)
         }
+    }
+    override fun onDestroy() {
+        qrPicker?.dispose()
+        qrPicker = null
+        qrChannel?.setMethodCallHandler(null)
+        qrChannel = null
+        super.onDestroy()
     }
     companion object { private const val VPN_PERMISSION = 7001 }
 }

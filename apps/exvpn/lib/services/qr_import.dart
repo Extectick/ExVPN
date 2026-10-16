@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:zxing2/qrcode.dart';
 
 enum QrImportError {
@@ -24,11 +25,22 @@ final class QrImportException implements Exception {
 const qrMaxBytes = 5 * 1024 * 1024;
 const qrMaxPixels = 4 * 1024 * 1024;
 const qrMaxCandidates = 128;
+const _androidQrImport = MethodChannel('exvpn/qr_import');
 
 /// Reading a QR never follows its URL or imports a profile. The dialog previews
 /// the result and reuses the normal validated import only after confirmation.
 Future<String?> pickQrText() async {
   try {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      // The native reader bounds bytes/deadline before returning any data and
+      // does not create a cache copy. file_selector_android eagerly reads and
+      // copies the entire content URI before Dart can enforce its limits.
+      // Picker cancellation and the read deadline belong to the native bridge;
+      // a Dart timeout here would leave its pending native operation running.
+      final bytes = await _androidQrImport.invokeMethod<Uint8List>('pickImage');
+      if (bytes == null) return null;
+      return await decodeQrImage(bytes);
+    }
     final file = await openFile(
       acceptedTypeGroups: const [
         XTypeGroup(
@@ -43,16 +55,26 @@ Future<String?> pickQrText() async {
     return await decodeQrImage(await readQrFile(file));
   } on QrImportException {
     rethrow;
+  } on PlatformException catch (error) {
+    // Provider messages/details can contain filenames or secrets. Only a fixed
+    // native error code is allowed across the UI error boundary.
+    throw QrImportException(
+      error.code == 'too_large'
+          ? QrImportError.tooLarge
+          : QrImportError.unreadable,
+    );
   } catch (_) {
     // Filenames, picker/provider errors and decoded secrets are never logged.
     throw const QrImportException(QrImportError.unreadable);
   }
 }
 
-/// The selected file may be backed by a stalled document/cloud provider. Bound
+/// Non-Android path, after file_selector has returned the selected XFile. Bound
 /// metadata + complete body by one deadline, and cancel without awaiting a
 /// provider's potentially stalled cancellation future. The OS picker itself is
-/// user-controlled and is not timed out.
+/// user-controlled and is not timed out. These limits cannot bound work a
+/// platform picker performs before returning an XFile; Android uses its own
+/// bounded native reader instead.
 Future<Uint8List> readQrFile(
   XFile file, {
   Duration timeout = const Duration(seconds: 20),

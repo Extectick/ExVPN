@@ -58,6 +58,9 @@ foreach ($module in @('native/core', 'native/android', 'native/windows')) {
 if ($Target -eq 'Android') {
     & (Join-Path $repository 'native/android/build.ps1')
     & (Join-Path $repository 'scripts/bootstrap/build-android-debug.ps1')
+    Push-Location (Join-Path $repository 'apps/exvpn/android')
+    try { Invoke-Checked './gradlew.bat' @(':app:testDebugUnitTest', '--no-daemon') }
+    finally { Pop-Location }
 }
 if ($Target -in @('Checks', 'Windows')) {
     # Exercise the actual installer PowerShell runtime, not pwsh-only semantics.

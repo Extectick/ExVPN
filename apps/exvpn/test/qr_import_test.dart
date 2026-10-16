@@ -1,7 +1,8 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:exvpn/services/qr_import.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:image/image.dart' as img;
@@ -50,6 +51,72 @@ class ProviderFile extends XFile {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  group('Android bounded native picker', () {
+    const channel = MethodChannel('exvpn/qr_import');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.android);
+    tearDown(() {
+      messenger.setMockMethodCallHandler(channel, null);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    test('uses native bytes and decoder without file_selector', () async {
+      var calls = 0;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        expect(call.method, 'pickImage');
+        expect(call.arguments, isNull);
+        calls++;
+        return Uint8List.fromList(img.encodePng(_qr(_value)));
+      });
+      // No file_selector mock/plugin is registered: invoking it would fail.
+      expect(await pickQrText(), _value);
+      expect(calls, 1);
+    });
+    test('picker cancellation stays cancellation', () async {
+      messenger.setMockMethodCallHandler(channel, (_) async => null);
+      expect(await pickQrText(), isNull);
+    });
+    for (final code in ['too_large', 'unreadable', 'busy', 'unexpected']) {
+      test('sanitizes native $code without provider details', () async {
+        messenger.setMockMethodCallHandler(channel, (_) async {
+          throw PlatformException(
+            code: code,
+            message: 'private-provider-uri',
+            details: {'content': 'private-QR'},
+          );
+        });
+        await expectLater(
+          pickQrText(),
+          failure(
+            code == 'too_large'
+                ? QrImportError.tooLarge
+                : QrImportError.unreadable,
+          ),
+        );
+      });
+    }
+    test('retains byte cap at Dart boundary', () async {
+      messenger.setMockMethodCallHandler(
+        channel,
+        (_) async => Uint8List(qrMaxBytes + 1),
+      );
+      await expectLater(pickQrText(), failure(QrImportError.tooLarge));
+    });
+    test('rejects invalid native image bytes', () async {
+      messenger.setMockMethodCallHandler(
+        channel,
+        (_) async => Uint8List.fromList([1, 2, 3]),
+      );
+      await expectLater(pickQrText(), failure(QrImportError.unsupportedImage));
+    });
+    test(
+      'missing bridge never falls back to unbounded Android picker',
+      () async {
+        await expectLater(pickQrText(), failure(QrImportError.unreadable));
+      },
+    );
+  });
   test(
     'real PNG and JPEG QR decoding returns text without using network',
     () async {
