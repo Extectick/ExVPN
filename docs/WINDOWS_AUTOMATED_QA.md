@@ -33,6 +33,28 @@ widget/update tests, 2 теста границ fixture bind, Go vet и PowerShel
 
 ## Состав и границы стенда
 
+Дополнительный прогон отказов **16:27:44–16:31:29 UTC** прошёл на том же
+установленном пакете +2. [Отчёт](evidence/windows-scm-failure-smoke.json),
+[подключение с исключением](evidence/windows-scm-exclusion-connected.png),
+[состояние после рестарта службы](evidence/windows-scm-restarted-blocked.png).
+Исходники: [1575305](https://github.com/Extectick/ExVPN/commit/1575305923c37b9c1f41721d6b07ad11fe133824).
+
+| Сценарий | Защищаемый executable | Исключённый executable | Состояние UI |
+|---|---|---|---|
+| VPN работает | HTTPS 200 | HTTPS 200 | connected |
+| Сервер остановлен | Ошибка сети | HTTPS 200 | reconnecting |
+| Реальный SCM PID аварийно завершён | Ошибка сети | Ошибка сети | error |
+| SCM запущен снова | Ошибка сети | Ошибка сети | blocked |
+| Явное отключение кнопкой | HTTPS 200 | HTTPS 200 | disconnected |
+
+Исключение выбрано через настоящий экран настроек из списка работающих процессов.
+Два отдельных probe executable запрашивали HTTPS одновременно. Ошибки запуска
+процесса/JSON не считаются доказательством блокировки. Read-only WFP observer
+подтвердил сохранение собственного guard после hard kill установленной службы.
+Он проверяет наличие принадлежащих ExVPN фильтров, а не полноту четырёх WFP layers.
+После Restore служба Running с исходным client path; TUN и guard отсутствуют,
+хеш отсортированных маршрутов IPv4/IPv6 и DNS совпадает с исходным.
+
 `apps/exvpn/integration_test/windows_sandbox_test.dart` — отдельная точка входа,
 собираемая в отдельной копии исходников под `artifacts/windows/`. Обычный
 установщик содержит `lib/main.dart`, а QA-код не подменяет установленный UI.
@@ -61,8 +83,9 @@ QA executable с прежним owner SID; проверка PID/SID/пути IPC
 - Эфемерный сервер находится на хосте; baseline и VPN имеют один внешний IP.
   Разные IP обычного/исключённого приложения этой топологией не доказаны.
 - Trojan/Hysteria2, UDP, полный IPv6/DNS packet capture, холодный кеш Xray,
-  sleep/resume, смена сети, исключения и падение SCM-службы не входят в этот прогон.
-  Ранее выполненные отдельные системные tests остаются отдельными доказательствами.
+  sleep/resume, перезагрузка и смена сети остаются открытыми. Проверенные исключения
+  и SCM crash относятся только к описанному TCP/IPv4 сценарию; сохранность настроек
+  исключений после аварии этим тестом не доказана.
 - Используется временный `AppController` без persistence. Хранилище, QR/picker,
   OTA и повторный запуск обычного UI этим сценарием не приняты.
 - Ввод текста синтезирует штатный Flutter test IME. Системная клавиатура/IME,
@@ -109,3 +132,16 @@ entry point и изменение сети. Полный репозиторий/
 ExecutionPolicy меняется только в процессе запуска. Окно Flutter создаётся самим
 приложением; им не управляет Computer Use. Raw exception dumps и заполненный
 диалог импорта не публикуются. Отчёт пропускает только известные поля и fixture names.
+
+Для проверки отказов добавить `-IncludeFaults` при подготовке bundle. После
+первоначального Setup/Restore использовать на хосте
+`scripts/windows/run-app-faults-sandbox.ps1 -SandboxId <id> -BundleDirectory <path>
+-FixtureProcessId <pid> -FixtureStartedUtc <start-time>`. Он выполняет Prepare,
+Refresh и запуск UI; управляет только тремя фиксированными действиями в порядке
+`stop-fixture → crash-service → restart-service`. Запросы/ответы содержат nonce
+текущего прогона и номер шага; произвольные команды из гостя не исполняются.
+Путь и время старта fixture проверяются до остановки. В `finally` выполняются
+восстановление production binding и сверка сети, даже если UI test не прошёл.
+Для успеха обязательны `faultsPassed`, `frameworkPassed`, `allProtocolsPassed`,
+`cleanupPassed` и нулевой exit code. Каждый повтор использует свежий nonce и
+новые эфемерные credentials; stale output не считается текущим результатом.

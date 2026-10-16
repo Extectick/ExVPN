@@ -3,8 +3,9 @@
 Проверка Windows 2026-10-16: TUN DNS использует отдельные peer-адреса
 `172.31.255.2` и `fd71:6578:7670::2`, а не собственные IP адаптера: иначе Windows
 доставляет DNS локально, минуя TUN. На изолированном диагностическом стенде
-подтверждены HTTPS, TCP-исключение и сохранение WFP после аварии процесса;
-SCM/UI и полная IPv6/DNS приёмка остаются открытыми. Подробности:
+подтверждены HTTPS, TCP-исключение и сохранение WFP после аварии процесса.
+Дополнительный Flutter integration test проверил эти отказы на установленной
+SCM-службе; полная IPv6/DNS приёмка остаётся открытой. Подробности:
 [WINDOWS_VALIDATION.md](WINDOWS_VALIDATION.md).
 
 Дата: 2026-10-16. Это целевая архитектура, а не заявление о готовности всех компонентов. Реализованные и проверенные части перечислены в [CHECKLIST.md](CHECKLIST.md).
@@ -43,7 +44,7 @@ Flutter не получает административных прав на Win
 
 Обычный запуск пустой. Демонстрационные подписки доступны только при `?demo=1` или `--dart-define=EXVPN_DEMO=true`; их задержки не являются измерениями. Нажатие подключения без профиля открывает импорт. На Android/Windows настоящий профиль передаётся через `NativeVpnBridge`; демонстрационные профили не запускают ядро. В браузере системный VPN недоступен. `VpnController` принимает фактическое состояние через native event stream, восстанавливает его при запуске/возвращении в приложение и игнорирует устаревшие ответы. Принятая команда никогда не считается успешным туннелем. Потеря IPC снимает подтверждение состояния, оставляя действие отключения.
 
-Android содержит Kotlin foreground `VpnService`, TUN IPv4/IPv6, Go c-shared JNI, проверку protect/bind сокетов и HTTPS health-check. Использованы прямые API закреплённого Xray: стандартный dialer игнорировал ошибку protect, поэтому собственный dialer обязателен. libXray остаётся исследовательским кандидатом, не подключённой библиотекой Android. Windows содержит SCM Go-службу, строгий named-pipe IPC, persistent WFP latch и C++ Flutter host adapter. Подробные контракты/ограничения: `native/android/README.md`, `native/windows/README.md`. Android debug APK собран: семь вариантов протоколов, ошибочный REALITY ключ, UID-исключение и часть lifecycle проверены в эмуляторе API36. Visual Studio C++/CMake/Windows SDK установлены; Windows release/NSIS собраны, clean-checkout CI Android/Windows прошёл. Системные Windows-испытания ждут изолированного стенда. Подробности: `ANDROID_VALIDATION.md`, `WINDOWS_VALIDATION.md`. Это ещё не подтверждение полной системной защиты или выпуска.
+Android содержит Kotlin foreground `VpnService`, TUN IPv4/IPv6, Go c-shared JNI, проверку protect/bind сокетов и HTTPS health-check. Использованы прямые API закреплённого Xray: стандартный dialer игнорировал ошибку protect, поэтому собственный dialer обязателен. libXray остаётся исследовательским кандидатом, не подключённой библиотекой Android. Windows содержит SCM Go-службу, строгий named-pipe IPC, persistent WFP latch и C++ Flutter host adapter. Подробные контракты/ограничения: `native/android/README.md`, `native/windows/README.md`. Android debug APK собран: семь вариантов протоколов, ошибочный REALITY ключ, UID-исключение и часть lifecycle проверены в эмуляторе API36. Visual Studio C++/CMake/Windows SDK установлены; Windows release/NSIS собраны, clean-checkout CI Android/Windows прошёл. В Sandbox проверены установка, семь вариантов протоколов и отказ установленной SCM-службы; вся матрица приёмки остаётся открытой. Подробности: `ANDROID_VALIDATION.md`, `WINDOWS_VALIDATION.md`. Это ещё не подтверждение полной системной защиты или выпуска.
 
 Общие каналы: `exvpn/vpn`, `exvpn/vpn_state`, `exvpn/vpn_stats`. UI показывает реальные версии, таймер и доступные счётчики; недоступные измерения не заменяются фиктивными данными. Исключения читаются из backend через `getExclusions`, меняются только при остановленном сеансе. Настройки защиты открывают системную страницу Android; флаг `processCrashProtection` не устанавливается интерфейсом.
 
@@ -175,5 +176,9 @@ service binary, owner SID и IPC-проверки сохраняются. Пос
 точный production client path службы. Нет HTTP/VPN mocks; только IME для ввода
 тестовой подписки синтезируется внутри Flutter. Установщик и lifecycle запускаются
 через CLI Sandbox без Computer Use; хостовая сеть не изменяется. Этот прогон не
-подменяет physical-device, native-dialog, crash/leak, storage и OTA acceptance.
+подменяет physical-device, native-dialog, полную leak/lifecycle, storage и OTA acceptance.
+Отдельный fault coordinator останавливает собственный fixture, аварийно завершает
+SCM-службу гостя и запускает её снова. Два точных executable проверяют HTTPS
+одновременно; команды имеют фиксированный порядок и nonce. После явного
+восстановления сравниваются route/DNS hashes и отсутствие TUN/WFP guard.
 Схема запуска и доказательства — [WINDOWS_AUTOMATED_QA.md](WINDOWS_AUTOMATED_QA.md).

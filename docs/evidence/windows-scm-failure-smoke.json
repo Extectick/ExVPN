@@ -1,0 +1,111 @@
+{
+  "format": 1,
+  "date": "2026-10-16",
+  "sourceCommit": "1575305923c37b9c1f41721d6b07ad11fe133824",
+  "appVersion": "0.1.0+2",
+  "serviceSha256": "6d93dc9ffb51bd2c34576e89697d8221c88a37e4dd456ddf149be3998f88f952",
+  "qaAotSha256": "20fad3bceb4a121ef9cb1414b1b448675230fdaa122132e7378f4e9e75fe3d32",
+  "startedUtc": "2026-10-16T16:27:44.5771644Z",
+  "finishedUtc": "2026-10-16T16:31:29.4734973Z",
+  "computerUse": false,
+  "nativeVpnMocked": false,
+  "installedScmServiceTested": true,
+  "temporaryClientBinding": true,
+  "exclusionSelectedThroughUi": true,
+  "allSevenProtocolsPassed": true,
+  "passed": true,
+  "frameworkPassed": true,
+  "results": {
+    "connected": {
+      "protected": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 814
+      },
+      "excluded": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 847
+      }
+    },
+    "serverOutage": {
+      "protected": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 8004
+      },
+      "excluded": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 755
+      }
+    },
+    "serviceCrash": {
+      "protected": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 3
+      },
+      "excluded": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 3
+      }
+    },
+    "serviceRestart": {
+      "protected": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 3
+      },
+      "excluded": {
+        "httpsSuccess": false,
+        "httpStatus": null,
+        "error": "network",
+        "durationMs": 3
+      }
+    },
+    "explicitRecovery": {
+      "protected": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 857
+      },
+      "excluded": {
+        "httpsSuccess": true,
+        "httpStatus": 200,
+        "error": null,
+        "durationMs": 855
+      }
+    }
+  },
+  "outageDetectedByUi": true,
+  "scmProcessTerminated": true,
+  "guardObservedAfterCrash": true,
+  "serviceLossDetectedByUi": true,
+  "restartRemainedBlocked": true,
+  "cleanup": {
+    "passed": true,
+    "guardArmed": false,
+    "tunnelAbsent": true,
+    "networkRestored": true,
+    "productionBindingRestored": true,
+    "serviceRunning": true,
+    "fixtureStopped": true,
+    "hostNetworkChanged": false
+  },
+  "ordinaryUserTokenTested": false,
+  "distinctEgressTested": false,
+  "fullIpv6DnsPacketCaptureTested": false,
+  "rebootSleepNetworkChangeTested": false,
+  "settingsPersistenceAfterCrashTested": false,
+  "nativeImeTested": false
+}
