@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "date": "2026-10-17",
-  "sourceState": "working tree; commit pending",
+  "sourceState": "committed",
   "appVersion": "0.1.0+11",
   "target": "Windows",
   "artifact": {
@@ -331,5 +331,6 @@
       "severity": "blocker"
     }
   ],
-  "scope": "Final installer SHA/signature and separate staged payload; EXE contents are not independently extracted."
+  "scope": "Final installer SHA/signature and separate staged payload; EXE contents are not independently extracted.",
+  "sourceCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f"
 }

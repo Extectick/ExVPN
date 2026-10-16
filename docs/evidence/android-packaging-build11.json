@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "date": "2026-10-17",
-  "sourceState": "working tree; commit pending",
+  "sourceState": "committed",
   "appVersion": "0.1.0+11",
   "target": "Android",
   "artifact": {
@@ -580,5 +580,6 @@
       "severity": "blocker"
     }
   ],
-  "scope": "Actual APK ZIP entries, manifest identity, native build info and APK signature; Maven and Dart link coverage incomplete."
+  "scope": "Actual APK ZIP entries, manifest identity, native build info and APK signature; Maven and Dart link coverage incomplete.",
+  "sourceCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f"
 }

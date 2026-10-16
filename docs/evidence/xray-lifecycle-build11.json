@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "date": "2026-10-17",
   "appVersion": "0.1.0+11",
-  "sourceState": "working tree; commit pending",
+  "sourceState": "committed",
   "upstreamCommit": "701af60772cda123492f86e383e1fdba066614a9",
   "patchedModule": "v1.260327.1-exvpn.3",
   "patchedModuleSum": "h1:m+ZEAwh0kFl/jMMtP2k0k88K5oK7tfNGSeJ+I4pi9tQ=",
@@ -87,5 +87,6 @@
   ],
   "hostNetworkChanged": false,
   "systemTrustChanged": false,
-  "realSubscriptionsUsed": false
+  "realSubscriptionsUsed": false,
+  "sourceCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f"
 }
