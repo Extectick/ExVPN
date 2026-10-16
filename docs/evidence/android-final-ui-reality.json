@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-16",
+  "device": "Android Emulator API36 x86_64",
+  "apk": {
+    "kind": "debug",
+    "sha256": "91b014e0bec3b76216dca49694193b23b3c287af1b1946ad30814a1d8cf06fbe",
+    "bytes": 268110112,
+    "demo": false
+  },
+  "qr": {
+    "fixture": "synthetic invalid-domain profile",
+    "nativePickerCancelPreservesDialog": true,
+    "decodedPreviewBeforeExplicitImport": true,
+    "explicitImportCreatesOneProfile": true,
+    "groupAndSelectionSurviveColdStart": true,
+    "sampleProfileNeverConnected": true
+  },
+  "versions": {
+    "app": "0.1.0",
+    "build": 1,
+    "core": "26.10.10",
+    "data": "built-in",
+    "channel": "stable",
+    "dartPatch": "base; Shorebird not configured",
+    "deliveryWithoutTrustedConfiguration": "disabled",
+    "signedDeliveryApplyRollbackTested": false
+  },
+  "reality": {
+    "fixture": "loopback server; ephemeral credentials; normal key verification",
+    "validAfterConnected": {
+      "httpStatus": 200,
+      "durationMs": 1516,
+      "vpnTransport": true
+    },
+    "firstValidProbeWhileConnecting": "network error; not counted as pass",
+    "wrongPublicKeyAfterBlocked": {
+      "state": "blocked",
+      "code": "tunnel_https_failed",
+      "probeError": "network",
+      "durationMs": 5572,
+      "vpnTransport": true
+    },
+    "osTrustModified": false,
+    "insecureTlsEnabled": false,
+    "serverCountersUsedToInferNoTraffic": false
+  },
+  "cleanup": {
+    "vpnServiceAbsent": true,
+    "qaServerListeners": 0,
+    "alwaysOn": false,
+    "systemLockdown": false,
+    "directProbe": {
+      "httpStatus": 200,
+      "durationMs": 1273,
+      "vpnTransport": false
+    }
+  },
+  "limits": [
+    "Emulator evidence does not replace physical Android 11+ acceptance.",
+    "The seven positive protocol matrix belongs to the earlier documented APK, not a rerun of this build.",
+    "No provider subscription or production OTA was used.",
+    "No DNS packet-capture audit or stable-release acceptance is claimed."
+  ]
+}

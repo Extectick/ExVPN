@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-16",
+  "device": "Android Emulator API36 x86_64",
+  "qaApk": {
+    "sha256": "debe5ac310c39cbdfdc114c2af072d5c55f68078d1ffd13da0983db88cfdc95e",
+    "bytes": 268108740,
+    "kind": "debug; separate compile-time beta QA policy",
+    "appIdChanged": false,
+    "nativeCodeChanged": false,
+    "privateSigningKeyIncluded": false
+  },
+  "feed": {
+    "kind": "public HTTPS QA feed; separate ephemeral Ed25519 key",
+    "channel": "beta",
+    "transport": "HttpsUpdateTransport",
+    "store": "DirectoryUpdateStore in app sandbox",
+    "osTrustChanged": false,
+    "revision2RollbackOf": 1,
+    "revision2EnvelopeSha256": "475ac32967f3975fdee0ee41a6dacd8df71c0efa784c1c0277ddbfcf4658efdf"
+  },
+  "checks": {
+    "stageWhileVpnConnected": true,
+    "applyDisabledWhileConnected": true,
+    "vpnStillConnectedAfterStage": true,
+    "protectedHttpsAfterStage": {
+      "httpStatus": 200,
+      "durationMs": 1206,
+      "vpnTransport": true
+    },
+    "applyEnabledAfterExplicitDisconnect": true,
+    "cancelPreservesBuiltInData": true,
+    "restageAndApplyRevision1": true,
+    "revision1HelpVisible": true,
+    "revision1ColdRecovery": true,
+    "revision1ReplayKeepsActiveData": true,
+    "revision2Applied": true,
+    "revision2RestoresOriginalHelp": true,
+    "revision2ColdRecovery": true,
+    "revision2ReplayKeepsActiveData": true,
+    "apkReinstalledBetweenRevisions": false,
+    "downloadedFilesPerRevision": 1,
+    "reusedFilesPerRevision": 0
+  },
+  "cleanup": {
+    "deletedOnlyVerifiedBetaStoreDirectory": true,
+    "subscriptionsAndKeystorePreserved": true,
+    "temporarySyntheticGroupRemovedViaUi": true,
+    "installedApkSha256": "91b014e0bec3b76216dca49694193b23b3c287af1b1946ad30814a1d8cf06fbe",
+    "installedApkHashMatchesDefault": true,
+    "standardFlutterOutputRebuiltWithoutQaDefines": true,
+    "standardFlutterOutputHashMatchesDefault": true,
+    "defaultData": "built-in",
+    "defaultChannel": "stable",
+    "defaultDelivery": "disabled",
+    "vpnServiceAbsent": true,
+    "qaProxyListeners": 0,
+    "directProbe": {
+      "httpStatus": 200,
+      "durationMs": 1252,
+      "vpnTransport": false
+    }
+  },
+  "limits": [
+    "No production endpoint or production key was configured.",
+    "Only signed help data changed, not Dart code or native components.",
+    "This does not replace physical-device acceptance or Android fault-injection tests.",
+    "Multi-file unchanged-resource reuse is covered separately by package tests."
+  ]
+}
