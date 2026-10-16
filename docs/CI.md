@@ -57,8 +57,11 @@ commit. Последующие lifecycle QA scripts и release audit требу�
 
 Для **+10** опубликованы [924493a](https://github.com/Extectick/ExVPN/commit/924493a511547bb2b4c93262ab93df82fe127479)
 и [run 38969281066](https://github.com/Extectick/ExVPN/actions/runs/38969281066).
-На момент записи он выполняется; успех ещё не заявляется. Локальные native
-builds и итоговые быстрые проверки прошли: [37,77 с, девять наборов](evidence/fast-validation-build10.json).
+Он завершился **SUCCESS**: Windows 7 мин 56 с, Android 14 мин 50 с, анализ,
+тесты, обе native-сборки и загрузка development artifacts прошли.
+[Обезличенное доказательство](evidence/ci-build10.json). Docs-only push `7da4c1c`
+не создал новый run и не отменил сборку. Локальные native builds и итоговые
+быстрые проверки также прошли: [37,77 с, девять наборов](evidence/fast-validation-build10.json).
 Android +10 также прошёл [обновление и настоящий HTTPS в эмуляторе](evidence/android-upgrade-build10.json).
 
 Локальный общий прогон 2026-10-16 после QR/OTA/installer исправлений завершился

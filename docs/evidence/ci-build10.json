@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "checkedUtc": "2026-10-16T21:41:34.5063968Z",
+  "sourceCommit": "924493a511547bb2b4c93262ab93df82fe127479",
+  "runId": 38969281066,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/38969281066",
+  "status": "completed",
+  "conclusion": "success",
+  "jobs": [
+    {
+      "name": "Windows",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/38969281066/job/117203372668",
+      "startedAt": "2026-10-16T21:25:37Z",
+      "completedAt": "2026-10-16T21:33:33Z",
+      "durationSeconds": 476.0,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check out source",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install repository-pinned Flutter and Go",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare Android SDK packages on the disposable runner",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Analyze, test, and build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload Android development APK",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Upload Windows development bundle",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Check out source",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "Android",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/38969281066/job/117203373005",
+      "startedAt": "2026-10-16T21:25:37Z",
+      "completedAt": "2026-10-16T21:40:27Z",
+      "durationSeconds": 890.0,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check out source",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install repository-pinned Flutter and Go",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare Android SDK packages on the disposable runner",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze, test, and build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload Android development APK",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload Windows development bundle",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Check out source",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "docsOnlyPush": {
+    "commit": "7da4c1c02132e740dbeb30eec4e7e61b421cb1af",
+    "newRuns": 0,
+    "nativeRunCancelled": false
+  },
+  "limits": [
+    "Development artifacts only; no release signature or full device/security acceptance.",
+    "Cloud debug signer differs from the local development signer; cloud APK is not an update channel for the local test installation."
+  ]
+}
