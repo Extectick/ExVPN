@@ -68,6 +68,13 @@
 
 - [x] **EXVPN-E3-006** — Поддержать HWID challenge подписки без аппаратных серийных номеров, тихой ротации ID или импорта служебного ответа. Критерий: один повтор того же HTTPS URL в исходный deadline, отдельные ошибки лимита/хранилища, устойчивый ID по origin из защищённого секрета, последний рабочий список сохранён при отказе. Проверено: 155 app tests, реальный DPAPI round-trip, live Dart HTTPS, обычный Android +7 импорт URL с HWID и 26 профилями. [Доказательства и границы](PROVIDER_COMPATIBILITY.md). Исходники: [f9313f3](https://github.com/Extectick/ExVPN/commit/f9313f31fe388f30f1c38d0f5837b86fc65b7f9b), QA: [8fa4b5d](https://github.com/Extectick/ExVPN/commit/8fa4b5dbb4545894e26617c91a5bba1bb284e9f2).
 - [ ] **EXVPN-E3-007** — Добавить строго типизированную поддержку VLESS encryption MLKEM и FinalMask sudoku, обнаруженных в четырёх записях новой подписки. Зависимость: E1-002, E3-001. Критерий: валидация каждого поддержанного поля на Dart/native границе, сохранение peer authentication, отрицательные тесты и настоящий HTTPS. Произвольный provider JSON в stream/routing не передаётся. Две записи Vision без TLS/REALITY не исправлять скрытым отключением flow.
+  Прогресс 2026-10-17: модель, URI/JSON/native/snapshot поддержка реализованы;
+  192 domain +46 state тестов и 24 loopback HTTPS комбинации прошли, проверены
+  неправильные ключи/маски, с которыми HTTPS-назначение не достигается. Настоящая подписка
+  импортируется 30/32, но новые четыре узла не прошли внешний HTTPS (0/4).
+  Пункт остаётся открыт до подтверждения этих подключений на клиенте.
+  [Границы и доказательства](VLESS_ENCRYPTION.md).
+  Исходники: [f5901bc](https://github.com/Extectick/ExVPN/commit/f5901bc7d0b61d22f555bc760cbfcb5e3c85de81).
 - [ ] **EXVPN-E3-008** — Уточнить диагностику отдельных отклонённых записей и частичного обновления. Критерий: безопасный номер записи/причина, явное решение пользователя о частичной замене, отсутствие незаметной потери рабочего списка. В +7 показано число шести отказов; ручное Android-обновление сохранило список, точная причина не снята в runtime-отчёте.
 
 ## E4 — Android-клиент
@@ -128,6 +135,18 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
 
 ## E7 — Общая beta
 
+- [x] **EXVPN-E7-005** — Ускорить локальную проверку и разделить разработку между агентами. Зависимость: E1 toolchain, E7-001. Критерий: одна команда выбирает тесты с учётом зависимостей, параллельно запускает готовые Dart/Flutter/Go runners, сохраняет результаты и не скрывает ошибки/изменения исходников; итоговый полный быстрый прогон проходит после завершения записи агентами. Системная приёмка остаётся отдельной.
+  Доказательство 2026-10-17: три агента разделили native core tests/builds,
+  Dart/state/Android QA и быстрый координатор; Windows проверял координатор.
+  Финальный `-Full` всех девяти наборов прошёл за **29,08 с**, без Go test-result
+  cache, fingerprint исходников совпал. 192 domain +46 state +31 updates
+  +155 Flutter tests, Go verify/test/vet, installer fixtures, 26 planner,
+  2 coordinator failure и 38 JVM QA checks прошли. Android QA ввод 10648 байт
+  занял **836 мс**, readback совпал; другое приложение отклонено, файл удалён.
+  [Методика](TESTING_WORKFLOW.md), [full report](evidence/fast-validation-build9.json),
+  [Android input](evidence/android-fast-input-build9.json), исходники
+  [24901d4](https://github.com/Extectick/ExVPN/commit/24901d4121b578ccc87cff590d1b9791e21085b4).
+
 - [x] **EXVPN-E7-001** — Настроить CI для анализа, тестов и Android/Windows сборок. Зависимость: E0 GitHub, E1 toolchain. Критерий: clean checkout проходит pipeline; secrets не включены в job output; версии и lock-файлы воспроизводимы.
   Прогресс: `.github/workflows/verify.yml`, `scripts/ci/verify.ps1`, `docs/CI.md`; workflow YAML и PowerShell синтаксис проверены, локальный общий прогон подтвердил 113 domain + 25 state + 86 app тестов и чистый анализ. Core tests/vet после новых protocol fixtures пройдены отдельно. Первый run 38878852742 выявил ошибку cold-start Flutter CLI, исправленную в f6cd4c4. Повторный [run 38880672529](https://github.com/Extectick/ExVPN/actions/runs/38880672529) на [f6cd4c4](https://github.com/Extectick/ExVPN/commit/f6cd4c4ed9f42f8ede0f1df772843f3724b6441e) полностью success: Android/Windows checks, builds и выгрузка development artifacts. Последующие изменения требуют собственного run; beta и системные испытания остаются открытыми.
   CI дополнение 2026-10-16: текущие QR/OTA/installer исправления прошли полный Android/Windows [run 38885825613](https://github.com/Extectick/ExVPN/actions/runs/38885825613) на [6fe2d3a](https://github.com/Extectick/ExVPN/commit/6fe2d3a288493b57ce9a7aa698a9df087f2fc50e). Это доказательство E7-001, не подпись или готовность beta.
@@ -147,6 +166,15 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
 - [ ] **EXVPN-E9-003** — Проверить OTA, UI и ограничения iOS; подготовить TestFlight. Зависимость: E9-002. Критерий: устройство, смена сети/фон/ошибки, требования магазина и подписанный TestFlight build; факт отправки не равен одобрению.
 
 ## Журнал доказательств
+
+2026-10-17, частично **E1/E3/E4/E5**, сборка **0.1.0+9**: 30/32 профиля,
+Android API30 upgrade/cold restart и настоящий XHTTP HTTPS с отдельным UID
+подтверждены. Windows ordinary-user UI/SCM: два выбранных узла прошли сразу,
+третий дал `tunnel_unreachable` и прошёл один отдельный повтор; обе попытки и
+успешное восстановление сети сохранены. Четыре новых Encryption/Sudoku узла
+по-прежнему не подтвердили внешний HTTPS. [Отчёт](evidence/provider-build9.json),
+[границы](VLESS_ENCRYPTION.md), исходники
+[f5901bc](https://github.com/Extectick/ExVPN/commit/f5901bc7d0b61d22f555bc760cbfcb5e3c85de81).
 
 2026-10-17, частично **E1-004/005/007/009, E3-001–004, E4, E5**: сборка
 **0.1.0+7**, новая настоящая подписка: 32 записи / 26 импортировано. Полный

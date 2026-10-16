@@ -1,0 +1,315 @@
+{
+  "schemaVersion": 1,
+  "recordedUtc": "2026-10-16T20:16:20.0322500Z",
+  "sourceCommit": "f5901bc7d0b61d22f555bc760cbfcb5e3c85de81",
+  "appVersion": "0.1.0+9",
+  "coreVersion": "26.10.10",
+  "coreCommit": "701af60772cda123492f86e383e1fdba066614a9",
+  "computerUse": false,
+  "hostNetworkChanged": false,
+  "artifacts": {
+    "android": {
+      "sha256": "04c988d3a9441c3a5f61a67b307d96c81870b0e3027df6a7c35f43f994a15f6c",
+      "signature": "development debug"
+    },
+    "windowsInstaller": {
+      "sha256": "59eb0829dfcbf4269cc3ba39e8aa5d240cbfa334f306b096f3f658e7f7c93bef",
+      "signature": "unsigned development"
+    },
+    "windowsServiceSha256": "d158e4ca4c3a9b42c06c0611b5bb79540153d802695c84eac0f30d59b872c520"
+  },
+  "subscription": {
+    "rejected": 2,
+    "records": 32,
+    "accepted": 30,
+    "rejectedReason": "Vision with neither TLS/REALITY nor VLESS Encryption"
+  },
+  "loopbackEncryption": {
+    "negativeCases": 8,
+    "matrixCases": 24,
+    "systemTrustChanged": false,
+    "passed": true,
+    "httpsConnectionsPerCase": 2,
+    "extraVisionSudokuCases": 2
+  },
+  "externalEncryption": {
+    "scope": "same native implementation; authenticated loopback SOCKS; not installed TUN",
+    "total": 4,
+    "passed": 0,
+    "results": [
+      {
+        "recordNumber": 1,
+        "passed": false,
+        "code": "probe_connection_failed",
+        "elapsedMs": 10001
+      },
+      {
+        "recordNumber": 2,
+        "passed": false,
+        "code": "probe_connection_failed",
+        "elapsedMs": 4394
+      },
+      {
+        "recordNumber": 3,
+        "passed": false,
+        "code": "probe_connection_failed",
+        "elapsedMs": 649
+      },
+      {
+        "recordNumber": 26,
+        "passed": false,
+        "code": "probe_connection_failed",
+        "elapsedMs": 700
+      }
+    ],
+    "cause": "not established"
+  },
+  "android": {
+    "schemaVersion": 1,
+    "status": "completed",
+    "startedAtUtc": "2026-10-16T20:09:54.2528144Z",
+    "serial": "emulator-5564",
+    "apiLevel": 30,
+    "adbUid": 2000,
+    "buildNumber": 9,
+    "apkSha256": "04c988d3a9441c3a5f61a67b307d96c81870b0e3027df6a7c35f43f994a15f6c",
+    "sourceCommit": "f5901bc7d0b61d22f555bc760cbfcb5e3c85de81",
+    "upgradeFrom": 8,
+    "ordinaryUpgrade": true,
+    "disconnectedAfterUpgrade": true,
+    "restoredGroupProfileCount": 30,
+    "restoredGroupIssueCount": 2,
+    "issueCountUiConfirmed": true,
+    "baseline": {
+      "trace4": {
+        "bodySha256": "2b19fc0a41016815fbeff9c6f03c16bde3ceda8d173873236037fb53e4d75756",
+        "durationMs": 1057,
+        "httpStatus": 200,
+        "publicIpFamily": 4,
+        "publicIpSha256": "ad6a86a4507e238e530f921ba9c96a2205e1375c1f0cb1d4a752fce9d8eed913",
+        "responseBytes": 257,
+        "success": true,
+        "uid": 10168,
+        "uidRxBytes": 4435,
+        "uidTxBytes": 1084,
+        "vpnTransport": false
+      }
+    },
+    "computerUse": false,
+    "connected": {
+      "dns": {
+        "durationMs": 224,
+        "ipv4Answers": 2,
+        "ipv6Answers": 2,
+        "success": true,
+        "uid": 10168,
+        "uidRxBytes": 202,
+        "uidTxBytes": 114,
+        "vpnTransport": true
+      },
+      "trace4": {
+        "bodySha256": "66436c1fb2ebd1c035ca60a20b47cd47a2ad575098d039aeef2602edd6e504c2",
+        "durationMs": 253,
+        "httpStatus": 200,
+        "publicIpFamily": 4,
+        "publicIpSha256": "6ccf88be1077b38bfce6692ef94fbfd5c0d9e47a0f51b1c9a0d6c8fe9a0c506f",
+        "responseBytes": 265,
+        "success": true,
+        "uid": 10168,
+        "uidRxBytes": 4525,
+        "uidTxBytes": 1124,
+        "vpnTransport": true
+      },
+      "health": {
+        "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "durationMs": 682,
+        "httpStatus": 204,
+        "responseBytes": 0,
+        "success": true,
+        "uid": 10168,
+        "uidRxBytes": 5589,
+        "uidTxBytes": 1514,
+        "vpnTransport": true
+      }
+    },
+    "restored": {
+      "trace4": {
+        "bodySha256": "b0b2fd0ec06eb017938578d120159d3675351461709c4917fc49e5cdd4816550",
+        "durationMs": 1081,
+        "httpStatus": 200,
+        "publicIpFamily": 4,
+        "publicIpSha256": "ad6a86a4507e238e530f921ba9c96a2205e1375c1f0cb1d4a752fce9d8eed913",
+        "responseBytes": 258,
+        "success": true,
+        "uid": 10168,
+        "uidRxBytes": 4437,
+        "uidTxBytes": 1004,
+        "vpnTransport": false
+      }
+    },
+    "distinctEgress": true,
+    "directEgressRestored": true,
+    "coldRestart": {
+      "disconnected": true,
+      "twoRejected": true,
+      "group30": true,
+      "initialStatusUnconfirmed": true,
+      "finalObservedAtUtc": "2026-10-16T20:11:24.1659993Z"
+    },
+    "probeApkSha256": "018a73b6d4ad826e0078b7d0f7655df2fb215f854dad73fbf5300ebb15861c51",
+    "finishedAtUtc": "2026-10-16T20:11:24.1659993Z",
+    "passed": true
+  },
+  "windows": {
+    "installedBuild": 9,
+    "installedLocalSystemService": true,
+    "attempts": [
+      {
+        "runId": "9bac01cb-46cd-4c6c-9b53-16b9511efe42",
+        "startedUtc": "2026-10-16T20:11:33.846316Z",
+        "finishedUtc": "2026-10-16T20:11:54.796161Z",
+        "importedCount": 30,
+        "frameworkPassed": false,
+        "ordinaryUserTokenTested": true,
+        "profiles": [
+          {
+            "recordNumber": 4,
+            "passed": true,
+            "state": "connected",
+            "errorCode": null,
+            "numericHttps": {
+              "success": true,
+              "mode": "numeric",
+              "httpStatus": 200,
+              "responseBytes": 213,
+              "egressIpSha256": "6ccf88be1077b38bfce6692ef94fbfd5c0d9e47a0f51b1c9a0d6c8fe9a0c506f",
+              "durationMs": 243
+            },
+            "hostnameHttps": {
+              "success": true,
+              "mode": "health",
+              "httpStatus": 204,
+              "responseBytes": 0,
+              "durationMs": 672
+            },
+            "tunDns": {
+              "success": true,
+              "mode": "dns-tun",
+              "durationMs": 123,
+              "addressCount": 2
+            },
+            "distinctEgress": true,
+            "trafficCountersIncreased": true,
+            "explicitDisconnect": true
+          },
+          {
+            "recordNumber": 7,
+            "passed": false,
+            "state": "blocked",
+            "errorCode": "tunnel_unreachable",
+            "numericHttps": null,
+            "hostnameHttps": null,
+            "tunDns": null,
+            "distinctEgress": null,
+            "trafficCountersIncreased": null,
+            "explicitDisconnect": null
+          },
+          {
+            "recordNumber": 25,
+            "passed": true,
+            "state": "connected",
+            "errorCode": null,
+            "numericHttps": {
+              "success": true,
+              "mode": "numeric",
+              "httpStatus": 200,
+              "responseBytes": 207,
+              "egressIpSha256": "86f7ce949c4ca5756da5791fda906990e2374897aa79d855b484d067207ad57c",
+              "durationMs": 294
+            },
+            "hostnameHttps": {
+              "success": true,
+              "mode": "health",
+              "httpStatus": 204,
+              "responseBytes": 0,
+              "durationMs": 613
+            },
+            "tunDns": {
+              "success": true,
+              "mode": "dns-tun",
+              "durationMs": 121,
+              "addressCount": 2
+            },
+            "distinctEgress": true,
+            "trafficCountersIncreased": true,
+            "explicitDisconnect": true
+          }
+        ],
+        "cleanupDisconnected": true,
+        "cleanupPassed": true,
+        "guardArmedAtFinish": false,
+        "tunnelAbsent": true,
+        "networkRestored": true,
+        "productionBindingRestored": true,
+        "serviceRunning": true
+      },
+      {
+        "runId": "227ac89b-c55b-495f-ac9a-1cad809b5544",
+        "startedUtc": "2026-10-16T20:13:25.819223Z",
+        "finishedUtc": "2026-10-16T20:13:54.203602Z",
+        "importedCount": 30,
+        "frameworkPassed": true,
+        "ordinaryUserTokenTested": true,
+        "profiles": [
+          {
+            "recordNumber": 7,
+            "passed": true,
+            "state": "connected",
+            "errorCode": null,
+            "numericHttps": {
+              "success": true,
+              "mode": "numeric",
+              "httpStatus": 200,
+              "responseBytes": 212,
+              "egressIpSha256": "da69de8c27888576ffe79cbb70d424ec3383ae17033cb2b4392a8958350247b8",
+              "durationMs": 252
+            },
+            "hostnameHttps": {
+              "success": true,
+              "mode": "health",
+              "httpStatus": 204,
+              "responseBytes": 0,
+              "durationMs": 10577
+            },
+            "tunDns": {
+              "success": true,
+              "mode": "dns-tun",
+              "durationMs": 141,
+              "addressCount": 2
+            },
+            "distinctEgress": true,
+            "trafficCountersIncreased": true,
+            "explicitDisconnect": true
+          }
+        ],
+        "cleanupDisconnected": true,
+        "cleanupPassed": true,
+        "guardArmedAtFinish": false,
+        "tunnelAbsent": true,
+        "networkRestored": true,
+        "productionBindingRestored": true,
+        "serviceRunning": true
+      }
+    ],
+    "upgradeFromBuild": 8,
+    "ordinaryUserUi": true,
+    "note": "Initial record7 tunnel_unreachable is retained; one isolated retry passed. This is not a clean 3/3 first attempt."
+  },
+  "remaining": [
+    "four external Encryption/Sudoku connections unverified",
+    "other provider TCP/gRPC HTTPS failures unresolved",
+    "physical Android device unavailable",
+    "full IPv4/IPv6/DNS leak and crash/lockdown acceptance open",
+    "release signing and beta acceptance open"
+  ]
+}

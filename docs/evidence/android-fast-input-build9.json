@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-10-16T20:17:27.3044483Z",
+  "serial": "emulator-5564",
+  "apiLevel": 30,
+  "applicationBuild": 9,
+  "helperApkSha256": "1b028debc02cfeed6541372010b564642c2ea7ec471f1c5b8baffb2ee3a7d476",
+  "syntheticInputOnly": true,
+  "positive": {
+    "status": "verified",
+    "inputLength": 10648,
+    "inputSha256": "1ecf274150925959eba03dcaa2d3f116be277e74592abdef4f310bcf5fbf02cc",
+    "appliedSha256": "1ecf274150925959eba03dcaa2d3f116be277e74592abdef4f310bcf5fbf02cc",
+    "actionAccepted": true,
+    "durationMs": 836,
+    "exitCode": 0
+  },
+  "negativeTarget": {
+    "status": "wrong_window_package",
+    "inputLength": 10648,
+    "inputSha256": "1ecf274150925959eba03dcaa2d3f116be277e74592abdef4f310bcf5fbf02cc",
+    "appliedSha256": null,
+    "actionAccepted": false,
+    "durationMs": 696,
+    "exitCode": 1
+  },
+  "independentUiReadback": true,
+  "privatePayloadRemoved": true,
+  "noSubscriptionApplied": true,
+  "finalDisconnected": true,
+  "computerUse": false,
+  "priorHelperAttempt": {
+    "resolvedBy": "bounded fresh-root and editable-focus readiness",
+    "helperApkSha256": "035dbd7b91ee153880755c5907fb80b8d7f0da02b0fd820837c6a502ee82cf56",
+    "result": {
+      "status": "focused_editable_missing",
+      "inputLength": 10648,
+      "inputSha256": "1ecf274150925959eba03dcaa2d3f116be277e74592abdef4f310bcf5fbf02cc",
+      "appliedSha256": null,
+      "actionAccepted": false,
+      "durationMs": 729,
+      "exitCode": 1
+    }
+  },
+  "passed": true,
+  "sourceCommit": "24901d4121b578ccc87cff590d1b9791e21085b4"
+}

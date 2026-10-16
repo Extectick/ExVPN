@@ -19,6 +19,8 @@ Production OTA, Shorebird и подписанный beta-выпуск не го�
 - [Зависимости и лицензии](docs/DEPENDENCIES.md): версии, лицензии и условия подготовки выпуска.
 - [Сборка комплекта notices](docs/RELEASE_NOTICES.md): связь лицензий с реальными native-бинарниками.
 - [Защищённое хранилище](docs/SECURE_STORAGE.md) и [проверки CI](docs/CI.md).
+- [Быстрый цикл разработки и параллельные проверки](docs/TESTING_WORKFLOW.md).
+- [VLESS Encryption/Sudoku: реализация и проверки](docs/VLESS_ENCRYPTION.md).
 - [Импорт QR](docs/QR_IMPORT.md), [подписанные данные OTA](docs/DATA_UPDATES.md) и [проверки Android в эмуляторе](docs/ANDROID_VALIDATION.md).
 - [Проверки Windows](docs/WINDOWS_VALIDATION.md) и [состояние подготовки Sandbox](docs/SANDBOX_SETUP.md).
 - [Правила работы](AGENTS.md): порядок выполнения этапов и проверки результата.

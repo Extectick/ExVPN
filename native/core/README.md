@@ -60,6 +60,12 @@ TLS supports `serverName`, `fingerprint`, `alpn`, and VLESS `reality` with
 Advanced XHTTP `extra`, Hysteria obfuscation and port hopping are unsupported
 and must be surfaced by importers, never silently removed.
 
+The optional `encryption` field admits bounded VLESS Encryption grammar;
+`transport.tcpSudoku` admits a single typed TCP Sudoku mask. The native boundary
+validates both independently of Dart. Sudoku requires TLS/REALITY or VLESS
+Encryption; it is not peer authentication by itself. See
+[limits and verified HTTPS cases](../../docs/VLESS_ENCRYPTION.md).
+
 `RoutingPolicy.Rules` is a policy compiler only. It gives DNS priority over
 exceptions, accepts exact Windows executable paths or already-resolved Android
 UIDs, and leaves unknown traffic on the proxy. It never enables a direct route
