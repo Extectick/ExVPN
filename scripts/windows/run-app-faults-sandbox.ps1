@@ -84,6 +84,12 @@ try {
     if ($launcher.ExitCode -ne 0 -or $native.ExitCode -ne 0) { throw 'Flutter integration process failed.' }
     $flutter=Get-Content -LiteralPath (Join-Path $outputRoot 'flutter-report.json') -Raw | ConvertFrom-Json
     if ($flutter.runId -cne $marker.runId -or !$flutter.frameworkPassed -or !$flutter.allProtocolsPassed -or !$flutter.faultsPassed -or $step -ne 4) { throw 'The required automated checks did not pass.' }
+    if ($marker.PSObject.Properties['unelevated'] -and $marker.unelevated) {
+        $launch=Get-Content -LiteralPath (Join-Path $outputRoot 'launch-report.json') -Raw | ConvertFrom-Json
+        if ($launch.runId -cne $marker.runId -or $launch.administratorToken -ne $false -or $launch.elevated -ne $false -or !$launch.mediumIntegrity -or !$launch.adminPrivilegesAbsent -or !$launch.processTokenVerified -or !$launch.privilegedAccessDenied -or !$flutter.ordinaryUserTokenTested) { throw 'Unprivileged execution was not proven.' }
+        $result.ordinaryUserTokenTested=$true
+        $result.tokenMethod=$launch.tokenMethod
+    }
     $result.passed=$true
 } catch {
     $result.error='automated_fault_run_failed'

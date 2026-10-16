@@ -97,6 +97,10 @@ Future<void> main() async {
         ),
       );
       await _until(tester, () => vpn.initialized && !vpn.commandPending);
+      report['initialState'] = vpn.status.phase.name;
+      report['initialErrorCode'] = vpn.lastErrorCode;
+      report['initialCanDisconnect'] = vpn.canDisconnect;
+      await save();
       expect(vpn.canDisconnect, isFalse);
       if (mode == 'reset') {
         expect(vpn.status.phase, VpnPhase.error);

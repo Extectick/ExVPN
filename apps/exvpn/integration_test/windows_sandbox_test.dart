@@ -85,6 +85,21 @@ Future<void> main() async {
   testWidgets('real Windows service and TUN through Flutter controls', (
     tester,
   ) async {
+    if (marker['unelevated'] == true) {
+      final launch = jsonDecode(
+        await File('$_output\\launch-report.json').readAsString(),
+      ) as Map<String, dynamic>;
+      expect(launch['runId'], marker['runId']);
+      expect(launch['administratorToken'], isFalse);
+      expect(launch['elevated'], isFalse);
+      expect(launch['mediumIntegrity'], isTrue);
+      expect(launch['adminPrivilegesAbsent'], isTrue);
+      expect(launch['sameInstallerOwner'], isTrue);
+      expect(launch['processTokenVerified'], isTrue);
+      expect(launch['privilegedAccessDenied'], isTrue);
+      report['ordinaryUserTokenTested'] = true;
+      report['tokenMethod'] = launch['tokenMethod'];
+    }
     final controller = AppController();
     final vpn = VpnController(NativeVpnBridge());
     final boundary = GlobalKey();
@@ -122,6 +137,14 @@ Future<void> main() async {
         ),
       );
       await _until(tester, () => vpn.initialized && !vpn.commandPending, 20);
+      report['initialState'] = vpn.status.phase.name;
+      report['initialErrorCode'] = vpn.lastErrorCode;
+      report['initialCanDisconnect'] = vpn.canDisconnect;
+      await save();
+      if (vpn.status.phase != VpnPhase.disconnected ||
+          vpn.lastErrorCode != null) {
+        await snapshot('initialization-failed');
+      }
       expect(
         vpn.status.phase,
         VpnPhase.disconnected,
@@ -454,9 +477,11 @@ Future<Map<String, dynamic>> _probe(
   String mode, {
   bool excluded = false,
 }) async {
+  var stage = 'start';
   try {
     final name = excluded ? 'excluded-probe.exe' : 'protected-probe.exe';
     final process = await Process.start('$_installed\\$name', ['-mode', mode]);
+    stage = 'wait';
     final stdout = process.stdout.transform(utf8.decoder).join();
     // The fixed probe has a 15 s network deadline; enforce a process deadline too.
     final stderr = process.stderr.drain<void>();
@@ -468,8 +493,17 @@ Future<Map<String, dynamic>> _probe(
       },
     );
     await stderr;
-    final value = jsonDecode(await stdout) as Map<String, dynamic>;
-    if (code != 0) return {'success': false, 'error': 'probe_process'};
+    final output = await stdout;
+    if (code != 0) {
+      return {
+        'success': false,
+        'error': 'probe_process',
+        'stage': stage,
+        'exitCode': code,
+      };
+    }
+    stage = 'decode';
+    final value = jsonDecode(output) as Map<String, dynamic>;
     return {
       for (final key in [
         'success',
@@ -483,8 +517,16 @@ Future<Map<String, dynamic>> _probe(
       ])
         if (value.containsKey(key)) key: value[key],
     };
+  } on ProcessException catch (error) {
+    // Numeric OS code only: messages/arguments can contain private paths.
+    return {
+      'success': false,
+      'error': 'probe_process',
+      'stage': stage,
+      'osErrorCode': error.errorCode,
+    };
   } catch (_) {
-    return {'success': false, 'error': 'probe_process'};
+    return {'success': false, 'error': 'probe_process', 'stage': stage};
   }
 }
 
