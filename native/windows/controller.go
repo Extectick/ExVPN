@@ -201,7 +201,13 @@ func (c *Controller) setExclusions(paths []string) error {
 	if validatePolicyPaths(paths) != nil || (c.validateExclusions != nil && c.validateExclusions(paths) != nil) {
 		return Code("exclusions_rejected")
 	}
-	return c.savePolicyLocked(paths)
+	if err := c.savePolicyLocked(paths); err != nil {
+		return err
+	}
+	if !c.status.GuardActive && c.status.State == "error" && c.status.Code == "exclusions_unavailable" {
+		c.status.State, c.status.Code = "disconnected", "policy_restored"
+	}
+	return nil
 }
 
 func (c *Controller) connectWithPolicy(p exvpn.Profile, paths []string, stored bool) error {

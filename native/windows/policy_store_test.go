@@ -145,6 +145,24 @@ func TestPolicySaveFailureDoesNotStartTunnelOrPublishNewSettings(t *testing.T) {
 	}
 }
 
+func TestExplicitPolicyResetClearsOnlyTheStorageErrorAndKeepsGuard(t *testing.T) {
+	for _, armed := range []bool{false, true} {
+		store := &memoryPolicy{err: errors.New("corrupt")}
+		g := &fakeGuard{armed: armed}
+		c := policyController(t, g, store, nil)
+		if r := c.Handle(Request{Command: "setExclusions", Exclusions: []string{}}); !r.OK {
+			t.Fatal(r.Code)
+		}
+		want := "disconnected"
+		if armed {
+			want = "blocked"
+		}
+		if c.Status().State != want || g.armed != armed {
+			t.Fatal("reset retained a stale error or changed protection")
+		}
+	}
+}
+
 func TestConnectUsesLatestSerializedConfirmedPolicy(t *testing.T) {
 	store := &memoryPolicy{paths: []string{}, gate: make(chan struct{}), entered: make(chan struct{})}
 	captured := make(chan []string, 1)
