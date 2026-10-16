@@ -69,6 +69,11 @@ Future<void> main() async {
           names.any((name) => !importedNames.contains(name))) {
         exit(78);
       }
+      if (marker['networkRecovery'] == true && names.length != 1) exit(78);
+    }
+    if (marker['networkRecovery'] == true &&
+        (marker['providerMatrix'] != true || marker['unelevated'] != true)) {
+      exit(78);
     }
   } catch (_) {
     exit(78);
@@ -89,6 +94,8 @@ Future<void> main() async {
     'faultsPassed': false,
     'runId': marker['runId'],
     'providerMatrix': marker['providerMatrix'] == true,
+    'networkRecoveryRequested': marker['networkRecovery'] == true,
+    'networkRecoveryPassed': false,
     'profiles': <Object?>[],
   };
   Future<void> save() => File('$_output\\flutter-report.json').writeAsString(
@@ -284,6 +291,73 @@ Future<void> main() async {
           );
           result['trafficCountersIncreased'] = true;
           await snapshot('connected-${names.indexOf(name)}');
+          if (marker['networkRecovery'] == true) {
+            final recovery = <String, Object?>{};
+            result['networkRecovery'] = recovery;
+            final initialConnectedAt = vpn.status.connectedAt;
+            await progress('disabling guest adapter');
+            await _coordinate(tester, marker, 1, 'network-down');
+            final down = jsonDecode(
+              await File('$_output\\network-Down.json').readAsString(),
+            ) as Map;
+            expect(down['runId'], marker['runId']);
+            expect(down['adapterDisabled'], isTrue);
+            expect(down['guardArmed'], isTrue);
+            recovery['adapterDisabled'] = true;
+            recovery['guardRetainedWhileOffline'] = true;
+            final offline = await _probe('numeric');
+            recovery['offlineHttps'] = offline;
+            expect(offline['success'], isFalse);
+            expect(offline['error'], 'network');
+            await _until(
+              tester,
+              () => vpn.status.phase == VpnPhase.reconnecting,
+              40,
+            );
+            expect(vpn.lastErrorCode, 'transport_unreachable');
+            recovery['offlineDetectedByUi'] = true;
+            await snapshot('network-offline');
+            await progress('enabling guest adapter');
+            await _coordinate(tester, marker, 2, 'network-up');
+            final up = jsonDecode(
+              await File('$_output\\network-Up.json').readAsString(),
+            ) as Map;
+            expect(up['runId'], marker['runId']);
+            expect(up['adapterUp'], isTrue);
+            expect(up['guardArmed'], isTrue);
+            recovery['guardRetainedAfterAdapterReturn'] = true;
+            await _until(
+              tester,
+              () => vpn.status.phase == VpnPhase.connected,
+              75,
+            );
+            expect(vpn.status.activeProfileId, server.profile.id);
+            expect(vpn.status.connectedAt, isNotNull);
+            expect(
+              vpn.status.connectedAt!.isAfter(initialConnectedAt!),
+              isTrue,
+            );
+            final recoveredNumeric = await _probe('numeric');
+            final recoveredDns = await _probe('dns-tun');
+            final recoveredHealth = await _probe('health');
+            recovery.addAll({
+              'restoredNumericHttps': recoveredNumeric,
+              'restoredTunDns': recoveredDns,
+              'restoredHostnameHttps': recoveredHealth,
+            });
+            expect(recoveredNumeric['success'], isTrue);
+            expect(recoveredNumeric['egressIpSha256'], isA<String>());
+            expect(recoveredDns['success'], isTrue);
+            expect(recoveredHealth['httpStatus'], 204);
+            expect(
+              recoveredNumeric['egressIpSha256'],
+              isNot((report['baseline'] as Map)['egressIpSha256']),
+            );
+            recovery['sameProfileReconnectedWithoutUserAction'] = true;
+            recovery['distinctEgressAfterRecovery'] = true;
+            report['networkRecoveryPassed'] = true;
+            await snapshot('network-recovered');
+          }
           await _tap(tester, find.byKey(const Key('connect-button')));
           await _until(
             tester,
@@ -480,6 +554,9 @@ Future<void> main() async {
       );
       expect((report['afterDisconnect'] as Map)['success'], isTrue);
       if (marker['faults'] == true) expect(report['faultsPassed'], isTrue);
+      if (marker['networkRecovery'] == true) {
+        expect(report['networkRecoveryPassed'], isTrue);
+      }
       expect(tester.takeException(), isNull);
     } finally {
       if (ownedAttempt) {

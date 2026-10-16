@@ -64,8 +64,8 @@ func TestTunnelConfigUsesPinnedCoreAndOwnsPolicy(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if sender.(*proxyman.SenderConfig).StreamSettings.SocketSettings.DomainStrategy != internet.DomainStrategy_FORCE_IP {
-			t.Fatal("excluded traffic permits system resolver fallback")
+		if sender.(*proxyman.SenderConfig).GetStreamSettings().GetSocketSettings().GetDomainStrategy() != internet.DomainStrategy_AS_IS {
+			t.Fatal("numeric owner-checked traffic invokes a global resolver")
 		}
 	}
 	var c map[string]any
@@ -102,6 +102,9 @@ func TestTunnelConfigUsesPinnedCoreAndOwnsPolicy(t *testing.T) {
 	}
 	if len(settings["autoSystemWfpBlockLeak"].([]any)) != 0 {
 		t.Fatal("relied on dynamic upstream guard")
+	}
+	if _, registered := settings["autoOutboundsInterface"]; registered {
+		t.Fatal("registered an unbounded per-core global socket hook")
 	}
 	rules := c["routing"].(map[string]any)["rules"].([]any)
 	if rules[1].(map[string]any)["outboundTag"] != "dns-out" || rules[2].(map[string]any)["outboundTag"] != applicationPolicyTag {

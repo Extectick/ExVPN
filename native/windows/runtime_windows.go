@@ -29,6 +29,7 @@ import (
 
 type xrayTunnel struct {
 	instance *core.Instance
+	lease    *outboundLease
 	luid     uint64
 	dialer   proxy.ContextDialer
 	once     sync.Once
@@ -36,6 +37,9 @@ type xrayTunnel struct {
 }
 
 func (t *xrayTunnel) LUID() uint64 { return t.luid }
+func (t *xrayTunnel) RecoveryRequired() bool {
+	return t.lease == nil || t.lease.RecoveryRequired()
+}
 func (t *xrayTunnel) Statistics() (Traffic, error) {
 	manager, ok := t.instance.GetFeature(stats.ManagerType()).(stats.Manager)
 	if !ok {
@@ -56,11 +60,17 @@ func readTraffic(manager stats.Manager) (Traffic, error) {
 	return traffic, nil
 }
 func (t *xrayTunnel) Close() error {
-	t.once.Do(func() { t.closeErr = t.instance.Close() })
-	if t.closeErr != nil {
-		return Code("core_stop_failed")
-	}
-	return nil
+	t.once.Do(func() {
+		// Retire the generation and close its sockets before the core's Close;
+		// upstream transports can otherwise leave asynchronous dialers alive.
+		if t.lease != nil && t.lease.Close() != nil {
+			t.closeErr = Code("outbound_close_failed")
+		}
+		if t.instance != nil && t.instance.Close() != nil && t.closeErr == nil {
+			t.closeErr = Code("core_stop_failed")
+		}
+	})
+	return t.closeErr
 }
 func (t *xrayTunnel) Verify(ctx context.Context) error {
 	roots, err := offlineNativeRoots()
@@ -118,17 +128,30 @@ func startTunnelResolved(ctx context.Context, p exvpn.Profile, exclusions []stri
 	if e != nil {
 		return nil, Code("config_rejected")
 	}
-	i, e := core.New(cfg)
+	coreContext, lease, e := prepareOutboundLease(ctx, resolution)
 	if e != nil {
+		return nil, e
+	}
+	if e = lease.BindConfig(cfg); e != nil {
+		if lease.Close() != nil {
+			return &xrayTunnel{lease: lease}, Code("outbound_close_failed")
+		}
+		return nil, e
+	}
+	i, e := core.NewWithContext(coreContext, cfg)
+	if e != nil {
+		if lease.Close() != nil {
+			return &xrayTunnel{lease: lease}, Code("outbound_close_failed")
+		}
 		return nil, Code("core_start_failed")
 	}
 	if e = installApplicationPolicy(i, exclusions); e != nil {
-		return &xrayTunnel{instance: i}, e
+		return &xrayTunnel{instance: i, lease: lease}, e
 	}
 	if e = i.Start(); e != nil {
-		return &xrayTunnel{instance: i}, Code("core_start_failed")
+		return &xrayTunnel{instance: i, lease: lease}, Code("core_start_failed")
 	}
-	fail := func() (Tunnel, error) { return &xrayTunnel{instance: i}, Code("tunnel_setup_failed") }
+	fail := func() (Tunnel, error) { return &xrayTunnel{instance: i, lease: lease}, Code("tunnel_setup_failed") }
 	if ctx.Err() != nil {
 		return fail()
 	}
@@ -148,5 +171,5 @@ func startTunnelResolved(ctx context.Context, p exvpn.Profile, exclusions []stri
 	if !ok {
 		return fail()
 	}
-	return &xrayTunnel{instance: i, luid: uint64(luid), dialer: cd}, nil
+	return &xrayTunnel{instance: i, lease: lease, luid: uint64(luid), dialer: cd}, nil
 }

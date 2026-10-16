@@ -39,10 +39,12 @@ type Controller struct {
 	context            context.Context
 	generation         uint64
 	closed             bool
-	stopping           bool
+	stopping           int
 	exclusions         []string
 	exclusionsKnown    bool
 	policy             PolicyStore
+	monitorInterval    time.Duration
+	reconnectDelays    []time.Duration
 }
 
 func NewController(g Guard, f TunnelFactory, validate func([]string) error, networkEnabled bool) (*Controller, error) {
@@ -57,6 +59,8 @@ func NewControllerWithPolicy(g Guard, f TunnelFactory, validate func([]string) e
 		return nil, Code("guard_inspection_failed")
 	}
 	c := &Controller{guard: g, start: f, validateExclusions: validate, networkEnabled: networkEnabled, status: Status{State: "disconnected", Code: "idle", GuardActive: armed, CoreVersion: exvpn.CoreVersion, Capabilities: Capabilities{SystemTunnel: networkEnabled, PersistentGuard: networkEnabled, ApplicationExclusions: networkEnabled, Verified: false}}}
+	c.monitorInterval = 15 * time.Second
+	c.reconnectDelays = []time.Duration{5 * time.Second, 15 * time.Second, 30 * time.Second}
 	if armed {
 		c.status.State = "blocked"
 		c.status.Code = "guard_recovered"
@@ -195,7 +199,7 @@ func (c *Controller) savePolicyLocked(paths []string) error {
 func (c *Controller) setExclusions(paths []string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.closed || c.cancel != nil || c.tunnel != nil || c.stopping {
+	if c.closed || c.cancel != nil || c.tunnel != nil || c.stopping != 0 {
 		return Code("reconnect_required")
 	}
 	if validatePolicyPaths(paths) != nil || (c.validateExclusions != nil && c.validateExclusions(paths) != nil) {
@@ -219,10 +223,14 @@ func (c *Controller) connectWithPolicy(p exvpn.Profile, paths []string, stored b
 	if !c.networkEnabled {
 		return Code("system_testing_required")
 	}
-	if c.cancel != nil || c.tunnel != nil || c.stopping {
+	if c.cancel != nil || c.tunnel != nil || c.stopping != 0 {
 		return Code("connection_busy")
 	}
 	exclusions, err := c.resolvePolicyLocked(p, paths, stored)
+	if err != nil {
+		return err
+	}
+	p, err = snapshotProfile(p)
 	if err != nil {
 		return err
 	}
@@ -264,20 +272,25 @@ func (c *Controller) connect(ctx context.Context, generation uint64, p exvpn.Pro
 		c.tunnel = t
 		c.mu.Unlock()
 	}
-	stop := func() {
-		if c.stopTunnel() != nil {
-			c.set("blocked", "tunnel_stop_failed", true)
+	stop := func() error {
+		err := c.stopTunnel()
+		if err != nil {
+			c.set("blocked", safeCode(err, "tunnel_stop_failed"), true)
 		}
+		return err
+	}
+	fail := func(code string) {
+		if stop() == nil {
+			c.set("blocked", code, true)
+		}
+		c.finishAttempt(generation)
 	}
 	if e != nil {
-		stop()
-		c.set("blocked", safeCode(e, "tunnel_start_failed"), true)
-		c.finishAttempt(generation)
+		fail(safeCode(e, "tunnel_start_failed"))
 		return
 	}
 	if t == nil {
-		c.set("blocked", "tunnel_start_failed", true)
-		c.finishAttempt(generation)
+		fail("tunnel_start_failed")
 		return
 	}
 	if ctx.Err() != nil {
@@ -285,20 +298,17 @@ func (c *Controller) connect(ctx context.Context, generation uint64, p exvpn.Pro
 		return
 	}
 	if e = c.guard.PermitTunnel(t.LUID()); e != nil {
-		stop()
-		c.set("blocked", "guard_permit_failed", true)
-		c.finishAttempt(generation)
+		fail("guard_permit_failed")
 		return
 	}
 	verifyCtx, verifyCancel := context.WithTimeout(ctx, 20*time.Second)
 	e = t.Verify(verifyCtx)
 	verifyCancel()
 	if e != nil || ctx.Err() != nil {
-		stop()
-		c.set("blocked", "tunnel_unreachable", true)
-		c.finishAttempt(generation)
+		fail("tunnel_unreachable")
 		return
 	}
+	recovering := tunnelRecoveryRequired(t)
 	c.mu.Lock()
 	if generation != c.generation || c.closed {
 		c.mu.Unlock()
@@ -306,41 +316,79 @@ func (c *Controller) connect(ctx context.Context, generation uint64, p exvpn.Pro
 		return
 	}
 	c.tunnel = t
-	c.status.State = "connected"
-	c.status.Code = "https_verified"
-	c.status.ConnectedAt = time.Now().Unix()
+	if recovering {
+		c.status.State, c.status.Code = "reconnecting", "transport_unreachable"
+		c.status.ConnectedAt = 0
+	} else {
+		c.status.State, c.status.Code = "connected", "https_verified"
+		c.status.ConnectedAt = time.Now().Unix()
+	}
 	c.mu.Unlock()
-	go c.monitor(ctx, generation, t)
+	go c.monitor(ctx, generation, t, p, exclusions, recovering)
 }
 
-// The adapter remains captured and guarded while a failed transport retries.
-// A dead server must not leave the UI indefinitely claiming connected.
-func (c *Controller) monitor(ctx context.Context, generation uint64, t Tunnel) {
-	ticker := time.NewTicker(15 * time.Second)
+// A changed underlay requires a new core; a remote server outage does not.
+// Keep a healthy core's confirmed application exclusions working while its VPN
+// endpoint is unreachable. Both cases remain under the persistent guard.
+func (c *Controller) monitor(ctx context.Context, generation uint64, t Tunnel, p exvpn.Profile, exclusions []string, immediately bool) {
+	ticker := time.NewTicker(c.monitorInterval)
 	defer ticker.Stop()
 	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
+		if !immediately {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+			}
 		}
-		probe, cancel := context.WithTimeout(ctx, 12*time.Second)
-		err := t.Verify(probe)
-		cancel()
+		immediately = false
+		c.ops.Lock()
 		c.mu.Lock()
 		if ctx.Err() != nil || c.closed || c.generation != generation || c.tunnel != t {
 			c.mu.Unlock()
+			c.ops.Unlock()
 			return
 		}
-		if err != nil {
+		c.mu.Unlock()
+		rebuild := tunnelRecoveryRequired(t)
+		var err error
+		if !rebuild {
+			probe, cancel := context.WithTimeout(ctx, 12*time.Second)
+			err = t.Verify(probe)
+			cancel()
+			// A short interface outage can occur during HTTPS and recover before
+			// this call returns. The lease remembers that change until retired.
+			rebuild = tunnelRecoveryRequired(t)
+		}
+		c.mu.Lock()
+		if ctx.Err() != nil || c.closed || c.generation != generation || c.tunnel != t {
+			c.mu.Unlock()
+			c.ops.Unlock()
+			return
+		}
+		if err != nil || rebuild {
 			c.status.State = "reconnecting"
 			c.status.Code = "transport_unreachable"
-		} else {
-			c.status.State = "connected"
-			c.status.Code = "https_verified"
+			c.status.ConnectedAt = 0
+		} else if c.status.State != "connected" {
+			c.status.State, c.status.Code = "connected", "https_verified"
+			c.status.ConnectedAt = time.Now().Unix()
 		}
 		c.mu.Unlock()
+		c.ops.Unlock()
+		if rebuild {
+			t = c.reconnect(ctx, generation, p, exclusions)
+			if t == nil {
+				return
+			}
+			ticker.Reset(c.monitorInterval)
+		}
 	}
+}
+
+func tunnelRecoveryRequired(tunnel Tunnel) bool {
+	observer, ok := tunnel.(interface{ RecoveryRequired() bool })
+	return ok && observer.RecoveryRequired()
 }
 func (c *Controller) finishAttempt(generation uint64) {
 	c.mu.Lock()
@@ -352,7 +400,7 @@ func (c *Controller) finishAttempt(generation uint64) {
 }
 func (c *Controller) Disconnect() error {
 	c.mu.Lock()
-	c.stopping = true
+	c.stopping++
 	c.generation++
 	if c.cancel != nil {
 		c.cancel()
@@ -361,7 +409,7 @@ func (c *Controller) Disconnect() error {
 	c.mu.Unlock()
 	c.ops.Lock()
 	defer c.ops.Unlock()
-	defer func() { c.mu.Lock(); c.stopping = false; c.mu.Unlock() }()
+	defer func() { c.mu.Lock(); c.stopping--; c.mu.Unlock() }()
 	if err := c.stopTunnel(); err != nil {
 		c.set("blocked", "tunnel_stop_failed", true)
 		return err
@@ -382,18 +430,29 @@ func (c *Controller) Disconnect() error {
 }
 
 func (c *Controller) Probe(profileID string) ProbeResult {
+	if !c.ops.TryLock() {
+		return ProbeResult{ErrorCode: "probe_requires_active_tunnel"}
+	}
+	defer c.ops.Unlock()
 	c.mu.Lock()
 	t := c.tunnel
 	ctx := c.context
-	active := c.status.ActiveProfileID
+	generation := c.generation
+	active := !c.closed && c.stopping == 0 && c.status.State == "connected" && c.status.ActiveProfileID == profileID
 	c.mu.Unlock()
-	if t == nil || ctx == nil || ctx.Err() != nil || active != profileID {
+	if t == nil || ctx == nil || ctx.Err() != nil || !active {
 		return ProbeResult{ErrorCode: "probe_requires_active_tunnel"}
 	}
 	probe, cancel := context.WithTimeout(ctx, 12*time.Second)
 	defer cancel()
 	started := time.Now()
 	if t.Verify(probe) != nil {
+		return ProbeResult{ErrorCode: "probe_connection_failed"}
+	}
+	c.mu.Lock()
+	current := ctx.Err() == nil && !c.closed && c.stopping == 0 && c.generation == generation && c.tunnel == t
+	c.mu.Unlock()
+	if !current {
 		return ProbeResult{ErrorCode: "probe_connection_failed"}
 	}
 	return ProbeResult{Reachable: true, LatencyMS: time.Since(started).Milliseconds()}
@@ -409,7 +468,9 @@ func (c *Controller) Statistics() (Traffic, error) {
 	defer c.ops.Unlock()
 	c.mu.Lock()
 	t := c.tunnel
-	active := c.context != nil && c.context.Err() == nil && !c.stopping && !c.closed
+	ctx := c.context
+	generation := c.generation
+	active := ctx != nil && ctx.Err() == nil && c.stopping == 0 && !c.closed && c.status.State == "connected"
 	c.mu.Unlock()
 	if !active {
 		return Traffic{}, Code("statistics_unavailable")
@@ -418,7 +479,14 @@ func (c *Controller) Statistics() (Traffic, error) {
 	if !ok {
 		return Traffic{}, Code("statistics_unavailable")
 	}
-	return provider.Statistics()
+	traffic, err := provider.Statistics()
+	c.mu.Lock()
+	current := ctx.Err() == nil && !c.closed && c.stopping == 0 && c.generation == generation && c.tunnel == t
+	c.mu.Unlock()
+	if !current {
+		return Traffic{}, Code("statistics_unavailable")
+	}
+	return traffic, err
 }
 func (c *Controller) stopTunnel() error {
 	if e := c.guard.Suspend(); e != nil {

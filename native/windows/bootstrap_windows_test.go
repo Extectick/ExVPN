@@ -137,8 +137,8 @@ func TestResolvedTunnelKeepsHostnameAndTransportIdentity(t *testing.T) {
 			actualProxy := got["outbounds"].([]any)[1].(map[string]any)
 			expectedProxy := want["outbounds"].([]any)[1].(map[string]any)
 			stream := actualProxy["streamSettings"].(map[string]any)
-			if stream["sockopt"].(map[string]any)["domainStrategy"] != "ForceIP" {
-				t.Fatal("System resolver fallback allowed")
+			if stream["sockopt"].(map[string]any)["domainStrategy"] != "AsIs" {
+				t.Fatal("Upstream DNS resolution can run before the lease check")
 			}
 			delete(stream, "sockopt")
 			if !reflect.DeepEqual(actualProxy, expectedProxy) {

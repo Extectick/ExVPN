@@ -66,7 +66,10 @@ func buildTunnelConfig(p exvpn.Profile, exclusions []string, probe exvpn.ProbeOp
 		for _, raw := range c["outbounds"].([]any) {
 			out := raw.(map[string]any)
 			if out["tag"] == "proxy" {
-				out["streamSettings"].(map[string]any)["sockopt"] = object{"domainStrategy": "ForceIP"}
+				// The ExVPN dialer validates the generation token before using
+				// this already bootstrapped name. Upstream ForceIP resolves via
+				// a global DNS client before reaching that lifetime check.
+				out["streamSettings"].(map[string]any)["sockopt"] = object{"domainStrategy": "AsIs"}
 			}
 		}
 	}
@@ -94,14 +97,18 @@ func buildTunnelConfig(p exvpn.Profile, exclusions []string, probe exvpn.ProbeOp
 			// Use a distinct peer in each captured subnet so DNS reaches Xray.
 			"dns":                    []string{"172.31.255.2", "fd71:6578:7670::2"},
 			"autoSystemRoutingTable": []string{"0.0.0.0/1", "128.0.0.0/1", "::/1", "8000::/1"},
-			"autoOutboundsInterface": "auto",
+			// The process-lifetime ExVPN dialer binds every TCP/UDP socket to
+			// this core generation's validated underlay lease. Upstream's
+			// per-Start global hooks are not used for repeated reconnects.
 			// Separate ExVPN WFP guard owns leak/crash protection. Upstream's
 			// optional dynamic guard must not be mistaken for persistence.
 			"autoSystemWfpBlockLeak": []string{},
 		},
 	})
 	if len(exclusions) > 0 {
-		c["outbounds"] = append(c["outbounds"].([]any), object{"tag": "direct-excluded", "protocol": "freedom", "settings": object{"domainStrategy": "ForceIP"}})
+		// Ownership checks accept numeric TUN tuples only, including every UDP
+		// datagram. Never invoke upstream's global resolver for a direct flow.
+		c["outbounds"] = append(c["outbounds"].([]any), object{"tag": "direct-excluded", "protocol": "freedom", "settings": object{"domainStrategy": "AsIs"}})
 	}
 	return json.Marshal(c)
 }
