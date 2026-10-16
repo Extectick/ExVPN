@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "visualStudioMajor": 18,
+  "toolsetDirectory": "14.51.36231",
+  "fileVersion": "14.51.36247.0",
+  "sourceRelativePath": "VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.CRT",
+  "licenseUrl": "https://visualstudio.microsoft.com/license-terms/vs2026-ga-community/",
+  "redistributionUrl": "https://learn.microsoft.com/en-us/visualstudio/releases/2026/redistribution",
+  "provenance": "Unmodified x64 release DLLs from the official Visual Studio Community 18.7.11903.348 installation (isPrerelease=false); Microsoft Authenticode verified 2026-10-16.",
+  "files": [
+    {"file": "msvcp140.dll", "sha256": "7c26614e1d733892c2deac7e245ce115504b1d80592dd0a01b08e3e5a55f89ca"},
+    {"file": "vcruntime140.dll", "sha256": "d1f4225df2cd877dbf130d5668a021dce3f94118455ff5ec952061c30afc9ce7"},
+    {"file": "vcruntime140_1.dll", "sha256": "a7146c08f89fe5b04541ab507cdb59ff7b44534d4ba3c668a426c6450a03434e"}
+  ]
+}

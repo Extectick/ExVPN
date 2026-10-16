@@ -103,6 +103,15 @@ function Register-InstalledPackage($State) {
     if (Test-Path -LiteralPath $menu) { if ($shell.CreateShortcut($menu).TargetPath -ine (Join-Path $roots.ui 'exvpn.exe')) { throw 'A different ExVPN Start menu shortcut already exists.' } }
     $shortcut = $shell.CreateShortcut($menu); $shortcut.TargetPath = Join-Path $roots.ui 'exvpn.exe'; $shortcut.WorkingDirectory = $roots.ui; $shortcut.IconLocation = $shortcut.TargetPath; $shortcut.Save()
 }
+function Remove-OwnedRegistration {
+    $registration = Get-ItemProperty $registryPath -ErrorAction SilentlyContinue
+    if ($registration -and $registration.InstallLocation -ieq $roots.ui) { Remove-Item -LiteralPath $registryPath }
+    $menu = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::CommonPrograms)) 'ExVPN.lnk'
+    if (Test-Path -LiteralPath $menu) {
+        $shell = New-Object -ComObject WScript.Shell
+        if ($shell.CreateShortcut($menu).TargetPath -ieq (Join-Path $roots.ui 'exvpn.exe')) { Remove-Item -LiteralPath $menu }
+    }
+}
 function Remove-InstalledTrees($State, [switch]$Partial) {
     # Preflight every tree before deleting any owned file. Absolute roots are
     # fixed Program Files subdirectories; unknown/changed files always abort.
@@ -123,12 +132,17 @@ function Backup-InstalledTrees($State) {
     Set-ProtectedPackageACL (Join-Path $backup 'previous-state.json')
     $backup
 }
-function Restore-PackageBackup([string]$Backup) {
-    $absolute = [IO.Path]::GetFullPath($Backup)
-    if ([IO.Path]::GetDirectoryName($absolute) -ine $rollbackRoot -or [IO.Path]::GetFileName($absolute) -notmatch '^[a-f0-9-]{36}$') { throw 'Invalid protected rollback path.' }
+function Read-PackageBackup([string]$Backup, [string]$ExpectedOwner) {
+    $absolute = Assert-RollbackPath $rollbackRoot $Backup
     Assert-ProtectedPackage $absolute
     $old = Read-PackageJson (Join-Path $absolute 'previous-state.json')
+    if ($old.format -ne 1 -or $old.ownerSid -cne $ExpectedOwner -or $old.version -notmatch '^\d+\.\d+\.\d+$' -or $old.build -lt 1) { throw 'Invalid rollback package identity.' }
     foreach ($tree in @('ui','service','control')) { Assert-TreeManifest (Join-Path $absolute $tree) $old.trees.$tree }
+    $old
+}
+function Restore-PackageBackup([string]$Backup, [string]$ExpectedOwner) {
+    $absolute = Assert-RollbackPath $rollbackRoot $Backup
+    $old = Read-PackageBackup $absolute $ExpectedOwner
     foreach ($tree in @('ui','service','control')) { Copy-OwnedTree (Join-Path $absolute $tree) $roots[$tree] $old.trees.$tree }
     Write-InstalledState $old; Create-OwnedService $old; Register-InstalledPackage $old
 }
@@ -163,20 +177,16 @@ try {
     if ($Action -eq 'Recover') { Stop-OwnedService $current; Write-Host 'Owned ExVPN guard recovered. Service remains stopped; no unrelated network settings were reset.'; return }
     if ($Action -eq 'Uninstall') {
         Stop-OwnedService $current; Remove-InstalledTrees $current
-        $registration = Get-ItemProperty $registryPath -ErrorAction SilentlyContinue
-        if ($registration -and $registration.InstallLocation -ieq $roots.ui) { Remove-Item -LiteralPath $registryPath }
-        $menu = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::CommonPrograms)) 'ExVPN.lnk'
-        if (Test-Path -LiteralPath $menu) { $shell = New-Object -ComObject WScript.Shell; if ($shell.CreateShortcut($menu).TargetPath -ieq (Join-Path $roots.ui 'exvpn.exe')) { Remove-Item -LiteralPath $menu } }
+        Remove-OwnedRegistration
         Write-Host 'Owned ExVPN installation removed. Encrypted user data and protected rollback snapshots retained.'; return
     }
     if ($Action -eq 'Rollback') {
         if (!$current.rollbackPath) { throw 'No previous package is recorded.' }
         $backup = $current.rollbackPath
         # Validate restore source before disconnecting or removing current files.
-        Assert-ProtectedPackage $backup
-        $old = Read-PackageJson (Join-Path $backup 'previous-state.json')
-        foreach ($tree in @('ui','service','control')) { Assert-TreeManifest (Join-Path $backup $tree) $old.trees.$tree }
-        Stop-OwnedService $current; Remove-InstalledTrees $current; Restore-PackageBackup $backup
+        $old = Read-PackageBackup $backup $resolvedOwner
+        if ($old.build -ge $current.build) { throw 'Rollback source must precede the installed build.' }
+        Stop-OwnedService $current; Remove-InstalledTrees $current; Restore-PackageBackup $backup $resolvedOwner
         Write-Host 'Previous package restored; no subscription data or automatic VPN session was restored.'; return
     }
     $backup = $null; $removedPrevious = $false
@@ -203,7 +213,8 @@ try {
         if (Assert-OwnedService $new) { Stop-OwnedService $new }
         if (!$current -or $removedPrevious) {
             Remove-InstalledTrees $new -Partial
-            if ($backup) { Restore-PackageBackup $backup }
+            Remove-OwnedRegistration
+            if ($backup) { Restore-PackageBackup $backup $resolvedOwner }
         }
         throw 'Installation failed. The previous package was restored when safe; protected rollback data remains available. Do not reset global firewall/DNS settings.'
     }

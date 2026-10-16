@@ -16,6 +16,9 @@ $known = Join-Path $root 'owned.txt'; Set-Content -LiteralPath $known -Value 'fi
 $records = @(Get-TreeManifest $root)
 Assert-TreeManifest $root $records
 foreach ($bad in @('../outside.txt','C:\outside.txt','nested/../../outside.txt','owned.txt:stream','\\server\share\file')) { Must-Reject { Get-OwnedPath $root $bad } 'escaping/ADS path' }
+$backupName = 'c7880ae4-094d-4f3e-8ad0-48247f0df5a0'
+if ((Assert-RollbackPath $root (Join-Path $root $backupName)) -ne (Join-Path $root $backupName)) { throw 'Valid rollback path rejected.' }
+foreach ($bad in @($backupName,(Join-Path $root "nested/$backupName"),(Join-Path $root ('-'*36)),(Join-Path $root "../$backupName"))) { Must-Reject { Assert-RollbackPath $root $bad } 'unowned rollback path' }
 Must-Reject { Assert-TreeManifest $root @($records[0],$records[0]) } 'duplicate target'
 $unknown = Join-Path $root 'unknown.txt'; Set-Content -LiteralPath $unknown -Value 'keep'
 Must-Reject { Remove-OwnedTree $root $records } 'unknown file cleanup'

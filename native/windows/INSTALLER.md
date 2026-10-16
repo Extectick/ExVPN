@@ -15,6 +15,10 @@ The full notices bundle, matching source archive and module inventory are includ
 NSIS 3.13 comes from the official SourceForge release; URL/archive/compiler hashes
 are in `scripts/windows/nsis.lock.json`. The installed license copy preserves
 zlib/libpng, bzip2 and CPL/LZMA notices. No third-party NSIS plugins are added.
+Three pinned Microsoft C++ runtime DLLs are copied app-locally from the installed
+release VS toolset after hash, version, Microsoft Authenticode and PE-import checks.
+Their separate license and redistribution notice are included. No global C++
+runtime installation is performed. See `scripts/windows/msvc-runtime.lock.json`.
 
 ## Installation on a controlled test machine
 
@@ -70,16 +74,40 @@ service/product registration, and retains encrypted per-user subscriptions.
 Unknown/modified files cause a preflight failure. Installer extraction and cleanup
 use fixed file lists and protected staging, never `RMDir /r` on an installation root.
 
-## Windows Sandbox option (not enabled by this work)
+## Windows Sandbox bundle (prepared, not executed)
 
-The current host inventory has Windows Sandbox/Hyper-V disabled. Enabling Sandbox
-is a separate administrator action and may require a reboot; neither is performed
-by this package. A future `.wsb` can expose only the installer directory read-only,
-disable clipboard/printer/audio/video redirection, and leave networking enabled
-inside the disposable guest for explicit tunnel tests. Do not expose `.private`
-or the whole repository. Sandbox is suitable for install/uninstall and basic
-network tests; it does not replace persistent reboot/sleep and Windows 10/11 VM
-coverage. Closing Sandbox discards its guest state.
+Run `scripts/windows/prepare-sandbox.ps1 -InstallerDirectory <package directory>`.
+This writes a fresh `artifacts/windows/sandbox-*` bundle without launching Sandbox.
+Its `.wsb` maps only four public package files plus their checksums read-only and a
+separate empty `qa-output` folder writable. Clipboard, audio/video and printer
+redirection are disabled. The repository and `.private` are never shared. The
+standard Sandbox virtual network is enabled; ExVPN network testing stays off.
+
+Opening this `.wsb` runs the guest QA script automatically. It verifies the exact
+`WDAGUtilityAccount`, expected guest path, forbidden host identity and input hashes
+before any elevation or installation. The guest tests silent install, protected
+file hashes/ACLs, LocalSystem SCM identity, explicit recovery, service restart,
+uninstall, and unchanged guest route/DNS fingerprints. Results go to
+`qa-output/result.json`; treat all guest output as untrusted data, never executable
+host instructions. A failed run leaves guest state for inspection and never resets
+the host firewall, routes or DNS. Prepare a new bundle for each run.
+
+The script deliberately reports UI/IPC, TUN/WFP/crash coverage, version-pair upgrade
+and rollback, reboot/sleep and Windows 10 as untested. Those require subsequent
+controlled scenarios, not an installer-compilation checkbox. Enablement of the
+Sandbox optional feature and any host reboot are separate operations; this bundle
+does neither. Closing Sandbox discards its guest state.
+
+## Local build evidence (2026-10-16)
+
+Pinned NSIS 3.13 compiled the unsigned installer offline; all expanded compiler,
+stub and built-in plugin files were checked against the pinned archive. Manifest
+tests reject traversal, duplicate targets, foreign rollback paths and cleanup of
+unknown/changed files. Windows PowerShell 5.1 parsed the scripts and inspected the
+complete payload without elevated/system actions. Flutter Windows release and
+Go service builds passed. The real release window displays the approved squirrel
+in its title bar. Installation, upgrade, recovery and uninstall have not yet run
+in a guest; E5-004 remains open. No installer or service was run on the host.
 
 Sources: [NSIS](https://nsis.sourceforge.io/Download),
 [licenses](https://nsis.sourceforge.io/License),

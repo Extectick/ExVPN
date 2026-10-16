@@ -41,11 +41,11 @@ Page custom OptionsPage OptionsLeave
 
 Function .onInit
   ${IfNot} ${RunningX64}
-    MessageBox MB_ICONSTOP "ExVPN requires Windows x64."
+    MessageBox MB_ICONSTOP "ExVPN requires Windows x64." /SD IDOK
     Abort
   ${EndIf}
   ${IfNot} ${AtLeastWin10}
-    MessageBox MB_ICONSTOP "ExVPN requires Windows 10 or newer."
+    MessageBox MB_ICONSTOP "ExVPN requires Windows 10 or newer." /SD IDOK
     Abort
   ${EndIf}
   SetRegView 64
@@ -167,8 +167,8 @@ Section "ExVPN" SEC_MAIN
   nsExec::ExecToLog '"$WINDIR\SysNative\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$Stage\control\package.ps1" -Action Install -PayloadRoot "$Stage" -OwnerSid "$OwnerSid" $NetworkArg'
   Pop $0
   ${If} $0 != 0
-    MessageBox MB_ICONSTOP "Installation failed (code $0). Protected staging remains at:$\r$\n$Stage$\r$\nDo not reset global firewall or DNS settings. Use the controlled recovery instructions."
-    SetErrorLevel $0
+    MessageBox MB_ICONSTOP "Installation failed (code $0). Protected staging remains at:$\r$\n$Stage$\r$\nDo not reset global firewall or DNS settings. Use the controlled recovery instructions." /SD IDOK
+    SetErrorLevel 1
     Abort
   ${EndIf}
   SetOutPath "$PROGRAMFILES64"
@@ -195,8 +195,8 @@ Section "Uninstall"
   nsExec::ExecToLog '"$WINDIR\SysNative\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$Stage\control\package.ps1" -Action $MaintenanceAction'
   Pop $0
   ${If} $0 != 0
-    MessageBox MB_ICONSTOP "Maintenance failed (code $0). Existing files/recovery data are retained. Inspect the controlled recovery instructions."
-    SetErrorLevel $0
+    MessageBox MB_ICONSTOP "Maintenance failed (code $0). Existing files/recovery data are retained. Inspect the controlled recovery instructions." /SD IDOK
+    SetErrorLevel 1
     Abort
   ${EndIf}
   SetOutPath "$PROGRAMFILES64"

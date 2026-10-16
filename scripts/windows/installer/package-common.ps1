@@ -26,6 +26,14 @@ function Get-OwnedPath([string]$Root, [string]$Relative) {
     $result
 }
 
+function Assert-RollbackPath([string]$Root, [string]$Backup) {
+    if (!$Backup -or ![IO.Path]::IsPathRooted($Backup)) { throw 'Invalid protected rollback path.' }
+    $absolute = [IO.Path]::GetFullPath($Backup).TrimEnd('\')
+    if ([IO.Path]::GetDirectoryName($absolute) -ine [IO.Path]::GetFullPath($Root).TrimEnd('\') -or
+        [IO.Path]::GetFileName($absolute) -notmatch '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$') { throw 'Invalid protected rollback path.' }
+    $absolute
+}
+
 function Get-TreeManifest([string]$Root, [string[]]$Ignore = @()) {
     $prefix = [IO.Path]::GetFullPath($Root).TrimEnd('\') + '\'
     @(Get-PackageTree $Root | Where-Object { !$_.PSIsContainer } | ForEach-Object {
