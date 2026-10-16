@@ -1,0 +1,142 @@
+{
+  "format": 1,
+  "date": "2026-10-16",
+  "sourceCommit": "625a8752c6da1c84465c1d0eed0747848fbea13e",
+  "appVersion": "0.1.0+2",
+  "startedUtc": "2026-10-16T15:56:08.617912Z",
+  "finishedUtc": "2026-10-16T15:56:48.826432Z",
+  "environment": "Windows Sandbox, Windows 11 Pro 25H2 build 26200.9711 host",
+  "installerSha256": "953099aa4456979239dc64c3626feb921b9c66f5d10893f42f5b9f13e7d3b630",
+  "serviceSha256": "6d93dc9ffb51bd2c34576e89697d8221c88a37e4dd456ddf149be3998f88f952",
+  "qaAotSha256": "1952cde7a1af44b519d76a697ec3b69dd0fa003e124029c916be16ab2d9fc918",
+  "frameworkPassed": true,
+  "nativeVpnMocked": false,
+  "computerUse": false,
+  "nativeImeTested": false,
+  "persistentStorageTested": false,
+  "ordinaryUserTokenTested": false,
+  "trojanTested": false,
+  "hysteria2Tested": false,
+  "udpTested": false,
+  "distinctEgressTested": false,
+  "fullIpv6LeakCaptureTested": false,
+  "coldDnsCachesTested": false,
+  "serviceCrashTestedInThisRun": false,
+  "exclusionsTestedInThisRun": false,
+  "temporaryServiceClientBinding": true,
+  "upgrade": {
+    "passed": true,
+    "exitCode": 0,
+    "upgradedFromBuild": 1,
+    "installedBuild": 2
+  },
+  "profiles": [
+    {
+      "name": "VLESS TCP",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "fixtureCounters": {
+        "uploadBytes": 29312,
+        "downloadBytes": 17181
+      },
+      "egressMatchedBaseline": true,
+      "explicitDisconnect": true
+    },
+    {
+      "name": "VLESS REALITY",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "fixtureCounters": {
+        "uploadBytes": 34841,
+        "downloadBytes": 73196
+      },
+      "egressMatchedBaseline": true,
+      "explicitDisconnect": true
+    },
+    {
+      "name": "VLESS Vision",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "fixtureCounters": {
+        "uploadBytes": 72516,
+        "downloadBytes": 86863
+      },
+      "egressMatchedBaseline": true,
+      "explicitDisconnect": true
+    },
+    {
+      "name": "VLESS XHTTP",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "fixtureCounters": {
+        "uploadBytes": 39336,
+        "downloadBytes": 89992
+      },
+      "egressMatchedBaseline": true,
+      "explicitDisconnect": true
+    },
+    {
+      "name": "XHTTP REALITY",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "fixtureCounters": {
+        "uploadBytes": 34762,
+        "downloadBytes": 73074
+      },
+      "egressMatchedBaseline": true,
+      "explicitDisconnect": true
+    },
+    {
+      "name": "VMess",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "fixtureCounters": {
+        "uploadBytes": 40042,
+        "downloadBytes": 14427
+      },
+      "egressMatchedBaseline": true,
+      "explicitDisconnect": true
+    },
+    {
+      "name": "Shadowsocks",
+      "passed": true,
+      "numericHttpsStatus": 200,
+      "hostnameHttpsStatus": 204,
+      "tunDnsSuccess": true,
+      "trafficCountersIncreased": true,
+      "fixtureCounters": {
+        "uploadBytes": 48870,
+        "downloadBytes": 23768
+      },
+      "egressMatchedBaseline": true,
+      "explicitDisconnect": true
+    }
+  ],
+  "restore": {
+    "productionBindingRestored": true,
+    "serviceRunning": true,
+    "tunnelAbsent": true,
+    "installedBuild": 2
+  },
+  "directHttpsAfterDisconnect": true,
+  "hostNetworkChanged": false,
+  "repeatBindingAndRestoration": true
+}

@@ -168,3 +168,12 @@ Shorebird доставляет подписанные исправления Dar
 Синтетические fixtures проверяют URI/JSON/Base64, ошибки типов, неизвестные поля, IPv6-адреса и кодирование. Системная приёмка отдельно проверяет HTTPS/IP, владельца потока, DNS с холодным кешем, UDP, IPv4/IPv6, смену сети и аварии. Макеты, анализ кода и тесты генерации конфигурации не подменяют эти доказательства.
 
 Отдельный release gate проверяет отсутствие секретов, комплект лицензий, подписи, обновление с предыдущей версии и восстановление состояния ОС после удаления. Источники решений и этапы: [PLAN.md](PLAN.md).
+
+Windows UI↔native↔SCM проверяется отдельным bundled Flutter `integration_test`
+entry point. QA executable находится в отдельном защищённом каталоге; production
+service binary, owner SID и IPC-проверки сохраняются. После прогона возвращается
+точный production client path службы. Нет HTTP/VPN mocks; только IME для ввода
+тестовой подписки синтезируется внутри Flutter. Установщик и lifecycle запускаются
+через CLI Sandbox без Computer Use; хостовая сеть не изменяется. Этот прогон не
+подменяет physical-device, native-dialog, crash/leak, storage и OTA acceptance.
+Схема запуска и доказательства — [WINDOWS_AUTOMATED_QA.md](WINDOWS_AUTOMATED_QA.md).
