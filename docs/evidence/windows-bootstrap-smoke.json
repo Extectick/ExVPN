@@ -1,0 +1,33 @@
+{
+  "format": 1,
+  "date": "2026-10-16",
+  "implementationCommit": "713b1a0ebb990e7b32a32e7544385fbc793bdc84",
+  "platform": "Windows11 Pro 25H2 26200.9711, Sandbox 0.8.107.0",
+  "scope": "bootstrap WFP/DoH only; no TUN or installed service IPC",
+  "qaExecutableSha256": "c117c611b62e4dc3881932d178332fde1b628e530ea83673e2a63623e88251aa",
+  "startedUtc": "2026-10-16T15:09:52Z",
+  "finishedUtc": "2026-10-16T15:09:55Z",
+  "status": "passed",
+  "steps": [
+    "baseline_independent_https",
+    "independent_process_blocked_before_bootstrap",
+    "independent_process_blocked_during_bootstrap",
+    "other_ip_and_port_blocked_for_bootstrap_process",
+    "verified_https_dns_wireformat_A_and_AAAA",
+    "bootstrap_closed_persistent_guard_retained",
+    "explicit_disarm_restored_independent_https"
+  ],
+  "resolvedAddressCount": 4,
+  "minimumTtl": 249,
+  "cleanupSucceeded": true,
+  "guestServiceRestored": true,
+  "guestTunnelAbsent": true,
+  "hostServiceAbsent": true,
+  "hostTunnelAbsent": true,
+  "installedServiceIpcTested": false,
+  "hostnameVpnEndToEndTested": false,
+  "packetCaptureTested": false,
+  "bootstrapCrashTested": false,
+  "networkChangeTested": false,
+  "ipv6OnlyBootstrapSupported": false
+}

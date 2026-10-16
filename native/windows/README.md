@@ -1,9 +1,10 @@
 # ExVPN Windows native service — E1/E5 work in progress
 
 **Not a verified VPN release.** This module builds the real privileged service,
-TUN runtime and Windows Filtering Platform guard, but no system service/driver
-has been installed and no routes, DNS or firewall settings have been changed by
-the automated checks below. Keep E1-007–010 and E5 open.
+TUN runtime and Windows Filtering Platform guard. Ordinary unit checks never
+install a service/driver or change routes, DNS or firewall settings. Separate
+authorized system tests run only in a disposable Sandbox; the development host
+has no ExVPN service or TUN. Keep E1-007–010 and E5 open.
 
 ## What is implemented
 
@@ -28,11 +29,13 @@ the automated checks below. Keep E1-007–010 and E5 open.
 - Xray's pinned TUN inbound config captures IPv4/IPv6, assigns adapter-specific
   DNS, prioritizes DNS above exact executable exclusions, then sends remaining
   traffic through the chosen proxy. The first/default outbound is blackhole.
-  Only the service constructs listeners/routes/DNS/policy. The current native
-  config requires a literal server IP: protected hostname bootstrap is pending.
-  Its researched lifecycle, DNS boundaries and acceptance gates are recorded in
-  [the Windows bootstrap plan](../../docs/WINDOWS_DNS_BOOTSTRAP.md); it is not
-  implemented in the prepared installer.
+  Only the service constructs listeners/routes/DNS/policy. Hostname endpoints
+  use a bounded DoH bootstrap after persistent protection is armed, before TUN
+  starts. Temporary WFP permits match this executable, SYSTEM, the fixed peer,
+  TCP/443 and the selected physical interface. TLS uses a pinned offline root
+  bundle. Exact static hosts and ForceIP retain the original SNI/Host/authority.
+  [Bootstrap implementation and evidence](../../docs/WINDOWS_DNS_BOOTSTRAP.md)
+  distinguish the passing WFP/DoH smoke from pending end-to-end hostname tests.
   Direct exclusions use `ForceIP`; failed core DNS resolution cannot fall back
   to the Windows resolver for a domain target.
 - Windows exceptions use ExVPN's `application-policy` outbound adapter, installed
@@ -215,7 +218,7 @@ These scripts are prepared and syntax checked, not elevated/install tested.
 
 - Controlled WFP/TUN/leak/crash tests above; production guard capability remains
   unverified. Link-local DHCP/IPv6 discovery handling needs that validation.
-- Protected hostname bootstrap, crash ownership journal/adapter recovery,
+- Hostname bootstrap end-to-end/expiry/network-change tests, crash ownership journal/adapter recovery,
   durable encrypted service policy and robust route/DNS restore after abrupt death.
   Existing `ExVPN-Tunnel` adapters are currently refused rather than adopted.
 - Real end-to-end IPC with a signed installed UI/service; measured live traffic

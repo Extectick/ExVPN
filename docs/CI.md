@@ -63,5 +63,7 @@ Android CI теперь дополнительно выполняет `:app:test
 заменяет сетевые испытания. Полный [run 38913723317](https://github.com/Extectick/ExVPN/actions/runs/38913723317)
 на `a26b653` успешно завершил Android и Windows, включая JVM reader tests.
 Следующие WFP GUID/DNS исправления `c50f5cd` и новый Sandbox-стенд `9fdf035`
-прошли локальные Go test/vet, service build и сборку NSIS. Им требуется отдельный
-remote run; прошлый зелёный CI не относится к этим изменениям.
+прошли локальные Go test/vet, service build и сборку NSIS. Полный
+[run 38918417589](https://github.com/Extectick/ExVPN/actions/runs/38918417589)
+на `98ad92a` завершился успешно на Android и Windows. Новый Windows hostname
+bootstrap требует собственного прогона; этот зелёный CI его не покрывает.

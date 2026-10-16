@@ -28,6 +28,7 @@ HAPP и Hiddify — функциональные ориентиры. ExVPN не 
 | Обёртка | Собственный адаптер поверх libXray; совместимый commit фиксируется после проверки E1 |
 | Android | Kotlin `VpnService`, foreground service, TUN; сокеты ядра защищены от попадания в собственный туннель |
 | Windows | Обычный пользовательский Flutter UI; отдельная Go-служба для TUN, маршрутов, DNS и WFP |
+| Windows endpoint DNS | Ограниченный DoH под persistent guard до запуска TUN; фиксированная локальная политика, без системного fallback. Реализация и незакрытая приёмка: [WINDOWS_DNS_BOOTSTRAP.md](WINDOWS_DNS_BOOTSTRAP.md) |
 | Linux | Системная служба и платформенная маршрутизация; Ubuntu 22.04/24.04 в первом Linux-этапе |
 | iOS | Swift Packet Tunnel extension и Network Extension; macOS/Xcode для сборки/подписи |
 | Исключения | Все приложения захватываются TUN; подтверждённые исключения направляются напрямую внутри ядра |

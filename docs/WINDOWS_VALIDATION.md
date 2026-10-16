@@ -150,3 +150,26 @@ TUN/fixture counters ненулевые. При закрытии VLESS-серв�
 Остаются открыты: все протоколы и удалённый egress с разными IP, DNS/IPv6 capture,
 уже открытые соединения при аварии, SCM crash, sleep/resume, смена сети, Windows10,
 upgrade/rollback/uninstall после активного VPN и подписанный выпуск.
+
+## Защищённое разрешение hostname (2026-10-16)
+
+В службу добавлен endpoint DoH под ограниченным динамическим WFP-разрешением,
+создаваемым после persistent guard и закрываемым до TUN. Подписка не меняет
+резолвер, интерфейс или политику доступа. TLS bootstrap и healthcheck используют
+офлайн-корни закреплённого Xray. Unit/config/lease/SDK tests, Go vet и service build
+прошли. Исходники: [713b1a0](https://github.com/Extectick/ExVPN/commit/713b1a0ebb990e7b32a32e7544385fbc793bdc84).
+
+Отдельный guest smoke подтвердил настоящий DoH A/AAAA, блокировку независимого
+executable, запрет другого IP/порта, сохранение guard после закрытия разрешения
+и восстановление HTTPS после disarm. Служба гостя восстановлена в Running,
+TUN отсутствует. [Результат](evidence/windows-bootstrap-smoke.json),
+[устройство механизма и открытая матрица](WINDOWS_DNS_BOOTSTRAP.md).
+TUN/SCM не участвовали именно в этом smoke; он не подтверждает сквозной hostname VPN.
+
+Пересобран unsigned development installer **34 945 907 байт**:
+`artifacts/windows/package-0.1.0-1-20261016-151625-ec6fad76/ExVPN-0.1.0-1-windows-x64-development.exe`,
+SHA-256 `7d4d0270c0c694722dcbdc755ede8d38682a33a46b2d182275aedc342bd2d715`.
+В нём новый native service и прежняя проверенная release-сборка Flutter UI.
+Payload/manifest и 136 component notices проверены сборкой NSIS. Этот пакет
+ещё не устанавливался в гостя; там остаётся предыдущий пакет с SHA-256 `00f9331…`.
+Это не подписанная beta и не принятая пара версий для upgrade.
