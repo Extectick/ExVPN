@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-16",
+  "device": "Android 11 API30 Google APIs revision16, x86_64, Pixel4a emulator",
+  "apkSha256": "341ec32e154accd41ddf3791ba941c1d8af933bf8f7ce0366f8d5d7d2621fe12",
+  "build": "0.1.0+1 debug; default OTA disabled",
+  "qr": {
+    "picker": "ACTION_OPEN_DOCUMENT / DocumentsUI",
+    "selection": "keyboard TAB/ENTER; touch observation API30-QR-001 remains open",
+    "cancelReturnedToDialog": true,
+    "smallPngBytes": 2457,
+    "smallPngDecodedToPreview": true,
+    "previewCancelledWithoutImport": true,
+    "oversizePngBytes": 5242881,
+    "oversizeRejectedWithTooLarge": true,
+    "smallPngAfterErrorDecoded": true,
+    "automaticImportOccurred": false
+  },
+  "vpnRegression": {
+    "fixture": "synthetic loopback-only VLESS TCP; ephemeral credentials",
+    "systemPermissionDialogAccepted": true,
+    "directBaseline": {"status":200,"vpnTransport":false},
+    "connected": {
+      "healthStatus":204,"healthDurationMs":1153,
+      "numericStatus":200,"numericDurationMs":1084,"vpnTransport":true,
+      "inboundUploadBytes":15515,"inboundDownloadBytes":10294
+    },
+    "serverStopped": {"numericError":"network","durationMs":8020,"vpnTransport":true,"settledUi":"blocked","code":"tunnel_https_failed"},
+    "explicitDisconnect": {"numericStatus":200,"durationMs":1130,"vpnTransport":false,"vpnServiceAbsent":true}
+  },
+  "hostNetworkSettingsChanged": false,
+  "automatedChecks": {"flutterQrTests":24,"nativeReaderJvmTests":8,"fullFlutterTests":133,"flutterAnalyze":"passed"},
+  "limits": [
+    "Device testing covers benign system provider, cancel, oversize and recovery; malicious/stalled sources are covered by JVM tests only.",
+    "API36 QR and physical-device regression on this APK are still pending.",
+    "Only VLESS TCP is repeated on this APK; older protocol and OTA evidence refers to its recorded hashes.",
+    "No full DNS/IPv6 leak, exclusions, lockdown or crash acceptance is claimed by this smoke."
+  ]
+}

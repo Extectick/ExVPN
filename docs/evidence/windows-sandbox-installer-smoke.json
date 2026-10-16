@@ -1,0 +1,56 @@
+{
+  "format": 1,
+  "status": "passed",
+  "startedUtc": "2026-10-16T14:02:50.2771118Z",
+  "installerSha256": "ce628f2b86d589d8d8e8ed20c98f42963cfdaa49433ca4e31c241775b9e36568",
+  "networkTesting": false,
+  "uiTested": false,
+  "tunnelTested": false,
+  "upgradeTested": false,
+  "steps": [
+    {
+      "name": "disposable_guest_and_input_hashes",
+      "result": "passed"
+    },
+    {
+      "name": "install_service_and_protected_manifests",
+      "result": "passed"
+    },
+    {
+      "name": "service_control_acl",
+      "result": "passed"
+    },
+    {
+      "name": "explicit_recovery_stops_service",
+      "result": "passed"
+    },
+    {
+      "name": "restart_after_recovery",
+      "result": "passed"
+    },
+    {
+      "name": "uninstall_owned_resources",
+      "result": "passed"
+    },
+    {
+      "name": "guest_routes_dns_unchanged",
+      "result": "passed"
+    }
+  ],
+  "networkBeforeSha256": "23ddad0748b6c35582f6239f428e889b89d7ed3b2086361f302024a4eff71231",
+  "networkAfterSha256": "23ddad0748b6c35582f6239f428e889b89d7ed3b2086361f302024a4eff71231",
+  "skipped": [
+    "interactive_UI_and_named_pipe",
+    "VPN_TUN_WFP_and_crash_matrix",
+    "upgrade_failed_upgrade_and_rollback_require_version_pair",
+    "Windows_reboot_sleep_and_Windows10"
+  ],
+  "finishedUtc": "2026-10-16T14:04:38.4416417Z",
+  "platform": "Windows11 Pro 25H2 26200.9711, disposable Windows Sandbox",
+  "sandboxVersion": "0.8.107.0",
+  "hostServiceInstalled": false,
+  "fixes": [
+    "Normalize DWORD results from WFP: raw 0xffffffff80320003 is FWP_E_FILTER_NOT_FOUND.",
+    "Validate service DACL rights after SCM expands GENERIC_ALL; reject extra principals and interactive control rights."
+  ]
+}

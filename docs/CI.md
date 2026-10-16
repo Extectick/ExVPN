@@ -48,3 +48,16 @@ Go verify/test/vet всех трёх модулей. Для `Checks`/`Windows` �
 файлов, manifest/path проверки и mock machine mutex. SCM/ACL подменены,
 установка на хосте не производится. Источники installer/CI:
 [8d8e48b](https://github.com/Extectick/ExVPN/commit/8d8e48b).
+
+Полный clean-checkout [run 38885825613](https://github.com/Extectick/ExVPN/actions/runs/38885825613)
+на [6fe2d3a](https://github.com/Extectick/ExVPN/commit/6fe2d3a288493b57ce9a7aa698a9df087f2fc50e)
+завершился **SUCCESS** на обеих платформах: Windows 7m35s, Android 15m21s.
+Он включает QR/OTA/authoring tests и installer failure checks этого commit.
+После него добавлены native Android bounded QR reader и Windows WFP/SCM fixes
+([fe48846](https://github.com/Extectick/ExVPN/commit/fe488467b9946b8f9ca79aad6d2a8bb777d25130),
+[b2f4e42](https://github.com/Extectick/ExVPN/commit/b2f4e427075af5f5592904f0f6fdbdc82755af54)).
+Локально прошли 133 Flutter tests, analyze, 8 JVM reader tests и APK build;
+Windows Go test/vet, service build и PS5.1 ACL/manifest/13 recovery/mutex checks.
+Android CI теперь дополнительно выполняет `:app:testDebugUnitTest`.
+Отдельно прошёл реальный install/recover/restart/uninstall в Sandbox, что не
+заменяет сетевые испытания. Новому исполняемому коду требуется новый remote run.

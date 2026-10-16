@@ -1,13 +1,16 @@
 # Android: проверка нативного клиента
 
-Дата: 2026-10-16. Рабочее дерево; commit ожидается. Это ограниченная проверка
-эмулятора, **не закрытие E1/E4 и не готовность стабильного выпуска**.
+Дата: 2026-10-16. Доказательства API36 и OTA сохранены в commit `c03e0e3`.
+Дополнение API30: исходники APK [6fe2d3a](https://github.com/Extectick/ExVPN/commit/6fe2d3a288493b57ce9a7aa698a9df087f2fc50e). Это ограниченные проверки
+эмуляторов, **не закрытие E1/E4 и не готовность стабильного выпуска**.
 
 ## Стенд и сборки
 
 Android 16/API36, x86_64, эмулятор Pixel 4a с WHPX. Стенд запущен read-only,
 без загрузки/записи snapshot. Маршруты, DNS и firewall Windows-хоста не менялись.
-Физическое Android-устройство и минимальная ОС Android11 не проверены.
+Дополнительно проверен Android11/API30 Google APIs rev16, x86_64, профиль Pixel4a
+в отдельном read-only AVD с WHPX. Подтверждены базовое соединение и отказ сервера;
+полная минимальная regression и физическое Android-устройство не проверены.
 
 Debug APK содержит arm64-v8a и x86_64 JNI. Первые четыре сборки имеют размер
 243247462 байта; итоговая сборка с QR/OTA — 268110112 байт, отдельная OTA QA
@@ -204,10 +207,88 @@ Shorebird, нативный release updater, а также аварии загр
 на устройстве остаются отдельными критериями. Сводка:
 [android-signed-data-ota.json](evidence/android-signed-data-ota.json).
 
+## Android11/API30: минимальная сетевая проверка
+
+На отдельный чистый API30 AVD установлен тот же обычный APK `91b014e0...`;
+SHA256 установленного пакета сверён. SDK manager использовал уже принятую лицензию;
+новые условия не принимались. В Text-диалоге импортирован Base64 одного
+синтетического VLESS TCP профиля, подтверждено системное разрешение VPN.
+Работал тот же loopback-only fixture без изменения сети Windows-хоста.
+
+| Сценарий | Результат |
+|---|---|
+| Прямой baseline до VPN | Numeric HTTPS200, 389ms, VPN transport=false |
+| Подключение | UI Connected, foreground service; независимый UID получил HTTPS204 за2163ms и numeric HTTPS200 за933ms, VPN transport=true |
+| Счётчики прокси | Соответствующий VLESS inbound вырос с0/0 до15662 upload /11242 download bytes перед остановкой |
+| Остановка сервера | Все семь listeners отсутствуют; защищаемый numeric HTTPS отказал с network за8024ms, VPN transport=true |
+| Обнаружение отказа | При следующей периодической health-проверке UI перешёл в Blocked / tunnel_https_failed. Сразу после первого отказавшего probe UI ещё показывал Connected |
+| Явная отмена/cleanup | Служба отсутствует, ordinary numeric HTTPS200 за726ms; после QR диагностики повторный запрос200 за793ms, VPN transport=false, proxy listeners=0 |
+
+Снимки: [Connected](../design/qa/android-api30/connected.png),
+[отказ сервера](../design/qa/android-api30/server-stopped.png).
+Сводка: [android-api30-smoke.json](evidence/android-api30-smoke.json).
+Это один VLESS TCP smoke; остальные протоколы, исключения, lockdown/process crash,
+DNS/IPv6 и весь lifecycle на API30 этим не подтверждены.
+
+### Открытое наблюдение API30-QR-001
+
+Путь воспроизведения: «Добавить подписку» → «QR из изображения» → системный
+DocumentsUI → Downloads → синтетический PNG. Файл виден как PNG image, enabled=true,
+но adb tap по центру строки/плитки из свежей UI hierarchy оставляет тот же picker;
+результат выбора через tap не подтверждён. Так же не открылся каталог Download при
+tap внутри storage-root, хотя toolbar, выбор roots и Grid/List переключались.
+Кнопок «Открыть/Выбрать» в полученном дереве не было. Отмена вернула диалог ExVPN
+без ошибки. В ограниченном scoped DocumentsUI log не обнаружены Exception или
+Permission Denial; это не доказывает отсутствие всех ошибок.
+
+Сохранены [состояние до](../design/qa/android-api30/qr-picker-before.png) и
+[после](../design/qa/android-api30/qr-picker-after.png) выбора. На них только
+общедоступный синтетический QR с фиктивным доменом, не рабочий VPN credential.
+Дополнительная короткая проверка клавиатурой успешна: один TAB установил focus
+на `DocumentsUI item_root` именно этого PNG (сверено по свежему дереву), ENTER
+вернул приложение. ExVPN показал «QR-код прочитан», ожидаемый синтетический
+VLESS-текст и предложил подтвердить импорт; автоматического добавления не было.
+Диалог затем отменён. Таким образом, native возврат файла и QR decode на API30
+работают при клавиатурном выборе; дефект URI permissions не подтверждён.
+Наблюдение сужено до touch/adb-взаимодействия с DocumentsUI. Его точная причина
+не установлена, обычное касание на устройстве ещё нужно проверить. Исходники
+приложения из-за этого наблюдения не менялись; безопасность чтения произвольных
+provider URI исследуется отдельно и этим benign-файлом не подтверждается.
+
+## Новый Android picker: ограничение до чтения (2026-10-16)
+
+В `file_selector_android 0.5.2+11` обнаружено чтение/копирование provider-файла
+до Dart-проверки размера. Android переведён на собственный `ACTION_OPEN_DOCUMENT`
+и фоновый reader: максимум 5 MiB фактических байтов, deadline 20 секунд,
+отдельные cancel/close, один process-wide worker. Зависший provider удерживает
+свой слот; повторный запрос не создаёт новые зависшие потоки. Сырые provider
+ошибки, URI и содержимое QR не передаются в диагностику.
+
+Новый APK `artifacts/android-qr-bounded/ExVPN-0.1.0-1-debug.apk`, SHA-256
+`341ec32e154accd41ddf3791ba941c1d8af933bf8f7ce0366f8d5d7d2621fe12`:
+8 JVM tests и 24 целевых Flutter tests прошли, полный Flutter suite — 133,
+анализ чистый. Сборка debug, без production OTA/signing. Исходники: [fe48846](https://github.com/Extectick/ExVPN/commit/fe488467b9946b8f9ca79aad6d2a8bb777d25130).
+
+На API30 проверены cancel системного picker, PNG 2457 bytes → preview → cancel
+без импорта, отказ PNG 5 MiB + 1 byte, успешный повторный выбор маленького PNG.
+Выбор файла выполнен TAB/ENTER; наблюдение API30-QR-001 по touch остаётся открытым.
+Снимок [отказа большого файла](../design/qa/android-qr-bounded/oversize-rejected.png).
+
+На том же APK заново подтверждён системный VPN permission и VLESS TCP через TUN:
+независимый UID получил HTTPS204/200, соответствующий inbound вырос с нуля до
+15515/10294 bytes. При остановке сервера numeric HTTPS отказал за 8020ms,
+VPN transport оставался активен, UI перешёл в Blocked / tunnel_https_failed.
+После явного отключения service отсутствует, numeric HTTPS200 с VPN=false.
+Снимок [подключения](../design/qa/android-qr-bounded/connected.png),
+[обезличенная сводка](evidence/android-qr-bounded-smoke.json).
+Сеть Windows-хоста не изменялась. Проверки старого APK не объявляются повторёнными
+на новом: API36 QR, другие протоколы, OTA, DNS/IPv6, crash/lockdown и физическое
+устройство требуют соответствующей отдельной приёмки.
+
 ## Незакрытые границы
 
-- Физический Android11+ и минимальная ОС; API30 image отсутствует, новая лицензия
-  автоматически не принималась.
+- Физический Android11+ и полный regression минимальной ОС; API30 проверен только
+  указанным сетевым smoke, QR-наблюдение API30-QR-001 остаётся открытым.
 - Пользовательский провайдер, Trojan/Hysteria2 Android TUN и другие сочетания
   протокольных параметров за пределами семи проверенных вариантов.
 - Полный IPv4/IPv6/DNS packet-capture аудит с холодным DNS cache; edge cases

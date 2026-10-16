@@ -149,7 +149,7 @@ Unit fault injection не заменяет эти испытания. Ресур
 ## Проверка и зависимости
 
 На Windows, Dart 3.13.5: **24 теста PASS**, `dart analyze` без замечаний.
-Рабочее дерево; commit ожидается. Проверены:
+Библиотека и app-интеграция: [a88f75b](https://github.com/Extectick/ExVPN/commit/a88f75b). Проверены:
 
 - staging без преждевременного применения; повторное чтение новым клиентом; загрузка
   только изменённых файлов; cancel и запрет повторной активации;
@@ -164,8 +164,14 @@ Unit fault injection не заменяет эти испытания. Ресур
 
 Тестовый TLS-сертификат/RSA-ключ генерируется в памяти; CA не устанавливается в ОС,
 проверка production TLS не ослабляется. Ed25519 test seed существует только в fixture.
-Публикация по настоящему endpoint, Android/Windows process-kill
-и power-loss испытания OTA, release signing и Shorebird ещё не выполнены.
+Отдельный синтетический HTTPS QA-feed опубликован в ветке
+[qa-data-api36-20261016](https://github.com/Extectick/ExVPN/tree/qa-data-api36-20261016)
+с тестовым публичным ключом. Реальное Android stage/cancel/apply/cold recovery,
+защита работающего VPN и rollback новой ревизией проверены:
+[ANDROID_VALIDATION.md](ANDROID_VALIDATION.md), исходные доказательства
+[c03e0e3](https://github.com/Extectick/ExVPN/commit/c03e0e3).
+Production endpoint/keys, Windows native OTA, авария во время записи/power loss,
+release signing и Shorebird ещё не приняты. Обычный APK не включает этот QA-feed.
 
 Закреплены `cryptography 2.9.0` (Ed25519, Apache-2.0), `crypto 3.0.7` (SHA-256,
 BSD-3-Clause), test-only `pointycastle 4.0.0` (TLS fixture RSA, MIT). Lock-файл и

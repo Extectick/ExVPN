@@ -133,12 +133,20 @@ uninstall survivors, successful uninstall and registration-removal failure.
 Windows/Checks CI runs the suite through Windows PowerShell 5.1. These prove local
 recovery behavior, not installed SCM/ACL
 acceptance. The real release window displays the approved squirrel
-in its title bar. Installation, upgrade, recovery and uninstall have not yet run
-in a guest; E5-004 remains open. No installer or service was run on the host.
+in its title bar. Fresh Sandbox installation, exact service ACL readback,
+recovery/restart and uninstall now pass with network testing disabled. Guest
+route/DNS fingerprints are unchanged. The first live run exposed a sign-extended
+WFP DWORD status; it is now normalized before comparing FWP_E_* values. SCM also
+expands GENERIC_ALL into concrete service rights, which are now validated rather
+than matching SDDL text. Extra principals and interactive control rights fail.
+See `docs/evidence/windows-sandbox-installer-smoke.json`. Upgrade, rollback and
+removal after an active VPN remain open in E5-004. No installer or service was
+run on the host. Source: [b2f4e42](https://github.com/Extectick/ExVPN/commit/b2f4e427075af5f5592904f0f6fdbdc82755af54).
 Mock multi-instance checks cover different IPC owners contending for the same
 maintenance lock, nonblocking busy behavior and hijacked-owner/ACL refusal.
-Actual elevated mutex/ACL and power-loss recovery still require guest tests;
-the transaction phase is not a durable power-loss journal.
+The installed single-instance elevated mutex/ACL path passed in Sandbox;
+concurrent elevated instances and power-loss recovery still require guest tests.
+The transaction phase is not a durable power-loss journal.
 
 Sources: [NSIS](https://nsis.sourceforge.io/Download),
 [licenses](https://nsis.sourceforge.io/License),

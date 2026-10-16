@@ -36,7 +36,7 @@
   [38880672529](https://github.com/Extectick/ExVPN/actions/runs/38880672529),
   исходники `f6cd4c4`; job Windows и выгрузка development bundle успешны.
 
-Итоговый локальный установщик `ExVPN-0.1.0-1-windows-x64-development.exe`,
+Локальный установщик до гостевой проверки `ExVPN-0.1.0-1-windows-x64-development.exe`,
 **34 903 877 байт**; SHA-256
 `02d9ad5e12c761ece44550cac4c46f00ee2b24289d82a0fcbdb5c8ddfb73ccd2`.
 Каталог новой сборки:
@@ -60,27 +60,45 @@ upgrade. Payload нового установщика проверен PS5.1; и�
 Показываемая версия ядра сейчас является pin native adapter; запрос версии
 фактически установленной службы требуется отдельно в E6.
 
-## Изолированный стенд
+## Изолированный стенд: реальная установка (2026-10-16)
 
-`scripts/windows/prepare-sandbox.ps1` подготовил `.wsb`, но не запускал его.
-Актуальный bundle: `artifacts/windows/sandbox-20261016-101046-951998fe/ExVPN-installer-qa.wsb`;
-SHA-256 `.wsb`: `8373f72be382d11728299c8cfe63509bd6b620d5a50d58f196305fc602552bc8`.
-Он ссылается на новую сборку с восстановлением при upgrade/rollback/uninstall
-и machine-wide mutex.
-В гостя передаётся только read-only payload установщика и отдельная пустая
-записываемая папка результатов; репозиторий, `.private` и clipboard не передаются.
-Guest runner проверяет установку/SCM/ACL, recovery, restart, uninstall и снимки
-DNS/маршрутов до и после. Сетевые VPN-испытания выключены: даже успех этого
-сценария не закрывает TUN/WFP/crash/upgrade-приёмку.
+После разрешённой перезагрузки Sandbox 0.8.107.0 работает на Windows11 Pro
+25H2 26200.9711. В гостя передаётся read-only пакет и отдельный каталог результатов;
+репозиторий, `.private`, clipboard и периферия не передаются. На хосте
+ExVPNService отсутствует. История подготовки: [SANDBOX_SETUP.md](SANDBOX_SETUP.md).
 
-Включение компонента Windows Sandbox без перезагрузки завершилось `0x800F0831`.
-Пользователь отдельно разрешил DISM RestoreHealth через Windows Update без
-перезагрузки. По результату host setup от 2026-10-16 восстановление завершилось
-ошибкой `0x800f0915`: необходимые repair contents недоступны. `NoRestart=true`,
-перезагрузка не требуется результатом операции и не выполнялась. Новая попытка
-Sandbox ждёт подходящего repair source; подготовленный `.wsb` не запускался.
-Полные системные журналы остаются локальными.
+Первый запуск старого пакета выявил ошибку старта службы: результат
+`FwpmFilterGetByKey0` оказался `0xffffffff80320003`, а сравнение ожидало
+`0x80320003`. Теперь WFP результаты нормализуются как DWORD. Вторая проверка
+обнаружила неверное сравнение строки ACL: SCM раскрывает GENERIC_ALL.
+Теперь установщик и QA проверяют фактические права трёх ожидаемых principals;
+избыточные права, дополнительные principals и неожиданные ACE отклоняются.
+Go tests/vet и PS5.1 manifest/ACL/13 recovery/mutex tests прошли.
 
-Открыты: настоящий Windows TUN/HTTPS, DNS/IPv6 leak matrix, исключения и аварии
-службы, установка/upgrade/rollback/uninstall, sleep/resume, Windows10 и подпись
-выпуска. Подробные инструкции подготовки: [INSTALLER.md](../native/windows/INSTALLER.md).
+Исправленный пакет **34 911 581 байт**, SHA-256
+`ce628f2b86d589d8d8e8ed20c98f42963cfdaa49433ca4e31c241775b9e36568`,
+`artifacts/windows/package-0.1.0-1-20261016-140033-bb3a9336/ExVPN-0.1.0-1-windows-x64-development.exe`.
+Он содержит исправленную службу/установщик и ранее проверенную release-сборку UI;
+номер app build не менялся. Это unsigned development package, не beta или
+версионная пара для upgrade. Исходники: [b2f4e42](https://github.com/Extectick/ExVPN/commit/b2f4e427075af5f5592904f0f6fdbdc82755af54).
+
+Чистый bundle `artifacts/windows/sandbox-20261016-140217-fc13e6d9` прошёл
+14:02:50–14:04:38 UTC:
+
+- Проверка изоляции и хешей входных файлов.
+- Silent install, точные файлы/защищённые ACL, LocalSystem SCM и Running.
+- Проверка service DACL: SYSTEM/Administrators full, Interactive read/query only.
+- Явный recovery останавливает службу; последующий запуск возвращает Running.
+- Uninstall удаляет принадлежащие пакету деревья, службу и регистрацию.
+- Хеши снимков маршрутов и DNS гостя до/после совпадают.
+
+[Обезличенный результат](evidence/windows-sandbox-installer-smoke.json).
+`networkTesting=false`: TUN не поднимался и защитные фильтры не активировались.
+Это подтверждает работоспособность упаковки, а не сетевую приёмку.
+
+Открыты: UI↔установленная служба, настоящий Windows TUN/HTTPS, DNS/IPv6,
+исключения и аварии службы, version-pair upgrade/rollback, удаление после
+активного VPN, sleep/resume, Windows10 и подпись выпуска.
+
+Win32 API возвращает [DWORD](https://learn.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmfiltergetbykey0);
+инструкции стенда: [INSTALLER.md](../native/windows/INSTALLER.md).

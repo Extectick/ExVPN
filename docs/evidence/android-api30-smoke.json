@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-16",
+  "device": {
+    "kind": "Android Emulator",
+    "android": "11",
+    "api": 30,
+    "abi": "x86_64",
+    "image": "Google APIs revision16",
+    "profile": "Pixel4a 1080x2340",
+    "readOnly": true,
+    "sdkManagerUsedExistingAcceptedLicense": true
+  },
+  "installedApkSha256": "91b014e0bec3b76216dca49694193b23b3c287af1b1946ad30814a1d8cf06fbe",
+  "fixture": "synthetic VLESS TCP; loopback only; ephemeral credentials",
+  "hostRoutesDnsFirewallChanged": false,
+  "import": "Text dialog; Base64 profile",
+  "systemVpnPermissionConfirmed": true,
+  "directBaseline": {
+    "httpStatus": 200,
+    "durationMs": 389,
+    "vpnTransport": false
+  },
+  "connected": {
+    "ui": "connected",
+    "foregroundService": true,
+    "health": {
+      "httpStatus": 204,
+      "durationMs": 2163,
+      "vpnTransport": true
+    },
+    "numeric": {
+      "httpStatus": 200,
+      "durationMs": 933,
+      "vpnTransport": true
+    },
+    "inboundBytesBeforeStop": {
+      "upload": 15662,
+      "download": 11242
+    }
+  },
+  "serverStopped": {
+    "listeners": 0,
+    "protectedNumericError": "network",
+    "durationMs": 8024,
+    "vpnTransport": true,
+    "initialUi": "connected until next periodic health check",
+    "settledUi": "blocked",
+    "settledErrorCode": "tunnel_https_failed"
+  },
+  "cleanup": {
+    "vpnServiceAbsent": true,
+    "proxyListeners": 0,
+    "finalNumeric": {
+      "httpStatus": 200,
+      "durationMs": 793,
+      "vpnTransport": false
+    }
+  },
+  "openQrObservation": {
+    "id": "API30-QR-001",
+    "picker": "Google DocumentsUI",
+    "fileVisibleAsPngAndEnabled": true,
+    "adbTapReturnedSelection": false,
+    "folderTapAlsoStayedInPicker": true,
+    "toolbarAndRootsResponded": true,
+    "cancelReturnedToApp": true,
+    "keyboardTabFocusedExpectedPngItem": true,
+    "keyboardEnterReturnedSelection": true,
+    "decodedExpectedSyntheticVlessPreview": true,
+    "automaticImportOccurred": false,
+    "keyboardPreviewCancelledCleanly": true,
+    "boundedScopedLogExceptionLines": 0,
+    "appBugOrPermissionFailureProven": false,
+    "needsPhysicalTouchReproduction": true
+  },
+  "limits": [
+    "Only VLESS TCP was exercised on API30, not the seven-protocol API36 matrix.",
+    "Application exclusions, system lockdown, process crash, DNS and IPv6 were not separately exercised on API30.",
+    "No physical device acceptance is claimed.",
+    "API30 keyboard selection and QR preview passed; touch selection and physical-device flow remain unconfirmed."
+  ]
+}
