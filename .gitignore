@@ -1,0 +1,78 @@
+# Private test input, downloaded tools and transient output
+.private/
+.tools/
+.cache/
+artifacts/
+coverage/
+*.log
+*.tmp
+*.bak
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.mobileprovision
+key.properties
+secrets.json
+credentials.json
+
+# Flutter / Dart; keep pubspec.lock for applications
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+**/build/
+**/doc/api/
+**/flutter/ephemeral/
+
+# Android / Gradle
+**/.gradle/
+**/.cxx/
+**/local.properties
+**/captures/
+*.apk
+*.aab
+
+# Apple build artifacts
+**/Pods/
+**/.symlinks/
+**/DerivedData/
+**/Flutter/Generated.xcconfig
+**/Flutter/flutter_export_environment.sh
+**/Flutter/ephemeral/
+**/xcuserdata/
+*.ipa
+*.dSYM/
+
+# Native and Go build output
+*.exe
+*.dll
+*.so
+*.dylib
+*.aar
+*.a
+*.o
+*.obj
+*.pdb
+*.lib
+*.msi
+*.msix
+*.test
+*.out
+**/bin/
+**/obj/
+
+# Editors and OS
+.idea/
+*.iml
+.vs/
+.DS_Store
+Thumbs.db
+Desktop.ini

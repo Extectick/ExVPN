@@ -1,0 +1,456 @@
+// SPDX-License-Identifier: Apache-2.0
+#include "vpn_bridge.h"
+
+#include <flutter/event_stream_handler_functions.h>
+#include <flutter/standard_method_codec.h>
+#include <shlobj.h>
+#include <tlhelp32.h>
+#include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/base.h>
+
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <cmath>
+#include <cwchar>
+#include <cwctype>
+#include <set>
+#include <stdexcept>
+#include <vector>
+
+namespace {
+using Value = flutter::EncodableValue;
+using Map = flutter::EncodableMap;
+using List = flutter::EncodableList;
+using namespace winrt::Windows::Data::Json;
+constexpr wchar_t kPipe[] = L"\\\\.\\pipe\\ExVPN.Control.v1";
+constexpr uint32_t kMaxFrame = (1 << 20) + 8192;
+struct Handle {
+  HANDLE value = INVALID_HANDLE_VALUE;
+  ~Handle() {
+    if (value != INVALID_HANDLE_VALUE && value != nullptr) CloseHandle(value);
+  }
+};
+struct ServiceHandle {
+  SC_HANDLE value = nullptr;
+  ~ServiceHandle() {
+    if (value) CloseServiceHandle(value);
+  }
+};
+[[noreturn]] void Fail(const char* code) { throw std::runtime_error(code); }
+const Value& Field(const Value& value, const char* key) {
+  const auto* map = std::get_if<Map>(&value);
+  if (!map) Fail("invalid_native_request");
+  auto it = map->find(Value(key));
+  if (it == map->end()) Fail("invalid_native_request");
+  return it->second;
+}
+IJsonValue Json(const Value& v, int depth = 0) {
+  if (depth > 16) Fail("invalid_native_request");
+  if (const auto* p = std::get_if<std::string>(&v))
+    return JsonValue::CreateStringValue(winrt::to_hstring(*p));
+  if (const auto* p = std::get_if<int32_t>(&v))
+    return JsonValue::CreateNumberValue(*p);
+  if (const auto* p = std::get_if<int64_t>(&v))
+    return JsonValue::CreateNumberValue(static_cast<double>(*p));
+  if (const auto* p = std::get_if<bool>(&v))
+    return JsonValue::CreateBooleanValue(*p);
+  if (const auto* p = std::get_if<Map>(&v)) {
+    JsonObject object;
+    for (const auto& item : *p) {
+      const auto* key = std::get_if<std::string>(&item.first);
+      if (!key) Fail("invalid_native_request");
+      object.Insert(winrt::to_hstring(*key), Json(item.second, depth + 1));
+    }
+    return object;
+  }
+  if (const auto* p = std::get_if<List>(&v)) {
+    JsonArray array;
+    for (const auto& item : *p) array.Append(Json(item, depth + 1));
+    return array;
+  }
+  Fail("invalid_native_request");
+}
+Value Status(const JsonObject& s) {
+  auto phase = winrt::to_string(s.GetNamedString(L"state"));
+  const std::set<std::string> phases = {"disconnected", "connecting",
+                                        "connected",    "reconnecting",
+                                        "blocked",      "error"};
+  if (!phases.count(phase)) Fail("ipc_invalid_response");
+  Map m{{Value("phase"), Value(phase)},
+        {Value("processCrashProtection"),
+         Value(s.GetNamedObject(L"capabilities").GetNamedBoolean(L"verified") &&
+               s.GetNamedBoolean(L"guardActive"))}};
+  if (s.HasKey(L"activeProfileId"))
+    m.emplace(Value("activeProfileId"),
+              Value(winrt::to_string(s.GetNamedString(L"activeProfileId"))));
+  if (s.HasKey(L"connectedAt"))
+    m.emplace(
+        Value("connectedAt"),
+        Value(static_cast<int64_t>(s.GetNamedNumber(L"connectedAt")) * 1000));
+  if (phase == "error" || phase == "blocked" || phase == "reconnecting")
+    m.emplace(Value("errorCode"),
+              Value(winrt::to_string(s.GetNamedString(L"code"))));
+  return Value(m);
+}
+Value Unavailable(const char* code) {
+  return Value(Map{{Value("phase"), Value("error")},
+                   {Value("processCrashProtection"), Value(false)},
+                   {Value("errorCode"), Value(code)}});
+}
+Value Traffic(const JsonObject& traffic) {
+  Map value;
+  for (const auto* key : {L"uploadBytes", L"downloadBytes"}) {
+    const auto bytes = traffic.GetNamedNumber(key);
+    if (!std::isfinite(bytes) || bytes < 0 || bytes > 9007199254740991.0 ||
+        std::floor(bytes) != bytes)
+      Fail("ipc_invalid_response");
+    value.emplace(Value(winrt::to_string(key)),
+                  Value(static_cast<int64_t>(bytes)));
+  }
+  return Value(value);
+}
+std::wstring ProcessPath(HANDLE process) {
+  std::wstring path(32768, L'\0');
+  DWORD n = static_cast<DWORD>(path.size());
+  if (!QueryFullProcessImageNameW(process, 0, path.data(), &n))
+    Fail("ipc_peer_unavailable");
+  path.resize(n);
+  return path;
+}
+void CheckServer(HANDLE pipe, Handle& process) {
+  ULONG pid = 0;
+  if (!GetNamedPipeServerProcessId(pipe, &pid)) Fail("ipc_peer_unavailable");
+  ServiceHandle manager{OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT)};
+  if (!manager.value) Fail("ipc_peer_unavailable");
+  ServiceHandle service{
+      OpenServiceW(manager.value, L"ExVPNService",
+                   SERVICE_QUERY_STATUS | SERVICE_QUERY_CONFIG)};
+  if (!service.value) Fail("ipc_access_denied");
+  SERVICE_STATUS_PROCESS state{};
+  DWORD bytes = 0;
+  if (!QueryServiceStatusEx(service.value, SC_STATUS_PROCESS_INFO,
+                            reinterpret_cast<BYTE*>(&state), sizeof(state),
+                            &bytes) ||
+      state.dwProcessId != pid || state.dwCurrentState != SERVICE_RUNNING)
+    Fail("ipc_access_denied");
+  DWORD needed = 0;
+  QueryServiceConfigW(service.value, nullptr, 0, &needed);
+  if (needed == 0 || needed > 65536) Fail("ipc_access_denied");
+  std::vector<BYTE> config(needed);
+  auto* service_config =
+      reinterpret_cast<QUERY_SERVICE_CONFIGW*>(config.data());
+  if (!QueryServiceConfigW(service.value, service_config, needed, &needed) ||
+      _wcsicmp(service_config->lpServiceStartName, L"LocalSystem") != 0)
+    Fail("ipc_access_denied");
+  process.value = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+  if (!process.value) Fail("ipc_peer_unavailable");
+  PWSTR program_files = nullptr;
+  if (FAILED(SHGetKnownFolderPath(FOLDERID_ProgramFiles, 0, nullptr,
+                                  &program_files)))
+    Fail("ipc_peer_unavailable");
+  const std::wstring expected =
+      std::wstring(program_files) + L"\\ExVPN Service\\exvpn-service.exe";
+  CoTaskMemFree(program_files);
+  if (_wcsicmp(ProcessPath(process.value).c_str(), expected.c_str()) != 0)
+    Fail("ipc_access_denied");
+}
+void Transfer(HANDLE pipe, void* data, DWORD size, bool write,
+              ULONGLONG deadline) {
+  auto* current = static_cast<BYTE*>(data);
+  while (size) {
+    Handle event{CreateEventW(nullptr, TRUE, FALSE, nullptr)};
+    if (!event.value) Fail("ipc_failed");
+    OVERLAPPED op{};
+    op.hEvent = event.value;
+    DWORD count = 0;
+    BOOL ok = write ? WriteFile(pipe, current, size, &count, &op)
+                    : ReadFile(pipe, current, size, &count, &op);
+    if (!ok) {
+      if (GetLastError() != ERROR_IO_PENDING) Fail("service_unavailable");
+      const auto now = GetTickCount64();
+      DWORD wait = now >= deadline ? 0 : static_cast<DWORD>(deadline - now);
+      if (WaitForSingleObject(event.value, wait) != WAIT_OBJECT_0) {
+        CancelIoEx(pipe, &op);
+        GetOverlappedResult(pipe, &op, &count, TRUE);
+        Fail("ipc_timeout");
+      }
+      if (!GetOverlappedResult(pipe, &op, &count, FALSE))
+        Fail("service_unavailable");
+    }
+    if (!count || count > size) Fail("ipc_invalid_response");
+    current += count;
+    size -= count;
+  }
+}
+JsonObject Request(const std::string& command, const Value* profile,
+                   const List& exclusions) {
+  Handle pipe{CreateFileW(
+      kPipe, 0x12019b, 0, nullptr, OPEN_EXISTING,
+      FILE_FLAG_OVERLAPPED | SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION,
+      nullptr)};
+  if (pipe.value == INVALID_HANDLE_VALUE) Fail("service_unavailable");
+  Handle process;
+  CheckServer(pipe.value, process);
+  JsonObject request;
+  request.Insert(L"version", JsonValue::CreateNumberValue(1));
+  request.Insert(L"id", JsonValue::CreateStringValue(L"flutter"));
+  request.Insert(L"command",
+                 JsonValue::CreateStringValue(winrt::to_hstring(command)));
+  if (profile) request.Insert(L"profile", Json(*profile));
+  if (command == "setExclusions")
+    request.Insert(L"exclusions", Json(Value(exclusions)));
+  std::string body = winrt::to_string(request.Stringify());
+  if (body.empty() || body.size() > kMaxFrame) Fail("invalid_native_request");
+  uint32_t size = static_cast<uint32_t>(body.size());
+  const auto deadline = GetTickCount64() + 25000;
+  Transfer(pipe.value, &size, 4, true, deadline);
+  Transfer(pipe.value, body.data(), size, true, deadline);
+  Transfer(pipe.value, &size, 4, false, deadline);
+  if (size == 0 || size > kMaxFrame) Fail("ipc_invalid_response");
+  std::string response(size, '\0');
+  Transfer(pipe.value, response.data(), size, false, deadline);
+  JsonObject parsed;
+  if (!JsonObject::TryParse(winrt::to_hstring(response), parsed) ||
+      parsed.GetNamedNumber(L"version") != 1 ||
+      parsed.GetNamedString(L"id") != L"flutter")
+    Fail("ipc_invalid_response");
+  return parsed;
+}
+Value Applications() {
+  Handle snapshot{CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)};
+  if (snapshot.value == INVALID_HANDLE_VALUE) Fail("applications_unavailable");
+  PROCESSENTRY32W entry{};
+  entry.dwSize = sizeof(entry);
+  List list;
+  std::set<std::wstring> seen;
+  for (BOOL ok = Process32FirstW(snapshot.value, &entry); ok;
+       ok = Process32NextW(snapshot.value, &entry)) {
+    if (entry.th32ProcessID == GetCurrentProcessId()) continue;
+    Handle p{OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE,
+                         entry.th32ProcessID)};
+    if (!p.value) continue;
+    try {
+      auto path = ProcessPath(p.value);
+      std::replace(path.begin(), path.end(), L'\\', L'/');
+      auto lower = path;
+      std::transform(lower.begin(), lower.end(), lower.begin(), ::towlower);
+      if (!seen.insert(lower).second) continue;
+      list.emplace_back(Map{
+          {Value("id"), Value(winrt::to_string(path))},
+          {Value("displayName"), Value(winrt::to_string(entry.szExeFile))}});
+    } catch (...) {
+    }
+  }
+  return Value(list);
+}
+}  // namespace
+
+VpnBridge::VpnBridge(flutter::BinaryMessenger* messenger, HWND window)
+    : window_(window) {
+  const auto* codec = &flutter::StandardMethodCodec::GetInstance();
+  methods_ = std::make_unique<flutter::MethodChannel<Value>>(
+      messenger, "exvpn/vpn", codec);
+  states_ = std::make_unique<flutter::EventChannel<Value>>(
+      messenger, "exvpn/vpn_state", codec);
+  stats_ = std::make_unique<flutter::EventChannel<Value>>(
+      messenger, "exvpn/vpn_stats", codec);
+  methods_->SetMethodCallHandler(
+      [this](const auto& call, std::unique_ptr<Result> result) {
+        Enqueue(Job{call.method_name(),
+                    call.arguments() ? *call.arguments() : Value(),
+                    std::move(result)});
+      });
+  states_->SetStreamHandler(
+      std::make_unique<flutter::StreamHandlerFunctions<Value>>(
+          [this](const Value*,
+                 std::unique_ptr<flutter::EventSink<Value>>&& sink) {
+            state_sink_ = std::move(sink);
+            Enqueue(Job{"getStatus", Value(), nullptr});
+            return nullptr;
+          },
+          [this](const Value*) {
+            state_sink_.reset();
+            return nullptr;
+          }));
+  stats_->SetStreamHandler(
+      std::make_unique<flutter::StreamHandlerFunctions<Value>>(
+          [this](const Value*,
+                 std::unique_ptr<flutter::EventSink<Value>>&& sink) {
+            stats_sink_ = std::move(sink);
+            Enqueue(Job{"getStatus", Value(), nullptr});
+            return nullptr;
+          },
+          [this](const Value*) {
+            stats_sink_.reset();
+            return nullptr;
+          }));
+  worker_ = std::thread([this] { Work(); });
+}
+VpnBridge::~VpnBridge() {
+  methods_->SetMethodCallHandler(nullptr);
+  states_->SetStreamHandler(nullptr);
+  stats_->SetStreamHandler(nullptr);
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    stopping_ = true;
+    jobs_.clear();
+  }
+  wake_.notify_all();
+  if (worker_.joinable()) worker_.join();
+}
+void VpnBridge::Enqueue(Job job) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (stopping_ || jobs_.size() >= 16) {
+    if (job.result)
+      job.result->Error("operation_in_progress",
+                        "Native request queue is busy");
+    return;
+  }
+  jobs_.push_back(std::move(job));
+  wake_.notify_one();
+}
+void VpnBridge::Work() {
+  winrt::init_apartment();
+  List exclusions;
+  for (;;) {
+    Job job;
+    {
+      std::unique_lock<std::mutex> lock(mutex_);
+      wake_.wait_for(lock, std::chrono::seconds(1),
+                     [this] { return stopping_ || !jobs_.empty(); });
+      if (stopping_) break;
+      if (jobs_.empty()) {
+        job.method = "getStatus";
+      } else {
+        job = std::move(jobs_.front());
+        jobs_.pop_front();
+      }
+    }
+    Completion completion;
+    completion.result = std::move(job.result);
+    try {
+      if (job.method == "coreVersion") {
+        completion.value = Value("26.10.10");
+      } else if (job.method == "listApplications") {
+        completion.value = Applications();
+      } else if (job.method == "openSystemProtectionSettings") {
+        Fail("system_protection_settings_unsupported");
+      } else if (job.method == "setExclusions") {
+        const auto& value = Field(job.arguments, "applications");
+        const auto* applications = std::get_if<List>(&value);
+        if (!applications || applications->size() > 128)
+          Fail("invalid_native_request");
+        for (const auto& app : *applications) {
+          const auto* path = std::get_if<std::string>(&app);
+          if (!path || path->size() < 7 || path->size() > 1024)
+            Fail("invalid_native_request");
+        }
+        auto response = Request("setExclusions", nullptr, *applications);
+        if (!response.GetNamedBoolean(L"ok"))
+          throw std::runtime_error(
+              winrt::to_string(response.GetNamedString(L"code")));
+      } else if (job.method == "getExclusions") {
+        auto response = Request("getExclusions", nullptr, {});
+        if (!response.GetNamedBoolean(L"ok"))
+          throw std::runtime_error(
+              winrt::to_string(response.GetNamedString(L"code")));
+        List result;
+        if (response.HasKey(L"exclusions")) {
+          for (const auto& path : response.GetNamedArray(L"exclusions"))
+            result.emplace_back(winrt::to_string(path.GetString()));
+        }
+        completion.value = Value(result);
+      } else if (job.method == "getStatus" || job.method == "connect" ||
+                 job.method == "disconnect" || job.method == "probe") {
+        const Value* profile = nullptr;
+        if (job.method == "connect" || job.method == "probe")
+          profile = &Field(job.arguments, "profile");
+        auto response =
+            Request(job.method == "getStatus" ? "status" : job.method, profile,
+                    exclusions);
+        completion.status = Status(response.GetNamedObject(L"status"));
+        if (!response.GetNamedBoolean(L"ok"))
+          throw std::runtime_error(
+              winrt::to_string(response.GetNamedString(L"code")));
+        if (job.method == "getStatus") {
+          completion.value = completion.status;
+          try {
+            auto counters = Request("stats", nullptr, {});
+            if (!counters.GetNamedBoolean(L"ok"))
+              Fail("statistics_unavailable");
+            completion.traffic = Traffic(counters.GetNamedObject(L"traffic"));
+          } catch (...) {
+            completion.traffic_error = "statistics_unavailable";
+          }
+        }
+        if (job.method == "probe") {
+          auto p = response.GetNamedObject(L"probe");
+          Map value{
+              {Value("reachable"), Value(p.GetNamedBoolean(L"reachable"))}};
+          if (p.HasKey(L"latencyMs"))
+            value.emplace(
+                Value("latencyMs"),
+                Value(static_cast<int64_t>(p.GetNamedNumber(L"latencyMs"))));
+          if (p.HasKey(L"errorCode"))
+            value.emplace(
+                Value("errorCode"),
+                Value(winrt::to_string(p.GetNamedString(L"errorCode"))));
+          completion.value = Value(value);
+        }
+      } else {
+        Fail("native_method_unsupported");
+      }
+    } catch (const std::runtime_error& e) {
+      completion.error = e.what();
+      if (job.method == "getStatus") {
+        completion.status = Unavailable(e.what());
+        completion.value = completion.status;
+        completion.error.clear();
+      }
+    } catch (...) {
+      completion.error = "native_request_failed";
+      if (job.method == "getStatus") {
+        completion.status = Unavailable("native_request_failed");
+        completion.value = completion.status;
+        completion.error.clear();
+      }
+    }
+    if (job.method == "getStatus" &&
+        !std::holds_alternative<Map>(completion.traffic))
+      completion.traffic_error = "statistics_unavailable";
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      if (stopping_) break;
+      completed_.push_back(std::move(completion));
+    }
+    PostMessageW(window_, kMessage, 0, 0);
+  }
+  winrt::uninit_apartment();
+}
+void VpnBridge::Drain() {
+  std::deque<Completion> ready;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ready.swap(completed_);
+  }
+  for (auto& completion : ready) {
+    if (state_sink_ && std::holds_alternative<Map>(completion.status))
+      state_sink_->Success(completion.status);
+    if (stats_sink_) {
+      if (std::holds_alternative<Map>(completion.traffic))
+        stats_sink_->Success(completion.traffic);
+      else if (!completion.traffic_error.empty())
+        stats_sink_->Error(completion.traffic_error,
+                           "Traffic counters are unavailable");
+    }
+    if (completion.result) {
+      if (completion.error.empty())
+        completion.result->Success(completion.value);
+      else
+        completion.result->Error(completion.error,
+                                 "Native request could not be applied");
+    }
+  }
+}

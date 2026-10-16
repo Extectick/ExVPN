@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ExVPN — проверка интерфейса</title>
+<style>
+  *{box-sizing:border-box}body{margin:0;background:#202326;color:#eee;font:14px system-ui}
+  header{height:64px;display:flex;align-items:center;justify-content:center;gap:20px}
+  a{color:#ffbd51;text-underline-offset:4px}main{display:flex;justify-content:center;padding-bottom:24px}
+  iframe{border:0;display:block;background:#141617;flex-shrink:0}
+</style>
+<header><span>ExVPN · просмотр интерфейса</span><a href="?size=mobile">Телефон</a><a href="?size=desktop">Компьютер</a><a href="?size=small">320 px</a></header>
+<main><iframe title="ExVPN" src="./?demo=1"></iframe></main>
+<script>
+  const size = new URLSearchParams(location.search).get('size');
+  const frame = document.querySelector('iframe');
+  frame.width = size === 'desktop' ? '1280' : size === 'small' ? '320' : '426';
+  frame.height = size === 'desktop' ? '900' : size === 'small' ? '760' : '922';
+</script>
+</html>

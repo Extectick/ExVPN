@@ -1,0 +1,76 @@
+name: ExVPN checks and development builds
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: ${{ matrix.target }}
+    runs-on: windows-2025
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [Android, Windows]
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      CI: 'true'
+      GOTOOLCHAIN: local
+      FLUTTER_SUPPRESS_ANALYTICS: 'true'
+      DART_SUPPRESS_ANALYTICS: 'true'
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install repository-pinned Flutter and Go
+        run: ./scripts/bootstrap/bootstrap.ps1
+      - name: Prepare Android SDK packages on the disposable runner
+        if: matrix.target == 'Android'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (!$env:JAVA_HOME_21_X64) { throw 'Runner JDK 21 is missing.' }
+          "JAVA_HOME=$env:JAVA_HOME_21_X64" >> $env:GITHUB_ENV
+          $env:JAVA_HOME = $env:JAVA_HOME_21_X64
+          if (!$env:ANDROID_HOME) { throw 'Runner Android SDK is missing.' }
+          # GitHub's Android SDK image includes accepted SDK license files.
+          # Do not auto-answer new license prompts or change a developer host.
+          if (!(Test-Path -LiteralPath (Join-Path $env:ANDROID_HOME 'licenses/android-sdk-license'))) {
+            throw 'The runner has no Android SDK license; use a prepared runner.'
+          }
+          $sdkManager = Join-Path $env:ANDROID_HOME 'cmdline-tools/latest/bin/sdkmanager.bat'
+          & $sdkManager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.1.12297006' 'ndk;28.2.13676358'
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned Android packages could not be installed.' }
+      - name: Analyze, test, and build
+        run: ./scripts/ci/verify.ps1 -Target '${{ matrix.target }}'
+      - name: Upload Android development APK
+        if: matrix.target == 'Android'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: exvpn-android-debug-${{ github.sha }}
+          path: apps/exvpn/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload Windows development bundle
+        if: matrix.target == 'Windows'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: exvpn-windows-debug-${{ github.sha }}
+          path: |
+            apps/exvpn/build/windows/x64/runner/Debug/
+            artifacts/windows/exvpn-service.exe
+            artifacts/windows/wintun.dll
+            artifacts/windows/Wintun-LICENSE.txt
+          if-no-files-found: error
+          retention-days: 7

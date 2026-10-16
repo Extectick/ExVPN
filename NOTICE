@@ -1,0 +1,17 @@
+ExVPN
+Copyright 2026 ExVPN contributors
+
+Original ExVPN source code is licensed under the Apache License, Version 2.0.
+A copy of that license is included in LICENSE.
+
+Third-party components retain their own licenses and copyright notices.
+The dependency register in docs/DEPENDENCIES.md distinguishes planned components
+from dependencies actually included in the project. Binary distributions must
+include the notices and source-availability information for their exact versions.
+
+Xray-core is licensed under MPL-2.0. libXray is licensed under MIT.
+Flutter is licensed under BSD-3-Clause; additional Flutter engine and package
+dependencies have their own licenses. This notice does not relicense them.
+
+HAPP and Hiddify are independent products used only as functional references.
+ExVPN is not affiliated with or endorsed by their developers.

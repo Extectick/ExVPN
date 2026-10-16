@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-16",
+  "platform": "windows-x64",
+  "go": {
+    "version": "1.27.2",
+    "url": "https://go.dev/dl/go1.27.2.windows-amd64.zip",
+    "sha256": "1314008898bd40df77af4b014f777f08873dbdfbcd3d92308728ee03304fe04f",
+    "metadataUrl": "https://go.dev/dl/?mode=json",
+    "archive": "go1.27.2.windows-amd64.zip",
+    "folder": "go"
+  },
+  "flutter": {
+    "version": "3.47.7",
+    "dartVersion": "3.13.5",
+    "revision": "abaf9c523780a608bd46686fd5e53740a07077f8",
+    "url": "https://storage.googleapis.com/flutter_infra_release/releases/stable/windows/flutter_windows_3.47.7-stable.zip",
+    "sha256": "c2c875da25a1a1448d18ee4e8f398b2f6fce888b4775d8f9130538e16d826cb4",
+    "metadataUrl": "https://storage.googleapis.com/flutter_infra_release/releases/releases_windows.json",
+    "archive": "flutter_windows_3.47.7-stable.zip",
+    "folder": "flutter"
+  }
+}

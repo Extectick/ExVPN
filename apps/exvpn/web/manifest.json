@@ -1,0 +1,13 @@
+{
+    "name": "ExVPN",
+    "short_name": "ExVPN",
+    "lang": "ru",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#141617",
+    "theme_color": "#141617",
+    "description": "ExVPN — интерфейс клиента и управление подписками. Предварительная версия.",
+    "orientation": "any",
+    "prefer_related_applications": false,
+    "icons": []
+}
