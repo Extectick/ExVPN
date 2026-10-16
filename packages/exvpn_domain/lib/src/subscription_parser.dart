@@ -538,7 +538,12 @@ final class SubscriptionParser {
     final path = _nonEmpty(q['path']);
     final host = _nonEmpty(q['host']);
     final service = _nonEmpty(q['serviceName']);
-    final mode = _nonEmpty(q['mode']);
+    // Share links call the default gRPC transport "gun". Canonicalize that
+    // explicit default; other gRPC modes still require a separate adapter.
+    final requestedMode = _nonEmpty(q['mode']);
+    final mode = type == 'grpc' && requestedMode == 'gun'
+        ? null
+        : requestedMode;
     if (((path != null || host != null) && !{'ws', 'xhttp'}.contains(type)) ||
         (service != null && type != 'grpc') ||
         (mode != null &&
@@ -639,6 +644,7 @@ final class SubscriptionParser {
       'ios',
       'android',
       'edge',
+      'qq',
       'random',
       'randomized',
     }.contains(tls.fingerprint)) {

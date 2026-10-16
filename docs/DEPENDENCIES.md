@@ -42,6 +42,12 @@
 
 ## Условия подготовки бинарного выпуска
 
+В 0.1.0+7 приложение прямо использует уже закреплённый Dart `crypto` **3.0.7**
+(BSD-3-Clause) для HMAC идентификатора установки по HTTPS origin. Версия не
+изменена; dependency перенесена из dev в runtime, app lock обновлён. Секрет
+остаётся в существующем Keystore/DPAPI backend. В комплект Windows +7 собрано
+140 component notices; это не закрывает отдельную задачу финального SBOM.
+
 Генератор полного текста доступных notices и границы инвентаризации описаны в
 [RELEASE_NOTICES.md](RELEASE_NOTICES.md). Он сверяет реальные Go build info/checksums,
 сохраняет Xray source zip и не подменяет отдельный release SBOM.

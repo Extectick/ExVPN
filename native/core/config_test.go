@@ -4,7 +4,28 @@ package exvpn
 import (
 	"encoding/json"
 	"testing"
+
+	xrayTLS "github.com/xtls/xray-core/transport/internet/tls"
 )
+
+func TestQQFingerprintUsesPinnedCoreWithoutDisablingVerification(t *testing.T) {
+	p := fixture("vless")
+	p.TLS.Fingerprint = "qq"
+	if xrayTLS.GetFingerprint("qq") == nil {
+		t.Fatal("pinned core does not implement QQ")
+	}
+	if _, err := Compile(p); err != nil {
+		t.Fatal(err)
+	}
+	settings := outbound(p)["streamSettings"].(map[string]any)["tlsSettings"].(map[string]any)
+	if settings["fingerprint"] != "qq" || settings["allowInsecure"] != false || settings["serverName"] != p.TLS.ServerName {
+		t.Fatal("fingerprint changed peer authentication")
+	}
+	p.TLS.Fingerprint = "qq-unknown"
+	if _, err := Compile(p); err == nil {
+		t.Fatal("unknown fingerprint silently accepted")
+	}
+}
 
 func TestProbeNeverAddsDirectOrSystemTunnel(t *testing.T) {
 	b, e := BuildProbeConfig(fixture("vless"), ProbeOptions{Port: 10808, Username: "user", Password: "test"})

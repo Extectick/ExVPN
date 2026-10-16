@@ -281,7 +281,7 @@ func (p Profile) Validate() error {
 	if !p.TLS.Enabled && (p.TLS.ServerName != "" || p.TLS.Fingerprint != "" || len(p.TLS.ALPN) != 0 || p.TLS.Reality != nil) {
 		return bad("unexpected_tls_fields")
 	}
-	if !oneOf(p.TLS.Fingerprint, "", "chrome", "firefox", "safari", "ios", "android", "edge", "random", "randomized") {
+	if !oneOf(p.TLS.Fingerprint, "", "chrome", "firefox", "safari", "ios", "android", "edge", "qq", "random", "randomized") {
 		return bad("unsupported_fingerprint")
 	}
 	if len(p.TLS.ALPN) > 8 {

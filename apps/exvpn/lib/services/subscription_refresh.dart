@@ -11,6 +11,9 @@ final class SubscriptionRefresh extends ChangeNotifier {
   final SubscriptionLoader _loader;
   final Map<String, Future<bool>> _running = {};
   final Map<String, int> _failedRevisions = {};
+  final Map<String, SubscriptionLoadErrorCode> _failureCodes = {};
+  SubscriptionLoadErrorCode? errorCode(String id) =>
+      failed.contains(id) ? _failureCodes[id] : null;
   Set<String> get failed => {
     for (final group in controller.groups)
       if (_failedRevisions[group.id] == group.contentRevision) group.id,
@@ -48,11 +51,13 @@ final class SubscriptionRefresh extends ChangeNotifier {
           .applied;
       if (applied) {
         _failedRevisions.remove(id);
+        _failureCodes.remove(id);
       } else {
         _failedRevisions[id] = group.contentRevision;
+        _failureCodes.remove(id);
       }
       return applied;
-    } catch (_) {
+    } catch (error) {
       if (!_disposed) {
         final current = controller.groups
             .where((item) => item.id == id)
@@ -61,6 +66,11 @@ final class SubscriptionRefresh extends ChangeNotifier {
             current.sourceUrl == group!.sourceUrl &&
             current.contentRevision == group.contentRevision) {
           _failedRevisions[id] = group.contentRevision;
+          if (error is SubscriptionLoadException) {
+            _failureCodes[id] = error.code;
+          } else {
+            _failureCodes.remove(id);
+          }
         }
       }
       return false;

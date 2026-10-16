@@ -13,6 +13,45 @@ const newProfile =
     'vless://00000000-0000-4000-8000-000000000002@sample.invalid:443?security=tls#New';
 void main() {
   test(
+    'HWID limit preserves the last working list and a safe reason',
+    () async {
+      final app = AppController()
+        ..addSubscription(
+          name: 'Example',
+          raw: oldProfile,
+          sourceUrl: 'https://example.invalid/sub',
+        );
+      var limited = true;
+      final refresh = SubscriptionRefresh(
+        app,
+        loader: SubscriptionLoader(
+          client: MockClient(
+            (_) async => limited
+                ? http.Response(
+                    newProfile,
+                    200,
+                    headers: {'x-hwid-max-devices-reached': 'true'},
+                  )
+                : http.Response(newProfile, 200),
+          ),
+        ),
+      );
+      addTearDown(refresh.dispose);
+      addTearDown(app.dispose);
+      final id = app.groups.single.id;
+      expect(await refresh.refresh(id), isFalse);
+      expect(app.selectedServer!.name, 'Old');
+      expect(
+        refresh.errorCode(id),
+        SubscriptionLoadErrorCode.deviceLimitReached,
+      );
+      limited = false;
+      expect(await refresh.refresh(id), isTrue);
+      expect(app.selectedServer!.name, 'New');
+      expect(refresh.errorCode(id), isNull);
+    },
+  );
+  test(
     'coalesces concurrent refresh and retains working profiles on corrupt data',
     () async {
       final app = AppController()

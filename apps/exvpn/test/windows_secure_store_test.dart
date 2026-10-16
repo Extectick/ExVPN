@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:exvpn/services/subscription_store.dart';
 import 'package:exvpn/services/windows_secure_store.dart';
+import 'package:exvpn/services/subscription_identity.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -42,11 +43,37 @@ void main() {
     final corrupted = List<int>.from(original);
     corrupted[corrupted.length - 1] ^= 1;
     await files.single.writeAsBytes(corrupted, flush: true);
-    await expectLater(fresh.read(SubscriptionStore.currentKey), throwsStateError);
+    await expectLater(
+      fresh.read(SubscriptionStore.currentKey),
+      throwsStateError,
+    );
     expect(await files.single.readAsBytes(), corrupted);
     await files.single.writeAsBytes(original, flush: true);
     expect(await fresh.read(SubscriptionStore.currentKey), 'replacement');
     await backend.delete(SubscriptionStore.currentKey);
     expect(await fresh.read(SubscriptionStore.currentKey), isNull);
+    final provider = Uri.parse('https://provider.example/sub/synthetic');
+    final identity = await SubscriptionIdentity.forTesting(backend)
+        .forProvider(provider);
+    expect(
+      await SubscriptionIdentity.forTesting(fresh).forProvider(provider),
+      identity,
+    );
+    final identityFile = File(
+      '${directory.path}/secure-subscriptions/${SubscriptionIdentity.storageKey}.dpapi',
+    );
+    final identityCiphertext = utf8.decode(
+      await identityFile.readAsBytes(),
+      allowMalformed: true,
+    );
+    expect(identityCiphertext, isNot(contains(identity)));
+    expect(
+      identityCiphertext,
+      isNot(contains((await fresh.read(SubscriptionIdentity.storageKey))!)),
+    );
+    await expectLater(
+      backend.write('unapproved_identity_key', 'value'),
+      throwsStateError,
+    );
   }, skip: !Platform.isWindows);
 }

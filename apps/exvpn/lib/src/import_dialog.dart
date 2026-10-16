@@ -134,6 +134,9 @@ class _ImportDialogState extends State<ImportDialog> {
             'Сервер вернул неподдерживаемый формат текста.',
           SubscriptionLoadErrorCode.timeout =>
             'Сервер не ответил вовремя. Попробуйте ещё раз.',
+          SubscriptionLoadErrorCode.deviceLimitReached => 'Достигнут лимит устройств подписки. Удалите ненужное устройство в личном кабинете провайдера и повторите загрузку.',
+          SubscriptionLoadErrorCode.deviceIdentityUnavailable => 'Провайдер требует идентификатор устройства. Не удалось открыть его защищённое хранилище. Перезапустите приложение.',
+          SubscriptionLoadErrorCode.deviceIdentityRejected => 'Провайдер не принял идентификатор этой установки ExVPN. Проверьте поддержку клиента у провайдера.',
           _ =>
             kIsWeb
                 ? 'Не удалось загрузить подписку. Сервер должен разрешать загрузку из браузера (CORS). Можно вставить текст.'

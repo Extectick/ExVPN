@@ -28,7 +28,8 @@ final class WindowsSecureKeyValueStore implements SecureKeyValueStore {
 
   Future<File> _file(String key) async {
     if (!Platform.isWindows ||
-        !RegExp(r'^exvpn_subscriptions_(current|pending)_v1$').hasMatch(key)) {
+        !(RegExp(r'^exvpn_subscriptions_(current|pending)_v1$').hasMatch(key) ||
+            key == 'exvpn_subscription_identity_v1')) {
       throw StateError('secure_storage_invalid_request');
     }
     final folder = await (_directory ??= () async {

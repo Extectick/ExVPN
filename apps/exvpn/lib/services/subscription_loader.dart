@@ -4,6 +4,9 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import '../build_identity.dart';
+import 'subscription_identity.dart';
+
 enum SubscriptionLoadErrorCode {
   invalidUrl,
   redirect,
@@ -13,6 +16,9 @@ enum SubscriptionLoadErrorCode {
   timeout,
   network,
   closed,
+  deviceIdentityUnavailable,
+  deviceIdentityRejected,
+  deviceLimitReached,
 }
 
 /// Contains no URL, response body, provider credentials, or underlying exception.
@@ -34,15 +40,18 @@ final class SubscriptionLoadException implements Exception {
 final class SubscriptionLoader {
   SubscriptionLoader({
     http.Client? client,
+    Future<String> Function(Uri)? identity,
     this.timeout = const Duration(seconds: 15),
     this.maxBytes = 2 * 1024 * 1024,
-  }) : _client = client ?? http.Client() {
+  }) : _client = client ?? http.Client(),
+       _identity = identity ?? SubscriptionIdentity.instance.forProvider {
     if (timeout <= Duration.zero || maxBytes <= 0) {
       throw ArgumentError('Download limits must be positive.');
     }
   }
 
   final http.Client _client;
+  final Future<String> Function(Uri) _identity;
   final Duration timeout;
   final int maxBytes;
   final Set<_Download> _downloads = {};
@@ -93,13 +102,15 @@ final class SubscriptionLoader {
     return uri;
   }
 
-  Future<void> _receive(Uri uri, _Download download) async {
+  Future<void> _receive(Uri uri, _Download download, {String? identity}) async {
     try {
       final request =
           http.AbortableRequest('GET', uri, abortTrigger: download.abort.future)
             ..followRedirects = false
             ..maxRedirects = 0
-            ..headers['accept'] = 'text/plain, application/json, */*';
+            ..headers['accept'] = 'text/plain, application/json, */*'
+            ..headers['user-agent'] = 'ExVPN/$appVersion';
+      if (identity != null) request.headers['x-hwid'] = identity;
       final response = await _client.send(request);
       if (download.finished) {
         _cancel(response.stream.listen(null));
@@ -108,6 +119,32 @@ final class SubscriptionLoader {
       SubscriptionLoadErrorCode? rejection;
       if (response.statusCode >= 300 && response.statusCode < 400) {
         rejection = SubscriptionLoadErrorCode.redirect;
+      } else if (_headerTrue(response, 'x-hwid-max-devices-reached') ||
+          (_headerTrue(response, 'x-hwid-limit') &&
+              !_headerTrue(response, 'x-hwid-not-supported'))) {
+        rejection = SubscriptionLoadErrorCode.deviceLimitReached;
+      } else if (_headerTrue(response, 'x-hwid-not-supported')) {
+        // The provider can return a valid-looking placeholder URI with HTTP
+        // 200. Never import it. Retry the same origin once, within the original
+        // deadline, only after its explicit identity requirement.
+        _cancel(response.stream.listen(null));
+        if (identity != null) {
+          download.fail(SubscriptionLoadErrorCode.deviceIdentityRejected);
+          return;
+        }
+        String resolved;
+        try {
+          resolved = await _identity(uri);
+          if (!RegExp(r'^[a-zA-Z0-9=-]{10,64}$').hasMatch(resolved)) {
+            throw const FormatException();
+          }
+        } catch (_) {
+          download.fail(SubscriptionLoadErrorCode.deviceIdentityUnavailable);
+          return;
+        }
+        if (download.finished) return;
+        await _receive(uri, download, identity: resolved);
+        return;
       } else if (response.statusCode != 200) {
         // A partial response (206) must never replace the complete subscription.
         rejection = SubscriptionLoadErrorCode.httpStatus;
@@ -146,6 +183,9 @@ final class SubscriptionLoader {
       download.fail(SubscriptionLoadErrorCode.network);
     }
   }
+
+  static bool _headerTrue(http.StreamedResponse response, String name) =>
+      response.headers[name]?.trim().toLowerCase() == 'true';
 
   /// Closes the owned/injected client and cancels outstanding subscriptions.
   void close() {

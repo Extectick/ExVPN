@@ -83,6 +83,37 @@ void _rejected(String text, {ImportIssueCode? code}) {
 }
 
 void main() {
+  group('Provider-compatible defaults', () {
+    test('preserves the pinned Xray QQ fingerprint', () {
+      final p = _single(
+        _vless(
+          query: 'security=reality&sni=front.example&pbk=$_publicKey&fp=qq',
+        ),
+      );
+      expect(p.tls.fingerprint, 'qq');
+      expect(p.tls.reality, isNotNull);
+    });
+
+    test('explicit gRPC gun has the same identity as its implicit default', () {
+      const query = 'type=grpc&security=tls&serviceName=test';
+      final implicit = _single(_vless(query: query));
+      final explicit = _single(_vless(query: '$query&mode=gun'));
+      expect(explicit.transport.mode, isNull);
+      expect(explicit.transport.serviceName, 'test');
+      expect(explicit.id, implicit.id);
+    });
+
+    test('does not silently downgrade another gRPC mode', () {
+      _rejected(
+        _vless(query: 'type=grpc&security=tls&mode=multi'),
+        code: ImportIssueCode.unsupportedFeature,
+      );
+      _rejected(
+        _vless(query: 'type=xhttp&security=tls&mode=gun'),
+        code: ImportIssueCode.unsupportedFeature,
+      );
+    });
+  });
   group('Supported URI profiles', () {
     test('VLESS REALITY TCP preserves security and flow', () {
       final p = _single(

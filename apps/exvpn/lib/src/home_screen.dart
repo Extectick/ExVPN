@@ -12,6 +12,7 @@ import 'power_button.dart';
 import '../services/vpn_controller.dart';
 import '../services/subscription_persistence.dart';
 import '../services/subscription_refresh.dart';
+import '../services/subscription_loader.dart';
 import '../build_identity.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -176,7 +177,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           content: Text(
             success
                 ? 'Подписка обновлена'
-                : 'Обновление не удалось. Последний рабочий список сохранён.',
+                : switch (_refreshes.errorCode(group.id)) {
+                    SubscriptionLoadErrorCode.deviceLimitReached => 'Достигнут лимит устройств у провайдера. Последний рабочий список сохранён.',
+                    SubscriptionLoadErrorCode.deviceIdentityUnavailable => 'Не удалось открыть идентификатор устройства. Перезапустите приложение. Рабочий список сохранён.',
+                    SubscriptionLoadErrorCode.deviceIdentityRejected => 'Провайдер не принял идентификатор ExVPN. Рабочий список сохранён.',
+                    _ => 'Обновление не удалось. Последний рабочий список сохранён.',
+                  },
           ),
         ),
       );
