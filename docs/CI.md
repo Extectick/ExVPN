@@ -2,8 +2,8 @@
 
 Workflow `.github/workflows/verify.yml` подготовлен для push, pull request и
 ручного запуска. Два изолированных `windows-2025` job собирают Android и Windows
-из одного checkout. До первого успешного GitHub run это конфигурация, а не
-доказательство воспроизводимости или закрытия EXVPN-E7-001.
+из одного checkout. Первый успешный run и границы его проверки приведены ниже;
+успех сборки не является системной приёмкой VPN.
 
 Скрипт `scripts/ci/verify.ps1 -Target Checks|Android|Windows` проверяет точные
 Flutter/Go pins, lock-файлы Dart, анализ, все unit/widget/loopback-тесты,
@@ -35,5 +35,16 @@ production endpoints или публикации release. Actions закрепл
 bootstrap progress даже при `--version --machine`, поэтому JSON parsing падал
 до тестов в обоих jobs. `flutter-version.ps1` сначала отдельно инициализирует CLI,
 затем проверяет exit code и строгий JSON второго вызова. Проверены cold-start
-fixture, ошибки обоих вызовов и настоящий закреплённый SDK. После исправления
-нужен новый успешный clean-checkout run; локальные проверки его не заменяют.
+fixture, ошибки обоих вызовов и настоящий закреплённый SDK. Исправление подтверждено
+полным успешным [run 38880672529](https://github.com/Extectick/ExVPN/actions/runs/38880672529)
+на commit `f6cd4c4`: Android и Windows прошли проверки, сборку и выгрузку
+development artifacts. Последующие изменения требуют собственного CI run;
+эта проверка не подтверждает системные VPN-права, установщик или release signing.
+
+Локальный общий прогон 2026-10-16 после QR/OTA/installer исправлений завершился
+успешно: 113 domain, 25 state, 31 updates и 124 Flutter tests, чистый анализ;
+Go verify/test/vet всех трёх модулей. Для `Checks`/`Windows` добавлен отдельный
+запуск PS5.1 installer tests: 13 recovery-сценариев с настоящими блокировками
+файлов, manifest/path проверки и mock machine mutex. SCM/ACL подменены,
+установка на хосте не производится. Источники installer/CI:
+[8d8e48b](https://github.com/Extectick/ExVPN/commit/8d8e48b).

@@ -33,5 +33,8 @@ provider cancellation; поздние события игнорируются, �
 повреждённых входов, ложной решётки finder-pattern 512×512 и зависших file-provider
 metadata/body/cancel; 4 widget tests подтверждения,
 отмены, сохранения ввода и конкурентных действий. Нативный системный picker
-проверяется отдельно в платформенных отчётах. Исходники: рабочее дерево;
-commit и screenshot evidence добавляются после проверки.
+проверяется отдельно в платформенных отчётах. Исходники:
+[a88f75b](https://github.com/Extectick/ExVPN/commit/a88f75b).
+Настоящие Android cancel → preview → Add → cold restart и Windows picker/cancel
+с обезличенными снимками описаны в [ANDROID_VALIDATION.md](ANDROID_VALIDATION.md)
+и [WINDOWS_VALIDATION.md](WINDOWS_VALIDATION.md). Полный Windows импорт ещё открыт.
