@@ -1,0 +1,159 @@
+// SPDX-License-Identifier: Apache-2.0
+import 'package:flutter/material.dart';
+
+import '../build_identity.dart';
+import '../services/data_updates.dart';
+
+class UpdatesSheet extends StatelessWidget {
+  const UpdatesSheet({super.key, required this.updates});
+  final DataUpdatesController updates;
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: updates,
+    builder: (context, _) {
+      final proposal = updates.proposal;
+      return Scaffold(
+        appBar: AppBar(title: const Text('Версии и обновления')),
+        body: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+              children: [
+                _version('Приложение', 'ExVPN $appVersion'),
+                _version('Сборка', '$appBuild'),
+                _version('Ядро', updates.vpn?.core ?? 'Не удалось определить'),
+                _version(
+                  'Данные',
+                  updates.snapshot.revision == null
+                      ? 'Встроенные'
+                      : 'Ревизия ${updates.snapshot.revision}',
+                ),
+                _version(
+                  'Dart-патч',
+                  'Базовая сборка · Shorebird не подключён',
+                ),
+                _version('Канал данных', updates.channel),
+                const SizedBox(height: 24),
+                Text(
+                  'Обновления данных',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Подписанный пакет обновляет справку без загрузки всего приложения. '
+                  'Ядро и системные компоненты обновляются вместе с приложением.',
+                ),
+                const SizedBox(height: 20),
+                if (!updates.enabled)
+                  Text(switch (updates.disabledReason) {
+                    'unsupported_platform' =>
+                      'OTA данных недоступны в браузере и на этой платформе.',
+                    'invalid_configuration' => 'Конфигурация доверенной доставки в этой сборке неверна. Используется встроенная справка.',
+                    _ => 'Доставка данных ещё не настроена. В этой сборке нет доверенного адреса и ключа обновлений.',
+                  }, key: const Key('updates-disabled')),
+                if (updates.busy) ...[
+                  const LinearProgressIndicator(key: Key('updates-progress')),
+                  const SizedBox(height: 12),
+                  const Text('Проверяем и подготавливаем данные…'),
+                ],
+                if (updates.errorCode != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    dataUpdatesErrorText(updates.errorCode),
+                    key: const Key('updates-error'),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+                if (updates.notice != null) ...[
+                  const SizedBox(height: 16),
+                  Text(updates.notice!, key: const Key('updates-notice')),
+                ],
+                if (proposal != null) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'Подготовлена ревизия ${proposal.revision}',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Загружено файлов: ${proposal.downloadedFiles}. '
+                    'Повторно использовано: ${proposal.reusedFiles}.',
+                  ),
+                  if (!updates.canApply && !updates.busy) ...[
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Для применения отключите VPN и дождитесь подтверждения от службы. '
+                      'Приложение не отключает соединение автоматически.',
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      FilledButton(
+                        key: const Key('updates-apply'),
+                        onPressed: updates.canApply ? updates.apply : null,
+                        child: const Text('Применить'),
+                      ),
+                      OutlinedButton(
+                        key: const Key('updates-cancel'),
+                        onPressed: updates.busy ? null : updates.cancel,
+                        child: const Text('Отменить'),
+                      ),
+                    ],
+                  ),
+                ],
+                if (updates.enabled && proposal == null) ...[
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    key: const Key('updates-check'),
+                    onPressed: updates.busy ? null : updates.check,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Проверить обновления'),
+                  ),
+                ],
+                if (updates.enabled && proposal == null && !updates.busy) ...[
+                  const SizedBox(height: 12),
+                  TextButton(
+                    key: const Key('updates-recover'),
+                    onPressed: updates.recover,
+                    child: Text(
+                      updates.initialized
+                          ? 'Перечитать сохранённые данные'
+                          : 'Повторить чтение сохранённых данных',
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 28),
+                Text(
+                  'Справка о подключении',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                Text(updates.snapshot.help, key: const Key('updates-help')),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  Widget _version(String title, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 9),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontSize: 12)),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontSize: 16)),
+      ],
+    ),
+  );
+}

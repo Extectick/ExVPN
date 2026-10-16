@@ -144,7 +144,8 @@ final class DataUpdateClient {
     }
   });
 
-  Future<ActiveData> activate(PreparedUpdate prepared, {
+  Future<ActiveData> activate(
+    PreparedUpdate prepared, {
     bool Function()? canActivate,
   }) => _run(() async {
     _checkPrepared(prepared);

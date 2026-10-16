@@ -10,6 +10,8 @@ import 'exclusions_sheet.dart';
 import '../services/subscription_persistence.dart';
 import '../services/safe_diagnostics.dart';
 import '../build_identity.dart';
+import '../services/data_updates.dart';
+import 'updates_sheet.dart';
 
 class SettingsSheet extends StatefulWidget {
   const SettingsSheet({
@@ -235,7 +237,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
             contentPadding: EdgeInsets.zero,
             title: Text(group.name),
             subtitle: Text(
-              '${group.servers.length} подключений${group.isDemo ? ' · пример' : ''}',
+              'Подключения: ${group.servers.length}${group.isDemo ? ' · пример' : ''}',
             ),
             trailing: IconButton(
               tooltip: 'Удалить ${group.name}',
@@ -280,8 +282,21 @@ class _SettingsSheetState extends State<SettingsSheet> {
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('Защита соединения'),
-              content: const Text(
-                'На Android защита при аварии процесса требует Always-on VPN и «Блокировать соединения без VPN» в настройках системы. Эта блокировка может оставаться включённой после отключения в приложении. На Windows защитой управляет служба ExVPN.',
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'На Android защита при аварии процесса требует Always-on VPN и «Блокировать соединения без VPN» в настройках системы. Эта блокировка может оставаться включённой после отключения в приложении. На Windows защитой управляет служба ExVPN.',
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      DataUpdatesScope.maybeOf(ctx)?.snapshot.help ??
+                          bundledConnectionHelp,
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 if (widget.vpn != null)
@@ -315,11 +330,16 @@ class _SettingsSheetState extends State<SettingsSheet> {
           title: const Text('Версии и обновления'),
           subtitle: const Text('ExVPN $appVersion · сборка $appBuild'),
           trailing: const Icon(Icons.chevron_right),
-          onTap: () => _info(
-            'Версии и обновления',
-            'Приложение: $appVersionLabel\nЯдро: ${widget.vpn?.core ?? 'не подключено'}\nРевизия ресурсов: встроенные\nDart-патч: базовая сборка\n\n'
-                'Доставка подписанных OTA-обновлений ещё не подключена.',
-          ),
+          onTap: () {
+            final updates = DataUpdatesScope.maybeOf(context);
+            if (updates != null) {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => UpdatesSheet(updates: updates),
+                ),
+              );
+            }
+          },
         ),
         const SizedBox(height: 24),
         ListTile(

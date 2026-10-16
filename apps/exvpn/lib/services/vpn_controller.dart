@@ -19,7 +19,8 @@ final class VpnController extends ChangeNotifier {
   bool _commandPending = false;
   bool _policyPending = false;
   bool _dataUpdatePending = false;
-  bool get commandPending => _commandPending || _policyPending || _dataUpdatePending;
+  bool get commandPending =>
+      _commandPending || _policyPending || _dataUpdatePending;
   String? lastErrorCode;
   String? core;
   Set<String> exclusions = {};
@@ -33,8 +34,12 @@ final class VpnController extends ChangeNotifier {
   bool _mayHaveTunnel = false;
   int _unsafeEpoch = 0;
 
-  bool get canApplyDataUpdate => !_disposed && initialized &&
-      !commandPending && status.phase == VpnPhase.disconnected && !canDisconnect;
+  bool get canApplyDataUpdate =>
+      !_disposed &&
+      initialized &&
+      !commandPending &&
+      status.phase == VpnPhase.disconnected &&
+      !canDisconnect;
 
   /// Reserves UI connect/policy commands and refreshes the authoritative native
   /// state. OS-initiated VPN starts remain independent; the predicate detects
@@ -42,17 +47,25 @@ final class VpnController extends ChangeNotifier {
   Future<T> runWhileDisconnected<T>(
     Future<T> Function(bool Function() stillSafe) action,
   ) async {
-    if (!canApplyDataUpdate) throw const VpnFailure('update_requires_disconnected');
+    if (!canApplyDataUpdate) {
+      throw const VpnFailure('update_requires_disconnected');
+    }
     _dataUpdatePending = true;
     _changed();
     try {
       await refresh();
       final epoch = _unsafeEpoch;
       final command = _command;
-      bool stillSafe() => !_disposed && initialized && _dataUpdatePending &&
-          !_commandPending && !_policyPending && !canDisconnect &&
+      bool stillSafe() =>
+          !_disposed &&
+          initialized &&
+          _dataUpdatePending &&
+          !_commandPending &&
+          !_policyPending &&
+          !canDisconnect &&
           status.phase == VpnPhase.disconnected &&
-          epoch == _unsafeEpoch && command == _command;
+          epoch == _unsafeEpoch &&
+          command == _command;
       if (!stillSafe()) throw const VpnFailure('update_requires_disconnected');
       return await action(stillSafe);
     } finally {

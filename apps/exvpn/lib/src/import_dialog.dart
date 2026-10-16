@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../services/subscription_loader.dart';
 import '../services/subscription_persistence.dart';
+import '../services/qr_import.dart';
 
 class ImportDialog extends StatefulWidget {
   const ImportDialog({
@@ -11,10 +12,12 @@ class ImportDialog extends StatefulWidget {
     required this.controller,
     this.group,
     this.persistence,
+    this.qrReader,
   });
   final AppController controller;
   final SubscriptionGroup? group;
   final SubscriptionPersistence? persistence;
+  final Future<String?> Function()? qrReader;
   @override
   State<ImportDialog> createState() => _ImportDialogState();
 }
@@ -26,6 +29,7 @@ class _ImportDialogState extends State<ImportDialog> {
   bool _link = true;
   bool _loading = false;
   String? _error;
+  bool _qrRead = false;
   @override
   void initState() {
     super.initState();
@@ -38,6 +42,42 @@ class _ImportDialogState extends State<ImportDialog> {
     _input.dispose();
     _loader.close();
     super.dispose();
+  }
+
+  Future<void> _readQr() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final value = await (widget.qrReader ?? pickQrText)();
+      if (!mounted || value == null) return;
+      setState(() {
+        _input.text = value;
+        _link = Uri.tryParse(value)?.scheme.toLowerCase() == 'https';
+        _qrRead = true;
+      });
+    } on QrImportException catch (error) {
+      if (!mounted) return;
+      setState(
+        () => _error = switch (error.code) {
+          QrImportError.tooLarge =>
+            'Изображение слишком большое: максимум 5 МБ и 4 млн пикселей.',
+          QrImportError.tooComplex =>
+            'Изображение слишком сложное. Обрежьте его до одного QR-кода.',
+          QrImportError.unsupportedImage =>
+            'Выберите обычное изображение PNG или JPEG с QR-кодом.',
+          QrImportError.notFound =>
+            'QR-код не найден. Выберите чёткое изображение с одним кодом.',
+          QrImportError.unreadable =>
+            'Не удалось прочитать изображение. Выберите другой файл.',
+        },
+      );
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Не удалось открыть изображение.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   Future<void> _submit() async {
@@ -159,6 +199,21 @@ class _ImportDialogState extends State<ImportDialog> {
                       }),
               ),
               const SizedBox(height: 18),
+              OutlinedButton.icon(
+                key: const Key('qr-import-button'),
+                onPressed: _loading ? null : _readQr,
+                icon: const Icon(Icons.qr_code, size: 20),
+                label: const Text('QR из изображения'),
+              ),
+              if (_qrRead)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text(
+                    'QR-код прочитан. Проверьте данные и подтвердите импорт.',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ),
+              const SizedBox(height: 12),
               TextField(
                 key: const Key('subscription-input'),
                 controller: _input,

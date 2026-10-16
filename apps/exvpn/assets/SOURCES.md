@@ -8,5 +8,6 @@ Recorded 2026-10-16. No provider data or real subscription credentials are asset
 - `flags/*.png`: unmodified national flags NL/DE/FI/PL/SE/FR from [FlagCDN](https://flagcdn.com/), 160 px sources. Country is only presented when explicitly supplied by the profile name or synthetic demo fixture; no endpoint geolocation is inferred.
 - Material Icons: bundled Flutter font, Google attribution; actual pinned SDK license copied to `licenses/MaterialIcons.txt` (CC BY 4.0).
 - Cupertino Icons 1.0.9: [Flutter package](https://pub.dev/packages/cupertino_icons), MIT; license copied to `licenses/CupertinoIcons.txt`. Used for the thin settings outline.
+- QR import: file_selector 1.1.0 and zxing2 0.2.4 (BSD-3-Clause); installed package licenses preserved as `licenses/FileSelector.txt` and `licenses/ZXing2.txt`. Synthetic QR fixtures contain no provider credentials.
 
 All fonts, icons and flags are packaged locally; the UI does not contact font/image CDNs at runtime. The web verification build uses `--no-web-resources-cdn` to package the Flutter renderer locally as well.

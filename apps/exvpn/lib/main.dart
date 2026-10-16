@@ -9,6 +9,7 @@ import 'services/native_vpn_bridge.dart';
 import 'services/vpn_controller.dart';
 import 'services/subscription_store.dart';
 import 'services/subscription_persistence.dart';
+import 'services/data_updates.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,11 +55,13 @@ class ExVpnApp extends StatefulWidget {
     this.vpn,
     this.store,
     this.storageWarning,
+    this.updates,
   });
   final AppController controller;
   final VpnController? vpn;
   final SubscriptionStore? store;
   final String? storageWarning;
+  final DataUpdatesController? updates;
   @override
   State<ExVpnApp> createState() => _ExVpnAppState();
 }
@@ -66,6 +69,7 @@ class ExVpnApp extends StatefulWidget {
 class _ExVpnAppState extends State<ExVpnApp> {
   ThemeMode _themeMode = ThemeMode.dark;
   SubscriptionPersistence? _persistence;
+  late final DataUpdatesController _updates;
   @override
   void initState() {
     super.initState();
@@ -73,30 +77,36 @@ class _ExVpnAppState extends State<ExVpnApp> {
       _persistence = SubscriptionPersistence(widget.controller, widget.store!);
     }
     widget.vpn?.initialize();
+    _updates = widget.updates ?? DataUpdatesController(vpn: widget.vpn);
+    _updates.initialize();
   }
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    title: 'ExVPN',
-    debugShowCheckedModeBanner: false,
-    theme: exVpnTheme(Brightness.light),
-    darkTheme: exVpnTheme(Brightness.dark),
-    themeMode: _themeMode,
-    locale: const Locale('ru'),
-    supportedLocales: const [Locale('ru'), Locale('en')],
-    localizationsDelegates: GlobalMaterialLocalizations.delegates,
-    home: HomeScreen(
-      controller: widget.controller,
-      vpn: widget.vpn,
-      persistence: _persistence,
-      storageWarning: widget.storageWarning,
+  Widget build(BuildContext context) => DataUpdatesScope(
+    controller: _updates,
+    child: MaterialApp(
+      title: 'ExVPN',
+      debugShowCheckedModeBanner: false,
+      theme: exVpnTheme(Brightness.light),
+      darkTheme: exVpnTheme(Brightness.dark),
       themeMode: _themeMode,
-      onThemeChanged: (mode) => setState(() => _themeMode = mode),
+      locale: const Locale('ru'),
+      supportedLocales: const [Locale('ru'), Locale('en')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      home: HomeScreen(
+        controller: widget.controller,
+        vpn: widget.vpn,
+        persistence: _persistence,
+        storageWarning: widget.storageWarning,
+        themeMode: _themeMode,
+        onThemeChanged: (mode) => setState(() => _themeMode = mode),
+      ),
     ),
   );
   @override
   void dispose() {
     _persistence?.dispose();
+    _updates.dispose();
     widget.controller.dispose();
     widget.vpn?.dispose();
     super.dispose();

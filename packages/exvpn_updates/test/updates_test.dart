@@ -388,6 +388,36 @@ void main() {
   });
 
   test(
+    'host safety change during disk work defers the atomic commit',
+    () async {
+      await fixture.install(1, 'old');
+      await fixture.publish(2, {'texts/ru.json': 'new'});
+      var safe = true;
+      final client = fixture.client(
+        fault: (operation) {
+          if (operation == StorageOperation.publishCommit) safe = false;
+        },
+      );
+      final stage = await client.stage();
+      await expectLater(
+        client.activate(stage, canActivate: () => safe),
+        fails(UpdateError.activationDeferred),
+      );
+      expect((await fixture.client().recover()).active!.manifest.revision, 1);
+      // Deferred activation consumes its stage/lease; a new check can reuse the
+      // sealed, independently revalidated bundle and publish safely later.
+      final retry = fixture.client();
+      expect(
+        (await retry.activate(
+          await retry.stage(),
+          canActivate: () => true,
+        )).manifest.revision,
+        2,
+      );
+    },
+  );
+
+  test(
     'corrupt signed marker recovers previous and retains replay floor',
     () async {
       await fixture.install(1, 'old');
