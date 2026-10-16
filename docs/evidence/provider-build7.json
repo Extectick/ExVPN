@@ -1,0 +1,146 @@
+{
+  "date": "2026-10-17",
+  "version": "0.1.0+7",
+  "computerUse": false,
+  "privateInputsPublished": false,
+  "subscription": {
+    "downloaded": true,
+    "hwidRequired": true,
+    "rawRecords": 32,
+    "accepted": 26,
+    "rejected": 6,
+    "protocols": [
+      "VLESS"
+    ],
+    "acceptedTransports": {
+      "grpcReality": 7,
+      "xhttpReality": 9,
+      "tcpRealityVision": 10
+    },
+    "rejectedVariants": {
+      "visionWithoutTlsOrReality": 2,
+      "mlkemWithSudoku": 4
+    }
+  },
+  "core": {
+    "boundary": "authenticated-loopback-SOCKS; no host TUN",
+    "tested": 26,
+    "https204Passed": 3,
+    "connectionFailed": 23,
+    "variants": [
+      {
+        "variant": "vless/grpc/reality/none/default",
+        "tested": 7,
+        "passed": 0
+      },
+      {
+        "variant": "vless/tcp/reality/xtls-rprx-vision/default",
+        "tested": 10,
+        "passed": 0
+      },
+      {
+        "variant": "vless/xhttp/reality/none/auto",
+        "tested": 9,
+        "passed": 3
+      }
+    ]
+  },
+  "android": {
+    "api": 30,
+    "emulator": true,
+    "physicalDevice": false,
+    "ordinaryApp": true,
+    "apkSha256": "d1e09a2006ae5e873493f13e4c70708c1864891d1f7c690a68c1c1f7656bf810",
+    "liveUrlImport": true,
+    "hwidIdentityFromProtectedStorage": true,
+    "importedCount": 26,
+    "https200": true,
+    "https204": true,
+    "independentUid": 10168,
+    "vpnTransport": true,
+    "distinctIpv4": true,
+    "dnsSucceeded": true,
+    "ipv6HttpsError": "network",
+    "explicitDisconnectRestoredIpv4": true,
+    "coldStartRestoredSubscription": true,
+    "manualRefreshRetainedLastList": true,
+    "manualRefreshFailureCauseCaptured": false
+  },
+  "windows": {
+    "runId": "b16104c5-9174-46a5-8934-7df46d6ee6ee",
+    "startedUtc": "2026-10-16T19:18:50.517335Z",
+    "finishedUtc": "2026-10-16T19:19:26.453752Z",
+    "upgradedFromBuild": 6,
+    "installedBuild": 7,
+    "installerSha256": "55ac3069ef5b18181a9ae9460cfebef3f9fefa1f82dfb6642aeb20f6afc70f4d",
+    "ordinaryUserToken": true,
+    "liveUrlImport": false,
+    "cachedPrivateSubscription": true,
+    "importedCount": 26,
+    "tested": 3,
+    "selectedCasesPassed": true,
+    "frameworkPassed": true,
+    "distinctEgress": true,
+    "profiles": [
+      {
+        "case": "Provider node 4",
+        "protocol": "VLESS",
+        "transport": "XHTTP",
+        "security": "REALITY",
+        "passed": true,
+        "numericHttps": 200,
+        "hostnameHttps": 204,
+        "tunDns": true,
+        "distinctEgress": true,
+        "trafficCountersIncreased": true,
+        "explicitDisconnect": true
+      },
+      {
+        "case": "Provider node 7",
+        "protocol": "VLESS",
+        "transport": "XHTTP",
+        "security": "REALITY",
+        "passed": true,
+        "numericHttps": 200,
+        "hostnameHttps": 204,
+        "tunDns": true,
+        "distinctEgress": true,
+        "trafficCountersIncreased": true,
+        "explicitDisconnect": true
+      },
+      {
+        "case": "Provider node 25",
+        "protocol": "VLESS",
+        "transport": "XHTTP",
+        "security": "REALITY",
+        "passed": true,
+        "numericHttps": 200,
+        "hostnameHttps": 204,
+        "tunDns": true,
+        "distinctEgress": true,
+        "trafficCountersIncreased": true,
+        "explicitDisconnect": true
+      }
+    ],
+    "cleanup": {
+      "passed": true,
+      "networkRestored": true,
+      "productionBindingRestored": true,
+      "tunnelAbsent": true,
+      "guardArmed": false
+    }
+  },
+  "limits": [
+    "Trojan/Hysteria2 absent from this response",
+    "Remaining 23 accepted provider nodes did not establish HTTPS",
+    "Six records not yet compatible",
+    "IPv6 HTTPS not confirmed",
+    "Packet-level leak checks pending",
+    "Physical Android pending",
+    "Unsigned development packages; no stable release"
+  ],
+  "sourceCommits": [
+    "f9313f31fe388f30f1c38d0f5837b86fc65b7f9b",
+    "8fa4b5dbb4545894e26617c91a5bba1bb284e9f2"
+  ]
+}

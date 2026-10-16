@@ -64,6 +64,12 @@
   Прогресс 2026-10-16: импорт PNG/JPEG QR с подтверждением до сетевого запроса/добавления, 15 decoder/widget tests PASS, включая защиту от сложных ложных QR и зависшего файлового провайдера; безопасная диагностика с явным копированием и allowlist полей проверена тестами. Android picker/cancel/preview/Add/cold restart пройдены; Windows picker/cancel пройдены, полный импорт ещё открыт. Камера пока не реализована. См. `QR_IMPORT.md`; исходники [a88f75b](https://github.com/Extectick/ExVPN/commit/a88f75b), доказательства [c03e0e3](https://github.com/Extectick/ExVPN/commit/c03e0e3).
   Дополнение 2026-10-16: Android чтение перенесено перед eager-copy стороннего picker в собственный bounded reader: 5 MiB / 20 секунд, одна операция на процесс, независимые cancel/close. 8 JVM и 24 QR Flutter tests прошли, полный app suite — 133. API30 cancel/preview/oversize/retry и VLESS TCP/HTTPS нового APK подтверждены: [android-qr-bounded-smoke.json](evidence/android-qr-bounded-smoke.json). Touch-наблюдение, API36 нового picker и физический телефон остаются открытыми. Исходники: [fe48846](https://github.com/Extectick/ExVPN/commit/fe488467b9946b8f9ca79aad6d2a8bb777d25130).
 
+Дополнение к E3, 2026-10-17:
+
+- [x] **EXVPN-E3-006** — Поддержать HWID challenge подписки без аппаратных серийных номеров, тихой ротации ID или импорта служебного ответа. Критерий: один повтор того же HTTPS URL в исходный deadline, отдельные ошибки лимита/хранилища, устойчивый ID по origin из защищённого секрета, последний рабочий список сохранён при отказе. Проверено: 155 app tests, реальный DPAPI round-trip, live Dart HTTPS, обычный Android +7 импорт URL с HWID и 26 профилями. [Доказательства и границы](PROVIDER_COMPATIBILITY.md). Исходники: [f9313f3](https://github.com/Extectick/ExVPN/commit/f9313f31fe388f30f1c38d0f5837b86fc65b7f9b), QA: [8fa4b5d](https://github.com/Extectick/ExVPN/commit/8fa4b5dbb4545894e26617c91a5bba1bb284e9f2).
+- [ ] **EXVPN-E3-007** — Добавить строго типизированную поддержку VLESS encryption MLKEM и FinalMask sudoku, обнаруженных в четырёх записях новой подписки. Зависимость: E1-002, E3-001. Критерий: валидация каждого поддержанного поля на Dart/native границе, сохранение peer authentication, отрицательные тесты и настоящий HTTPS. Произвольный provider JSON в stream/routing не передаётся. Две записи Vision без TLS/REALITY не исправлять скрытым отключением flow.
+- [ ] **EXVPN-E3-008** — Уточнить диагностику отдельных отклонённых записей и частичного обновления. Критерий: безопасный номер записи/причина, явное решение пользователя о частичной замене, отсутствие незаметной потери рабочего списка. В +7 показано число шести отказов; ручное Android-обновление сохранило список, точная причина не снята в runtime-отчёте.
+
 ## E4 — Android-клиент
 
 - [ ] **EXVPN-E4-001** — Реализовать VpnService, системное разрешение, foreground notification и полный жизненный цикл. Зависимости: E1–E3. Критерий: служба независима от Activity, видимый статус достоверен, повторный старт/stop безопасен.
@@ -141,6 +147,20 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
 - [ ] **EXVPN-E9-003** — Проверить OTA, UI и ограничения iOS; подготовить TestFlight. Зависимость: E9-002. Критерий: устройство, смена сети/фон/ошибки, требования магазина и подписанный TestFlight build; факт отправки не равен одобрению.
 
 ## Журнал доказательств
+
+2026-10-17, частично **E1-004/005/007/009, E3-001–004, E4, E5**: сборка
+**0.1.0+7**, новая настоящая подписка: 32 записи / 26 импортировано. Полный
+core SOCKS-прогон 26 профилей дал HTTPS 204 у трёх XHTTP/REALITY. Все три затем
+прошли Windows ordinary-user UI → SCM/TUN с другим внешним IPv4, HTTPS 200/204,
+DNS, счётчиками и полным cleanup. На Android API30 emulator обычный APK сам
+получил HWID-подписку; один профиль дал независимому UID HTTPS 200/204, другой
+IPv4 и DNS. Cold start сохранил список; после disconnect прямой IPv4 восстановился.
+IPv6 HTTPS не подтверждён, 23 принятых узла и шесть отклонённых остаются открытыми.
+[Отчёт](PROVIDER_COMPATIBILITY.md), [JSON](evidence/provider-build7.json),
+[Windows screenshot](evidence/windows-provider-build7.png).
+155 app / 116 domain tests, Go tests/vet, release Windows/debug Android и обе JNI ABI
+пройдены. Исходники: [f9313f3](https://github.com/Extectick/ExVPN/commit/f9313f31fe388f30f1c38d0f5837b86fc65b7f9b), QA: [8fa4b5d](https://github.com/Extectick/ExVPN/commit/8fa4b5dbb4545894e26617c91a5bba1bb284e9f2). Предыдущий CI `7db56df` завершился
+успешно на Windows и Android; к новой сборке это подтверждение не переносится.
 
 | Дата | Задачи | Результат | Commit / PR / артефакт |
 |---|---|---|---|
