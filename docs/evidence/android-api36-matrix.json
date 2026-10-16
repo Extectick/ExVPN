@@ -1,0 +1,80 @@
+{
+  "date": "2026-10-16",
+  "androidApi": 36,
+  "abi": "x86_64",
+  "apkSha256": "1ebd6d782feca226309c1693fe2ef917ef2e6f071a7eff53d3ab12689da8f116",
+  "probe": "separate UID verified HTTPS health",
+  "fixture": "loopback ephemeral; not provider",
+  "cases": [
+    {
+      "protocol": "VLESS TCP",
+      "httpStatus": 204,
+      "vpnTransport": true,
+      "success": true,
+      "durationMs": 1723,
+      "inboundUploadBytes": 13318,
+      "inboundDownloadBytes": 7776
+    },
+    {
+      "protocol": "VLESS REALITY",
+      "httpStatus": 204,
+      "vpnTransport": true,
+      "success": true,
+      "durationMs": 1412,
+      "inboundUploadBytes": 13118,
+      "inboundDownloadBytes": 26776
+    },
+    {
+      "protocol": "VLESS Vision",
+      "httpStatus": 204,
+      "vpnTransport": true,
+      "success": true,
+      "durationMs": 6372,
+      "inboundUploadBytes": 40367,
+      "inboundDownloadBytes": 42169
+    },
+    {
+      "protocol": "VLESS XHTTP",
+      "httpStatus": 204,
+      "vpnTransport": true,
+      "success": true,
+      "durationMs": 1704,
+      "inboundUploadBytes": 17267,
+      "inboundDownloadBytes": 36389
+    },
+    {
+      "protocol": "XHTTP REALITY",
+      "httpStatus": 204,
+      "vpnTransport": true,
+      "success": true,
+      "durationMs": 2362,
+      "inboundUploadBytes": 18063,
+      "inboundDownloadBytes": 33256
+    },
+    {
+      "protocol": "VMess",
+      "httpStatus": 204,
+      "vpnTransport": true,
+      "success": true,
+      "durationMs": 6055,
+      "inboundUploadBytes": 19896,
+      "inboundDownloadBytes": 11411
+    },
+    {
+      "protocol": "Shadowsocks",
+      "httpStatus": 204,
+      "vpnTransport": true,
+      "success": true,
+      "durationMs": 2737,
+      "inboundUploadBytes": 19380,
+      "inboundDownloadBytes": 8891
+    }
+  ],
+  "unverified": [
+    "Trojan Android TUN",
+    "Hysteria2 Android TUN",
+    "physical Android",
+    "Android 11",
+    "full DNS/IPv4/IPv6 leak audit"
+  ]
+}

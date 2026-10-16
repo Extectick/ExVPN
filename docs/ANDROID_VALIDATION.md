@@ -84,15 +84,47 @@ unbind. Это корреляция, а не доказанная причина
 - [Сервер недоступен](../design/qa/android-native/server-unavailable.png)
 - [Повреждённое защищённое хранилище](../design/qa/android-native/storage-blocked.png)
 - [Нет сохранённого сеанса после отмены](../design/qa/android-native/profile-required.png)
+- [Работающий Shadowsocks в матрице протоколов](../design/qa/android-native/protocol-matrix-connected.png)
 
 На снимках только синтетические названия; секреты, серверные адреса и ссылки
 подписки не отображаются. Скриншот эмулятора не заменяет физическое устройство.
+
+## Матрица протоколов через Android TUN
+
+На сборке `1ebd6d...` все семь синтетических профилей импортированы через UI из
+Base64-подписки. Для каждого выбран отдельный сервер, нажата кнопка подключения,
+независимый защищаемый UID выполнил HTTPS с обычной проверкой сертификата.
+Показание UI Connected сопоставлено с успешным probe и увеличением счётчиков
+именно соответствующего inbound сервера. Настройки доверия ОС не менялись.
+
+| Вариант | HTTP status | Время probe | VPN transport |
+|---|---|---|---|
+| VLESS TCP | 204 | 1723 ms | true |
+| VLESS REALITY | 204 | 1412 ms | true |
+| VLESS REALITY + Vision | 204 | 6372 ms | true |
+| VLESS XHTTP | 204 | 1704 ms | true |
+| VLESS XHTTP + REALITY | 204 | 2362 ms | true |
+| VMess TCP | 204 | 6055 ms | true |
+| Shadowsocks chacha20-ietf-poly1305 | 204 | 2737 ms | true |
+
+Время включает запуск/установление соединения и не является latency benchmark.
+Сводка точных счётчиков и hash APK: [android-api36-matrix.json](evidence/android-api36-matrix.json).
+Fixture: `native/android/cmd/qa-server`, только loopback, случайные эфемерные
+credentials, файлы только в игнорируемой `.private`. REALITY использует локальную
+camouflage TLS1.3 цель и проверку своего ключа; сертификат цели не добавляется
+в системное доверие. Это не доступность реального провайдера или всех возможных
+сочетаний транспорта/параметров. Отрицательные проверки неверного ключа на
+Android отдельно не выполнены; core tests не подменяют их.
+
+Trojan и Hysteria2 через Android TUN **не проверены**: проверка TLS не отключалась
+ради локального стенда. Их core-level fixtures с test-only trust — другая граница.
 
 ## Незакрытые границы
 
 - Физический Android11+ и минимальная ОС; API30 image отсутствует, новая лицензия
   автоматически не принималась.
-- Пользовательский провайдер и полный Android protocol matrix.
+- Пользовательский провайдер, Trojan/Hysteria2 Android TUN и другие сочетания
+  протокольных параметров за пределами семи проверенных вариантов.
 - Полный IPv4/IPv6/DNS packet-capture аудит с холодным DNS cache; edge cases
   неизвестного/shared UID и lifecycle установленных приложений.
 - Автовосстановление после SIGKILL, reboot/unlock, sleep/resume и обновление пакета.

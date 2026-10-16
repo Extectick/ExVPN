@@ -132,10 +132,14 @@ During a controlled synthetic VLESS server outage, the protected UID failed
 numeric HTTPS while the selected excluded UID succeeded through the same TUN.
 The UI reported blocked and recovered automatically after server restoration;
 background UI and Wi-Fi/cellular transitions retained working HTTPS after recovery.
-Exact APK hash, observations and limitations are in the local
-[`artifacts/android-runtime/REPORT.md`](../../artifacts/android-runtime/REPORT.md).
-That report identifies the tested build; later native persistence changes require
-a new APK and their own focused lifecycle replay. No real provider key was used.
+Exact APK hashes, observations and limitations are in
+[`docs/ANDROID_VALIDATION.md`](../../docs/ANDROID_VALIDATION.md). Follow-up API36
+checks passed encrypted exclusion/session persistence, Always-on restoration,
+corrupt-resume blocking and explicit-stop cleanup. OS lockdown blocked both probe
+UIDs after SIGKILL, but automatic process restart did not pass. Seven synthetic
+protocol/transport cases carried verified HTTPS through Android TUN: VLESS TCP,
+REALITY, Vision, XHTTP, XHTTP+REALITY, VMess and Shadowsocks. See the loopback-only
+[`cmd/qa-server`](cmd/qa-server/README.md) fixture. No real provider key was used.
 
 ## Sources and remaining validation
 
@@ -146,12 +150,11 @@ a new APK and their own focused lifecycle replay. No real provider key was used.
 - [Pinned Android TUN](https://github.com/XTLS/Xray-core/blob/701af60772cda123492f86e383e1fdba066614a9/proxy/tun/tun_android.go)
 - [Pinned system dialer](https://github.com/XTLS/Xray-core/blob/701af60772cda123492f86e383e1fdba066614a9/transport/internet/system_dialer.go)
 
-Pending: physical Android 11+ permission/foreground lifecycle, real provider and
-Android per-protocol matrix, IPv4/IPv6/DNS packet capture with cold caches,
-unknown/shared UID edge cases, sleep/resume/reboot and native process-crash
-lockdown tests. The local core's verified Trojan, Hy2 and REALITY HTTPS fixtures
-do not by themselves prove those protocols through Android TUN. Encrypted native
-recovery, explicit-stop cleanup and corrupted-store failure require focused
-runtime verification on the updated APK. JNI compilation or an emulator
-screenshot alone must not close E1/E4 acceptance.
+Pending: physical Android 11+ permission/foreground lifecycle, real provider,
+Trojan/Hysteria2 through Android TUN, remaining protocol parameter combinations,
+IPv4/IPv6/DNS packet capture with cold caches, unknown/shared UID edge cases,
+sleep/resume/reboot and automatic process recovery after SIGKILL. The core's
+test-only Trojan/Hy2 trust fixtures do not prove those protocols through Android
+TUN. Newer source changes than the report's hashes need their own focused replay.
+JNI compilation or an emulator screenshot alone must not close E1/E4 acceptance.
 Use synthetic profiles first and keep any real inputs under `.private/`.
