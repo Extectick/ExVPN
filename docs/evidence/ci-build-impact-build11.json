@@ -3,7 +3,7 @@
   "taskId": "EXVPN-E7-006",
   "date": "2026-10-17",
   "status": "LOCAL_PASS",
-  "sourceState": "working tree; commit pending",
+  "sourceState": "committed",
   "applicationSourceCommit": "292d3dc05f1b694a26ca9e2cb30953850e5b8373",
   "selectorChecks": 92,
   "fixtureLogSha256": "805d47b6fcb164fcdd0fd049f2bc38b6b2cb854a9484649109c3b0e587b82d69",
@@ -74,5 +74,6 @@
     "No final GitHub QA-only push run or native packaging performed by this validation."
   ],
   "remoteQaOnlyRunVerified": false,
-  "review": "Independent read-only review: no remaining findings; agreed docs-only trigger boundary documented."
+  "review": "Independent read-only review: no remaining findings; agreed docs-only trigger boundary documented.",
+  "ciCodeCommit": "9d035aee717604dafa31e0b2818b3767bfac0efe"
 }

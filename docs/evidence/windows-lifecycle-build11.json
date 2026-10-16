@@ -194,7 +194,7 @@
       "attempt": 4,
       "status": "FAIL",
       "failureClass": "Retained host TCP peer after original disconnect deadline",
-      "qaSourceState": "working tree; commit pending",
+      "qaSourceState": "committed",
       "qaSourceHashes": [
         {
           "path": "apps/exvpn/integration_test/windows_sandbox_test.dart",
@@ -303,7 +303,8 @@
         "privateDisconnectedHostPeers": "2c21796faceaa992676f83024e7eadd5d7066bd4b6d84f65335fb2074bfb424d",
         "privateValidatedCorrelation": "b2694b9ee9ce158a56ef056c3f0c4d58a85d11511b8674b59a5294b8ed5e0b38",
         "privateSourceAndBinaryProof": "ce3de4218f549ae954bf41f2dda88b94175bf5bb9a2e17a79256ac692a104f6f"
-      }
+      },
+      "qaCodeCommit": "afdd24e399f3d0e3f118f03816379ce63d2b5a25"
     }
   ],
   "secondAttemptDiagnostics": {
@@ -336,7 +337,7 @@
     "These runs do not prove complete leak prevention, native cache counts, physical Windows behavior, or release readiness."
   ],
   "secondAttemptQaCodeCommit": "932cd0f04b4bc1e2ed0ae80a98f04d425b419eea",
-  "latestQaSourceState": "working tree; commit pending",
+  "latestQaSourceState": "committed",
   "fourthAttemptBinaryReuse": {
     "preparationWallSeconds": 4.2,
     "timingScope": "QA bundle preparation only, observed tool wall time",
@@ -417,6 +418,8 @@
     ],
     "networkCommandsInSyntheticTests": false,
     "privateTestsLogSha256": "78069ee00fde4831b07a718b1467537f00fe83040bc4b38f73dfb0cff45d0587",
-    "latestSourceState": "working tree; commit pending"
-  }
+    "latestSourceState": "committed",
+    "qaCodeCommit": "afdd24e399f3d0e3f118f03816379ce63d2b5a25"
+  },
+  "latestQaCodeCommit": "afdd24e399f3d0e3f118f03816379ce63d2b5a25"
 }

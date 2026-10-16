@@ -17,6 +17,14 @@ Go unit/loopback tests и файловые сценарии установщик
 запускают установленный VPN, службу, TUN, WFP или смену маршрутов/DNS хоста.
 Приватные подписки и действующие VPN-серверы в них не участвуют.
 
+Последний общий прогон, 2026-10-17: **10/10 наборов за 93,90 с**, все Go tests
+выполнены заново, fingerprint исходников совпал. Он включает 134 Windows
+lifecycle helper checks и 92 CI selector/graph/JUnit checks.
+[Отчёт](evidence/fast-validation-build11-acceleration.json).
+Чистый Android JVM helper отдельно прошёл 8/8 за 43,13 с без APK/JNI; локальные
+SDK/dependency caches сохранены. Эти измерения относятся к разным проверкам и
+не являются коэффициентом ускорения полной сборки CI.
+
 ## Режимы
 
 ```powershell
@@ -101,8 +109,12 @@ pwsh -NoProfile -File scripts/ci/verify.ps1 -Target Android
 pwsh -NoProfile -File scripts/ci/verify.ps1 -Target Windows
 ```
 
-CI продолжает делать clean-checkout анализ/тесты, обе JNI ABI, APK/JVM tests и
-Windows UI/service build. Нативные функции, Kotlin/C++, TUN, IPv4/IPv6/DNS,
+CI сохраняет clean-checkout анализ/тесты. Product-изменения, неизвестные пути,
+pull request и ручной запуск требуют обе JNI ABI, APK/JVM tests и Windows
+UI/service build. Только подтверждённый QA-only push может пропустить native
+packaging, сохранив JVM и остальные проверки; такой run не даёт новых APK/EXE.
+[Правила выбора и граница docs-only trigger](CI.md).
+Нативные функции, Kotlin/C++, TUN, IPv4/IPv6/DNS,
 исключения, crash/lockdown, обновление, удаление и подпись не закрываются быстрым
 прогоном. Для них используются [Windows CLI Sandbox](WINDOWS_AUTOMATED_QA.md),
 [Android ADB/emulator](ANDROID_VALIDATION.md), [provider matrix](PROVIDER_COMPATIBILITY.md)
@@ -159,7 +171,7 @@ Windows lifecycle driver — `scripts/qa/run-windows-transport-lifecycle.ps1`:
 готовый Flutter integration runner выполняет циклы в одном UI/SCM процессе,
 CLI Sandbox наблюдает очистку TUN/WFP/DNS/routes и завершение peer sockets.
 Android использует отдельный ADB/probe driver и
-`scripts/qa/android-lifecycle-tools.ps1`. 78 Windows и 19 Android синтетических
+`scripts/qa/android-lifecycle-tools.ps1`. 134 Windows и 19 Android синтетических
 проверок этих helpers входят в `scripts` и CI; они сами не запускают VPN.
 Результаты настоящих циклов привязываются к хешу APK/установщика отдельно.
 
