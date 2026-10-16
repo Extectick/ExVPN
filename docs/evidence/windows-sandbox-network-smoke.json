@@ -1,0 +1,264 @@
+{
+  "format": 1,
+  "date": "2026-10-16",
+  "scope": "Production Controller, WindowsGuard and Xray TUN in a disposable guest; separate diagnostic host process, not SCM or UI IPC acceptance",
+  "implementationCommit": "c50f5cd",
+  "harnessCommit": "9fdf035",
+  "platform": "Windows11 Pro 25H2 26200.9711, Sandbox 0.8.107.0",
+  "fixture": "Ephemeral loopback VLESS TCP in the privileged test process; egress bound to original guest physical interface; fixture-only pre-resolved health hostname",
+  "desktopProbeTokenIsAdmin": true,
+  "installedServiceIpcTested": false,
+  "scmCrashTested": false,
+  "distinctExternalIpsProven": false,
+  "ipv6EgressTested": false,
+  "packetCaptureLeakTested": false,
+  "dnsCacheScope": "Windows DNS Client cache cleared for outage-cold; Xray cache was not flushed",
+  "traffic": {
+    "tun": {
+      "uploadBytes": 11457,
+      "downloadBytes": 27597
+    },
+    "fixtureUplink": 22229,
+    "fixtureDownlink": 15948
+  },
+  "phases": [
+    {
+      "phase": "baseline",
+      "utc": "2026-10-16T14:24:26.1158577Z",
+      "probes": [
+        {
+          "process": "protected-probe.exe",
+          "mode": "numeric",
+          "success": true,
+          "httpStatus": 200,
+          "durationMs": 2564
+        },
+        {
+          "process": "protected-probe.exe",
+          "mode": "health",
+          "success": true,
+          "httpStatus": 204,
+          "durationMs": 1580
+        },
+        {
+          "process": "excluded-probe.exe",
+          "mode": "numeric",
+          "success": true,
+          "httpStatus": 200,
+          "durationMs": 706
+        },
+        {
+          "process": "excluded-probe.exe",
+          "mode": "health",
+          "success": true,
+          "httpStatus": 204,
+          "durationMs": 608
+        }
+      ]
+    },
+    {
+      "phase": "connected",
+      "utc": "2026-10-16T14:33:57.7605968Z",
+      "probes": [
+        {
+          "process": "protected-probe.exe",
+          "mode": "numeric",
+          "success": true,
+          "httpStatus": 200,
+          "durationMs": 277
+        },
+        {
+          "process": "protected-probe.exe",
+          "mode": "health",
+          "success": true,
+          "httpStatus": 204,
+          "durationMs": 401
+        },
+        {
+          "process": "excluded-probe.exe",
+          "mode": "numeric",
+          "success": true,
+          "httpStatus": 200,
+          "durationMs": 272
+        },
+        {
+          "process": "excluded-probe.exe",
+          "mode": "health",
+          "success": true,
+          "httpStatus": 204,
+          "durationMs": 298
+        }
+      ]
+    },
+    {
+      "phase": "outage",
+      "utc": "2026-10-16T14:34:33.2746505Z",
+      "probes": [
+        {
+          "process": "protected-probe.exe",
+          "mode": "numeric",
+          "success": false,
+          "httpStatus": null,
+          "durationMs": 2009
+        },
+        {
+          "process": "protected-probe.exe",
+          "mode": "health",
+          "success": false,
+          "httpStatus": null,
+          "durationMs": 2021
+        },
+        {
+          "process": "excluded-probe.exe",
+          "mode": "numeric",
+          "success": true,
+          "httpStatus": 200,
+          "durationMs": 367
+        },
+        {
+          "process": "excluded-probe.exe",
+          "mode": "health",
+          "success": true,
+          "httpStatus": 204,
+          "durationMs": 271
+        }
+      ]
+    },
+    {
+      "phase": "outage-cold",
+      "utc": "2026-10-16T14:35:34.8778419Z",
+      "probes": [
+        {
+          "process": "protected-probe.exe",
+          "mode": "numeric",
+          "success": false,
+          "httpStatus": null,
+          "durationMs": 2010
+        },
+        {
+          "process": "protected-probe.exe",
+          "mode": "health",
+          "success": false,
+          "httpStatus": null,
+          "durationMs": 2165
+        },
+        {
+          "process": "excluded-probe.exe",
+          "mode": "numeric",
+          "success": true,
+          "httpStatus": 200,
+          "durationMs": 403
+        },
+        {
+          "process": "excluded-probe.exe",
+          "mode": "health",
+          "success": true,
+          "httpStatus": 204,
+          "durationMs": 268
+        }
+      ]
+    },
+    {
+      "phase": "crashed",
+      "utc": "2026-10-16T14:37:20.089301Z",
+      "probes": [
+        {
+          "process": "protected-probe.exe",
+          "mode": "numeric",
+          "success": false,
+          "httpStatus": null,
+          "durationMs": 5
+        },
+        {
+          "process": "protected-probe.exe",
+          "mode": "health",
+          "success": false,
+          "httpStatus": null,
+          "durationMs": 12095
+        },
+        {
+          "process": "excluded-probe.exe",
+          "mode": "numeric",
+          "success": false,
+          "httpStatus": null,
+          "durationMs": 3
+        },
+        {
+          "process": "excluded-probe.exe",
+          "mode": "health",
+          "success": false,
+          "httpStatus": null,
+          "durationMs": 15
+        }
+      ]
+    },
+    {
+      "phase": "disconnected",
+      "utc": "2026-10-16T14:39:07.9299368Z",
+      "probes": [
+        {
+          "process": "protected-probe.exe",
+          "mode": "numeric",
+          "success": true,
+          "httpStatus": 200,
+          "durationMs": 274
+        },
+        {
+          "process": "protected-probe.exe",
+          "mode": "health",
+          "success": true,
+          "httpStatus": 204,
+          "durationMs": 294
+        },
+        {
+          "process": "excluded-probe.exe",
+          "mode": "numeric",
+          "success": true,
+          "httpStatus": 200,
+          "durationMs": 279
+        },
+        {
+          "process": "excluded-probe.exe",
+          "mode": "health",
+          "success": true,
+          "httpStatus": 204,
+          "durationMs": 289
+        }
+      ]
+    }
+  ],
+  "afterCrash": {
+    "guardPersisted": true,
+    "adapterPresent": false,
+    "bothProbeProcessesBlocked": true
+  },
+  "explicitDisconnect": {
+    "guardRemoved": true,
+    "adapterRemoved": true,
+    "routesAndDnsFingerprintRestored": true
+  },
+  "afterExplicitRecovery": {
+    "httpsRestored": true,
+    "guardReadback": {
+      "guardArmed": false,
+      "readFailed": false,
+      "utc": "2026-10-16T14:42:58Z"
+    }
+  },
+  "installer": {
+    "sha256": "00f9331ba0f6a9be80756adcf19bb999215f9c23c6628b1f9863f2c0bd4677af",
+    "bytes": 34905498,
+    "unsignedDevelopment": true,
+    "installedInSameGuest": true,
+    "serviceAndUiProcessesRunning": true,
+    "interactiveUiValidation": "stopped by user Escape; not accepted"
+  },
+  "remaining": [
+    "Installed service and unelevated UI IPC end to end",
+    "All protocols and distinct remote egress",
+    "IPv4/IPv6/DNS packet-capture leak checks, including fresh core DNS cache",
+    "Existing active flows during crash",
+    "SCM crash, sleep/resume, network change, reboot, Windows10",
+    "Version-pair upgrade/rollback and uninstall after active VPN"
+  ]
+}

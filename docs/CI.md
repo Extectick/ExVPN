@@ -60,4 +60,8 @@ Go verify/test/vet всех трёх модулей. Для `Checks`/`Windows` �
 Windows Go test/vet, service build и PS5.1 ACL/manifest/13 recovery/mutex checks.
 Android CI теперь дополнительно выполняет `:app:testDebugUnitTest`.
 Отдельно прошёл реальный install/recover/restart/uninstall в Sandbox, что не
-заменяет сетевые испытания. Новому исполняемому коду требуется новый remote run.
+заменяет сетевые испытания. Полный [run 38913723317](https://github.com/Extectick/ExVPN/actions/runs/38913723317)
+на `a26b653` успешно завершил Android и Windows, включая JVM reader tests.
+Следующие WFP GUID/DNS исправления `c50f5cd` и новый Sandbox-стенд `9fdf035`
+прошли локальные Go test/vet, service build и сборку NSIS. Им требуется отдельный
+remote run; прошлый зелёный CI не относится к этим изменениям.

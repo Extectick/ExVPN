@@ -102,3 +102,51 @@ Go tests/vet и PS5.1 manifest/ACL/13 recovery/mutex tests прошли.
 
 Win32 API возвращает [DWORD](https://learn.microsoft.com/en-us/windows/win32/api/fwpmu/nf-fwpmu-fwpmfiltergetbykey0);
 инструкции стенда: [INSTALLER.md](../native/windows/INSTALLER.md).
+
+## Реальный TUN и отказы на диагностическом стенде (2026-10-16)
+
+В открытом пользователем Sandbox выполнен production `Controller → WindowsGuard →
+StartTunnel`, размещённый в отдельном QA executable. В приложение этот executable
+не входит. Два других процесса выполняли HTTPS с обычной проверкой TLS, без
+proxy и привязки сокетов к физическому интерфейсу. Один путь явно исключён.
+Тестовый VLESS TCP-сервер находится в том же привилегированном QA-процессе,
+слушает только loopback и выводит запросы через исходный физический интерфейс
+гостя. Его единственный health hostname разрешается до захвата трафика,
+имитируя DNS удалённого сервера. Секреты генерируются в памяти и не экспортируются.
+
+Стенд обнаружил и проверил два исправления:
+
+- WFP отклонял условия с `0x80320002`: три GUID отличались от Microsoft SDK.
+  Регрессионный тест сверяет все используемые системные GUID с независимо
+  установленным `fwpmu.h`, не меняя сеть тестовой машины.
+- DNS на собственном адресе TUN доставлялся локально в Windows. Отдельный peer
+  внутри каждого TUN subnet возвращает запросы в Xray; DNS остаётся перед
+  исключениями и отправляется через VPN.
+
+HTTPS 200 по числовому IP и 204 по доменному имени прошёл в обоих процессах.
+TUN/fixture counters ненулевые. При закрытии VLESS-сервера оба HTTPS-запроса
+защищаемого процесса отказали, исключённый сохранил доступ. Контроллер перешёл
+в `reconnecting/transport_unreachable`. Очистка кеша Windows DNS Client повторила
+результат; внутренний кеш Xray не очищался, поэтому это не полная проверка DNS
+с холодным кешем. При hard kill QA-процесса TUN исчез, WFP остался, оба процесса
+потеряли доступ. Explicit disconnect/recover удалил принадлежащие ExVPN фильтры,
+восстановил HTTPS и исходные хеши маршрутов/DNS.
+
+[Обезличенный отчёт](evidence/windows-sandbox-network-smoke.json).
+Исходники исправлений: [c50f5cd](https://github.com/Extectick/ExVPN/commit/c50f5cd),
+стенда: [9fdf035](https://github.com/Extectick/ExVPN/commit/9fdf035).
+Команды находятся в `scripts/windows/sandbox/guest-system-qa.ps1` и требуют
+подготовленного гостя, read-only input и отдельного writable output.
+
+Новый пакет **34 905 498 байт**, SHA-256
+`00f9331ba0f6a9be80756adcf19bb999215f9c23c6628b1f9863f2c0bd4677af`,
+сохранён в `artifacts/windows/package-0.1.0-1-20261016-143621-2d5b8640`.
+Установка с явно разрешённым network testing прошла, LocalSystem-служба и
+процесс Flutter UI запущены. Пользователь остановил Computer Use нажатием Esc;
+визуальная проверка и UI↔SCM connect/disconnect не приняты. Sandbox desktop token
+имеет права администратора; эти испытания не подтверждают сценарий обычного
+пользователя. На хосте ExVPNService отсутствует.
+
+Остаются открыты: все протоколы и удалённый egress с разными IP, DNS/IPv6 capture,
+уже открытые соединения при аварии, SCM crash, sleep/resume, смена сети, Windows10,
+upgrade/rollback/uninstall после активного VPN и подписанный выпуск.
