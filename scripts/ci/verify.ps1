@@ -17,8 +17,8 @@ $dart = Join-Path $repository '.tools/flutter/bin/dart.bat'
 $flutter = Join-Path $repository '.tools/flutter/bin/flutter.bat'
 $pin = Get-Content -LiteralPath (Join-Path $repository 'scripts/bootstrap/toolchain.lock.json') -Raw | ConvertFrom-Json
 if ((& $go version) -ne "go version go$($pin.go.version) windows/amd64") { throw 'Go SDK pin mismatch.' }
-$flutterVersion = (& $flutter --version --machine) | ConvertFrom-Json
-if ($LASTEXITCODE -ne 0 -or $flutterVersion.frameworkRevision -ne $pin.flutter.revision) { throw 'Flutter SDK pin mismatch.' }
+$flutterVersion = & (Join-Path $PSScriptRoot 'flutter-version.ps1') -Flutter $flutter
+if ($flutterVersion.frameworkRevision -ne $pin.flutter.revision) { throw 'Flutter SDK pin mismatch.' }
 $pubspec = Get-Content -LiteralPath (Join-Path $repository 'apps/exvpn/pubspec.yaml') -Raw
 $identity = Get-Content -LiteralPath (Join-Path $repository 'apps/exvpn/lib/build_identity.dart') -Raw
 $version = [regex]::Match($pubspec, '(?m)^version:\s*(\d+\.\d+\.\d+)\+(\d+)\s*$')
