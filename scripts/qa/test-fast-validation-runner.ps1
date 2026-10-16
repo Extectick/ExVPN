@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: Apache-2.0
+#requires -Version 7.0
+[CmdletBinding()]
+param()
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'fast-validation-plan.ps1')
+$repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+$fixture = Join-Path $repository ('artifacts/qa/runner-fixture-' + [Guid]::NewGuid().ToString('N'))
+foreach ($directory in @('scripts/qa', 'scripts/bootstrap', 'scripts/ci', 'apps/exvpn/lib')) {
+    New-Item -ItemType Directory -Path (Join-Path $fixture $directory) -Force | Out-Null
+}
+# Run the real coordinator in an isolated fixture. Replace ONLY its worker with
+# a synthetic child; no actual lane, native build, service or network runs here.
+foreach ($relative in @(
+    'scripts/qa/run-fast-validation.ps1', 'scripts/qa/fast-validation-plan.ps1',
+    'scripts/bootstrap/enter-environment.ps1', 'scripts/bootstrap/toolchain.lock.json',
+    'scripts/ci/flutter-version.ps1'
+)) {
+    Copy-Item -LiteralPath (Join-Path $repository $relative) -Destination (Join-Path $fixture $relative)
+}
+# Read existing pinned SDKs. The junction is ignored and never recursively
+# deleted; no SDK contents or installed programs are replaced by this test.
+New-Item -ItemType Junction -Path (Join-Path $fixture '.tools') -Target (Join-Path $repository '.tools') | Out-Null
+Set-Content -LiteralPath (Join-Path $fixture '.gitignore') -Value ".tools/`nartifacts/`n*.log"
+Set-Content -LiteralPath (Join-Path $fixture 'apps/exvpn/pubspec.yaml') -Value 'version: 0.1.0+1'
+Set-Content -LiteralPath (Join-Path $fixture 'apps/exvpn/lib/build_identity.dart') -Value "const appVersion = '0.1.0';`nconst appBuild = 1;"
+$null = Invoke-FastValidationGit $fixture @('init', '--quiet')
+$worker = Join-Path $fixture 'scripts/qa/run-fast-validation-lane.ps1'
+Set-Content -LiteralPath $worker -Value @'
+param([string]$Lane, [switch]$FreshGoTests, [int]$TestConcurrency, [switch]$OnlineDependencies)
+if ($Lane -eq 'android') { Write-Host 'Intentional child failure fixture.'; exit 7 }
+exit 0
+'@
+$shell = Join-Path $PSHOME 'pwsh.exe'
+$runner = Join-Path $fixture 'scripts/qa/run-fast-validation.ps1'
+& $shell -NoProfile -NonInteractive -File $runner -Full *> (Join-Path $fixture 'failure-run.log')
+if ($LASTEXITCODE -eq 0) { throw 'Coordinator returned success despite a failed child.' }
+$reportPath = Get-ChildItem -LiteralPath (Join-Path $fixture 'artifacts/qa') -Directory -Filter 'fast-*' |
+    Sort-Object Name -Descending | Select-Object -First 1 -ExpandProperty FullName
+$report = Get-Content -LiteralPath (Join-Path $reportPath 'summary.json') -Raw | ConvertFrom-Json
+$failed = @($report.lanes | Where-Object status -eq 'failed')
+if ($report.status -ne 'failed' -or $report.lanes.Count -ne 9 -or $failed.Count -ne 1 -or
+    $failed[0].lane -ne 'android' -or $failed[0].exitCode -ne 7 -or !$report.sourceUnchanged) {
+    throw 'Coordinator lost a child result or failed for an unrelated reason.'
+}
+
+Set-Content -LiteralPath $worker -Value @'
+param([string]$Lane, [switch]$FreshGoTests, [int]$TestConcurrency, [switch]$OnlineDependencies)
+if ($Lane -eq 'core') {
+    $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+    Set-Content -LiteralPath (Join-Path $root 'changed-during-run.dart') -Value 'synthetic edit'
+}
+exit 0
+'@
+& $shell -NoProfile -NonInteractive -File $runner -Full *> (Join-Path $fixture 'drift-run.log')
+if ($LASTEXITCODE -eq 0) { throw 'Coordinator accepted a source edit during the run.' }
+$reportPath = Get-ChildItem -LiteralPath (Join-Path $fixture 'artifacts/qa') -Directory -Filter 'fast-*' |
+    Sort-Object Name -Descending | Select-Object -First 1 -ExpandProperty FullName
+$report = Get-Content -LiteralPath (Join-Path $reportPath 'summary.json') -Raw | ConvertFrom-Json
+if ($report.status -ne 'source-changed-during-run' -or $report.sourceUnchanged -or
+    $report.lanes.Count -ne 9 -or @($report.lanes | Where-Object status -ne 'passed').Count) {
+    throw 'Coordinator did not distinguish source drift from child failure.'
+}
+Write-Host 'Fast-validation runner: child exit 7 and concurrent source edit both rejected; all nine child results preserved.'

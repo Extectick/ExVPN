@@ -18,12 +18,13 @@ function Invoke-Checked([string]$Executable, [string[]]$Arguments) {
     & $Executable @Arguments
     if ($LASTEXITCODE -ne 0) { throw "QA build step failed: $([IO.Path]::GetFileName($Executable)) ($LASTEXITCODE)" }
 }
-Invoke-Checked (Join-Path $env:JAVA_HOME 'bin/javac.exe') @('-source','8','-target','8','-classpath',$androidJar,'-d',$classesPath,(Join-Path $PSScriptRoot 'HttpsProbe.java'),(Join-Path $PSScriptRoot 'ProbeActivity.java'))
+Invoke-Checked (Join-Path $env:JAVA_HOME 'bin/javac.exe') @('-source','8','-target','8','-classpath',$androidJar,'-d',$classesPath,(Join-Path $PSScriptRoot 'HttpsProbe.java'),(Join-Path $PSScriptRoot 'ProbeActivity.java'),(Join-Path $PSScriptRoot 'TextInputProbe.java'),(Join-Path $PSScriptRoot 'TextInputPayload.java'))
 $classesJar = Join-Path $outputRoot 'classes.jar'
 Invoke-Checked (Join-Path $env:JAVA_HOME 'bin/jar.exe') @('cf',$classesJar,'-C',$classesPath,'.')
 Invoke-Checked (Join-Path $buildTools 'd8.bat') @('--min-api','30','--lib',$androidJar,'--output',$dexPath,$classesJar)
 foreach ($flavor in @('protected','excluded')) {
     $packageName = if ($flavor -eq 'protected') { 'ru.exvpn.netprobe' } else { 'ru.exvpn.netprobe.excluded' }
+    $textInputInstrumentation = if ($flavor -eq 'protected') { '<instrumentation android:name="ru.exvpn.netprobe.TextInputProbe" android:targetPackage="ru.exvpn.netprobe" android:functionalTest="true" />' } else { '' }
     $manifestPath = Join-Path $outputRoot "$flavor-manifest.xml"
     @"
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="$packageName" android:versionCode="1" android:versionName="0.1.0">
@@ -36,6 +37,7 @@ foreach ($flavor in @('protected','excluded')) {
     </activity>
   </application>
   <instrumentation android:name="ru.exvpn.netprobe.HttpsProbe" android:targetPackage="$packageName" android:functionalTest="true" />
+  $textInputInstrumentation
 </manifest>
 "@ | Set-Content -LiteralPath $manifestPath -Encoding utf8
     $unsignedApk = Join-Path $outputRoot "$flavor-unsigned.apk"
