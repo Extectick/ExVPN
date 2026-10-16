@@ -69,7 +69,11 @@ if ($Action -eq 'Setup') {
     Assert-ProtectedPackage (Split-Path $stateFile)
     $state = Get-Content -LiteralPath $stateFile -Raw | ConvertFrom-Json
     $service = Get-CimInstance Win32_Service -Filter "Name='ExVPNService'"
-    if (($service.PathName -cne $state.qaCommand -and $service.PathName -cne $state.original) -or $service.StartName -ne 'LocalSystem' -or $state.build -ne $marker.build -or (Get-FileHash -LiteralPath $serviceExe).Hash.ToLowerInvariant() -cne $state.serviceSha256) { throw 'QA service ownership changed.' }
+    $installed = Get-Content -LiteralPath 'C:\Program Files\ExVPN Installer\install-state.json' -Raw | ConvertFrom-Json
+    if (($service.PathName -cne $state.qaCommand -and $service.PathName -cne $state.original) -or $service.StartName -ne 'LocalSystem' -or $state.build -gt $marker.build -or $installed.build -ne $marker.build -or $installed.ownerSid -cne $state.ownerSid -or (Get-FileHash -LiteralPath $serviceExe).Hash.ToLowerInvariant() -cne $state.serviceSha256) { throw 'QA service ownership changed.' }
+    # A completed ordinary UI upgrade may advance the build. Reuse the QA tree
+    # only after Restore and while the exact service binary and owner are intact.
+    if ($state.build -lt $marker.build -and $service.PathName -cne $state.original) { throw 'Restore production binding before upgrading the QA session.' }
     if ((Get-Process -Name exvpn -ErrorAction SilentlyContinue) -or (Get-NetAdapter -Name 'ExVPN-Tunnel' -ErrorAction SilentlyContinue)) { throw 'QA must be stopped and disconnected before refresh.' }
     Assert-ProtectedPackage $qaRoot
     Assert-TreeManifest $qaRoot $state.files
@@ -88,6 +92,7 @@ if ($Action -eq 'Setup') {
     $newFiles = @(Get-TreeManifest (Join-Path $inputRoot 'ui'))
     Assert-TreeManifest $qaRoot $newFiles
     $state.files = $newFiles
+    $state.build = $installed.build
     $state | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $stateFile -Encoding utf8
     Set-ProtectedPackageACL $stateFile
     $changed = Invoke-CimMethod -InputObject (Get-CimInstance Win32_Service -Filter "Name='ExVPNService'") -MethodName Change -Arguments @{PathName=[string]$state.qaCommand}
