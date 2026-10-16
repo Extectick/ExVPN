@@ -95,11 +95,11 @@ var guardLayers = []windows.GUID{
 	guid("{E1CD9FE7-F4B5-4273-96C0-592E487B8650}"), // ALE_AUTH_RECV_ACCEPT_V4
 	guid("{A3B42C97-9F04-4672-B87E-CEE9C483257F}"), // ALE_AUTH_RECV_ACCEPT_V6
 }
-var fieldFlags = guid("{632CE23B-5167-435C-86D7-E9036848AA8C}")
+var fieldFlags = guid("{632CE23B-5167-435C-86D7-E903684AA80C}")
 var fieldAppID = guid("{D78E1E87-8644-4EA5-9437-D809ECEFC971}")
-var fieldUserID = guid("{AF043A0A-B34D-4F86-979C-C90E9FCB6E66}")
+var fieldUserID = guid("{AF043A0A-B34D-4F86-979C-C90371AF6E66}")
 var fieldLocalInterface = guid("{4CD62A49-59C3-4969-B7F3-BDA5D32890A4}")
-var fieldNextInterface = guid("{93AE8F5B-7F6F-4719-98C8-14E9A74D1F04}")
+var fieldNextInterface = guid("{93AE8F5B-7F6F-4719-98C8-14E97429EF04}")
 var fieldArrivalInterface = guid("{618A9B6D-386B-4136-AD6E-B51587CFB1CD}")
 
 const wfpPersistent = 1

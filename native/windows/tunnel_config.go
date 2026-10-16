@@ -47,8 +47,10 @@ func BuildTunnelConfig(p exvpn.Profile, exclusions []string, probe exvpn.ProbeOp
 	c["inbounds"] = append(c["inbounds"].([]any), object{
 		"tag": "vpn", "protocol": "tun", "settings": object{
 			"name": TunnelName, "desc": "ExVPN", "mtu": 1500,
-			"gateway":                []string{"172.31.255.1/30", "fd71:6578:7670::1/126"},
-			"dns":                    []string{"172.31.255.1", "fd71:6578:7670::1"},
+			"gateway": []string{"172.31.255.1/30", "fd71:6578:7670::1/126"},
+			// Windows consumes packets addressed to its own adapter IP locally.
+			// Use a distinct peer in each captured subnet so DNS reaches Xray.
+			"dns":                    []string{"172.31.255.2", "fd71:6578:7670::2"},
 			"autoSystemRoutingTable": []string{"0.0.0.0/1", "128.0.0.0/1", "::/1", "8000::/1"},
 			"autoOutboundsInterface": "auto",
 			// Separate ExVPN WFP guard owns leak/crash protection. Upstream's

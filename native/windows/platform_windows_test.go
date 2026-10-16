@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"net/netip"
 	"os"
 	"strings"
 	"testing"
@@ -76,6 +77,26 @@ func TestTunnelConfigUsesPinnedCoreAndOwnsPolicy(t *testing.T) {
 		t.Fatal("listener count")
 	}
 	settings := in[1].(map[string]any)["settings"].(map[string]any)
+	for _, rawDNS := range settings["dns"].([]any) {
+		dns, err := netip.ParseAddr(rawDNS.(string))
+		if err != nil {
+			t.Fatal("invalid tunnel DNS address")
+		}
+		captured := false
+		for _, rawGateway := range settings["gateway"].([]any) {
+			gateway, err := netip.ParsePrefix(rawGateway.(string))
+			if err != nil {
+				t.Fatal("invalid tunnel prefix")
+			}
+			if dns == gateway.Addr() {
+				t.Fatal("DNS points to Windows' own adapter address and bypasses TUN delivery")
+			}
+			captured = captured || gateway.Contains(dns)
+		}
+		if !captured {
+			t.Fatal("DNS must be a separate peer inside the captured TUN subnet")
+		}
+	}
 	if len(settings["autoSystemRoutingTable"].([]any)) != 4 {
 		t.Fatal("missing IPv4/IPv6 routes")
 	}
