@@ -1,0 +1,584 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "sourceState": "working tree; commit pending",
+  "appVersion": "0.1.0+11",
+  "target": "Android",
+  "artifact": {
+    "file": "ExVPN-0.1.0-11-android-development.apk",
+    "sha256": "fcd8859014745538c645874333c9e3bba881e25279160f1e8ac8bd82af8e95ce",
+    "bytes": 220455263
+  },
+  "counts": {
+    "files": 394,
+    "nativeBinaries": 2,
+    "noticeComponents": 139
+  },
+  "noticeSource": "actual-apk-entries",
+  "noticeEvidence": {
+    "source": "actual-apk-entries",
+    "fileCount": 221,
+    "inventorySha256": "2e1a8e47e775d7424e38d8ccbf856568d24ff8745be8e1e4b3005bc7cbf82ab2",
+    "fileSetSha256": "87d2b32de8ae610d1cb9acf1987b45c536d441efe9b5507063b456c4564b61bb",
+    "xraySource": {
+      "present": true,
+      "zipSha256": "7f6a8d0c00aa677c3a880ed6e9296bfd7bbaad0261cf8e50bb30d59f525843d7",
+      "linkedModuleSum": "h1:m+ZEAwh0kFl/jMMtP2k0k88K5oK7tfNGSeJ+I4pi9tQ=",
+      "actualGoSum": "h1:m+ZEAwh0kFl/jMMtP2k0k88K5oK7tfNGSeJ+I4pi9tQ=",
+      "matched": true,
+      "patch": {
+        "upstreamCommit": "701af60772cda123492f86e383e1fdba066614a9",
+        "sha256": "c55d66ad1dc551057eb899b7916e32d897e00acf6e891844ef9b6d7613dddfbb",
+        "included": true
+      }
+    }
+  },
+  "nativeBinaries": [
+    {
+      "path": "lib/arm64-v8a/libexvpn.so",
+      "sha256": "c90d2ee8c5abd4f70750698279056b03210c5bbce4a4a107d3912516f9024a92",
+      "go": "go1.27.2",
+      "modules": [
+        {
+          "name": "github.com/andybalholm/brotli",
+          "version": "v1.0.6",
+          "sum": "h1:Yf9fFpf49Zrxb9NlQaluyE92/+X7UVHlhMNJN2sxfOI="
+        },
+        {
+          "name": "github.com/apernet/quic-go",
+          "version": "v0.61.1-0.20260806010916-184d081eef3e",
+          "sum": "h1:5mgtR5gwIgBKMiGI1QdXldZZ+SNor06Nbu1wCBulQBg="
+        },
+        {
+          "name": "github.com/cloudflare/circl",
+          "version": "v1.6.5",
+          "sum": "h1:O64F26HEqNhznd/hrC5KZXVKYuKM2rx4deZDTc4ihQA="
+        },
+        {
+          "name": "github.com/ghodss/yaml",
+          "version": "v1.0.1-0.20220118164431-d8423dcdf344",
+          "sum": "h1:Arcl6UOIS/kgO2nW3A65HN+7CMjSDP/gofXL4CZt1V4="
+        },
+        {
+          "name": "github.com/google/btree",
+          "version": "v1.1.2",
+          "sum": "h1:xf4v41cLI2Z6FxbKm+8Bu+m8ifhj15JuZ9sa0jZCMUU="
+        },
+        {
+          "name": "github.com/google/gopacket",
+          "version": "v1.1.19",
+          "sum": "h1:ves8RnFZPGiFnTS0uPQStjwru6uO6h+nlr9j6fL7kF8="
+        },
+        {
+          "name": "github.com/google/uuid",
+          "version": "v1.6.0",
+          "sum": "h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0="
+        },
+        {
+          "name": "github.com/gorilla/websocket",
+          "version": "v1.5.3",
+          "sum": "h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg="
+        },
+        {
+          "name": "github.com/huin/goupnp",
+          "version": "v1.2.0",
+          "sum": "h1:uOKW26NG1hsSSbXIZ1IR7XP9Gjd1U8pnLaCMgntmkmY="
+        },
+        {
+          "name": "github.com/jackpal/go-nat-pmp",
+          "version": "v1.0.2",
+          "sum": "h1:KzKSgb7qkJvOUTqYl9/Hg/me3pWgBmERKrTGD7BdWus="
+        },
+        {
+          "name": "github.com/juju/ratelimit",
+          "version": "v1.0.2",
+          "sum": "h1:sRxmtRiajbvrcLQT7S+JbqU0ntsb9W2yhSdNN8tWfaI="
+        },
+        {
+          "name": "github.com/klauspost/compress",
+          "version": "v1.17.4",
+          "sum": "h1:Ej5ixsIri7BrIjBkRZLTo6ghwrEtHFk7ijlczPW4fZ4="
+        },
+        {
+          "name": "github.com/klauspost/cpuid/v2",
+          "version": "v2.4.0",
+          "sum": "h1:S6Hrbc7+ywsr0r+RLapfGBHfyefhCTwEh3A0tV913Dw="
+        },
+        {
+          "name": "github.com/koron/go-ssdp",
+          "version": "v0.0.4",
+          "sum": "h1:1IDwrghSKYM7yLf7XCzbByg2sJ/JcNOZRXS2jczTwz0="
+        },
+        {
+          "name": "github.com/libp2p/go-nat",
+          "version": "v1.0.1-0.20250821073202-01afc089f138",
+          "sum": "h1:YohuNPT/1k3VcThCQlBZ43PCPWPfMRS1zcxWBF2SLK8="
+        },
+        {
+          "name": "github.com/libp2p/go-netroute",
+          "version": "v0.2.1",
+          "sum": "h1:V8kVrpD8GK0Riv15/7VN6RbUQ3URNZVosw7H2v9tksU="
+        },
+        {
+          "name": "github.com/miekg/dns",
+          "version": "v1.1.73",
+          "sum": "h1:uhT8nJxmTrPJYClxVxTCX+CVn6qnzSiybRk72Z6DgrE="
+        },
+        {
+          "name": "github.com/pelletier/go-toml",
+          "version": "v1.9.5",
+          "sum": "h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3ve8="
+        },
+        {
+          "name": "github.com/pion/dtls/v3",
+          "version": "v3.1.5",
+          "sum": "h1:9xJtVsHwMYeSjPp5Hh1FTis4DchnQWtnOa5o+6ygqfc="
+        },
+        {
+          "name": "github.com/pion/logging",
+          "version": "v0.2.4",
+          "sum": "h1:tTew+7cmQ+Mc1pTBLKH2puKsOvhm32dROumOZ655zB8="
+        },
+        {
+          "name": "github.com/pion/stun/v3",
+          "version": "v3.1.7",
+          "sum": "h1:uRXMTlGLf89WgItGNyZ6aR5jMTX0NBbybXADpQCzn+E="
+        },
+        {
+          "name": "github.com/pion/transport/v4",
+          "version": "v4.1.0",
+          "sum": "h1:8S+nF2reM2cJuqC6g78OVy2BBgmbdns+acx3jA97BvQ="
+        },
+        {
+          "name": "github.com/pires/go-proxyproto",
+          "version": "v0.15.0",
+          "sum": "h1:dTshmNbFm/D+0+sbrxUuddPOZ5Y0B7c5NhtsBkm6LqI="
+        },
+        {
+          "name": "github.com/quic-go/qpack",
+          "version": "v0.6.0",
+          "sum": "h1:g7W+BMYynC1LbYLSqRt8PBg5Tgwxn214ZZR34VIOjz8="
+        },
+        {
+          "name": "github.com/refraction-networking/utls",
+          "version": "v1.8.3-0.20260301010127-aa6edf4b11af",
+          "sum": "h1:er2acxbi3N1nvEq6HXHUAR1nTWEJmQfqiGR8EVT9rfs="
+        },
+        {
+          "name": "github.com/robfig/cron/v3",
+          "version": "v3.0.1",
+          "sum": "h1:WdRxkvbJztn8LMz/QEvLN5sBU+xKpSqwwUO1Pjr4qDs="
+        },
+        {
+          "name": "github.com/vishvananda/netlink",
+          "version": "v1.3.1",
+          "sum": "h1:3AEMt62VKqz90r0tmNhog0r/PpWKmrEShJU0wJW6bV0="
+        },
+        {
+          "name": "github.com/vishvananda/netns",
+          "version": "v0.0.5",
+          "sum": "h1:DfiHV+j8bA32MFM7bfEunvT8IAqQ/NzSJHtcmW5zdEY="
+        },
+        {
+          "name": "github.com/wlynxg/anet",
+          "version": "v0.0.5",
+          "sum": "h1:J3VJGi1gvo0JwZ/P1/Yc/8p63SoW98B5dHkYDmpgvvU="
+        },
+        {
+          "name": "github.com/xtls/reality",
+          "version": "v0.0.0-20260908062103-8cdf7bf9c7f0",
+          "sum": "h1:rb+fKQFhz+5I2PPuQsNYxI5mUU840XWYtRF0ZBjvkws="
+        },
+        {
+          "name": "github.com/xtls/xray-core",
+          "version": "v1.260327.1-exvpn.3",
+          "sum": "h1:m+ZEAwh0kFl/jMMtP2k0k88K5oK7tfNGSeJ+I4pi9tQ="
+        },
+        {
+          "name": "github.com/yuin/gopher-lua",
+          "version": "v1.1.2",
+          "sum": "h1:yF/FjE3hD65tBbt0VXLE13HWS9h34fdzJmrWRXwobGA="
+        },
+        {
+          "name": "go4.org/netipx",
+          "version": "v0.0.0-20231129151722-fdeea329fbba",
+          "sum": "h1:0b9z3AuHCjxk0x/opv64kcgZLBseWJUpBw5I82+2U4M="
+        },
+        {
+          "name": "golang.org/x/crypto",
+          "version": "v0.57.0",
+          "sum": "h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M="
+        },
+        {
+          "name": "golang.org/x/crypto/x509roots/fallback",
+          "version": "v0.0.0-20261005185213-c3db4df58582",
+          "sum": "h1:wjDBrGbfLuifgrVLFEWUBJYAfh5Q1wkMc5t0FY0tCbs="
+        },
+        {
+          "name": "golang.org/x/exp",
+          "version": "v0.0.0-20240506185415-9bf2ced13842",
+          "sum": "h1:vr/HnozRka3pE4EsMEg1lgkXJkTFJCVUX+S/ZT6wYzM="
+        },
+        {
+          "name": "golang.org/x/net",
+          "version": "v0.59.0",
+          "sum": "h1:5zfYln+w5XCxwrnMMJPufRgNoXEaGxl0wo5GqPXyues="
+        },
+        {
+          "name": "golang.org/x/sync",
+          "version": "v0.23.0",
+          "sum": "h1:KameEIfc1IkluZyXWLn39Wd4tURc6GbCiISGiZm2bQk="
+        },
+        {
+          "name": "golang.org/x/sys",
+          "version": "v0.48.0",
+          "sum": "h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo="
+        },
+        {
+          "name": "golang.org/x/text",
+          "version": "v0.42.0",
+          "sum": "h1:JbOZXgfeCPU9gacVtYliJqOhD+zhrEqK4LfdpmlUZqI="
+        },
+        {
+          "name": "golang.org/x/time",
+          "version": "v0.14.0",
+          "sum": "h1:MRx4UaLrDotUKUdCIqzPC48t1Y9hANFKIRpNx+Te8PI="
+        },
+        {
+          "name": "golang.zx2c4.com/wireguard",
+          "version": "v0.0.0-20250521234502-f333402bd9cb",
+          "sum": "h1:whnFRlWMcXI9d+ZbWg+4sHnLp52d5yiIPUxMBSt4X9A="
+        },
+        {
+          "name": "google.golang.org/genproto/googleapis/rpc",
+          "version": "v0.0.0-20260706201446-f0a921348800",
+          "sum": "h1:qEHAMpSaUhtD0p3NbEEI83HwNGFxEwaSJ1G9PLnCBZE="
+        },
+        {
+          "name": "google.golang.org/grpc",
+          "version": "v1.84.0",
+          "sum": "h1:soMyaPJ8pAak5PIQ0DGBUir0XRo2fRoMqhNWMLlLxO0="
+        },
+        {
+          "name": "google.golang.org/protobuf",
+          "version": "v1.36.12",
+          "sum": "h1:pJOKDDOyeXErUroCihFAd5LQuwXBSpVnKGrj5o/fwxc="
+        },
+        {
+          "name": "gopkg.in/yaml.v2",
+          "version": "v2.4.0",
+          "sum": "h1:D8xgwECY7CYvx+Y2n4sBz93Jn9JRvxdiyyo8CTfuKaY="
+        },
+        {
+          "name": "gvisor.dev/gvisor",
+          "version": "v0.0.0-20260122175437-89a5d21be8f0",
+          "sum": "h1:Lk6hARj5UPY47dBep70OD/TIMwikJ5fGUGX0Rm3Xigk="
+        },
+        {
+          "name": "layeh.com/gopher-luar",
+          "version": "v1.0.11",
+          "sum": "h1:8zJudpKI6HWkoh9eyyNFaTM79PY6CAPcIr6X/KTiliw="
+        },
+        {
+          "name": "lukechampine.com/blake3",
+          "version": "v1.4.1",
+          "sum": "h1:I3Smz7gso8w4/TunLKec6K2fn+kyKtDxr/xcQEN84Wg="
+        }
+      ]
+    },
+    {
+      "path": "lib/x86_64/libexvpn.so",
+      "sha256": "281d91227ca4217c26ba330f3be59bcb38fff5295a5eb6abbc36e2ff0bf18980",
+      "go": "go1.27.2",
+      "modules": [
+        {
+          "name": "github.com/andybalholm/brotli",
+          "version": "v1.0.6",
+          "sum": "h1:Yf9fFpf49Zrxb9NlQaluyE92/+X7UVHlhMNJN2sxfOI="
+        },
+        {
+          "name": "github.com/apernet/quic-go",
+          "version": "v0.61.1-0.20260806010916-184d081eef3e",
+          "sum": "h1:5mgtR5gwIgBKMiGI1QdXldZZ+SNor06Nbu1wCBulQBg="
+        },
+        {
+          "name": "github.com/cloudflare/circl",
+          "version": "v1.6.5",
+          "sum": "h1:O64F26HEqNhznd/hrC5KZXVKYuKM2rx4deZDTc4ihQA="
+        },
+        {
+          "name": "github.com/ghodss/yaml",
+          "version": "v1.0.1-0.20220118164431-d8423dcdf344",
+          "sum": "h1:Arcl6UOIS/kgO2nW3A65HN+7CMjSDP/gofXL4CZt1V4="
+        },
+        {
+          "name": "github.com/google/btree",
+          "version": "v1.1.2",
+          "sum": "h1:xf4v41cLI2Z6FxbKm+8Bu+m8ifhj15JuZ9sa0jZCMUU="
+        },
+        {
+          "name": "github.com/google/gopacket",
+          "version": "v1.1.19",
+          "sum": "h1:ves8RnFZPGiFnTS0uPQStjwru6uO6h+nlr9j6fL7kF8="
+        },
+        {
+          "name": "github.com/google/uuid",
+          "version": "v1.6.0",
+          "sum": "h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0="
+        },
+        {
+          "name": "github.com/gorilla/websocket",
+          "version": "v1.5.3",
+          "sum": "h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg="
+        },
+        {
+          "name": "github.com/huin/goupnp",
+          "version": "v1.2.0",
+          "sum": "h1:uOKW26NG1hsSSbXIZ1IR7XP9Gjd1U8pnLaCMgntmkmY="
+        },
+        {
+          "name": "github.com/jackpal/go-nat-pmp",
+          "version": "v1.0.2",
+          "sum": "h1:KzKSgb7qkJvOUTqYl9/Hg/me3pWgBmERKrTGD7BdWus="
+        },
+        {
+          "name": "github.com/juju/ratelimit",
+          "version": "v1.0.2",
+          "sum": "h1:sRxmtRiajbvrcLQT7S+JbqU0ntsb9W2yhSdNN8tWfaI="
+        },
+        {
+          "name": "github.com/klauspost/compress",
+          "version": "v1.17.4",
+          "sum": "h1:Ej5ixsIri7BrIjBkRZLTo6ghwrEtHFk7ijlczPW4fZ4="
+        },
+        {
+          "name": "github.com/klauspost/cpuid/v2",
+          "version": "v2.4.0",
+          "sum": "h1:S6Hrbc7+ywsr0r+RLapfGBHfyefhCTwEh3A0tV913Dw="
+        },
+        {
+          "name": "github.com/koron/go-ssdp",
+          "version": "v0.0.4",
+          "sum": "h1:1IDwrghSKYM7yLf7XCzbByg2sJ/JcNOZRXS2jczTwz0="
+        },
+        {
+          "name": "github.com/libp2p/go-nat",
+          "version": "v1.0.1-0.20250821073202-01afc089f138",
+          "sum": "h1:YohuNPT/1k3VcThCQlBZ43PCPWPfMRS1zcxWBF2SLK8="
+        },
+        {
+          "name": "github.com/libp2p/go-netroute",
+          "version": "v0.2.1",
+          "sum": "h1:V8kVrpD8GK0Riv15/7VN6RbUQ3URNZVosw7H2v9tksU="
+        },
+        {
+          "name": "github.com/miekg/dns",
+          "version": "v1.1.73",
+          "sum": "h1:uhT8nJxmTrPJYClxVxTCX+CVn6qnzSiybRk72Z6DgrE="
+        },
+        {
+          "name": "github.com/pelletier/go-toml",
+          "version": "v1.9.5",
+          "sum": "h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3ve8="
+        },
+        {
+          "name": "github.com/pion/dtls/v3",
+          "version": "v3.1.5",
+          "sum": "h1:9xJtVsHwMYeSjPp5Hh1FTis4DchnQWtnOa5o+6ygqfc="
+        },
+        {
+          "name": "github.com/pion/logging",
+          "version": "v0.2.4",
+          "sum": "h1:tTew+7cmQ+Mc1pTBLKH2puKsOvhm32dROumOZ655zB8="
+        },
+        {
+          "name": "github.com/pion/stun/v3",
+          "version": "v3.1.7",
+          "sum": "h1:uRXMTlGLf89WgItGNyZ6aR5jMTX0NBbybXADpQCzn+E="
+        },
+        {
+          "name": "github.com/pion/transport/v4",
+          "version": "v4.1.0",
+          "sum": "h1:8S+nF2reM2cJuqC6g78OVy2BBgmbdns+acx3jA97BvQ="
+        },
+        {
+          "name": "github.com/pires/go-proxyproto",
+          "version": "v0.15.0",
+          "sum": "h1:dTshmNbFm/D+0+sbrxUuddPOZ5Y0B7c5NhtsBkm6LqI="
+        },
+        {
+          "name": "github.com/quic-go/qpack",
+          "version": "v0.6.0",
+          "sum": "h1:g7W+BMYynC1LbYLSqRt8PBg5Tgwxn214ZZR34VIOjz8="
+        },
+        {
+          "name": "github.com/refraction-networking/utls",
+          "version": "v1.8.3-0.20260301010127-aa6edf4b11af",
+          "sum": "h1:er2acxbi3N1nvEq6HXHUAR1nTWEJmQfqiGR8EVT9rfs="
+        },
+        {
+          "name": "github.com/robfig/cron/v3",
+          "version": "v3.0.1",
+          "sum": "h1:WdRxkvbJztn8LMz/QEvLN5sBU+xKpSqwwUO1Pjr4qDs="
+        },
+        {
+          "name": "github.com/vishvananda/netlink",
+          "version": "v1.3.1",
+          "sum": "h1:3AEMt62VKqz90r0tmNhog0r/PpWKmrEShJU0wJW6bV0="
+        },
+        {
+          "name": "github.com/vishvananda/netns",
+          "version": "v0.0.5",
+          "sum": "h1:DfiHV+j8bA32MFM7bfEunvT8IAqQ/NzSJHtcmW5zdEY="
+        },
+        {
+          "name": "github.com/wlynxg/anet",
+          "version": "v0.0.5",
+          "sum": "h1:J3VJGi1gvo0JwZ/P1/Yc/8p63SoW98B5dHkYDmpgvvU="
+        },
+        {
+          "name": "github.com/xtls/reality",
+          "version": "v0.0.0-20260908062103-8cdf7bf9c7f0",
+          "sum": "h1:rb+fKQFhz+5I2PPuQsNYxI5mUU840XWYtRF0ZBjvkws="
+        },
+        {
+          "name": "github.com/xtls/xray-core",
+          "version": "v1.260327.1-exvpn.3",
+          "sum": "h1:m+ZEAwh0kFl/jMMtP2k0k88K5oK7tfNGSeJ+I4pi9tQ="
+        },
+        {
+          "name": "github.com/yuin/gopher-lua",
+          "version": "v1.1.2",
+          "sum": "h1:yF/FjE3hD65tBbt0VXLE13HWS9h34fdzJmrWRXwobGA="
+        },
+        {
+          "name": "go4.org/netipx",
+          "version": "v0.0.0-20231129151722-fdeea329fbba",
+          "sum": "h1:0b9z3AuHCjxk0x/opv64kcgZLBseWJUpBw5I82+2U4M="
+        },
+        {
+          "name": "golang.org/x/crypto",
+          "version": "v0.57.0",
+          "sum": "h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M="
+        },
+        {
+          "name": "golang.org/x/crypto/x509roots/fallback",
+          "version": "v0.0.0-20261005185213-c3db4df58582",
+          "sum": "h1:wjDBrGbfLuifgrVLFEWUBJYAfh5Q1wkMc5t0FY0tCbs="
+        },
+        {
+          "name": "golang.org/x/exp",
+          "version": "v0.0.0-20240506185415-9bf2ced13842",
+          "sum": "h1:vr/HnozRka3pE4EsMEg1lgkXJkTFJCVUX+S/ZT6wYzM="
+        },
+        {
+          "name": "golang.org/x/net",
+          "version": "v0.59.0",
+          "sum": "h1:5zfYln+w5XCxwrnMMJPufRgNoXEaGxl0wo5GqPXyues="
+        },
+        {
+          "name": "golang.org/x/sync",
+          "version": "v0.23.0",
+          "sum": "h1:KameEIfc1IkluZyXWLn39Wd4tURc6GbCiISGiZm2bQk="
+        },
+        {
+          "name": "golang.org/x/sys",
+          "version": "v0.48.0",
+          "sum": "h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo="
+        },
+        {
+          "name": "golang.org/x/text",
+          "version": "v0.42.0",
+          "sum": "h1:JbOZXgfeCPU9gacVtYliJqOhD+zhrEqK4LfdpmlUZqI="
+        },
+        {
+          "name": "golang.org/x/time",
+          "version": "v0.14.0",
+          "sum": "h1:MRx4UaLrDotUKUdCIqzPC48t1Y9hANFKIRpNx+Te8PI="
+        },
+        {
+          "name": "golang.zx2c4.com/wireguard",
+          "version": "v0.0.0-20250521234502-f333402bd9cb",
+          "sum": "h1:whnFRlWMcXI9d+ZbWg+4sHnLp52d5yiIPUxMBSt4X9A="
+        },
+        {
+          "name": "google.golang.org/genproto/googleapis/rpc",
+          "version": "v0.0.0-20260706201446-f0a921348800",
+          "sum": "h1:qEHAMpSaUhtD0p3NbEEI83HwNGFxEwaSJ1G9PLnCBZE="
+        },
+        {
+          "name": "google.golang.org/grpc",
+          "version": "v1.84.0",
+          "sum": "h1:soMyaPJ8pAak5PIQ0DGBUir0XRo2fRoMqhNWMLlLxO0="
+        },
+        {
+          "name": "google.golang.org/protobuf",
+          "version": "v1.36.12",
+          "sum": "h1:pJOKDDOyeXErUroCihFAd5LQuwXBSpVnKGrj5o/fwxc="
+        },
+        {
+          "name": "gopkg.in/yaml.v2",
+          "version": "v2.4.0",
+          "sum": "h1:D8xgwECY7CYvx+Y2n4sBz93Jn9JRvxdiyyo8CTfuKaY="
+        },
+        {
+          "name": "gvisor.dev/gvisor",
+          "version": "v0.0.0-20260122175437-89a5d21be8f0",
+          "sum": "h1:Lk6hARj5UPY47dBep70OD/TIMwikJ5fGUGX0Rm3Xigk="
+        },
+        {
+          "name": "layeh.com/gopher-luar",
+          "version": "v1.0.11",
+          "sum": "h1:8zJudpKI6HWkoh9eyyNFaTM79PY6CAPcIr6X/KTiliw="
+        },
+        {
+          "name": "lukechampine.com/blake3",
+          "version": "v1.4.1",
+          "sum": "h1:I3Smz7gso8w4/TunLKec6K2fn+kyKtDxr/xcQEN84Wg="
+        }
+      ]
+    }
+  ],
+  "signature": {
+    "verified": true,
+    "trustedSignerMatched": false,
+    "debug": true,
+    "certificateSha256": [
+      "5d2aaeb2fb744b9d92666f0c926ceb42076610ab41e006a6b0569169d52cc740"
+    ]
+  },
+  "releaseReady": false,
+  "findings": [
+    {
+      "code": "android_debug_signer",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "android_gradle_maven_runtime_inventory_missing",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "apk_debuggable",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "dart_flutter_runtime_link_inventory_incomplete",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "license_expressions_and_distribution_obligations_not_fully_reviewed",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "release_signer_not_pinned",
+      "subject": "",
+      "severity": "blocker"
+    }
+  ],
+  "scope": "Actual APK ZIP entries, manifest identity, native build info and APK signature; Maven and Dart link coverage incomplete."
+}

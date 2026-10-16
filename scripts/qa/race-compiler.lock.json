@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "name": "w64devkit",
+  "version": "2.10.1",
+  "target": "windows-amd64",
+  "url": "https://github.com/skeeto/w64devkit/releases/download/v2.10.1/w64devkit-x64-2.10.1.7z.exe",
+  "sha256": "add1edf984ce4d473cfeb7c52e0ab38db73a855bba6c7f564d5e16648eb2896a",
+  "size": 67263552,
+  "source": "https://github.com/skeeto/w64devkit/releases/tag/v2.10.1",
+  "scope": "Optional local Go race tests only; not a product compiler or shipped runtime"
+}

@@ -9,7 +9,7 @@
 | Собственный код ExVPN | Версия приложения задаётся в manifest проекта | Apache-2.0 | Полный текст находится в корневом `LICENSE`; собственное уведомление — `NOTICE` |
 | Flutter | **3.47.7**, commit `abaf9c523780a608bd46686fd5e53740a07077f8` | BSD-3-Clause; отдельные зависимости engine имеют свои лицензии | Версия/SHA-256 архива в `scripts/bootstrap/toolchain.lock.json`; [официальный LICENSE](https://github.com/flutter/flutter/blob/master/LICENSE) проверен; полный состав проверять по фактическому SDK |
 | Dart SDK | **3.13.5**, поставляется с закреплённым Flutter | BSD-3-Clause; зависимости имеют отдельные лицензии | Использован для `dart analyze`/113 тестов domain-пакета; [официальный LICENSE](https://github.com/dart-lang/sdk/blob/main/LICENSE) |
-| Xray-core | **v26.10.10**, исследовательский prerelease; commit `701af60772cda123492f86e383e1fdba066614a9` | MPL-2.0 | Pin в `native/core/go.mod`/`go.sum`; [LICENSE тега](https://github.com/XTLS/Xray-core/blob/v26.10.10/LICENSE), проверен; системные проверки E1 отдельно |
+| Xray-core | **26.10.10-exvpn.3**, собственный lifecycle patch поверх commit `701af60772cda123492f86e383e1fdba066614a9`; Go module `v1.260327.1-exvpn.3` | MPL-2.0, включая изменённые covered files | [Patch, pin и реконструкция](../native/patches/README.md); исходный LICENSE сохранён; binary/source `h1` проверяется при комплектации, системный E1 отдельно |
 | libXray | Исследовательский commit `4e1f7843e6cddb750ac7abc23ef36800820a8098` | MIT | Исследовательский pin записан в `native/core/config.go`; текущие Android/Windows используют собственный Go-адаптер прямо к Xray. libXray не входит в runtime graph и не должен выдаваться за упакованный компонент; [официальный LICENSE](https://github.com/XTLS/libXray/blob/main/LICENSE) |
 | Go | **1.27.2**; native module требует минимум 1.27.1 | BSD-3-Clause; сторонние модули отдельно | SDK/SHA-256 в `scripts/bootstrap/toolchain.lock.json`; [официальный LICENSE](https://go.dev/LICENSE); зависимости в `native/core/go.sum` |
 | Microsoft `go-winio` | **0.6.2**, `native/windows/go.mod` / `go.sum` | MIT | Локальный LICENSE закреплённого модуля проверен; Windows named-pipe IPC. Версия и Go checksum сверяются с build info служебного EXE при сборе notices |
@@ -39,6 +39,16 @@
 | Microsoft C++ runtime x64 | **14.51.36247.0**, release toolset **14.51.36231**, VS Community **18.7.11903.348**; 3 DLL и SHA-256 в `scripts/windows/msvc-runtime.lock.json` | Microsoft Software License Terms, отдельные proprietary Distributable Code; не Apache-2.0 | App-local `msvcp140.dll`, `vcruntime140.dll`, `vcruntime140_1.dll`; Microsoft Authenticode/version/import scan проверены. Полные terms и исходный DOCX hash сохранены в `native/windows/licenses/`; [список разрешённых файлов](https://learn.microsoft.com/en-us/visualstudio/releases/2026/redistribution). Внешний выпуск требует соблюдения distributor/end-user terms; чистый guest UI ещё не проверен. Системный CRT не устанавливается |
 
 Плагины защищённого хранилища, QR, проверки подписей, системные TUN-библиотеки/драйверы и Flutter packages добавляются отдельными строками после выбора конкретных версий. Не считать их автоматически покрытыми Apache-2.0 ExVPN. Итоговый реестр и SBOM должны соответствовать lock-файлам и фактическому комплекту выпуска.
+
+## Инструмент проверки гонок
+
+Для `go test -race` на Windows используется **w64devkit 2.10.1** (GCC 16.2.0),
+официальный release asset и SHA-256 закреплены в
+[`scripts/qa/race-compiler.lock.json`](../scripts/qa/race-compiler.lock.json).
+Архив распаковывается в `.tools/`; это тестовый SDK, в APK/установщик и production
+JNI/EXE он не входит. Сохраняются поставленные `COPYING.MinGW-w64-runtime.txt` и
+информация о компонентах набора. Лицензии отдельных инструментов не заменяются
+Apache-2.0 проекта. [Исходники и состав закреплённой версии](https://github.com/skeeto/w64devkit/tree/v2.10.1).
 
 ## Условия подготовки бинарного выпуска
 

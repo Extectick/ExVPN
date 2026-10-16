@@ -332,7 +332,7 @@ void VpnBridge::Work() {
     completion.result = std::move(job.result);
     try {
       if (job.method == "coreVersion") {
-        completion.value = Value("26.10.10");
+        completion.value = Value("26.10.10-exvpn.3");
       } else if (job.method == "listApplications") {
         completion.value = Applications();
       } else if (job.method == "openSystemProtectionSettings") {

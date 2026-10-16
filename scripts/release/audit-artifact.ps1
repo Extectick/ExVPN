@@ -36,12 +36,13 @@ $noticeFiles = New-AuditFileMap
 $noticeRoot = ''
 $noticeSource = 'missing'
 $sourceZip = ''
-$sourceCorrespondence = [ordered]@{ present = $false; zipSha256 = ''; linkedModuleSum = ''; actualGoSum = ''; matched = $false }
+$sourceCorrespondence = [ordered]@{ present = $false; zipSha256 = ''; linkedModuleSum = ''; actualGoSum = ''; matched = $false; patch = $null }
 $signature = [ordered]@{ verified = $false; trustedSignerMatched = $false; debug = $false; certificateSha256 = @() }
 $pinPaths = @('apps/exvpn/pubspec.yaml', 'apps/exvpn/pubspec.lock', 'scripts/bootstrap/toolchain.lock.json',
     'scripts/windows/wintun.lock.json', 'scripts/windows/msvc-runtime.lock.json', 'scripts/windows/nsis.lock.json',
     'native/windows/go.mod', 'native/windows/go.sum', 'native/android/go.mod', 'native/android/go.sum',
     'native/core/go.mod', 'native/core/go.sum', 'LICENSE', 'NOTICE',
+    'native/patches/xray-lifecycle.lock.json', 'native/patches/xray-lifecycle.patch',
     'scripts/release/audit-artifact.ps1', 'scripts/release/artifact-audit-lib.ps1', 'scripts/release/notice-inputs.ps1')
 $pinEvidence = @($pinPaths | Sort-Object -CaseSensitive -Culture en-US | ForEach-Object {
     [ordered]@{ path = $_; sha256 = Get-AuditSha256 (Join-Path $repository $_) }
@@ -225,6 +226,24 @@ try {
         if ($xray.Count -eq 1) { $sourceCorrespondence.linkedModuleSum = $xray[0] }
         $sourceCorrespondence.matched = $xray.Count -eq 1 -and $sourceCorrespondence.actualGoSum -ceq $xray[0]
         if (!$sourceCorrespondence.matched) { Add-AuditFinding $findings 'xray_source_does_not_match_linked_module' }
+        $modifiedXray = @($native | ForEach-Object { $_.modules } | Where-Object {
+            $_.name -ceq 'github.com/xtls/xray-core' -and $_.version -match '-exvpn\.'
+        } | ForEach-Object {
+            # Native inspection returns OrderedDictionary records. Select-Object
+            # does not expose their keys as properties without this projection.
+            [pscustomobject]@{version=$_.version;sum=$_.sum}
+        } | Select-Object -Property version,sum -Unique)
+        if ($modifiedXray.Count) {
+            try {
+                if ($modifiedXray.Count -ne 1) { throw 'multiple_modified_xray_versions' }
+                $patchEvidence = Get-NoticeXrayPatch $repository $modifiedXray[0].version $modifiedXray[0].sum
+                $sourceCorrespondence.patch = [ordered]@{
+                    upstreamCommit=$patchEvidence.upstreamCommit; sha256=$patchEvidence.patchSha256; included=$false
+                }
+                Assert-NoticeXraySourceBundle $patchEvidence $noticeFiles
+                $sourceCorrespondence.patch.included = $true
+            } catch { Add-AuditFinding $findings 'xray_patch_provenance_missing_or_mismatched' }
+        }
     } else { Add-AuditFinding $findings 'xray_corresponding_source_missing' }
     # Resolved pub packages are a superset, not evidence of the final Dart/native
     # link graph. Preserve this release blocker rather than manufacture coverage.

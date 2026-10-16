@@ -55,6 +55,24 @@ foreach ($module in @('native/core', 'native/android', 'native/windows')) {
     } finally { Pop-Location }
 }
 
+# The pinned upstream modifications have their own loopback lifetime suite.
+# Race checks run once in the Windows job; Android still runs the ordinary
+# suite before both JNI ABIs are compiled. The compiler is a local test SDK.
+& (Join-Path $repository 'scripts/qa/test-xray-lifecycle.ps1') -Race:($Target -eq 'Windows')
+if (!$?) { throw 'Pinned Xray lifecycle checks failed.' }
+Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
+    '-NoProfile', '-NonInteractive', '-File',
+    (Join-Path $repository 'scripts/core/test-xray-patch.ps1')
+)
+Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
+    '-NoProfile', '-NonInteractive', '-File',
+    (Join-Path $repository 'scripts/qa/test-android-lifecycle-tools.ps1')
+)
+Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
+    '-NoProfile', '-NonInteractive', '-File',
+    (Join-Path $repository 'scripts/qa/test-windows-transport-lifecycle.ps1')
+)
+
 # Read-only release tooling fixtures: stale notice versions/locks/payloads must
 # fail before any installer is published. No actual package is installed here.
 Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(

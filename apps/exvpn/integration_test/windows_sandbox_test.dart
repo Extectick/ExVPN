@@ -26,6 +26,7 @@ const _fixtureNames = [
   'VLESS Vision',
   'VLESS XHTTP',
   'XHTTP REALITY',
+  'VLESS gRPC',
   'VMess',
   'Shadowsocks',
 ];
@@ -35,6 +36,7 @@ Future<void> main() async {
   late Map<String, dynamic> marker;
   var names = _fixtureNames;
   var importedNames = _fixtureNames;
+  var transportCycles = 0;
   try {
     marker = jsonDecode(
       await File('$_input\\sandbox-bundle.json').readAsString(),
@@ -75,6 +77,23 @@ Future<void> main() async {
         (marker['providerMatrix'] != true || marker['unelevated'] != true)) {
       exit(78);
     }
+    final requestedCycles = marker['transportCycles'] ?? 0;
+    if (requestedCycles is! int ||
+        (requestedCycles != 0 &&
+            (requestedCycles < 3 || requestedCycles > 20))) {
+      exit(78);
+    }
+    transportCycles = requestedCycles;
+    if (transportCycles > 0) {
+      if (marker['unelevated'] != true ||
+          marker['providerMatrix'] == true ||
+          marker['faults'] == true ||
+          marker['networkRecovery'] == true) {
+        exit(78);
+      }
+      names = const ['VLESS gRPC', 'VLESS XHTTP', 'XHTTP REALITY'];
+      importedNames = _fixtureNames;
+    }
   } catch (_) {
     exit(78);
   }
@@ -96,6 +115,7 @@ Future<void> main() async {
     'providerMatrix': marker['providerMatrix'] == true,
     'networkRecoveryRequested': marker['networkRecovery'] == true,
     'networkRecoveryPassed': false,
+    if (transportCycles > 0) 'transportCycles': transportCycles,
     'profiles': <Object?>[],
   };
   Future<void> save() => File('$_output\\flutter-report.json').writeAsString(
@@ -215,8 +235,21 @@ Future<void> main() async {
       );
       report['importedCount'] = controller.groups.single.servers.length;
       await snapshot('imported');
-      for (final name in names) {
-        final result = <String, Object?>{'name': name, 'passed': false};
+      final attempts = [
+        for (
+          var cycle = 1;
+          cycle <= (transportCycles > 0 ? transportCycles : 1);
+          cycle++
+        )
+          for (final name in names) (cycle: cycle, name: name),
+      ];
+      for (final attempt in attempts) {
+        final name = attempt.name;
+        final result = <String, Object?>{
+          'name': name,
+          if (transportCycles > 0) 'cycle': attempt.cycle,
+          'passed': false,
+        };
         results.add(result);
         await progress('connecting $name');
         try {
@@ -290,7 +323,11 @@ Future<void> main() async {
             10,
           );
           result['trafficCountersIncreased'] = true;
-          await snapshot('connected-${names.indexOf(name)}');
+          if (transportCycles == 0) {
+            await snapshot('connected-${names.indexOf(name)}');
+          } else if (attempt.cycle == 1 || attempt.cycle == transportCycles) {
+            await snapshot('connected-${attempt.cycle}-${names.indexOf(name)}');
+          }
           if (marker['networkRecovery'] == true) {
             final recovery = <String, Object?>{};
             result['networkRecovery'] = recovery;
@@ -386,6 +423,17 @@ Future<void> main() async {
               30,
             );
             ownedAttempt = false;
+          }
+          if (transportCycles > 0) {
+            await progress('observing disconnect');
+            await _coordinate(
+              tester,
+              marker,
+              results.length,
+              'observe-disconnect',
+              channel: 'transport',
+            );
+            result['disconnectObserved'] = true;
           }
           await save();
         }
@@ -661,17 +709,21 @@ Future<void> _coordinate(
   WidgetTester tester,
   Map<String, dynamic> marker,
   int step,
-  String action,
-) async {
-  final temporary = File('$_output\\fault-request.tmp');
+  String action, {
+  String channel = 'fault',
+}) async {
+  if (channel != 'fault' && channel != 'transport') {
+    throw StateError('unknown_coordinator_channel');
+  }
+  final temporary = File('$_output\\$channel-request.tmp');
   await temporary.writeAsString(
     jsonEncode({'runId': marker['runId'], 'step': step, 'action': action}),
     flush: true,
   );
-  await temporary.rename('$_output\\fault-request.json');
+  await temporary.rename('$_output\\$channel-request.json');
   final deadline = DateTime.now().add(const Duration(seconds: 70));
   while (DateTime.now().isBefore(deadline)) {
-    final file = File('$_output\\fault-ack.json');
+    final file = File('$_output\\$channel-ack.json');
     if (await file.exists()) {
       final ack = jsonDecode(await file.readAsString()) as Map;
       if (ack['runId'] == marker['runId'] && ack['step'] == step) {

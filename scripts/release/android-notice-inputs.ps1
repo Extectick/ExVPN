@@ -8,6 +8,7 @@ function Get-AndroidNoticePinPaths {
     @('apps/exvpn/pubspec.yaml', 'apps/exvpn/pubspec.lock', 'apps/exvpn/lib/build_identity.dart',
       'apps/exvpn/android/app/build.gradle.kts', 'scripts/bootstrap/toolchain.lock.json',
       'native/core/go.mod', 'native/core/go.sum', 'native/android/go.mod', 'native/android/go.sum',
+      'native/patches/xray-lifecycle.lock.json', 'native/patches/xray-lifecycle.patch',
       'scripts/release/collect-notices.ps1', 'scripts/release/notice-inputs.ps1',
       'scripts/release/artifact-audit-lib.ps1', 'scripts/release/android-notice-inputs.ps1',
       'scripts/release/prepare-android-notices.ps1', 'scripts/release/verify-android-notices.ps1',
@@ -68,6 +69,17 @@ function Get-AndroidNoticeSnapshotState([string]$Repository, [string]$InputDirec
             if ($notice.sha256 -cnotmatch '^[a-f0-9]{64}$' -or !$bundleFiles.ContainsKey($path) -or !$bundleFiles[$path].size -or $bundleFiles[$path].sha256 -cne $notice.sha256) { throw 'android_notice_text_hash_mismatch' }
         }
     }
+    $goPins = Get-AuditGoPins (Join-Path $Repository 'native/android/go.mod') (Join-Path $Repository 'native/android/go.sum')
+    $xrayPin = $goPins['github.com/xtls/xray-core']
+    if (!$xrayPin -or !$xrayPin.sum -or (Get-AuditGoZipSum (Join-Path $bundle 'sources/xray-core.zip')) -cne $xrayPin.sum) { throw 'android_notice_xray_source_mismatch' }
+    $patchEvidence = Get-NoticeXrayPatch $Repository $xrayPin.version $xrayPin.sum
+    if ($patchEvidence) {
+        Assert-NoticeXraySourceBundle $patchEvidence $bundleFiles
+        foreach ($path in @('sources/xray-lifecycle.patch', 'sources/xray-lifecycle.lock.json', 'sources/XRAY-EXVPN-NOTICE.txt')) {
+            [void]$allowedFiles.Add($path)
+            if (!$bundleFiles[$path].size) { throw 'android_notice_required_file_missing' }
+        }
+    }
     foreach ($path in $bundleFiles.Keys) {
         if (!$allowedFiles.Contains($path)) { throw 'android_notice_unlisted_bundle_file' }
     }
@@ -85,9 +97,6 @@ function Get-AndroidNoticeSnapshotState([string]$Repository, [string]$InputDirec
         $component = @($inventory.components | Where-Object { $_.scope -ceq 'resolved-dart-package' -and $_.name -ceq $package.name -and $_.version -ceq $package.version })
         if ($component.Count -ne 1) { throw 'android_notice_dart_component_missing' }
     }
-    $goPins = Get-AuditGoPins (Join-Path $Repository 'native/android/go.mod') (Join-Path $Repository 'native/android/go.sum')
-    $xrayPin = $goPins['github.com/xtls/xray-core']
-    if (!$xrayPin -or !$xrayPin.sum -or (Get-AuditGoZipSum (Join-Path $bundle 'sources/xray-core.zip')) -cne $xrayPin.sum) { throw 'android_notice_xray_source_mismatch' }
     [ordered]@{
         schema = 1; appVersion = $version; dartLockSha256 = $dartLockHash; pins = $pins
         nativeFiles = @($jni.Values | Sort-Object { $_.path } -CaseSensitive -Culture en-US)

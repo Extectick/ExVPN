@@ -83,4 +83,49 @@ Assert-Rejected { Assert-NoticePackageBinding $inventory '1.2.3+42' ('b' * 64) @
 Assert-Rejected { Assert-NoticePackageBinding $inventory '1.2.3+42' $hash @{'service/exvpn-service.exe'=('b' * 64)} }
 $inventory.components[0].version='1.2.3+1'
 Assert-Rejected { Assert-NoticePackageBinding $inventory '1.2.3+42' $hash @{'service/exvpn-service.exe'=$hash} }
+$patchDirectory = Join-Path $fixture 'native/patches'
+New-Item -ItemType Directory -Path $patchDirectory -Force | Out-Null
+$patchPath = Join-Path $patchDirectory 'xray-lifecycle.patch'
+$patchLockPath = Join-Path $patchDirectory 'xray-lifecycle.lock.json'
+[IO.File]::WriteAllText($patchPath, 'synthetic patch fixture')
+$patchPin = [ordered]@{
+    schemaVersion=1; module='github.com/xtls/xray-core'
+    upstream=@{commit=('a' * 40)}
+    patch=@{path='xray-lifecycle.patch';sha256=(Get-FileHash -LiteralPath $patchPath -Algorithm SHA256).Hash.ToLowerInvariant()}
+    patched=@{version='v1.0.0-exvpn.1';sum='h1:synthetic'}
+}
+function Save-PatchPin { $patchPin | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $patchLockPath -Encoding utf8NoBOM }
+Save-PatchPin
+$provenance = Get-NoticeXrayPatch $fixture 'v1.0.0-exvpn.1' 'h1:synthetic'
+if ($provenance.sourceUrl -notlike 'https://github.com/Extectick/ExVPN/*' -or
+    $provenance.patchSha256 -cne $patchPin.patch.sha256) { throw 'Modified source provenance was lost.' }
+$checks++
+if ($null -ne (Get-NoticeXrayPatch $fixture 'v1.0.0' 'h1:stock')) { throw 'Historical stock Xray was relabeled as modified.' }
+$checks++
+$sourceBundle = @{
+    'sources/xray-lifecycle.patch' = @{sha256=$provenance.patchSha256}
+    'sources/xray-lifecycle.lock.json' = @{sha256=(Get-FileHash -LiteralPath $patchLockPath -Algorithm SHA256).Hash.ToLowerInvariant()}
+    'sources/XRAY-EXVPN-NOTICE.txt' = @{sha256=('b' * 64)}
+}
+Assert-NoticeXraySourceBundle $provenance $sourceBundle
+$checks++
+foreach ($entry in @($sourceBundle.Keys)) {
+    $savedEntry=$sourceBundle[$entry]
+    $sourceBundle.Remove($entry)
+    Assert-Rejected { Assert-NoticeXraySourceBundle $provenance $sourceBundle }
+    $sourceBundle[$entry]=$savedEntry
+}
+foreach ($entry in @('sources/xray-lifecycle.patch','sources/xray-lifecycle.lock.json')) {
+    $savedHash=$sourceBundle[$entry].sha256
+    $sourceBundle[$entry].sha256='0' * 64
+    Assert-Rejected { Assert-NoticeXraySourceBundle $provenance $sourceBundle }
+    $sourceBundle[$entry].sha256=$savedHash
+}
+Assert-Rejected { Get-NoticeXrayPatch $fixture 'v1.0.0-exvpn.2' 'h1:synthetic' }
+Assert-Rejected { Get-NoticeXrayPatch $fixture 'v1.0.0-exvpn.1' 'h1:other' }
+$patchPin.patch.path='../untrusted.patch'; Save-PatchPin
+Assert-Rejected { Get-NoticeXrayPatch $fixture 'v1.0.0-exvpn.1' 'h1:synthetic' }
+$patchPin.patch.path='xray-lifecycle.patch'; Save-PatchPin
+[IO.File]::WriteAllText($patchPath, 'mutated patch fixture')
+Assert-Rejected { Get-NoticeXrayPatch $fixture 'v1.0.0-exvpn.1' 'h1:synthetic' }
 Write-Host "Notice input validation: $checks checks passed."

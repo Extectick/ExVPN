@@ -4,7 +4,7 @@ go 1.27.1
 
 require (
 	github.com/Extectick/ExVPN/native/core v0.0.0
-	github.com/xtls/xray-core v1.260327.1-0.20261010092107-701af60772cd
+	github.com/xtls/xray-core v1.260327.1-exvpn.3
 	golang.org/x/sys v0.48.0
 )
 

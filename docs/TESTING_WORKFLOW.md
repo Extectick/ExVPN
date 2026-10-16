@@ -34,6 +34,9 @@ pwsh -NoProfile -File scripts/qa/run-fast-validation.ps1 -Changed -MaxParallel 2
 
 # Один раз после bootstrap при отсутствии dependency packages в локальном кеше.
 pwsh -NoProfile -File scripts/qa/run-fast-validation.ps1 -Full -OnlineDependencies
+
+# При изменении жизненного цикла транспорта — отдельная проверка гонок.
+pwsh -NoProfile -File scripts/qa/test-xray-lifecycle.ps1 -Race -Count 5
 ```
 
 Без аргументов действует `-Changed`. Он объединяет **отдельные staged и unstaged
@@ -47,6 +50,7 @@ diff**, новые неигнорируемые файлы, удаления и 
 | Изменение | Автоматически проверяется |
 |---|---|
 | `packages/exvpn_domain` или `native/core` | domain, state, Flutter app, core, оба native adapter и installer fixtures |
+| `native/patches` | Xray lifecycle, затем те же потребители, что для native core |
 | `packages/exvpn_client_state` | state и Flutter app |
 | `packages/exvpn_updates` | updates и Flutter app |
 | `apps/exvpn/lib`, тесты и assets | Flutter app |
@@ -72,6 +76,14 @@ diff**, новые неигнорируемые файлы, удаления и 
 - До/после прогона вычисляется SHA-256 tracked и неигнорируемых untracked файлов.
   При параллельном редактировании результат помечается `source-changed-during-run`:
   финальную проверку запускают после завершения записи агентами.
+
+Xray lifecycle — десятый быстрый набор: тесты из точно закреплённого исходного
+ZIP проверяют закрытие gRPC/XHTTP, активные и зависшие запросы, повторные поколения
+и конкурентный Dial/Close. В scripts lane также проверяются реконструкция ZIP,
+отказ при подмене и сохранение offline при повторном входе в окружение.
+Race detector запускается отдельно и в Windows CI; первый запуск скачивает
+проверенный по SHA-256 portable w64devkit в `.tools/`, без изменения PATH машины.
+Он не используется для production JNI/EXE. [Точные исходники и pin](../native/patches/README.md).
 
 Нового task framework, собственной системы кэширования сборок или плавающих
 dependencies нет. Используются готовые команды [`go test`](https://pkg.go.dev/cmd/go#hdr-Test_packages),
@@ -122,6 +134,23 @@ readback длины/SHA-256; production APK не получает тестовы
 [Команда и ограничения](../scripts/qa/android-https-probe/README.md#fast-focused-text-input).
 
 ## Первые измерения, 2026-10-17
+
+Для +11 расширенный `-Full` содержит **10 наборов** и прошёл за **70,74 с**:
+192 domain, 46 state, 31 updates, 156 Flutter tests, Go verify/test/vet,
+26 upstream lifecycle test functions, installer/tooling fixtures. Go test-result
+cache отключён, source fingerprint до/после совпал.
+[Обезличенный отчёт](evidence/fast-validation-build11.json).
+Отдельный race ×5 прошёл для четырёх пакетов изменённого Xray.
+Новый объём включает реконструкцию и отказы source proxy, поэтому цифра не
+сравнивается как ускорение с более коротким набором +10.
+
+Windows lifecycle driver — `scripts/qa/run-windows-transport-lifecycle.ps1`:
+готовый Flutter integration runner выполняет циклы в одном UI/SCM процессе,
+CLI Sandbox наблюдает очистку TUN/WFP/DNS/routes и завершение peer sockets.
+Android использует отдельный ADB/probe driver и
+`scripts/qa/android-lifecycle-tools.ps1`. 51 Windows и 19 Android синтетических
+проверок этих helpers входят в `scripts` и CI; они сами не запускают VPN.
+Результаты настоящих циклов привязываются к хешу APK/установщика отдельно.
 
 Два последовательных `-Changed` на одном неизменном рабочем дереве выбрали все
 девять наборов, потому что добавлялись сами QA-скрипты. Оба завершились PASS:

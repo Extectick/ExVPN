@@ -11,7 +11,7 @@ import (
 	"github.com/xtls/xray-core/infra/conf"
 )
 
-const CoreVersion = "26.10.10"
+const CoreVersion = "26.10.10-exvpn.3"
 const CoreCommit = "701af60772cda123492f86e383e1fdba066614a9"
 const LibXrayCommit = "4e1f7843e6cddb750ac7abc23ef36800820a8098"
 

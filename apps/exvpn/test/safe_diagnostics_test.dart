@@ -48,4 +48,29 @@ void main() {
     expect(fields['coreVersion'], '26.10.10');
     expect(fields['errorCode'], 'tunnel_https_failed');
   });
+
+  test(
+    'diagnostics identifies the bundled patch without arbitrary suffixes',
+    () {
+      for (final version in [
+        '26.10.10-exvpn.1',
+        '26.10.10-exvpn.1-private-data',
+        '26.10.10-exvpn.0',
+        '26.10.10-private-data',
+      ]) {
+        final fields = jsonDecode(
+          safeDiagnostics(
+            status: null,
+            platform: 'windows',
+            coreVersion: version,
+            secureStorageAvailable: true,
+          ),
+        ) as Map<String, dynamic>;
+        expect(
+          fields['coreVersion'],
+          version == '26.10.10-exvpn.1' ? version : isNull,
+        );
+      }
+    },
+  );
 }

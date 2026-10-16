@@ -14,7 +14,7 @@ function Write-FixtureFile([string]$Path, [string]$Text) {
     [IO.File]::WriteAllText($Path, $Text, [Text.UTF8Encoding]::new($false))
 }
 function New-NoticeFixture {
-    param([switch]$WithoutSeal)
+    param([switch]$WithoutSeal, [switch]$Patched)
     $root = Join-Path $fixtureRoot ([Guid]::NewGuid().ToString('N'))
     foreach ($pin in Get-AndroidNoticePinPaths) { Write-FixtureFile (Join-Path $root $pin) 'synthetic pinned source' }
     Write-FixtureFile (Join-Path $root 'apps/exvpn/pubspec.yaml') "name: exvpn`nversion: 0.1.0+9`n"
@@ -46,21 +46,33 @@ sdks:
     Write-FixtureFile (Join-Path $bundle 'ASSET_SOURCES.md') 'synthetic assets'
     New-Item -ItemType Directory -Path (Join-Path $bundle 'sources') | Out-Null
     $source = Join-Path $bundle 'sources/xray-core.zip'
+    $xrayVersion = if ($Patched) { 'v1.0.0-exvpn.1' } else { 'v1.0.0' }
     $zip = [IO.Compression.ZipFile]::Open($source, [IO.Compression.ZipArchiveMode]::Create)
     try {
-        $entry = $zip.CreateEntry('github.com/xtls/xray-core@v1.0.0/LICENSE')
+        $entry = $zip.CreateEntry("github.com/xtls/xray-core@$xrayVersion/LICENSE")
         $stream = $entry.Open()
         try { $bytes = [Text.Encoding]::UTF8.GetBytes('synthetic source'); $stream.Write($bytes, 0, $bytes.Length) } finally { $stream.Dispose() }
     } finally { $zip.Dispose() }
     $sum = Get-AuditGoZipSum $source
-    Write-FixtureFile (Join-Path $root 'native/android/go.mod') "module example.org/native`nrequire github.com/xtls/xray-core v1.0.0`n"
-    Write-FixtureFile (Join-Path $root 'native/android/go.sum') "github.com/xtls/xray-core v1.0.0 $sum`n"
+    Write-FixtureFile (Join-Path $root 'native/android/go.mod') "module example.org/native`nrequire github.com/xtls/xray-core $xrayVersion`n"
+    Write-FixtureFile (Join-Path $root 'native/android/go.sum') "github.com/xtls/xray-core $xrayVersion $sum`n"
+    if ($Patched) {
+        $patchPath = Join-Path $root 'native/patches/xray-lifecycle.patch'
+        $patchLock = Join-Path $root 'native/patches/xray-lifecycle.lock.json'
+        Write-AuditJson $patchLock @{
+            schemaVersion=1;module='github.com/xtls/xray-core';upstream=@{commit=('a' * 40)}
+            patch=@{path='xray-lifecycle.patch';sha256=(Get-AuditSha256 $patchPath)}
+            patched=@{version=$xrayVersion;sum=$sum}
+        }
+        Copy-Item -LiteralPath $patchPath,$patchLock -Destination (Join-Path $bundle 'sources')
+        Write-FixtureFile (Join-Path $bundle 'sources/XRAY-EXVPN-NOTICE.txt') 'Synthetic modified-source notice'
+    }
     $components = @()
     foreach ($definition in @(
         @('ExVPN','0.1.0+9','runtime-or-asset','own/LICENSE','synthetic pinned source'),
         @('ExVPN copyright','0.1.0+9','runtime-or-asset','own/NOTICE','synthetic pinned source'),
         @('fixture_dep','1.2.3','resolved-dart-package','dart/LICENSE','synthetic dependency license'),
-        @('github.com/xtls/xray-core','v1.0.0','linked-go-module','xray/LICENSE','synthetic core license')
+        @('github.com/xtls/xray-core',$xrayVersion,'linked-go-module','xray/LICENSE','synthetic core license')
     )) {
         $notice = Join-Path $bundle $definition[3]
         Write-FixtureFile $notice $definition[4]
@@ -85,6 +97,20 @@ function Assert-Refused([scriptblock]$Action, [string]$Name, [string]$Code = '')
 }
 function Save-Inventory($Fixture) { Write-AuditJson (Join-Path $Fixture.Bundle 'inventory.json') $Fixture.Inventory }
 
+$f = New-NoticeFixture -Patched
+Assert-AndroidNoticeSeal $f.Root $f.Stage '0.1.0+9'
+$checks++
+foreach ($name in @('xray-lifecycle.patch','xray-lifecycle.lock.json','XRAY-EXVPN-NOTICE.txt')) {
+    $f = New-NoticeFixture -Patched
+    # Delete only this exact synthetic fixture file, never a recursive tree.
+    Remove-Item -LiteralPath (Join-Path $f.Bundle "sources/$name")
+    Assert-Refused { Assert-AndroidNoticeSeal $f.Root $f.Stage } "missing modified provenance $name"
+}
+foreach ($name in @('xray-lifecycle.patch','xray-lifecycle.lock.json')) {
+    $f = New-NoticeFixture -Patched
+    Write-FixtureFile (Join-Path $f.Bundle "sources/$name") 'tampered provenance'
+    Assert-Refused { Assert-AndroidNoticeSeal $f.Root $f.Stage } "tampered modified provenance $name" 'modified_xray_provenance_mismatch'
+}
 $f = New-NoticeFixture
 Assert-AndroidNoticeSeal $f.Root $f.Stage '0.1.0+9'
 $checks++

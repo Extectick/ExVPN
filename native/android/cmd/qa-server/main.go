@@ -108,7 +108,7 @@ func run(output, listen, client string) error {
 	camouflage.StartTLS()
 	defer camouflage.Close()
 	var fixtures []fixture
-	for _, name := range []string{"VLESS TCP", "VLESS REALITY", "VLESS Vision", "VLESS XHTTP", "XHTTP REALITY", "VMess", "Shadowsocks"} {
+	for _, name := range []string{"VLESS TCP", "VLESS REALITY", "VLESS Vision", "VLESS XHTTP", "XHTTP REALITY", "VLESS gRPC", "VMess", "Shadowsocks"} {
 		f, err := makeFixture(name, strings.TrimPrefix(camouflage.URL, "https://"), listen, client)
 		if err != nil {
 			return err
@@ -207,6 +207,14 @@ func makeFixture(name, camouflage, listen, client string) (fixture, error) {
 		query.Set("type", "xhttp")
 		query.Set("path", "/exvpn-qa")
 		query.Set("mode", "auto")
+	}
+	if name == "VLESS gRPC" {
+		// Deliberately h2c on the explicit local QA listener. The independent
+		// destination HTTPS probe still verifies the public TLS certificate.
+		stream["network"] = "grpc"
+		stream["grpcSettings"] = object{"serviceName": "exvpn-qa"}
+		query.Set("type", "grpc")
+		query.Set("serviceName", "exvpn-qa")
 	}
 	if strings.Contains(name, "REALITY") || name == "VLESS Vision" {
 		key, e := ecdh.X25519().GenerateKey(rand.Reader)

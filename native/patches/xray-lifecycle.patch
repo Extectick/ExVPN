@@ -1,0 +1,3279 @@
+diff --git a/app/proxyman/outbound/handler.go b/app/proxyman/outbound/handler.go
+index fe43c429f261a7bbb370dcb2cffc55d13da057ca..b353421ae8c7a7051eb24d59ee1caf2877afc32a 100644
+--- a/app/proxyman/outbound/handler.go
++++ b/app/proxyman/outbound/handler.go
+@@ -6,6 +6,7 @@ import (
+ 	goerrors "errors"
+ 	"io"
+ 	"math/big"
++	"sync"
+ 
+ 	"github.com/xtls/xray-core/common/dice"
+ 
+@@ -65,6 +66,9 @@ type Handler struct {
+ 	udp443          string
+ 	uplinkCounter   stats.Counter
+ 	downlinkCounter stats.Counter
++	// ExVPN modification: retire stream caches exactly once with the handler.
++	closeOnce sync.Once
++	closeErr  error
+ }
+ 
+ // NewHandler creates a new Handler based on the given configuration.
+@@ -329,9 +333,12 @@ func (h *Handler) Start() error {
+ 
+ // Close implements common.Closable.
+ func (h *Handler) Close() error {
+-	common.Close(h.mux)
+-	common.Close(h.proxy)
+-	return nil
++	// ExVPN modification: cancel transport background work before closing the
++	// proxy. Shared download settings are retired by the same stream lifetime.
++	h.closeOnce.Do(func() {
++		h.closeErr = goerrors.Join(h.streamSettings.Close(), common.Close(h.mux), common.Close(h.xudp), common.Close(h.proxy))
++	})
++	return h.closeErr
+ }
+ 
+ // SenderSettings implements outbound.Handler.
+diff --git a/app/proxyman/outbound/handler_lifetime_test.go b/app/proxyman/outbound/handler_lifetime_test.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..d5958231bb4a32c4eee7b9556e2717f5719d7b0e
+--- /dev/null
++++ b/app/proxyman/outbound/handler_lifetime_test.go
+@@ -0,0 +1,61 @@
++// ExVPN modifications, Copyright 2026 ExVPN contributors.
++// SPDX-License-Identifier: MPL-2.0
++
++package outbound
++
++import (
++	"context"
++	"errors"
++	"sync"
++	"sync/atomic"
++	"testing"
++
++	"github.com/xtls/xray-core/transport"
++	"github.com/xtls/xray-core/transport/internet"
++)
++
++type lifetimeProxy struct {
++	settings *internet.MemoryStreamConfig
++	closed   atomic.Int32
++	want     error
++	t        *testing.T
++}
++
++func (*lifetimeProxy) Process(context.Context, *transport.Link, internet.Dialer) error { return nil }
++func (p *lifetimeProxy) Close() error {
++	if !p.settings.Lifecycle().IsClosed() || p.settings.Lifecycle().Context().Err() == nil {
++		p.t.Error("proxy closed before transport owner retirement")
++	}
++	p.closed.Add(1)
++	return p.want
++}
++
++func TestExVPNHandlerCloseRetiresTransportOwnerOnce(t *testing.T) {
++	settings := new(internet.MemoryStreamConfig)
++	wantTransport := errors.New("synthetic transport cleanup failure")
++	wantProxy := errors.New("synthetic proxy cleanup failure")
++	var transportCloses atomic.Int32
++	if err := settings.Lifecycle().Register(func() error { transportCloses.Add(1); return wantTransport }); err != nil {
++		t.Fatal(err)
++	}
++	proxy := &lifetimeProxy{settings: settings, want: wantProxy, t: t}
++	h := &Handler{streamSettings: settings, proxy: proxy}
++	var workers sync.WaitGroup
++	for i := 0; i < 32; i++ {
++		workers.Add(1)
++		go func() {
++			defer workers.Done()
++			err := h.Close()
++			if !errors.Is(err, wantTransport) || !errors.Is(err, wantProxy) {
++				t.Errorf("cleanup errors lost: %v", err)
++			}
++		}()
++	}
++	workers.Wait()
++	if transportCloses.Load() != 1 || proxy.closed.Load() != 1 {
++		t.Fatal("owned resources closed more than once")
++	}
++	if err := settings.Lifecycle().Register(func() error { return nil }); !errors.Is(err, internet.ErrTransportClosed) {
++		t.Fatal("handler close allowed retired cache publication")
++	}
++}
+diff --git a/transport/internet/grpc/dial.go b/transport/internet/grpc/dial.go
+index bb65041ad477ebb243d1c965ecb16c19931a86a6..de4bf4934534856f7d21eb005923d6c76ea02019 100644
+--- a/transport/internet/grpc/dial.go
++++ b/transport/internet/grpc/dial.go
+@@ -2,6 +2,8 @@ package grpc
+ 
+ import (
+ 	"context"
++	goerrors "errors"
++	gonet "net"
+ 	"reflect"
+ 	"sync"
+ 	"time"
+@@ -46,8 +48,85 @@ type dialerConf struct {
+ var (
+ 	globalDialerMap    map[dialerConf]*grpc.ClientConn
+ 	globalDialerAccess sync.Mutex
++	// ExVPN modification: one cleanup hook per stream owner, not per dial.
++	globalDialerOwners map[*internet.MemoryStreamConfig]*grpcDialerOwner
+ )
+ 
++// ExVPN modification: ClientConn.Close cancels background attempts but the
++// system dialer may still be returning a socket. Join those callbacks before
++// owner cleanup completes, and serialize Add against the start of Wait.
++type grpcDialerOwner struct {
++	mu       sync.Mutex
++	closed   bool
++	pending  sync.WaitGroup
++	lifetime *internet.TransportLifetime
++	// Keep the first failed raw-socket cleanup until retirement. This remains
++	// bounded even when an unavailable endpoint triggers many background tries.
++	cleanupErr error
++}
++
++func (o *grpcDialerOwner) begin() bool {
++	o.mu.Lock()
++	defer o.mu.Unlock()
++	if o.closed || o.lifetime.IsClosed() {
++		return false
++	}
++	o.pending.Add(1)
++	return true
++}
++
++func (o *grpcDialerOwner) closeFailedSocket(conn net.Conn) error {
++	err := conn.Close()
++	// A canceled TLS handshake can already have closed the same raw socket.
++	if goerrors.Is(err, gonet.ErrClosed) {
++		return nil
++	}
++	if err != nil {
++		o.mu.Lock()
++		if o.cleanupErr == nil {
++			o.cleanupErr = err
++		}
++		o.mu.Unlock()
++	}
++	return err
++}
++
++// ExVPN modification: detach only this config's clients under the cache mutex,
++// then close transports outside it. Closing one core cannot affect a live core.
++func closeGrpcOwner(settings *internet.MemoryStreamConfig) error {
++	globalDialerAccess.Lock()
++	owner := globalDialerOwners[settings]
++	if owner != nil {
++		owner.mu.Lock()
++		owner.closed = true
++		owner.mu.Unlock()
++	}
++	var clients []*grpc.ClientConn
++	for key, client := range globalDialerMap {
++		if key.MemoryStreamConfig == settings {
++			delete(globalDialerMap, key)
++			clients = append(clients, client)
++		}
++	}
++	delete(globalDialerOwners, settings)
++	globalDialerAccess.Unlock()
++	var errs []error
++	for _, client := range clients {
++		if client != nil && client.GetState() != connectivity.Shutdown {
++			if err := client.Close(); err != nil && !goerrors.Is(err, grpc.ErrClientConnClosing) {
++				errs = append(errs, err)
++			}
++		}
++	}
++	if owner != nil {
++		owner.pending.Wait()
++		owner.mu.Lock()
++		errs = append(errs, owner.cleanupErr)
++		owner.mu.Unlock()
++	}
++	return goerrors.Join(errs...)
++}
++
+ func dialgRPC(ctx context.Context, dest net.Destination, streamSettings *internet.MemoryStreamConfig) (net.Conn, error) {
+ 	grpcSettings := streamSettings.ProtocolSettings.(*Config)
+ 
+@@ -77,10 +156,31 @@ func dialgRPC(ctx context.Context, dest net.Destination, streamSettings *interne
+ func getGrpcClient(ctx context.Context, dest net.Destination, streamSettings *internet.MemoryStreamConfig) (*grpc.ClientConn, error) {
+ 	globalDialerAccess.Lock()
+ 	defer globalDialerAccess.Unlock()
++	// ExVPN modification: registration and publication are serialized by the
++	// cache lock. Retirement callbacks acquire that lock only after releasing
++	// the lifetime lock, and can never recreate this retired owner.
++	lifetime := streamSettings.Lifecycle()
++	if lifetime.IsClosed() {
++		return nil, internet.ErrTransportClosed
++	}
++	if err := ctx.Err(); err != nil {
++		return nil, err
++	}
+ 
+ 	if globalDialerMap == nil {
+ 		globalDialerMap = make(map[dialerConf]*grpc.ClientConn)
+ 	}
++	if globalDialerOwners == nil {
++		globalDialerOwners = make(map[*internet.MemoryStreamConfig]*grpcDialerOwner)
++	}
++	owner := globalDialerOwners[streamSettings]
++	if owner == nil {
++		if err := lifetime.Register(func() error { return closeGrpcOwner(streamSettings) }); err != nil {
++			return nil, err
++		}
++		owner = &grpcDialerOwner{lifetime: lifetime}
++		globalDialerOwners[streamSettings] = owner
++	}
+ 	tlsConfig := tls.ConfigFromStreamSettings(streamSettings)
+ 	realityConfig := reality.ConfigFromStreamSettings(streamSettings)
+ 	grpcSettings := streamSettings.ProtocolSettings.(*Config)
+@@ -99,7 +199,17 @@ func getGrpcClient(ctx context.Context, dest net.Destination, streamSettings *in
+ 			},
+ 			MinConnectTimeout: 5 * time.Second,
+ 		}),
+-		grpc.WithContextDialer(func(gctx context.Context, s string) (net.Conn, error) {
++		grpc.WithContextDialer(func(gctx context.Context, s string) (result net.Conn, resultErr error) {
++			// ExVPN modification: gRPC does not inherit arbitrary caller context
++			// values. Explicitly bind each background attempt to its stream owner.
++			if !owner.begin() {
++				return nil, internet.ErrTransportClosed
++			}
++			defer owner.pending.Done()
++			gctx, cancel := context.WithCancel(gctx)
++			stopOwnerCancel := context.AfterFunc(lifetime.Context(), cancel)
++			defer stopOwnerCancel()
++			defer cancel()
+ 			select {
+ 			case <-gctx.Done():
+ 				return nil, gctx.Err()
+@@ -129,20 +239,44 @@ func getGrpcClient(ctx context.Context, dest net.Destination, streamSettings *in
+ 			} else {
+ 				c, err = internet.DialSystem(gctx, net.TCPDestination(address, port), streamSettings.SocketSettings)
+ 			}
+-			if err == nil {
+-				if tlsConfig != nil {
+-					config := tlsConfig.GetTLSConfig(tls.WithDestination(dest))
+-					if fingerprint := tls.GetFingerprint(tlsConfig.Fingerprint); fingerprint != nil {
+-						return tls.UClient(c, config, fingerprint), nil
+-					} else { // Fallback to normal gRPC TLS
+-						return tls.Client(c, config), nil
+-					}
++			// ExVPN modification: grpc-go cannot close a socket which its dialer
++			// never successfully returned. Own the raw result through all TLS or
++			// REALITY setup, including errors accompanied by a non-nil socket.
++			defer func() {
++				if c != nil && (result == nil || resultErr != nil) {
++					resultErr = goerrors.Join(resultErr, owner.closeFailedSocket(c))
++					result = nil
++				}
++			}()
++			if err != nil {
++				return nil, err
++			}
++			if lifetime.IsClosed() || gctx.Err() != nil {
++				return nil, internet.ErrTransportClosed
++			}
++			if c == nil {
++				return nil, errors.New("system dialer returned no connection")
++			}
++			secured := c
++			if tlsConfig != nil {
++				config := tlsConfig.GetTLSConfig(tls.WithDestination(dest))
++				if fingerprint := tls.GetFingerprint(tlsConfig.Fingerprint); fingerprint != nil {
++					secured = tls.UClient(c, config, fingerprint)
++				} else { // Fallback to normal gRPC TLS
++					secured = tls.Client(c, config)
+ 				}
+-				if realityConfig != nil {
+-					return reality.UClient(c, realityConfig, gctx, dest)
++			} else if realityConfig != nil {
++				secured, err = reality.UClient(c, realityConfig, gctx, dest)
++				if err != nil {
++					return nil, err
+ 				}
+ 			}
+-			return c, err
++			// REALITY performs a handshake inside the dial callback. A retirement
++			// racing its completion must not transfer a late socket to grpc-go.
++			if lifetime.IsClosed() || gctx.Err() != nil {
++				return nil, internet.ErrTransportClosed
++			}
++			return secured, nil
+ 		}),
+ 	}
+ 
+@@ -181,7 +315,10 @@ func getGrpcClient(ctx context.Context, dest net.Destination, streamSettings *in
+ 		"passthrough:///"+net.JoinHostPort(grpcDestHost, dest.Port.String()),
+ 		dialOptions...,
+ 	)
+-	if err == nil {
++	if err != nil {
++		return nil, err
++	}
++	{
+ 		userAgent := grpcSettings.UserAgent
+ 		// It's NOT recommended to set the UA of gRPC connections to that of real browsers, as they are fundamentally incapable of initiating real gRPC connections.
+ 		switch userAgent {
+@@ -195,10 +332,15 @@ func getGrpcClient(ctx context.Context, dest net.Destination, streamSettings *in
+ 			userAgent = ""
+ 		}
+ 		setUserAgent(conn, userAgent)
+-		conn.Connect()
+ 	}
+ 	globalDialerMap[dialerConf{dest, streamSettings}] = conn
+-	return conn, err
++	if lifetime.IsClosed() {
++		// The registered callback owns this just-published connection and will
++		// close it as soon as this function releases globalDialerAccess.
++		return nil, internet.ErrTransportClosed
++	}
++	conn.Connect()
++	return conn, nil
+ }
+ 
+ // setUserAgent overrides the user-agent on a ClientConn to remove the
+diff --git a/transport/internet/grpc/lifecycle_test.go b/transport/internet/grpc/lifecycle_test.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..3c74417e1aee334bc27511207e6ccb6708237d3b
+--- /dev/null
++++ b/transport/internet/grpc/lifecycle_test.go
+@@ -0,0 +1,522 @@
++// ExVPN modifications, Copyright 2026 ExVPN contributors.
++// SPDX-License-Identifier: MPL-2.0
++
++package grpc
++
++import (
++	"context"
++	"crypto/ecdh"
++	"crypto/rand"
++	"encoding/binary"
++	"errors"
++	"io"
++	gonet "net"
++	"sync"
++	"sync/atomic"
++	"testing"
++	"time"
++
++	"github.com/xtls/xray-core/common/net"
++	"github.com/xtls/xray-core/transport/internet"
++	"github.com/xtls/xray-core/transport/internet/grpc/encoding"
++	"github.com/xtls/xray-core/transport/internet/reality"
++	gogrpc "google.golang.org/grpc"
++	"google.golang.org/grpc/connectivity"
++	"google.golang.org/grpc/stats"
++)
++
++type lifetimeEchoServer struct {
++	encoding.UnimplementedGRPCServiceServer
++}
++
++func (*lifetimeEchoServer) Tun(stream encoding.GRPCService_TunServer) error {
++	for {
++		message, err := stream.Recv()
++		if err != nil {
++			return err
++		}
++		if err := stream.Send(message); err != nil {
++			return err
++		}
++	}
++}
++
++func (*lifetimeEchoServer) TunMulti(stream encoding.GRPCService_TunMultiServer) error {
++	for {
++		message, err := stream.Recv()
++		if err != nil {
++			return err
++		}
++		if err := stream.Send(message); err != nil {
++			return err
++		}
++	}
++}
++
++type lifetimeStats struct{ active atomic.Int32 }
++
++func (*lifetimeStats) TagRPC(ctx context.Context, _ *stats.RPCTagInfo) context.Context   { return ctx }
++func (*lifetimeStats) HandleRPC(context.Context, stats.RPCStats)                         {}
++func (*lifetimeStats) TagConn(ctx context.Context, _ *stats.ConnTagInfo) context.Context { return ctx }
++func (s *lifetimeStats) HandleConn(_ context.Context, event stats.ConnStats) {
++	switch event.(type) {
++	case *stats.ConnBegin:
++		s.active.Add(1)
++	case *stats.ConnEnd:
++		s.active.Add(-1)
++	}
++}
++
++func lifetimeConfig(multi bool) *internet.MemoryStreamConfig {
++	return &internet.MemoryStreamConfig{ProtocolName: "grpc", ProtocolSettings: &Config{ServiceName: "exvpn-lifetime", UserAgent: "golang", MultiMode: multi}}
++}
++
++func startLifetimeEcho(t *testing.T) (net.Destination, *lifetimeStats) {
++	t.Helper()
++	listener, err := gonet.Listen("tcp4", "127.0.0.1:0")
++	if err != nil {
++		t.Fatal(err)
++	}
++	counts := new(lifetimeStats)
++	server := gogrpc.NewServer(gogrpc.StatsHandler(counts))
++	encoding.RegisterGRPCServiceServerX(server, &lifetimeEchoServer{}, "exvpn-lifetime", "Tun", "TunMulti")
++	finished := make(chan struct{})
++	go func() { defer close(finished); _ = server.Serve(listener) }()
++	t.Cleanup(func() { server.Stop(); listener.Close(); <-finished })
++	return net.TCPDestination(net.LocalHostIP, net.Port(listener.Addr().(*gonet.TCPAddr).Port)), counts
++}
++
++func waitLifetime(t *testing.T, message string, check func() bool) {
++	t.Helper()
++	deadline := time.Now().Add(3 * time.Second)
++	for !check() {
++		if time.Now().After(deadline) {
++			t.Fatal(message)
++		}
++		time.Sleep(5 * time.Millisecond)
++	}
++}
++
++func assertLifetimeEcho(t *testing.T, conn net.Conn) {
++	t.Helper()
++	finished := make(chan error, 1)
++	go func() {
++		payload := []byte("synthetic owner payload")
++		if _, err := conn.Write(payload); err != nil {
++			finished <- err
++			return
++		}
++		got := make([]byte, len(payload))
++		if _, err := io.ReadFull(conn, got); err != nil {
++			finished <- err
++			return
++		}
++		if string(got) != string(payload) {
++			finished <- errors.New("echo differed")
++			return
++		}
++		finished <- nil
++	}()
++	select {
++	case err := <-finished:
++		if err != nil {
++			t.Fatal(err)
++		}
++	case <-time.After(3 * time.Second):
++		conn.Close()
++		t.Fatal("loopback gRPC payload timed out")
++	}
++}
++
++func grpcOwnerPresent(settings *internet.MemoryStreamConfig) bool {
++	globalDialerAccess.Lock()
++	defer globalDialerAccess.Unlock()
++	if _, found := globalDialerOwners[settings]; found {
++		return true
++	}
++	for key := range globalDialerMap {
++		if key.MemoryStreamConfig == settings {
++			return true
++		}
++	}
++	return false
++}
++
++func TestExVPNGRPCLifetimeClosesActiveOwnerKeepsIndependentOwner(t *testing.T) {
++	for _, multi := range []bool{false, true} {
++		t.Run(map[bool]string{false: "gun", true: "multi"}[multi], func(t *testing.T) {
++			dest, counts := startLifetimeEcho(t)
++			first, second := lifetimeConfig(multi), lifetimeConfig(multi)
++			t.Cleanup(func() { first.Close(); second.Close() })
++			ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
++			defer cancel()
++			client1, err := getGrpcClient(ctx, dest, first)
++			if err != nil {
++				t.Fatal(err)
++			}
++			client2, err := getGrpcClient(ctx, dest, second)
++			if err != nil {
++				t.Fatal(err)
++			}
++			waitLifetime(t, "both independent clients did not become ready", func() bool {
++				return client1.GetState() == connectivity.Ready && client2.GetState() == connectivity.Ready
++			})
++			conn1, err := Dial(ctx, dest, first)
++			if err != nil {
++				t.Fatal(err)
++			}
++			defer conn1.Close()
++			conn2, err := Dial(ctx, dest, second)
++			if err != nil {
++				t.Fatal(err)
++			}
++			defer conn2.Close()
++			assertLifetimeEcho(t, conn1)
++			assertLifetimeEcho(t, conn2)
++			if err := first.Close(); err != nil {
++				t.Fatal(err)
++			}
++			if client1.GetState() != connectivity.Shutdown || grpcOwnerPresent(first) {
++				t.Fatal("retired client or cache owner remains")
++			}
++			waitLifetime(t, "retired TCP connection remained active on peer", func() bool { return counts.active.Load() == 1 })
++			if _, err := getGrpcClient(ctx, dest, first); !errors.Is(err, internet.ErrTransportClosed) {
++				t.Fatal("retired config recreated a client", err)
++			}
++			assertLifetimeEcho(t, conn2)
++			again, err := getGrpcClient(ctx, dest, second)
++			if err != nil || again != client2 {
++				t.Fatal("independent owner was evicted", err)
++			}
++			if err := first.Close(); err != nil {
++				t.Fatal("repeat Close changed outcome", err)
++			}
++			if err := second.Close(); err != nil {
++				t.Fatal(err)
++			}
++			waitLifetime(t, "active sockets survived both owners", func() bool { return counts.active.Load() == 0 })
++		})
++	}
++}
++
++func TestExVPNGRPCLifetimeStopsBackgroundReconnects(t *testing.T) {
++	listener, err := gonet.Listen("tcp4", "127.0.0.1:0")
++	if err != nil {
++		t.Fatal(err)
++	}
++	var attempts atomic.Int32
++	finished := make(chan struct{})
++	go func() {
++		defer close(finished)
++		for {
++			conn, err := listener.Accept()
++			if err != nil {
++				return
++			}
++			attempts.Add(1)
++			conn.Close()
++		}
++	}()
++	t.Cleanup(func() { listener.Close(); <-finished })
++	settings := lifetimeConfig(false)
++	t.Cleanup(func() { settings.Close() })
++	dest := net.TCPDestination(net.LocalHostIP, net.Port(listener.Addr().(*gonet.TCPAddr).Port))
++	client, err := getGrpcClient(context.Background(), dest, settings)
++	if err != nil {
++		t.Fatal(err)
++	}
++	waitLifetime(t, "fixture did not observe a background gRPC retry", func() bool { return attempts.Load() >= 2 })
++	if err := settings.Close(); err != nil {
++		t.Fatal(err)
++	}
++	if client.GetState() != connectivity.Shutdown || grpcOwnerPresent(settings) {
++		t.Fatal("background owner remained after Close")
++	}
++	// Longer than the next 750ms base backoff, including its 20% jitter.
++	time.Sleep(100 * time.Millisecond)
++	closedAttempts := attempts.Load()
++	time.Sleep(1100 * time.Millisecond)
++	if attempts.Load() != closedAttempts {
++		t.Fatalf("retired gRPC continued reconnecting: %d -> %d", closedAttempts, attempts.Load())
++	}
++}
++
++func TestExVPNGRPCLifetimeConcurrentDialCloseNoCacheResurrection(t *testing.T) {
++	dest, counts := startLifetimeEcho(t)
++	globalDialerAccess.Lock()
++	baselineClients, baselineOwners := len(globalDialerMap), len(globalDialerOwners)
++	globalDialerAccess.Unlock()
++	for cycle := 0; cycle < 24; cycle++ {
++		settings := lifetimeConfig(false)
++		start := make(chan struct{})
++		var workers sync.WaitGroup
++		for i := 0; i < 16; i++ {
++			workers.Add(1)
++			go func() {
++				defer workers.Done()
++				<-start
++				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
++				defer cancel()
++				conn, err := Dial(ctx, dest, settings)
++				if err == nil {
++					conn.Close()
++				}
++			}()
++		}
++		workers.Add(1)
++		go func() { defer workers.Done(); <-start; _ = settings.Close() }()
++		close(start)
++		workers.Wait()
++		if err := settings.Close(); err != nil || grpcOwnerPresent(settings) {
++			t.Fatal("retired owner remained after concurrent publication", err)
++		}
++		if _, err := getGrpcClient(context.Background(), dest, settings); !errors.Is(err, internet.ErrTransportClosed) {
++			t.Fatal("late dial resurrected retired owner", err)
++		}
++	}
++	waitLifetime(t, "concurrent dial sockets remained active", func() bool { return counts.active.Load() == 0 })
++	globalDialerAccess.Lock()
++	defer globalDialerAccess.Unlock()
++	if len(globalDialerMap) != baselineClients || len(globalDialerOwners) != baselineOwners {
++		t.Fatal("cache cardinality grew across retired owners")
++	}
++}
++
++type delayedLifetimeDialer struct {
++	entered chan context.Context
++	release chan struct{}
++	conn    net.Conn
++	err     error
++	calls   atomic.Int32
++}
++
++func (d *delayedLifetimeDialer) Dial(ctx context.Context, _ net.Address, _ net.Destination, _ *internet.SocketConfig) (net.Conn, error) {
++	d.calls.Add(1)
++	d.entered <- ctx
++	// Intentionally ignore cancellation until released. The transport must join
++	// this callback and close the late result, not return successful retirement.
++	<-d.release
++	return d.conn, d.err
++}
++func (*delayedLifetimeDialer) DestIpAddress() net.IP { return net.LocalHostIP.IP() }
++
++func TestExVPNGRPCLifetimeJoinsPendingDialAndClosesLateSocket(t *testing.T) {
++	client, peer := gonet.Pipe()
++	dialer := &delayedLifetimeDialer{entered: make(chan context.Context, 1), release: make(chan struct{}), conn: client}
++	settings := lifetimeConfig(false)
++	var release sync.Once
++	internet.UseAlternativeSystemDialer(dialer)
++	t.Cleanup(func() {
++		release.Do(func() { close(dialer.release) })
++		settings.Close()
++		peer.Close()
++		internet.UseAlternativeSystemDialer(nil)
++	})
++	_, err := getGrpcClient(context.Background(), net.TCPDestination(net.LocalHostIP, 1), settings)
++	if err != nil {
++		t.Fatal(err)
++	}
++	var attempt context.Context
++	select {
++	case attempt = <-dialer.entered:
++	case <-time.After(time.Second):
++		t.Fatal("background dial did not start")
++	}
++	closed := make(chan error, 1)
++	go func() { closed <- settings.Close() }()
++	select {
++	case <-attempt.Done():
++	case <-time.After(time.Second):
++		t.Fatal("pending dial did not receive owner cancellation")
++	}
++	select {
++	case <-closed:
++		t.Fatal("owner Close returned while a dial callback was still active")
++	case <-time.After(20 * time.Millisecond):
++	}
++	release.Do(func() { close(dialer.release) })
++	select {
++	case err := <-closed:
++		if err != nil {
++			t.Fatal(err)
++		}
++	case <-time.After(time.Second):
++		t.Fatal("owner did not join released callback")
++	}
++	peer.SetReadDeadline(time.Now().Add(time.Second))
++	if _, err := peer.Read(make([]byte, 1)); !errors.Is(err, io.EOF) {
++		t.Fatal("late dial socket survived retirement", err)
++	}
++	if dialer.calls.Load() != 1 || grpcOwnerPresent(settings) {
++		t.Fatal("retired owner restarted dial or retained cache")
++	}
++}
++
++func lifetimeRealityConfig(t *testing.T) *internet.MemoryStreamConfig {
++	t.Helper()
++	key, err := ecdh.X25519().GenerateKey(rand.Reader)
++	if err != nil {
++		t.Fatal(err)
++	}
++	settings := lifetimeConfig(false)
++	settings.SecurityType = "reality"
++	settings.SecuritySettings = &reality.Config{
++		Fingerprint: "chrome", ServerName: "synthetic.example.invalid",
++		PublicKey: key.PublicKey().Bytes(), ShortId: make([]byte, 8),
++	}
++	return settings
++}
++
++// The peer reads a real REALITY ClientHello, then either rejects it with a TLS
++// alert or stalls until the owner retires. EOF proves that the callback did not
++// orphan the raw socket before handing any transport to grpc-go.
++func startLifetimeRealityPeer(t *testing.T, reject bool) (net.Destination, <-chan error, <-chan error) {
++	t.Helper()
++	listener, err := gonet.Listen("tcp4", "127.0.0.1:0")
++	if err != nil {
++		t.Fatal(err)
++	}
++	hello := make(chan error, 1)
++	eof := make(chan error, 1)
++	accepted := make(chan gonet.Conn, 1)
++	finished := make(chan struct{})
++	go func() {
++		defer close(finished)
++		conn, err := listener.Accept()
++		if err != nil {
++			hello <- err
++			return
++		}
++		accepted <- conn
++		defer conn.Close()
++		_ = listener.Close() // This fixture owns exactly one handshake.
++		_ = conn.SetDeadline(time.Now().Add(3 * time.Second))
++		header := make([]byte, 5)
++		if _, err := io.ReadFull(conn, header); err != nil {
++			hello <- err
++			return
++		}
++		size := binary.BigEndian.Uint16(header[3:])
++		if header[0] != 22 || size == 0 || size > 16384 {
++			hello <- errors.New("peer did not receive a TLS handshake record")
++			return
++		}
++		if _, err := io.CopyN(io.Discard, conn, int64(size)); err != nil {
++			hello <- err
++			return
++		}
++		if reject {
++			// TLS fatal handshake_failure. Keep the TCP socket open so a missing
++			// client-side Close remains independently visible at the peer.
++			if _, err := conn.Write([]byte{21, 3, 3, 0, 2, 2, 40}); err != nil {
++				hello <- err
++				return
++			}
++		}
++		hello <- nil
++		_, err = conn.Read(make([]byte, 1))
++		eof <- err
++	}()
++	t.Cleanup(func() {
++		listener.Close()
++		select {
++		case conn := <-accepted:
++			conn.Close()
++		default:
++		}
++		<-finished
++	})
++	return net.TCPDestination(net.LocalHostIP, net.Port(listener.Addr().(*gonet.TCPAddr).Port)), hello, eof
++}
++
++func TestExVPNGRPCLifetimeClosesFailedAndStalledRealityHandshake(t *testing.T) {
++	for _, reject := range []bool{true, false} {
++		t.Run(map[bool]string{true: "failed", false: "stalled"}[reject], func(t *testing.T) {
++			dest, hello, eof := startLifetimeRealityPeer(t, reject)
++			settings := lifetimeRealityConfig(t)
++			t.Cleanup(func() { settings.Close() })
++			client, err := getGrpcClient(context.Background(), dest, settings)
++			if err != nil {
++				t.Fatal(err)
++			}
++			select {
++			case err := <-hello:
++				if err != nil {
++					t.Fatal("REALITY ClientHello failed", err)
++				}
++			case <-time.After(2 * time.Second):
++				t.Fatal("REALITY handshake did not start")
++			}
++			if reject {
++				waitLifetime(t, "failed REALITY callback did not finish", func() bool { return client.GetState() == connectivity.TransientFailure })
++			}
++			closed := make(chan error, 1)
++			go func() { closed <- settings.Close() }()
++			select {
++			case err := <-closed:
++				if err != nil {
++					t.Fatal("retirement failed", err)
++				}
++			case <-time.After(time.Second):
++				t.Fatal("retirement did not cancel and join the REALITY handshake")
++			}
++			select {
++			case err := <-eof:
++				if !errors.Is(err, io.EOF) {
++					t.Fatal("raw REALITY socket survived callback failure/retirement", err)
++				}
++			case <-time.After(time.Second):
++				t.Fatal("peer did not observe retired REALITY socket EOF")
++			}
++			if client.GetState() != connectivity.Shutdown || grpcOwnerPresent(settings) {
++				t.Fatal("failed REALITY owner remained cached")
++			}
++		})
++	}
++}
++
++type lifetimeCloseErrorConn struct {
++	net.Conn
++	want   error
++	closes atomic.Int32
++}
++
++func (c *lifetimeCloseErrorConn) Close() error {
++	c.closes.Add(1)
++	_ = c.Conn.Close()
++	return c.want
++}
++
++func TestExVPNGRPCLifetimePreservesFailedDialSocketCleanupError(t *testing.T) {
++	client, peer := gonet.Pipe()
++	wantCleanup := errors.New("synthetic raw socket close failure")
++	tracked := &lifetimeCloseErrorConn{Conn: client, want: wantCleanup}
++	dialer := &delayedLifetimeDialer{
++		entered: make(chan context.Context, 1), release: make(chan struct{}),
++		conn: tracked, err: errors.New("synthetic dial failure with nonnil connection"),
++	}
++	close(dialer.release)
++	settings := lifetimeConfig(false)
++	internet.UseAlternativeSystemDialer(dialer)
++	t.Cleanup(func() {
++		settings.Close()
++		client.Close()
++		peer.Close()
++		internet.UseAlternativeSystemDialer(nil)
++	})
++	grpcClient, err := getGrpcClient(context.Background(), net.TCPDestination(net.LocalHostIP, 1), settings)
++	if err != nil {
++		t.Fatal(err)
++	}
++	waitLifetime(t, "failed raw dial callback did not finish", func() bool { return grpcClient.GetState() == connectivity.TransientFailure })
++	if err := settings.Close(); !errors.Is(err, wantCleanup) || !errors.Is(settings.Close(), wantCleanup) {
++		t.Fatal("raw socket cleanup error was discarded", err)
++	}
++	_ = peer.SetReadDeadline(time.Now().Add(time.Second))
++	if _, err := peer.Read(make([]byte, 1)); !errors.Is(err, io.EOF) {
++		t.Fatal("nonnil socket returned with a dial error was not closed", err)
++	}
++	if tracked.closes.Load() != 1 || dialer.calls.Load() != 1 || grpcOwnerPresent(settings) {
++		t.Fatal("failed dial ownership was not retired exactly once")
++	}
++}
+diff --git a/transport/internet/memory_settings.go b/transport/internet/memory_settings.go
+index 6277151c6ae2f32f69d74b75e9a0b46011e7599c..a779fd7fc7fd75e5147c9d3739c66343917868ca 100644
+--- a/transport/internet/memory_settings.go
++++ b/transport/internet/memory_settings.go
+@@ -21,6 +21,9 @@ type MemoryStreamConfig struct {
+ 	QuicParams       *QuicParams
+ 	SocketSettings   *SocketConfig
+ 	DownloadSettings *MemoryStreamConfig
++	// ExVPN modification: the owner pointer is shared by derived transports.
++	// Keep synchronization in TransportLifetime rather than copying a mutex here.
++	transportLifetime *TransportLifetime
+ }
+ 
+ // ToMemoryStreamConfig converts a StreamConfig to MemoryStreamConfig. It returns a default non-nil MemoryStreamConfig for nil input.
+diff --git a/transport/internet/splithttp/client.go b/transport/internet/splithttp/client.go
+index a2b5f75e87a5b5caae865433d66ae94151eacaa3..79ddc7686ddcbf62782529f110abfed192e84617 100644
+--- a/transport/internet/splithttp/client.go
++++ b/transport/internet/splithttp/client.go
+@@ -1,8 +1,11 @@
++// ExVPN changes: cancellable HTTP requests and owned H1/H2/H3 cleanup, 2026-10-17.
++// Upstream file remains licensed under the MPL-2.0.
+ package splithttp
+ 
+ import (
+ 	"bytes"
+ 	"context"
++	stderrors "errors"
+ 	"fmt"
+ 	"io"
+ 	"net/http"
+@@ -16,6 +19,7 @@ import (
+ 	"github.com/xtls/xray-core/common/errors"
+ 	"github.com/xtls/xray-core/common/net"
+ 	"github.com/xtls/xray-core/common/signal/done"
++	"github.com/xtls/xray-core/transport/internet"
+ )
+ 
+ // interface to abstract between use of browser dialer, vs net/http
+@@ -35,9 +39,8 @@ type DefaultDialerClient struct {
+ 	client          *http.Client
+ 	closed          atomic.Bool
+ 	httpVersion     string
+-	// pool of net.Conn, created using dialUploadConn
+-	uploadRawPool  *sync.Pool
+-	dialUploadConn func(ctxInner context.Context) (net.Conn, error)
++	resources       *clientResources
++	dialUploadConn  func(ctxInner context.Context) (net.Conn, error)
+ }
+ 
+ func (c *DefaultDialerClient) IsClosed() bool {
+@@ -45,14 +48,33 @@ func (c *DefaultDialerClient) IsClosed() bool {
+ }
+ 
+ func (c *DefaultDialerClient) OpenStream(ctx context.Context, url string, sessionId string, body io.Reader, uploadOnly bool) (wrc io.ReadCloser, remoteAddr, localAddr net.Addr, err error) {
++	if c.IsClosed() {
++		return nil, nil, nil, internet.ErrTransportClosed
++	}
++	if err := c.resources.begin(); err != nil {
++		return nil, nil, nil, err
++	}
++	ctx, finish := c.resources.context(ctx)
++	result := &WaitReadCloser{wait: done.New(), owner: c.resources}
++	result.onClose = func() error {
++		finish()
++		return common.Close(body)
++	}
++	if err := c.resources.add(result); err != nil {
++		c.resources.pending.Done()
++		return nil, nil, nil, err
++	}
+ 	// this is done when the TCP/UDP connection to the server was established,
+ 	// and we can unblock the Dial function and print correct net addresses in
+ 	// logs
+ 	gotConn := done.New()
++	var addressMu sync.Mutex
++	var remote, local net.Addr
+ 	ctx = httptrace.WithClientTrace(ctx, &httptrace.ClientTrace{
+ 		GotConn: func(connInfo httptrace.GotConnInfo) {
+-			remoteAddr = connInfo.Conn.RemoteAddr()
+-			localAddr = connInfo.Conn.LocalAddr()
++			addressMu.Lock()
++			remote, local = connInfo.Conn.RemoteAddr(), connInfo.Conn.LocalAddr()
++			addressMu.Unlock()
+ 			gotConn.Close()
+ 		},
+ 	})
+@@ -61,15 +83,19 @@ func (c *DefaultDialerClient) OpenStream(ctx context.Context, url string, sessio
+ 	if body != nil {
+ 		method = c.transportConfig.GetNormalizedUplinkHTTPMethod() // stream-up/one
+ 	}
+-	req, err := http.NewRequestWithContext(context.WithoutCancel(ctx), method, url, body)
++	req, err := http.NewRequestWithContext(ctx, method, url, body)
+ 	if err != nil {
++		result.Close()
++		c.resources.pending.Done()
+ 		errors.LogInfoInner(ctx, err, "failed to create HTTP request for "+url)
+ 		return nil, nil, nil, err
+ 	}
+ 	c.transportConfig.FillStreamRequest(req, sessionId, "")
+ 
+-	wrc = &WaitReadCloser{wait: done.New()}
++	wrc = result
+ 	go func() {
++		defer c.resources.pending.Done()
++		defer gotConn.Close()
+ 		resp, err := c.client.Do(req)
+ 		if err != nil {
+ 			if !uploadOnly { // stream-down is enough
+@@ -78,7 +104,7 @@ func (c *DefaultDialerClient) OpenStream(ctx context.Context, url string, sessio
+ 			}
+ 			gotConn.Close()
+ 			common.Close(body)
+-			wrc.Close()
++			result.Close()
+ 			return
+ 		}
+ 		if resp.StatusCode != 200 && !uploadOnly {
+@@ -88,23 +114,47 @@ func (c *DefaultDialerClient) OpenStream(ctx context.Context, url string, sessio
+ 			io.Copy(io.Discard, resp.Body)
+ 			resp.Body.Close() // if it is called immediately, the upload will be interrupted also
+ 			common.Close(body)
+-			wrc.Close()
++			result.Close()
+ 			return
+ 		}
+-		wrc.(*WaitReadCloser).Set(resp.Body)
++		result.Set(resp.Body)
+ 	}()
+ 
+-	<-gotConn.Wait()
++	select {
++	case <-gotConn.Wait():
++	case <-ctx.Done():
++	}
++	if ctx.Err() != nil {
++		result.Close()
++		return nil, nil, nil, internet.ErrTransportClosed
++	}
++	addressMu.Lock()
++	remoteAddr, localAddr = remote, local
++	addressMu.Unlock()
+ 	return
+ }
+ 
+ func (c *DefaultDialerClient) PostPacket(ctx context.Context, url string, sessionId string, seqStr string, payload buf.MultiBuffer) error {
++	if c.IsClosed() {
++		buf.ReleaseMulti(payload)
++		return internet.ErrTransportClosed
++	}
++	if err := c.resources.begin(); err != nil {
++		buf.ReleaseMulti(payload)
++		return err
++	}
++	defer c.resources.pending.Done()
++	ctx, finish := c.resources.context(ctx)
++	defer finish()
+ 	method := c.transportConfig.GetNormalizedUplinkHTTPMethod()
+-	req, err := http.NewRequestWithContext(context.WithoutCancel(ctx), method, url, nil)
++	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+ 	if err != nil {
++		buf.ReleaseMulti(payload)
++		return err
++	}
++	if err := c.transportConfig.FillPacketRequest(req, sessionId, seqStr, payload); err != nil {
+ 		return err
+ 	}
+-	c.transportConfig.FillPacketRequest(req, sessionId, seqStr, payload)
+ 
+ 	if c.httpVersion != "1.1" {
+ 		resp, err := c.client.Do(req)
+@@ -128,33 +178,35 @@ func (c *DefaultDialerClient) PostPacket(ctx context.Context, url string, sessio
+ 		requestBuff.Grow(512 + int(req.ContentLength))
+ 		common.Must(req.Write(requestBuff))
+ 
+-		var uploadConn any
+ 		var h1UploadConn *H1Conn
+ 
+ 		for {
+-			uploadConn = c.uploadRawPool.Get()
+-			newConnection := uploadConn == nil
++			h1UploadConn, err = c.resources.takeH1()
++			if err != nil {
++				return err
++			}
++			newConnection := h1UploadConn == nil
+ 			if newConnection {
+-				newConn, err := c.dialUploadConn(context.WithoutCancel(ctx))
++				newConn, err := c.dialUploadConn(ctx)
+ 				if err != nil {
+ 					return err
+ 				}
+ 				h1UploadConn = NewH1Conn(newConn)
+-				uploadConn = h1UploadConn
+ 			} else {
+-				h1UploadConn = uploadConn.(*H1Conn)
+-
+ 				// TODO: Replace 0 here with a config value later
+ 				// Or add some other condition for optimization purposes
+ 				if h1UploadConn.UnreadedResponsesCount > 0 {
+ 					resp, err := http.ReadResponse(h1UploadConn.RespBufReader, req)
+ 					if err != nil {
++						h1UploadConn.Close()
+ 						c.closed.Store(true)
+ 						return fmt.Errorf("error while reading response: %s", err.Error())
+ 					}
+ 					io.Copy(io.Discard, resp.Body)
+-					defer resp.Body.Close()
++					resp.Body.Close()
++					h1UploadConn.UnreadedResponsesCount--
+ 					if resp.StatusCode != 200 {
++						h1UploadConn.Close()
+ 						return fmt.Errorf("got non-200 error response code: %d", resp.StatusCode)
+ 					}
+ 				}
+@@ -166,57 +218,95 @@ func (c *DefaultDialerClient) PostPacket(ctx context.Context, url string, sessio
+ 			// failed writes to a pooled connection are normal when
+ 			// the connection has been closed in the meantime.
+ 			if err == nil {
++				h1UploadConn.UnreadedResponsesCount++
+ 				break
+ 			} else if newConnection {
++				h1UploadConn.Close()
+ 				return err
+ 			}
++			h1UploadConn.Close()
+ 		}
+ 
+-		c.uploadRawPool.Put(uploadConn)
++		return c.resources.putH1(h1UploadConn)
+ 	}
+ 
+ 	return nil
+ }
+ 
+-// HTTP/1.1 and HTTP/2 will close itself, we only handle HTTP/3 here
+ func (c *DefaultDialerClient) Close() error {
+-	transport := c.client.Transport
+-	if h3Transport, ok := transport.(*http3.Transport); ok {
+-		h3Transport.Close()
+-	}
+-	return nil
++	c.closed.Store(true)
++	return c.resources.close(func() error {
++		transport := c.client.Transport
++		var err error
++		if h3Transport, ok := transport.(*http3.Transport); ok {
++			err = h3Transport.Close()
++		}
++		if idle, ok := transport.(interface{ CloseIdleConnections() }); ok {
++			idle.CloseIdleConnections()
++		}
++		return err
++	})
+ }
+ 
+ type WaitReadCloser struct {
+-	wait   *done.Instance
+-	reader atomic.Pointer[io.ReadCloser]
++	wait      *done.Instance
++	mu        sync.Mutex
++	reader    io.ReadCloser
++	closed    bool
++	onClose   func() error
++	owner     *clientResources
++	closeOnce sync.Once
++	closeErr  error
+ }
+ 
+ func (w *WaitReadCloser) Set(rc io.ReadCloser) {
+-	w.reader.Store(&rc)
+-	if w.wait.Done() {
+-		if p := w.reader.Swap(nil); p != nil {
+-			(*p).Close()
++	w.mu.Lock()
++	if w.closed {
++		w.mu.Unlock()
++		// The response may arrive after Close. Its publishing request remains
++		// pending until this late body has closed, including any cleanup error.
++		err := rc.Close()
++		if w.owner != nil {
++			w.owner.recordError(err)
+ 		}
++		return
+ 	}
++	w.reader = rc
++	w.mu.Unlock()
+ 	w.wait.Close()
+ }
+ 
+ func (w *WaitReadCloser) Read(b []byte) (int, error) {
+-	rc := w.reader.Load()
++	<-w.wait.Wait()
++	w.mu.Lock()
++	rc := w.reader
++	w.mu.Unlock()
+ 	if rc == nil {
+-		<-w.wait.Wait()
+-		if rc = w.reader.Load(); rc == nil {
+-			return 0, io.ErrClosedPipe
+-		}
++		return 0, io.ErrClosedPipe
+ 	}
+-	return (*rc).Read(b)
++	return rc.Read(b)
+ }
+ 
+ func (w *WaitReadCloser) Close() error {
+-	w.wait.Close()
+-	if p := w.reader.Swap(nil); p != nil {
+-		return (*p).Close()
+-	}
+-	return nil
++	w.closeOnce.Do(func() {
++		w.wait.Close()
++		w.mu.Lock()
++		w.closed = true
++		rc := w.reader
++		w.reader = nil
++		w.mu.Unlock()
++		// Cancel before closing a body that may be waiting for its request.
++		if w.onClose != nil {
++			w.closeErr = w.onClose()
++		}
++		if rc != nil {
++			w.closeErr = stderrors.Join(w.closeErr, rc.Close())
++		}
++		// Keep failed cleanup owned so retirement cannot lose its error. A
++		// concurrent Close waits for this one and receives the same result.
++		if w.owner != nil && w.closeErr == nil {
++			w.owner.remove(w)
++		}
++	})
++	return w.closeErr
+ }
+diff --git a/transport/internet/splithttp/connection.go b/transport/internet/splithttp/connection.go
+index 613e1f36b4f59330cfa940908860a66e9b41f845..44b4e667f6d43c7afccd2879227b90ce79d1a639 100644
+--- a/transport/internet/splithttp/connection.go
++++ b/transport/internet/splithttp/connection.go
+@@ -1,8 +1,11 @@
++// ExVPN changes: idempotent cleanup of a partially constructed connection, 2026-10-17.
++// Upstream file remains licensed under the MPL-2.0.
+ package splithttp
+ 
+ import (
+ 	"io"
+ 	"net"
++	"sync"
+ 	"time"
+ )
+ 
+@@ -12,6 +15,8 @@ type splitConn struct {
+ 	remoteAddr net.Addr
+ 	localAddr  net.Addr
+ 	onClose    func()
++	closeOnce  sync.Once
++	closeErr   error
+ }
+ 
+ func (c *splitConn) Write(b []byte) (int, error) {
+@@ -23,21 +28,20 @@ func (c *splitConn) Read(b []byte) (int, error) {
+ }
+ 
+ func (c *splitConn) Close() error {
+-	if c.onClose != nil {
+-		c.onClose()
+-	}
+-
+-	err := c.writer.Close()
+-	err2 := c.reader.Close()
+-	if err != nil {
+-		return err
+-	}
+-
+-	if err2 != nil {
+-		return err
+-	}
+-
+-	return nil
++	c.closeOnce.Do(func() {
++		if c.onClose != nil {
++			c.onClose()
++		}
++		if c.writer != nil {
++			c.closeErr = c.writer.Close()
++		}
++		if c.reader != nil {
++			if err := c.reader.Close(); c.closeErr == nil {
++				c.closeErr = err
++			}
++		}
++	})
++	return c.closeErr
+ }
+ 
+ func (c *splitConn) LocalAddr() net.Addr {
+diff --git a/transport/internet/splithttp/dialer.go b/transport/internet/splithttp/dialer.go
+index b52f5a71dc12da20f1bee35b9bd92da47b99a63d..bd508fa81abade03ce5f6efc464b003373a92794 100644
+--- a/transport/internet/splithttp/dialer.go
++++ b/transport/internet/splithttp/dialer.go
+@@ -1,3 +1,5 @@
++// ExVPN changes: per-owner XHTTP cache/socket retirement, 2026-10-17.
++// Upstream file remains licensed under the MPL-2.0.
+ package splithttp
+ 
+ import (
+@@ -44,15 +46,22 @@ var (
+ 	globalDialerAccess sync.Mutex
+ )
+ 
+-func getHTTPClient(ctx context.Context, dest net.Destination, streamSettings *internet.MemoryStreamConfig) (DialerClient, *XmuxClient) {
++func getHTTPClient(ctx context.Context, dest net.Destination, streamSettings *internet.MemoryStreamConfig) (DialerClient, *XmuxClient, error) {
++	owner := streamSettings.Lifecycle()
++	if owner.IsClosed() {
++		return nil, nil, internet.ErrTransportClosed
++	}
+ 	realityConfig := reality.ConfigFromStreamSettings(streamSettings)
+ 
+ 	if browser_dialer.HasBrowserDialer() && realityConfig == nil {
+-		return &BrowserDialerClient{transportConfig: streamSettings.ProtocolSettings.(*Config)}, nil
++		return &BrowserDialerClient{transportConfig: streamSettings.ProtocolSettings.(*Config)}, nil, nil
+ 	}
+ 
+ 	globalDialerAccess.Lock()
+-	defer globalDialerAccess.Unlock()
++	if owner.IsClosed() {
++		globalDialerAccess.Unlock()
++		return nil, nil, internet.ErrTransportClosed
++	}
+ 
+ 	if globalDialerMap == nil {
+ 		globalDialerMap = make(map[dialerConf]*XmuxManager)
+@@ -64,19 +73,31 @@ func getHTTPClient(ctx context.Context, dest net.Destination, streamSettings *in
+ 
+ 	if !found {
+ 		transportConfig := streamSettings.ProtocolSettings.(*Config)
+-		var xmuxConfig XmuxConfig
+-		if transportConfig.Xmux != nil {
+-			xmuxConfig = *transportConfig.Xmux
+-		}
+ 
+-		xmuxManager = NewXmuxManager(xmuxConfig, func() XmuxConn {
++		xmuxManager = NewXmuxManager(transportConfig.Xmux, func() XmuxConn {
+ 			return createHTTPClient(dest, streamSettings)
+ 		})
++		if err := owner.Register(func() error {
++			globalDialerAccess.Lock()
++			if globalDialerMap[key] == xmuxManager {
++				delete(globalDialerMap, key)
++			}
++			globalDialerAccess.Unlock()
++			return xmuxManager.Close()
++		}); err != nil {
++			globalDialerAccess.Unlock()
++			xmuxManager.Close()
++			return nil, nil, err
++		}
+ 		globalDialerMap[key] = xmuxManager
+ 	}
+ 
+ 	xmuxClient := xmuxManager.GetXmuxClient(ctx)
+-	return xmuxClient.XmuxConn.(DialerClient), xmuxClient
++	globalDialerAccess.Unlock()
++	if xmuxClient == nil || owner.IsClosed() {
++		return nil, nil, internet.ErrTransportClosed
++	}
++	return xmuxClient.XmuxConn.(DialerClient), xmuxClient, nil
+ }
+ 
+ func decideHTTPVersion(tlsConfig *tls.Config, realityConfig *reality.Config) string {
+@@ -114,8 +135,15 @@ func createHTTPClient(dest net.Destination, streamSettings *internet.MemoryStrea
+ 	}
+ 
+ 	transportConfig := streamSettings.ProtocolSettings.(*Config)
++	client := &DefaultDialerClient{transportConfig: transportConfig, resources: newClientResources(), httpVersion: httpVersion}
+ 
+ 	dialContext := func(ctxInner context.Context) (net.Conn, error) {
++		if err := client.resources.begin(); err != nil {
++			return nil, err
++		}
++		defer client.resources.pending.Done()
++		ctxInner, finish := client.resources.context(ctxInner)
++		defer finish()
+ 		var conn net.Conn
+ 		var err error
+ 		if streamSettings.FinalMask != nil {
+@@ -123,18 +151,30 @@ func createHTTPClient(dest net.Destination, streamSettings *internet.MemoryStrea
+ 		} else {
+ 			conn, err = internet.DialSystem(ctxInner, dest, streamSettings.SocketSettings)
+ 		}
++		if err != nil {
++			if conn != nil {
++				client.resources.recordError(conn.Close())
++			}
++			return nil, err
++		}
++		conn, err = client.resources.trackConn(conn)
+ 		if err != nil {
+ 			return nil, err
+ 		}
+ 
+ 		if realityConfig != nil {
+-			return reality.UClient(conn, realityConfig, ctxInner, dest)
++			secured, err := reality.UClient(conn, realityConfig, ctxInner, dest)
++			if err != nil {
++				conn.Close()
++			}
++			return secured, err
+ 		}
+ 
+ 		if gotlsConfig != nil {
+ 			if fingerprint := tls.GetFingerprint(tlsConfig.Fingerprint); fingerprint != nil {
+ 				conn = tls.UClient(conn, gotlsConfig, fingerprint)
+ 				if err := conn.(*tls.UConn).HandshakeContext(ctxInner); err != nil {
++					conn.Close()
+ 					return nil, err
+ 				}
+ 			} else {
+@@ -192,11 +232,20 @@ func createHTTPClient(dest net.Destination, streamSettings *internet.MemoryStrea
+ 			QUICConfig:      quicConfig,
+ 			TLSClientConfig: gotlsConfig,
+ 			Dial: func(ctx context.Context, addr string, tlsCfg *gotls.Config, cfg *quic.Config) (*quic.Conn, error) {
++				if err := client.resources.begin(); err != nil {
++					return nil, err
++				}
++				defer client.resources.pending.Done()
++				ctx, finish := client.resources.context(ctx)
++				defer finish()
+ 				var pktConn net.PacketConn
+ 				var udpAddr net.Addr
+ 				if streamSettings.FinalMask != nil {
+ 					conn, err := streamSettings.FinalMask.DialUDP(ctx, dest)
+ 					if err != nil {
++						if conn != nil {
++							client.resources.recordError(conn.Close())
++						}
+ 						return nil, errors.New("failed to dial to dest").Base(err)
+ 					}
+ 					pktConn = conn.(*net.PacketConnWrapper).PacketConn
+@@ -204,6 +253,9 @@ func createHTTPClient(dest net.Destination, streamSettings *internet.MemoryStrea
+ 				} else {
+ 					conn, err := internet.DialSystem(ctx, dest, streamSettings.SocketSettings)
+ 					if err != nil {
++						if conn != nil {
++							client.resources.recordError(conn.Close())
++						}
+ 						return nil, errors.New("failed to dial to dest").Base(err)
+ 					}
+ 					switch c := conn.(type) {
+@@ -218,6 +270,10 @@ func createHTTPClient(dest net.Destination, streamSettings *internet.MemoryStrea
+ 					}
+ 				}
+ 
++				pktConn, err := client.resources.trackPacket(pktConn)
++				if err != nil {
++					return nil, err
++				}
+ 				tr := &quic.Transport{Conn: pktConn, DisableGSO: quicParams.DisableGSO}
+ 
+ 				if !quicParams.DisableChromeParrot {
+@@ -227,6 +283,8 @@ func createHTTPClient(dest net.Destination, streamSettings *internet.MemoryStrea
+ 
+ 				conn, err := tr.DialEarly(ctx, udpAddr, tlsCfg, cfg)
+ 				if err != nil {
++					tr.Close()
++					pktConn.Close()
+ 					return nil, err
+ 				}
+ 				context.AfterFunc(conn.Context(), func() { tr.Close(); pktConn.Close() })
+@@ -273,15 +331,8 @@ func createHTTPClient(dest net.Destination, streamSettings *internet.MemoryStrea
+ 		}
+ 	}
+ 
+-	client := &DefaultDialerClient{
+-		transportConfig: transportConfig,
+-		client: &http.Client{
+-			Transport: transport,
+-		},
+-		httpVersion:    httpVersion,
+-		uploadRawPool:  &sync.Pool{},
+-		dialUploadConn: dialContext,
+-	}
++	client.client = &http.Client{Transport: transport}
++	client.dialUploadConn = dialContext
+ 
+ 	return client
+ }
+@@ -291,6 +342,24 @@ func init() {
+ }
+ 
+ func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.MemoryStreamConfig) (stat.Connection, error) {
++	owner := streamSettings.Lifecycle()
++	if owner.IsClosed() {
++		return nil, internet.ErrTransportClosed
++	}
++	// Preserve the original detached caller lifetime, then restore cancellation
++	// for this connection and its owning outbound. HTTP must not detach it again.
++	ctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
++	stopOwner := context.AfterFunc(owner.Context(), cancel)
++	if owner.IsClosed() {
++		cancel()
++	}
++	succeeded := false
++	defer func() {
++		if !succeeded {
++			stopOwner()
++			cancel()
++		}
++	}()
+ 	tlsConfig := tls.ConfigFromStreamSettings(streamSettings)
+ 	realityConfig := reality.ConfigFromStreamSettings(streamSettings)
+ 
+@@ -327,7 +396,10 @@ func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.Me
+ 	requestURL.Path = transportConfiguration.GetNormalizedPath()
+ 	requestURL.RawQuery = transportConfiguration.GetNormalizedQuery()
+ 
+-	httpClient, xmuxClient := getHTTPClient(ctx, dest, streamSettings)
++	httpClient, xmuxClient, err := getHTTPClient(ctx, dest, streamSettings)
++	if err != nil {
++		return nil, err
++	}
+ 
+ 	mode := transportConfiguration.Mode
+ 	if mode == "" || mode == "auto" {
+@@ -351,15 +423,10 @@ func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.Me
+ 	httpClient2 := httpClient
+ 	xmuxClient2 := xmuxClient
+ 	if transportConfiguration.DownloadSettings != nil {
+-		globalDialerAccess.Lock()
+-		if streamSettings.DownloadSettings == nil {
+-			streamSettings.DownloadSettings = common.Must2(internet.ToMemoryStreamConfig(transportConfiguration.DownloadSettings))
+-			if streamSettings.SocketSettings != nil && streamSettings.SocketSettings.Penetrate {
+-				streamSettings.DownloadSettings.SocketSettings = streamSettings.SocketSettings
+-			}
++		memory2, err := getDownloadSettings(streamSettings, transportConfiguration)
++		if err != nil {
++			return nil, err
+ 		}
+-		globalDialerAccess.Unlock()
+-		memory2 := streamSettings.DownloadSettings
+ 		dest2 := *memory2.Destination // just panic
+ 		tlsConfig2 := tls.ConfigFromStreamSettings(memory2)
+ 		realityConfig2 := reality.ConfigFromStreamSettings(memory2)
+@@ -391,7 +458,10 @@ func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.Me
+ 		}
+ 		requestURL2.Path = config2.GetNormalizedPath()
+ 		requestURL2.RawQuery = config2.GetNormalizedQuery()
+-		httpClient2, xmuxClient2 = getHTTPClient(ctx, dest2, memory2)
++		httpClient2, xmuxClient2, err = getHTTPClient(ctx, dest2, memory2)
++		if err != nil {
++			return nil, err
++		}
+ 		errors.LogInfo(ctx, fmt.Sprintf("XHTTP is downloading from %s, mode %s, HTTP version %s, host %s", dest2, "stream-down", httpVersion2, requestURL2.Host))
+ 	}
+ 
+@@ -410,6 +480,8 @@ func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.Me
+ 			if closed.Add(1) > 1 {
+ 				return
+ 			}
++			stopOwner()
++			cancel()
+ 			if xmuxClient != nil {
+ 				xmuxClient.DoneRunning()
+ 			}
+@@ -418,8 +490,19 @@ func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.Me
+ 			}
+ 		},
+ 	}
++	defer func() {
++		if !succeeded {
++			conn.Close()
++		}
++	}()
++	finishConnection := func() (stat.Connection, error) {
++		if ctx.Err() != nil || owner.IsClosed() {
++			return nil, internet.ErrTransportClosed
++		}
++		succeeded = true
++		return stat.Connection(&conn), nil
++	}
+ 
+-	var err error
+ 	if mode == "stream-one" {
+ 		requestURL.Path = transportConfiguration.GetNormalizedPath()
+ 		if xmuxClient != nil {
+@@ -429,7 +512,7 @@ func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.Me
+ 		if err != nil { // browser dialer only
+ 			return nil, err
+ 		}
+-		return stat.Connection(&conn), nil
++		return finishConnection()
+ 	} else { // stream-down
+ 		if xmuxClient2 != nil {
+ 			xmuxClient2.LeftRequests.Add(-1)
+@@ -447,7 +530,7 @@ func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.Me
+ 		if err != nil { // browser dialer only
+ 			return nil, err
+ 		}
+-		return stat.Connection(&conn), nil
++		return finishConnection()
+ 	}
+ 
+ 	scMaxEachPostBytes := transportConfiguration.GetNormalizedScMaxEachPostBytes()
+@@ -463,6 +546,12 @@ func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.Me
+ 	// uploadWriter wrapper, exact size limits can be enforced
+ 	// uploadPipeReader, uploadPipeWriter := pipe.New(pipe.WithSizeLimit(maxUploadSize - 1))
+ 	uploadPipeReader, uploadPipeWriter := pipe.New(pipe.WithSizeLimit(max(0, maxUploadSize-buf.Size)))
++	reader.Close()
++	writer.Close()
++	stopUpload := context.AfterFunc(ctx, func() {
++		uploadPipeReader.Interrupt()
++		uploadPipeWriter.Interrupt()
++	})
+ 
+ 	conn.writer = uploadWriter{
+ 		uploadPipeWriter,
+@@ -470,6 +559,8 @@ func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.Me
+ 	}
+ 
+ 	go func() {
++		defer stopUpload()
++		defer uploadPipeReader.Interrupt()
+ 		var seq int64
+ 		var lastWrite time.Time
+ 
+@@ -504,14 +595,28 @@ func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.Me
+ 				seq += 1
+ 
+ 				if scMinPostsIntervalMs.From > 0 {
+-					time.Sleep(time.Duration(scMinPostsIntervalMs.rand())*time.Millisecond - time.Since(lastWrite))
++					delay := time.NewTimer(time.Duration(scMinPostsIntervalMs.rand())*time.Millisecond - time.Since(lastWrite))
++					select {
++					case <-delay.C:
++					case <-ctx.Done():
++						delay.Stop()
++						buf.ReleaseMulti(chunk)
++						buf.ReleaseMulti(remainder)
++						return
++					}
+ 				}
+ 
+ 				lastWrite = time.Now()
+ 
+ 				if dynamicXmuxClient != nil && (dynamicXmuxClient.LeftRequests.Add(-1) <= 0 ||
+ 					(dynamicXmuxClient.UnreusableAt != time.Time{} && lastWrite.After(dynamicXmuxClient.UnreusableAt))) {
+-					dynamicHTTPClient, dynamicXmuxClient = getHTTPClient(ctx, dest, streamSettings)
++					var err error
++					dynamicHTTPClient, dynamicXmuxClient, err = getHTTPClient(ctx, dest, streamSettings)
++					if err != nil {
++						buf.ReleaseMulti(chunk)
++						buf.ReleaseMulti(remainder)
++						return
++					}
+ 				}
+ 
+ 				go func(hClient DialerClient) {
+@@ -531,13 +636,43 @@ func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.Me
+ 				}(dynamicHTTPClient)
+ 
+ 				if _, ok := dynamicHTTPClient.(*DefaultDialerClient); ok {
+-					<-wroteRequest.Wait()
++					select {
++					case <-wroteRequest.Wait():
++					case <-ctx.Done():
++						buf.ReleaseMulti(remainder)
++						return
++					}
+ 				}
+ 			}
++			buf.ReleaseMulti(remainder)
+ 		}
+ 	}()
+ 
+-	return stat.Connection(&conn), nil
++	return finishConnection()
++}
++
++func getDownloadSettings(parent *internet.MemoryStreamConfig, config *Config) (*internet.MemoryStreamConfig, error) {
++	globalDialerAccess.Lock()
++	defer globalDialerAccess.Unlock()
++	if parent.Lifecycle().IsClosed() {
++		return nil, internet.ErrTransportClosed
++	}
++	child := parent.DownloadSettings
++	if child == nil {
++		var err error
++		child, err = internet.ToMemoryStreamConfig(config.DownloadSettings)
++		if err != nil {
++			return nil, err
++		}
++		if parent.SocketSettings != nil && parent.SocketSettings.Penetrate {
++			child.SocketSettings = parent.SocketSettings
++		}
++	}
++	if err := child.ShareTransportLifetime(parent); err != nil {
++		return nil, err
++	}
++	parent.DownloadSettings = child
++	return child, nil
+ }
+ 
+ // A wrapper around pipe that ensures the size limit is exactly honored.
+diff --git a/transport/internet/splithttp/lifecycle.go b/transport/internet/splithttp/lifecycle.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..edb7acd5a955e2901f411df2ebd48935ea0ab56d
+--- /dev/null
++++ b/transport/internet/splithttp/lifecycle.go
+@@ -0,0 +1,224 @@
++// ExVPN changes: per-client HTTP resources and cancellation, 2026-10-17.
++// This file is part of Xray-core and is licensed under the MPL-2.0.
++package splithttp
++
++import (
++	"context"
++	"errors"
++	"io"
++	"net"
++	"sync"
++	"syscall"
++
++	"github.com/apernet/quic-go"
++	"github.com/xtls/xray-core/transport/internet"
++)
++
++// clientResources owns sockets even when net/http detaches its dial context,
++// and an enumerable H1 upload pool. A retired client cannot publish a late dial.
++type clientResources struct {
++	mu       sync.Mutex
++	ctx      context.Context
++	cancel   context.CancelFunc
++	closed   bool
++	owned    map[io.Closer]struct{}
++	idleH1   []*H1Conn
++	pending  sync.WaitGroup
++	once     sync.Once
++	closeErr error
++}
++
++func newClientResources() *clientResources {
++	ctx, cancel := context.WithCancel(context.Background())
++	return &clientResources{ctx: ctx, cancel: cancel, owned: make(map[io.Closer]struct{})}
++}
++
++func (r *clientResources) begin() error {
++	r.mu.Lock()
++	defer r.mu.Unlock()
++	if r.closed {
++		return internet.ErrTransportClosed
++	}
++	r.pending.Add(1)
++	return nil
++}
++
++func (r *clientResources) context(parent context.Context) (context.Context, func()) {
++	ctx, cancel := context.WithCancel(parent)
++	stop := context.AfterFunc(r.ctx, cancel)
++	if r.ctx.Err() != nil {
++		cancel()
++	}
++	return ctx, func() { stop(); cancel() }
++}
++
++func (r *clientResources) add(c io.Closer) error {
++	r.mu.Lock()
++	if !r.closed {
++		r.owned[c] = struct{}{}
++		r.mu.Unlock()
++		return nil
++	}
++	r.mu.Unlock()
++	r.recordError(c.Close())
++	return internet.ErrTransportClosed
++}
++
++func (r *clientResources) recordError(err error) {
++	if err == nil || errors.Is(err, net.ErrClosed) {
++		return
++	}
++	r.mu.Lock()
++	r.closeErr = errors.Join(r.closeErr, err)
++	r.mu.Unlock()
++}
++
++func (r *clientResources) remove(c io.Closer) {
++	r.mu.Lock()
++	delete(r.owned, c)
++	r.mu.Unlock()
++}
++
++func (r *clientResources) trackConn(conn net.Conn) (net.Conn, error) {
++	c := &ownedHTTPConn{Conn: conn, owner: r}
++	if err := r.add(c); err != nil {
++		return nil, err
++	}
++	return c, nil
++}
++
++func (r *clientResources) trackPacket(conn net.PacketConn) (net.PacketConn, error) {
++	c := &ownedHTTPPacket{PacketConn: conn, owner: r}
++	if err := r.add(c); err != nil {
++		return nil, err
++	}
++	// quic-go selects UDP ancillary-data/ECN support through this optional
++	// interface. Preserve it without claiming that FakePacketConn supports OOB.
++	if oob, ok := conn.(quic.OOBCapablePacketConn); ok {
++		tracked := &ownedHTTPOOBPacket{ownedHTTPPacket: c, oob: oob}
++		if buffer, ok := conn.(interface{ SetWriteBuffer(int) error }); ok {
++			return &ownedHTTPBufferedOOBPacket{ownedHTTPOOBPacket: tracked, setWriteBuffer: buffer.SetWriteBuffer}, nil
++		}
++		return tracked, nil
++	}
++	return c, nil
++}
++
++func (r *clientResources) takeH1() (*H1Conn, error) {
++	r.mu.Lock()
++	defer r.mu.Unlock()
++	if r.closed {
++		return nil, internet.ErrTransportClosed
++	}
++	if len(r.idleH1) == 0 {
++		return nil, nil
++	}
++	last := len(r.idleH1) - 1
++	c := r.idleH1[last]
++	r.idleH1[last] = nil
++	r.idleH1 = r.idleH1[:last]
++	return c, nil
++}
++
++func (r *clientResources) putH1(c *H1Conn) error {
++	r.mu.Lock()
++	if !r.closed {
++		r.idleH1 = append(r.idleH1, c)
++		r.mu.Unlock()
++		return nil
++	}
++	r.mu.Unlock()
++	_ = c.Close()
++	return internet.ErrTransportClosed
++}
++
++func (r *clientResources) close(closeTransport func() error) error {
++	r.once.Do(func() {
++		r.mu.Lock()
++		r.closed = true
++		r.cancel()
++		owned := make([]io.Closer, 0, len(r.owned))
++		for c := range r.owned {
++			owned = append(owned, c)
++		}
++		r.idleH1 = nil
++		r.mu.Unlock()
++		// Let QUIC send its connection-close frame while the packet socket is
++		// still open. The owned registry then closes active and raw sockets.
++		r.recordError(closeTransport())
++		// Close outside the registry mutex: tracked Close removes its entry.
++		for _, c := range owned {
++			r.recordError(c.Close())
++		}
++		// begin and publication are gated by the same mutex. Late dial results
++		// close themselves before ending; no Add can race this Wait.
++		r.pending.Wait()
++	})
++	return r.closeErr
++}
++
++type ownedHTTPConn struct {
++	net.Conn
++	owner *clientResources
++	once  sync.Once
++	err   error
++}
++
++func (c *ownedHTTPConn) Close() error {
++	c.once.Do(func() {
++		c.err = c.Conn.Close()
++		if c.err == nil || errors.Is(c.err, net.ErrClosed) {
++			c.owner.remove(c)
++		}
++	})
++	return c.err
++}
++
++type ownedHTTPPacket struct {
++	net.PacketConn
++	owner *clientResources
++	once  sync.Once
++	err   error
++}
++
++func (c *ownedHTTPPacket) Close() error {
++	c.once.Do(func() {
++		c.err = c.PacketConn.Close()
++		if c.err == nil || errors.Is(c.err, net.ErrClosed) {
++			c.owner.remove(c)
++		}
++	})
++	return c.err
++}
++
++type ownedHTTPOOBPacket struct {
++	*ownedHTTPPacket
++	oob quic.OOBCapablePacketConn
++}
++
++var _ quic.OOBCapablePacketConn = (*ownedHTTPOOBPacket)(nil)
++
++func (c *ownedHTTPOOBPacket) SyscallConn() (syscall.RawConn, error) {
++	return c.oob.SyscallConn()
++}
++
++func (c *ownedHTTPOOBPacket) SetReadBuffer(size int) error {
++	return c.oob.SetReadBuffer(size)
++}
++
++func (c *ownedHTTPOOBPacket) ReadMsgUDP(b, oob []byte) (int, int, int, *net.UDPAddr, error) {
++	return c.oob.ReadMsgUDP(b, oob)
++}
++
++func (c *ownedHTTPOOBPacket) WriteMsgUDP(b, oob []byte, addr *net.UDPAddr) (int, int, error) {
++	return c.oob.WriteMsgUDP(b, oob, addr)
++}
++
++type ownedHTTPBufferedOOBPacket struct {
++	*ownedHTTPOOBPacket
++	setWriteBuffer func(int) error
++}
++
++func (c *ownedHTTPBufferedOOBPacket) SetWriteBuffer(size int) error {
++	return c.setWriteBuffer(size)
++}
+diff --git a/transport/internet/splithttp/lifecycle_test.go b/transport/internet/splithttp/lifecycle_test.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..de3f1f682c9523e09fe50683e62019f6b8bd079c
+--- /dev/null
++++ b/transport/internet/splithttp/lifecycle_test.go
+@@ -0,0 +1,883 @@
++// ExVPN modifications, Copyright 2026 ExVPN contributors.
++// SPDX-License-Identifier: MPL-2.0
++package splithttp
++
++import (
++	"bytes"
++	"context"
++	"crypto/ecdsa"
++	"crypto/elliptic"
++	"crypto/rand"
++	gotls "crypto/tls"
++	"crypto/x509"
++	"crypto/x509/pkix"
++	"encoding/pem"
++	"errors"
++	"io"
++	"math/big"
++	"net"
++	"net/http"
++	"net/http/httptest"
++	"strconv"
++	"sync"
++	"sync/atomic"
++	"syscall"
++	"testing"
++	"time"
++
++	"github.com/apernet/quic-go"
++	"github.com/apernet/quic-go/http3"
++	"github.com/xtls/xray-core/common/buf"
++	xnet "github.com/xtls/xray-core/common/net"
++	"github.com/xtls/xray-core/common/serial"
++	"github.com/xtls/xray-core/common/signal/done"
++	"github.com/xtls/xray-core/transport/internet"
++	"github.com/xtls/xray-core/transport/internet/stat"
++	xraytls "github.com/xtls/xray-core/transport/internet/tls"
++)
++
++func waitExVPN(t *testing.T, done <-chan struct{}, detail string) {
++	t.Helper()
++	select {
++	case <-done:
++	case <-time.After(3 * time.Second):
++		t.Fatal(detail)
++	}
++}
++
++func closeExVPN(t *testing.T, owner *internet.MemoryStreamConfig) {
++	t.Helper()
++	done := make(chan struct{})
++	var err error
++	go func() { err = owner.Close(); close(done) }()
++	waitExVPN(t, done, "owner close did not finish")
++	if err != nil {
++		t.Fatal(err)
++	}
++}
++
++func exVPNHTTPFixture(t *testing.T, version string, handler http.Handler) (xnet.Destination, *internet.MemoryStreamConfig, string) {
++	t.Helper()
++	settings := &internet.MemoryStreamConfig{ProtocolName: "splithttp", ProtocolSettings: &Config{Path: "/fixture", Mode: "packet-up"}}
++	scheme := "http"
++	var address string
++	if version == "1.1" {
++		server := httptest.NewServer(handler)
++		t.Cleanup(server.Close)
++		address = server.Listener.Addr().String()
++	} else {
++		scheme = "https"
++		certificate, privatePEM := exVPNTLSFixture(t)
++		keypair, err := gotls.X509KeyPair(certificate, privatePEM)
++		if err != nil {
++			t.Fatal(err)
++		}
++		settings.SecurityType = serial.GetMessageType(&xraytls.Config{})
++		alpn := "h2"
++		if version == "3" {
++			alpn = "h3"
++		}
++		settings.SecuritySettings = &xraytls.Config{Certificate: []*xraytls.Certificate{{Certificate: certificate, Usage: xraytls.Certificate_AUTHORITY_VERIFY}}, DisableSystemRoot: true, ServerName: "localhost", NextProtocol: []string{alpn}}
++		if version == "2" {
++			server := httptest.NewUnstartedServer(handler)
++			server.EnableHTTP2 = true
++			server.TLS = &gotls.Config{Certificates: []gotls.Certificate{keypair}, NextProtos: []string{"h2"}}
++			server.StartTLS()
++			t.Cleanup(server.Close)
++			address = server.Listener.Addr().String()
++		} else {
++			packet, err := net.ListenPacket("udp4", "127.0.0.1:0")
++			if err != nil {
++				t.Fatal(err)
++			}
++			server := &http3.Server{Handler: handler, TLSConfig: &gotls.Config{Certificates: []gotls.Certificate{keypair}, NextProtos: []string{"h3"}}}
++			go server.Serve(packet)
++			t.Cleanup(func() { server.Close(); packet.Close() })
++			address = packet.LocalAddr().String()
++			settings.QuicParams = &internet.QuicParams{DisableChromeParrot: true, DisableGSO: true, Congestion: "reno"}
++		}
++	}
++	_, port, err := net.SplitHostPort(address)
++	if err != nil {
++		t.Fatal(err)
++	}
++	portNumber, _ := strconv.Atoi(port)
++	return xnet.TCPDestination(xnet.LocalHostIP, xnet.Port(portNumber)), settings, scheme + "://localhost/fixture"
++}
++
++func exVPNTLSFixture(t *testing.T) ([]byte, []byte) {
++	t.Helper()
++	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
++	if err != nil {
++		t.Fatal(err)
++	}
++	template := &x509.Certificate{SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: "localhost"}, DNSNames: []string{"localhost"}, NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(time.Hour), IsCA: true, BasicConstraintsValid: true, KeyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}}
++	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
++	if err != nil {
++		t.Fatal(err)
++	}
++	private, err := x509.MarshalPKCS8PrivateKey(key)
++	if err != nil {
++		t.Fatal(err)
++	}
++	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: private})
++}
++
++func TestExVPNCloseCancelsStalledHTTP(t *testing.T) {
++	for _, version := range []string{"1.1", "2", "3"} {
++		for _, stage := range []string{"headers", "body"} {
++			t.Run(version+"/"+stage, func(t *testing.T) {
++				entered, cancelled := make(chan struct{}), make(chan struct{})
++				dest, settings, url := exVPNHTTPFixture(t, version, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++					if stage == "body" {
++						w.WriteHeader(http.StatusOK)
++						w.(http.Flusher).Flush()
++					}
++					close(entered)
++					<-r.Context().Done()
++					close(cancelled)
++				}))
++				t.Cleanup(func() { settings.Close() })
++				client, _, err := getHTTPClient(context.Background(), dest, settings)
++				if err != nil {
++					t.Fatal(err)
++				}
++				reader, _, _, err := client.OpenStream(context.Background(), url, "session", nil, false)
++				if err != nil {
++					t.Fatal(err)
++				}
++				waitExVPN(t, entered, "server did not receive stream request")
++				readDone := make(chan struct{})
++				var readErr error
++				go func() { _, readErr = reader.Read(make([]byte, 1)); close(readDone) }()
++				closeExVPN(t, settings)
++				waitExVPN(t, readDone, "body reader survived owner close")
++				waitExVPN(t, cancelled, "server request survived owner close")
++				if readErr == nil {
++					t.Fatal("closed stream read succeeded")
++				}
++				if _, _, err = getHTTPClient(context.Background(), dest, settings); !errors.Is(err, internet.ErrTransportClosed) {
++					t.Fatal("retired cache was resurrected")
++				}
++				resources := client.(*DefaultDialerClient).resources
++				resources.mu.Lock()
++				remaining := len(resources.owned) + len(resources.idleH1)
++				resources.mu.Unlock()
++				if remaining != 0 {
++					t.Fatal("socket/body registry was not emptied")
++				}
++			})
++		}
++	}
++}
++
++func exVPNPayload() buf.MultiBuffer {
++	b := buf.New()
++	b.Write([]byte("fixture"))
++	return buf.MultiBuffer{b}
++}
++
++func TestExVPNCloseCancelsRawH1AndIdlePool(t *testing.T) {
++	for _, stalled := range []bool{false, true} {
++		t.Run(strconv.FormatBool(stalled), func(t *testing.T) {
++			entered := make(chan struct{})
++			var once sync.Once
++			dest, settings, url := exVPNHTTPFixture(t, "1.1", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++				io.Copy(io.Discard, r.Body)
++				once.Do(func() { close(entered) })
++				if stalled {
++					<-r.Context().Done()
++					return
++				}
++				w.WriteHeader(http.StatusOK)
++			}))
++			t.Cleanup(func() { settings.Close() })
++			client, _, err := getHTTPClient(context.Background(), dest, settings)
++			if err != nil {
++				t.Fatal(err)
++			}
++			if err := client.PostPacket(context.Background(), url, "session", "0", exVPNPayload()); err != nil {
++				t.Fatal(err)
++			}
++			waitExVPN(t, entered, "server did not receive raw upload")
++			runtime := client.(*DefaultDialerClient).resources
++			runtime.mu.Lock()
++			idle, owned := len(runtime.idleH1), len(runtime.owned)
++			runtime.mu.Unlock()
++			if idle != 1 || owned != 1 {
++				t.Fatal("raw upload not owned while pooled")
++			}
++			var secondDone chan struct{}
++			var secondErr error
++			if stalled {
++				secondDone = make(chan struct{})
++				go func() {
++					secondErr = client.PostPacket(context.Background(), url, "session", "1", exVPNPayload())
++					close(secondDone)
++				}()
++			}
++			closeExVPN(t, settings)
++			if stalled {
++				waitExVPN(t, secondDone, "raw response read survived retirement")
++				if secondErr == nil {
++					t.Fatal("retired raw upload succeeded")
++				}
++			}
++			runtime.mu.Lock()
++			idle, owned = len(runtime.idleH1), len(runtime.owned)
++			runtime.mu.Unlock()
++			if idle != 0 || owned != 0 {
++				t.Fatal("raw pool survived owner close")
++			}
++			if err := client.PostPacket(context.Background(), url, "session", "2", exVPNPayload()); !errors.Is(err, internet.ErrTransportClosed) {
++				t.Fatal("retired client reused an upload socket")
++			}
++		})
++	}
++}
++
++func TestExVPNCloseCancelsStreamingAndPacketUploads(t *testing.T) {
++	for _, version := range []string{"2", "3"} {
++		for _, mode := range []string{"stream", "packet"} {
++			t.Run(version+"/"+mode, func(t *testing.T) {
++				entered, cancelled := make(chan struct{}), make(chan struct{})
++				dest, settings, url := exVPNHTTPFixture(t, version, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++					if mode == "packet" {
++						io.Copy(io.Discard, r.Body)
++					}
++					close(entered)
++					<-r.Context().Done()
++					close(cancelled)
++				}))
++				t.Cleanup(func() { settings.Close() })
++				client, _, err := getHTTPClient(context.Background(), dest, settings)
++				if err != nil {
++					t.Fatal(err)
++				}
++				var packetDone chan struct{}
++				var packetErr error
++				var streamWriter *io.PipeWriter
++				if mode == "packet" {
++					packetDone = make(chan struct{})
++					go func() {
++						packetErr = client.PostPacket(context.Background(), url, "session", "0", exVPNPayload())
++						close(packetDone)
++					}()
++				} else {
++					reader, writer := io.Pipe()
++					streamWriter = writer
++					defer writer.Close()
++					if _, _, _, err := client.OpenStream(context.Background(), url, "session", reader, true); err != nil {
++						t.Fatal(err)
++					}
++				}
++				waitExVPN(t, entered, "upload did not reach server")
++				closeExVPN(t, settings)
++				waitExVPN(t, cancelled, "upload request remained alive after Close")
++				if mode == "packet" {
++					waitExVPN(t, packetDone, "PostPacket remained blocked")
++					if packetErr == nil {
++						t.Fatal("stalled packet upload reported success")
++					}
++				} else if _, err := streamWriter.Write([]byte("after retirement")); err == nil {
++					t.Fatal("stream upload body survived retirement")
++				}
++			})
++		}
++	}
++}
++
++type exVPNXmuxFixture struct{ closed atomic.Int32 }
++
++func (c *exVPNXmuxFixture) IsClosed() bool { return c.closed.Load() != 0 }
++func (c *exVPNXmuxFixture) Close() error   { c.closed.Add(1); return nil }
++
++func TestExVPNManagerRetiresRemovedActiveClients(t *testing.T) {
++	manager := NewXmuxManager(&XmuxConfig{CMaxReuseTimes: &RangeConfig{From: 1, To: 1}}, func() XmuxConn { return &exVPNXmuxFixture{} })
++	first := manager.GetXmuxClient(context.Background())
++	first.AddRunning()
++	second := manager.GetXmuxClient(context.Background())
++	second.AddRunning()
++	if first == second || first.XmuxConn.IsClosed() {
++		t.Fatal("active reusable rotation was not exercised")
++	}
++	if err := manager.Close(); err != nil {
++		t.Fatal(err)
++	}
++	for _, c := range []*XmuxClient{first, second} {
++		c.DoneRunning()
++		if c.XmuxConn.(*exVPNXmuxFixture).closed.Load() != 1 {
++			t.Fatal("active retired client not closed exactly once")
++		}
++	}
++	if manager.GetXmuxClient(context.Background()) != nil {
++		t.Fatal("manager recreated a client after close")
++	}
++}
++
++type exVPNFailedCloseConn struct {
++	net.Conn
++	err error
++}
++
++func (c *exVPNFailedCloseConn) Close() error { c.Conn.Close(); return c.err }
++
++type exVPNPartialDialer struct {
++	conn net.Conn
++	err  error
++}
++
++func (d *exVPNPartialDialer) Dial(context.Context, xnet.Address, xnet.Destination, *internet.SocketConfig) (net.Conn, error) {
++	return d.conn, d.err
++}
++func (*exVPNPartialDialer) DestIpAddress() xnet.IP { return nil }
++
++type exVPNFailedClosePacket struct {
++	net.PacketConn
++	err error
++}
++
++func (c *exVPNFailedClosePacket) Close() error { c.PacketConn.Close(); return c.err }
++
++func TestExVPNPartialTCPAndUDPDialResultsAreClosedAndCleanupErrorsRetained(t *testing.T) {
++	for _, network := range []string{"tcp", "udp"} {
++		for _, closeFails := range []bool{false, true} {
++			t.Run(network+"/"+strconv.FormatBool(closeFails), func(t *testing.T) {
++				var closeError error
++				if closeFails {
++					closeError = errors.New("synthetic partial-dial close failure")
++				}
++				dialError := errors.New("synthetic partial dial failure")
++				var partial net.Conn
++				var assertClosed func()
++				if network == "tcp" {
++					local, peer := net.Pipe()
++					defer local.Close()
++					defer peer.Close()
++					partial = &exVPNFailedCloseConn{Conn: local, err: closeError}
++					assertClosed = func() {
++						peer.SetReadDeadline(time.Now().Add(time.Second))
++						if _, err := peer.Read(make([]byte, 1)); err != io.EOF {
++							t.Fatal("partial TCP socket remained open")
++						}
++					}
++				} else {
++					packet, err := net.ListenPacket("udp4", "127.0.0.1:0")
++					if err != nil {
++						t.Fatal(err)
++					}
++					defer packet.Close()
++					partial = &xnet.PacketConnWrapper{PacketConn: &exVPNFailedClosePacket{PacketConn: packet, err: closeError}, Dest: &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 1}}
++					assertClosed = func() {
++						packet.SetReadDeadline(time.Now().Add(time.Second))
++						if _, _, err := packet.ReadFrom(make([]byte, 1)); !errors.Is(err, net.ErrClosed) {
++							t.Fatal("partial UDP socket remained open")
++						}
++					}
++				}
++				internet.UseAlternativeSystemDialer(&exVPNPartialDialer{conn: partial, err: dialError})
++				defer internet.UseAlternativeSystemDialer(nil)
++				settings := &internet.MemoryStreamConfig{ProtocolName: "splithttp", ProtocolSettings: &Config{Path: "/fixture"}}
++				if network == "udp" {
++					settings.SecurityType = serial.GetMessageType(&xraytls.Config{})
++					settings.SecuritySettings = &xraytls.Config{ServerName: "localhost", NextProtocol: []string{"h3"}}
++				}
++				client, _, err := getHTTPClient(context.Background(), xnet.TCPDestination(xnet.LocalHostIP, 1), settings)
++				if err != nil {
++					t.Fatal(err)
++				}
++				defer settings.Close()
++				native := client.(*DefaultDialerClient)
++				if network == "tcp" {
++					conn, err := native.dialUploadConn(context.Background())
++					if conn != nil || !errors.Is(err, dialError) {
++						t.Fatal("partial TCP dial was incorrectly published")
++					}
++				} else {
++					conn, err := native.client.Transport.(*http3.Transport).Dial(context.Background(), "localhost:1", &gotls.Config{}, &quic.Config{})
++					if conn != nil || !errors.Is(err, dialError) {
++						t.Fatal("partial UDP dial was incorrectly published")
++					}
++				}
++				assertClosed()
++				for range 2 {
++					if err := settings.Close(); !errors.Is(err, closeError) {
++						t.Fatal("retirement lost the partial-dial cleanup result")
++					}
++				}
++			})
++		}
++	}
++}
++
++func TestExVPNTrackedUDPPreservesOOBAndClosesActualSocket(t *testing.T) {
++	local, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
++	if err != nil {
++		t.Fatal(err)
++	}
++	defer local.Close()
++	peer, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
++	if err != nil {
++		t.Fatal(err)
++	}
++	defer peer.Close()
++	resources := newClientResources()
++	defer resources.close(func() error { return nil })
++	tracked, err := resources.trackPacket(local)
++	if err != nil {
++		t.Fatal(err)
++	}
++	oob, ok := tracked.(quic.OOBCapablePacketConn)
++	if !ok {
++		t.Fatal("tracking hid the original UDP OOB capability")
++	}
++	raw, err := oob.SyscallConn()
++	if err != nil {
++		t.Fatal(err)
++	}
++	called := false
++	if err := raw.Control(func(uintptr) { called = true }); err != nil || !called {
++		t.Fatal("tracked socket did not expose its live syscall handle")
++	}
++	if err := oob.SetReadBuffer(32768); err != nil {
++		t.Fatal(err)
++	}
++	writeBuffer, ok := tracked.(interface{ SetWriteBuffer(int) error })
++	if !ok || writeBuffer.SetWriteBuffer(32768) != nil {
++		t.Fatal("tracking hid the original UDP send-buffer capability")
++	}
++	tracked.SetDeadline(time.Now().Add(3 * time.Second))
++	peer.SetDeadline(time.Now().Add(3 * time.Second))
++	payload := []byte("synthetic-udp-lifecycle")
++	// Assert actual delivery below. The pinned Go Windows WSASendMsg path can
++	// report zero completion bytes even after delivering the whole datagram.
++	if _, _, err := oob.WriteMsgUDP(payload, nil, peer.LocalAddr().(*net.UDPAddr)); err != nil {
++		t.Fatal("tracked WriteMsgUDP failed")
++	}
++	buffer := make([]byte, 128)
++	n, _, _, source, err := peer.ReadMsgUDP(buffer, nil)
++	if err != nil || !bytes.Equal(buffer[:n], payload) || source.Port != local.LocalAddr().(*net.UDPAddr).Port {
++		t.Fatal("peer did not receive the tracked UDP datagram")
++	}
++	if _, _, err := peer.WriteMsgUDP(payload, nil, source); err != nil {
++		t.Fatal(err)
++	}
++	n, _, _, source, err = oob.ReadMsgUDP(buffer, nil)
++	if err != nil || !bytes.Equal(buffer[:n], payload) || source.Port != peer.LocalAddr().(*net.UDPAddr).Port {
++		t.Fatal("tracked ReadMsgUDP did not receive the peer datagram")
++	}
++	if err := resources.close(func() error { return nil }); err != nil {
++		t.Fatal(err)
++	}
++	if _, _, _, _, err := oob.ReadMsgUDP(buffer, nil); !errors.Is(err, net.ErrClosed) {
++		t.Fatal("retirement left the underlying OOB reader open")
++	}
++	if _, _, err := oob.WriteMsgUDP(payload, nil, peer.LocalAddr().(*net.UDPAddr)); !errors.Is(err, net.ErrClosed) {
++		t.Fatal("retirement left the underlying OOB writer open")
++	}
++	resources.mu.Lock()
++	remaining := len(resources.owned)
++	resources.mu.Unlock()
++	if remaining != 0 {
++		t.Fatal("OOB wrapper did not relinquish its owned socket")
++	}
++}
++
++type exVPNOOBOnlyPacket struct{ quic.OOBCapablePacketConn }
++
++func TestExVPNTrackedPacketDoesNotInventOptionalCapabilities(t *testing.T) {
++	local, peer := net.Pipe()
++	defer peer.Close()
++	resources := newClientResources()
++	defer resources.close(func() error { return nil })
++	tracked, err := resources.trackPacket(&internet.FakePacketConn{Conn: local})
++	if err != nil {
++		t.Fatal(err)
++	}
++	if _, ok := tracked.(quic.OOBCapablePacketConn); ok {
++		t.Fatal("FakePacketConn incorrectly gained OOB support")
++	}
++	if _, ok := tracked.(interface {
++		SyscallConn() (syscall.RawConn, error)
++	}); ok {
++		t.Fatal("FakePacketConn incorrectly gained a raw socket handle")
++	}
++	udp, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
++	if err != nil {
++		t.Fatal(err)
++	}
++	defer udp.Close()
++	tracked, err = resources.trackPacket(&exVPNOOBOnlyPacket{OOBCapablePacketConn: udp})
++	if err != nil {
++		t.Fatal(err)
++	}
++	if _, ok := tracked.(quic.OOBCapablePacketConn); !ok {
++		t.Fatal("OOB-only custom socket lost its original capability")
++	}
++	if _, ok := tracked.(interface{ SetWriteBuffer(int) error }); ok {
++		t.Fatal("OOB-only custom socket incorrectly gained write-buffer control")
++	}
++}
++
++func TestExVPNFailedSocketCloseIsRetainedAndReported(t *testing.T) {
++	resources := newClientResources()
++	local, peer := net.Pipe()
++	defer peer.Close()
++	want := errors.New("synthetic close failure")
++	conn, err := resources.trackConn(&exVPNFailedCloseConn{Conn: local, err: want})
++	if err != nil {
++		t.Fatal(err)
++	}
++	if err := conn.Close(); !errors.Is(err, want) {
++		t.Fatal("close error lost")
++	}
++	resources.mu.Lock()
++	retained := len(resources.owned)
++	resources.mu.Unlock()
++	if retained != 1 {
++		t.Fatal("failed-close socket ownership was forgotten")
++	}
++	for range 2 {
++		if err := resources.close(func() error { return nil }); !errors.Is(err, want) {
++			t.Fatal("retirement lost a prior socket close failure")
++		}
++	}
++}
++
++type exVPNBlockingBody struct {
++	entered chan struct{}
++	release chan struct{}
++	err     error
++	once    sync.Once
++	calls   atomic.Int32
++}
++
++func (b *exVPNBlockingBody) Read([]byte) (int, error) { return 0, io.EOF }
++
++func (b *exVPNBlockingBody) Close() error {
++	b.calls.Add(1)
++	b.once.Do(func() { close(b.entered) })
++	<-b.release
++	return b.err
++}
++
++func TestExVPNBodyCloseJoinsConcurrentRetirementAndRetainsErrors(t *testing.T) {
++	for _, fail := range []bool{false, true} {
++		t.Run(strconv.FormatBool(fail), func(t *testing.T) {
++			resources := newClientResources()
++			body := &exVPNBlockingBody{entered: make(chan struct{}), release: make(chan struct{})}
++			var release sync.Once
++			defer release.Do(func() { close(body.release) })
++			if fail {
++				body.err = errors.New("synthetic response close failure")
++			}
++			cancelled := make(chan struct{})
++			reader := &WaitReadCloser{wait: done.New(), owner: resources, onClose: func() error { close(cancelled); return nil }}
++			if err := resources.add(reader); err != nil {
++				t.Fatal(err)
++			}
++			reader.Set(body)
++			first, second, retirement := make(chan error, 1), make(chan error, 1), make(chan error, 1)
++			go func() { first <- reader.Close() }()
++			waitExVPN(t, body.entered, "response body close not entered")
++			waitExVPN(t, cancelled, "request was not cancelled before body close")
++			resources.mu.Lock()
++			retained := len(resources.owned)
++			resources.mu.Unlock()
++			if retained != 1 {
++				t.Fatal("pending body close was forgotten before it completed")
++			}
++			retiring := make(chan struct{})
++			go func() { retirement <- resources.close(func() error { close(retiring); return nil }) }()
++			waitExVPN(t, retiring, "retirement did not start")
++			go func() { second <- reader.Close() }()
++			select {
++			case <-second:
++				t.Fatal("concurrent body Close returned before cleanup completed")
++			case <-retirement:
++				t.Fatal("retirement returned before body cleanup completed")
++			case <-time.After(20 * time.Millisecond):
++			}
++			release.Do(func() { close(body.release) })
++			for _, result := range []<-chan error{first, second, retirement} {
++				select {
++				case err := <-result:
++					if !errors.Is(err, body.err) {
++						t.Fatal("body cleanup result was not preserved")
++					}
++				case <-time.After(3 * time.Second):
++					t.Fatal("body cleanup did not join")
++				}
++			}
++			if body.calls.Load() != 1 {
++				t.Fatal("response body was closed more than once")
++			}
++			if err := resources.close(func() error { return nil }); !errors.Is(err, body.err) {
++				t.Fatal("repeat retirement changed the body cleanup result")
++			}
++		})
++	}
++}
++
++func TestExVPNLateResponseBodyCloseErrorReachesRetirement(t *testing.T) {
++	resources := newClientResources()
++	if err := resources.begin(); err != nil {
++		t.Fatal(err)
++	}
++	reader := &WaitReadCloser{wait: done.New(), owner: resources}
++	if err := resources.add(reader); err != nil {
++		t.Fatal(err)
++	}
++	if err := reader.Close(); err != nil {
++		t.Fatal(err)
++	}
++	want := errors.New("synthetic late response close failure")
++	body := &exVPNBlockingBody{entered: make(chan struct{}), release: make(chan struct{}), err: want}
++	var release sync.Once
++	defer release.Do(func() { close(body.release) })
++	go func() { reader.Set(body); resources.pending.Done() }()
++	waitExVPN(t, body.entered, "late response body was not closed")
++	retirement := make(chan error, 1)
++	go func() { retirement <- resources.close(func() error { return nil }) }()
++	select {
++	case <-retirement:
++		t.Fatal("retirement did not join late response cleanup")
++	case <-time.After(20 * time.Millisecond):
++	}
++	release.Do(func() { close(body.release) })
++	select {
++	case err := <-retirement:
++		if !errors.Is(err, want) {
++			t.Fatal("late response body cleanup failure was lost")
++		}
++	case <-time.After(3 * time.Second):
++		t.Fatal("late response body cleanup did not finish")
++	}
++}
++
++func TestExVPNLateSocketIsClosedBeforeRetirementReturns(t *testing.T) {
++	runtime := newClientResources()
++	if err := runtime.begin(); err != nil {
++		t.Fatal(err)
++	}
++	ctx, finish := runtime.context(context.Background())
++	defer finish()
++	local, peer := net.Pipe()
++	defer peer.Close()
++	published := make(chan error, 1)
++	go func() {
++		<-ctx.Done()
++		_, err := runtime.trackConn(local)
++		published <- err
++		runtime.pending.Done()
++	}()
++	if err := runtime.close(func() error { return nil }); err != nil {
++		t.Fatal(err)
++	}
++	if !errors.Is(<-published, internet.ErrTransportClosed) {
++		t.Fatal("late socket was published")
++	}
++	if _, err := peer.Read(make([]byte, 1)); err != io.EOF {
++		t.Fatal("late socket is still open")
++	}
++}
++
++func exVPNEchoFixture(t *testing.T) xnet.Destination {
++	t.Helper()
++	reserve, err := net.Listen("tcp4", "127.0.0.1:0")
++	if err != nil {
++		t.Fatal(err)
++	}
++	port := xnet.Port(reserve.Addr().(*net.TCPAddr).Port)
++	reserve.Close()
++	listener, err := ListenXH(context.Background(), xnet.LocalHostIP, port, &internet.MemoryStreamConfig{ProtocolName: "splithttp", ProtocolSettings: &Config{Path: "/fixture"}}, func(conn stat.Connection) {
++		go func() { defer conn.Close(); io.Copy(conn, conn) }()
++	})
++	if err != nil {
++		t.Fatal(err)
++	}
++	t.Cleanup(func() { listener.Close() })
++	return xnet.TCPDestination(xnet.LocalHostIP, port)
++}
++
++func exVPNExchange(t *testing.T, conn net.Conn) {
++	t.Helper()
++	done := make(chan struct{})
++	var err error
++	go func() {
++		data := []byte("lifetime-fixture")
++		if _, err = conn.Write(data); err == nil {
++			response := make([]byte, len(data))
++			_, err = io.ReadFull(conn, response)
++			if err == nil && !bytes.Equal(data, response) {
++				err = errors.New("payload mismatch")
++			}
++		}
++		close(done)
++	}()
++	waitExVPN(t, done, "loopback payload stalled")
++	if err != nil {
++		t.Fatal(err)
++	}
++}
++
++func TestExVPNRepeatedOwnersDoNotRetainCachesOrDisruptOthers(t *testing.T) {
++	dest := exVPNEchoFixture(t)
++	newSettings := func() *internet.MemoryStreamConfig {
++		return &internet.MemoryStreamConfig{ProtocolName: "splithttp", ProtocolSettings: &Config{Path: "/fixture", Xmux: &XmuxConfig{HMaxRequestTimes: &RangeConfig{From: 1, To: 1}}}}
++	}
++	other := newSettings()
++	otherConn, err := Dial(context.Background(), dest, other)
++	if err != nil {
++		t.Fatal(err)
++	}
++	t.Cleanup(func() { otherConn.Close(); other.Close() })
++	globalDialerAccess.Lock()
++	baseline := len(globalDialerMap)
++	globalDialerAccess.Unlock()
++	for range 20 {
++		settings := newSettings()
++		conn, err := Dial(context.Background(), dest, settings)
++		if err != nil {
++			t.Fatal(err)
++		}
++		exVPNExchange(t, conn)
++		closeExVPN(t, settings)
++		conn.Close()
++		if _, err := Dial(context.Background(), dest, settings); !errors.Is(err, internet.ErrTransportClosed) {
++			t.Fatal("retired Dial was accepted")
++		}
++		exVPNExchange(t, otherConn)
++		globalDialerAccess.Lock()
++		count := len(globalDialerMap)
++		globalDialerAccess.Unlock()
++		if count != baseline {
++			t.Fatal("per-owner cache entries accumulated")
++		}
++	}
++}
++
++func TestExVPNDownloadSettingsShareOwnerWithoutInitializationRaces(t *testing.T) {
++	dest := exVPNEchoFixture(t)
++	download := &internet.StreamConfig{Address: xnet.NewIPOrDomain(dest.Address), Port: uint32(dest.Port), ProtocolName: "splithttp", TransportSettings: []*internet.TransportConfig{{ProtocolName: "splithttp", Settings: serial.ToTypedMessage(&Config{Path: "/fixture"})}}}
++	config := &Config{Path: "/fixture", DownloadSettings: download}
++	parent := &internet.MemoryStreamConfig{ProtocolName: "splithttp", ProtocolSettings: config}
++	t.Cleanup(func() { parent.Close() })
++	children := make(chan *internet.MemoryStreamConfig, 32)
++	var group sync.WaitGroup
++	for range 32 {
++		group.Add(1)
++		go func() { defer group.Done(); child, _ := getDownloadSettings(parent, config); children <- child }()
++	}
++	group.Wait()
++	close(children)
++	var first *internet.MemoryStreamConfig
++	for child := range children {
++		if child == nil || child.Lifecycle() != parent.Lifecycle() {
++			t.Fatal("derived download owner diverged")
++		}
++		if first == nil {
++			first = child
++		}
++		if child != first {
++			t.Fatal("download config was published twice")
++		}
++	}
++	conn, err := Dial(context.Background(), dest, parent)
++	if err != nil {
++		t.Fatal(err)
++	}
++	exVPNExchange(t, conn)
++	closeExVPN(t, parent)
++	conn.Close()
++	if _, _, err = getHTTPClient(context.Background(), dest, first); !errors.Is(err, internet.ErrTransportClosed) {
++		t.Fatal("download cache resurrected retired parent")
++	}
++	globalDialerAccess.Lock()
++	defer globalDialerAccess.Unlock()
++	for key := range globalDialerMap {
++		if key.MemoryStreamConfig == parent || key.MemoryStreamConfig == first {
++			t.Fatal("main/download entry survived owner close")
++		}
++	}
++}
++
++func TestExVPNIdleHTTP2AndHTTP3SocketsClose(t *testing.T) {
++	for _, version := range []string{"2", "3"} {
++		t.Run(version, func(t *testing.T) {
++			dest, settings, url := exVPNHTTPFixture(t, version, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("fixture")) }))
++			t.Cleanup(func() { settings.Close() })
++			client, _, err := getHTTPClient(context.Background(), dest, settings)
++			if err != nil {
++				t.Fatal(err)
++			}
++			reader, _, _, err := client.OpenStream(context.Background(), url, "session", nil, false)
++			if err != nil {
++				t.Fatal(err)
++			}
++			payload, err := io.ReadAll(reader)
++			reader.Close()
++			if err != nil || string(payload) != "fixture" {
++				t.Fatal("HTTP exchange failed")
++			}
++			resources := client.(*DefaultDialerClient).resources
++			resources.mu.Lock()
++			idleSockets := len(resources.owned)
++			resources.mu.Unlock()
++			if idleSockets == 0 {
++				t.Fatal("idle pooled socket was not exercised")
++			}
++			closeExVPN(t, settings)
++			resources.mu.Lock()
++			remaining := len(resources.owned)
++			resources.mu.Unlock()
++			if remaining != 0 {
++				t.Fatal("idle HTTP socket remained owned after successful close")
++			}
++		})
++	}
++}
++
++func TestExVPNConcurrentDialCloseCannotResurrectOwner(t *testing.T) {
++	entered := make(chan struct{}, 160)
++	dest, template, _ := exVPNHTTPFixture(t, "1.1", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		w.WriteHeader(http.StatusOK)
++		w.(http.Flusher).Flush()
++		entered <- struct{}{}
++		<-r.Context().Done()
++	}))
++	for range 20 {
++		for len(entered) > 0 {
++			<-entered
++		}
++		settings := &internet.MemoryStreamConfig{ProtocolName: "splithttp", ProtocolSettings: template.ProtocolSettings}
++		start, release, joined := make(chan struct{}), make(chan struct{}), make(chan struct{})
++		var group sync.WaitGroup
++		for range 8 {
++			group.Add(1)
++			go func() {
++				defer group.Done()
++				<-start
++				conn, _ := Dial(context.Background(), dest, settings)
++				if conn != nil {
++					<-release
++					conn.Close()
++				}
++			}()
++		}
++		close(start)
++		waitExVPN(t, entered, "no HTTP request raced with Close")
++		closeExVPN(t, settings)
++		close(release)
++		go func() { group.Wait(); close(joined) }()
++		waitExVPN(t, joined, "concurrent Dial did not finish after Close")
++		globalDialerAccess.Lock()
++		for key := range globalDialerMap {
++			if key.MemoryStreamConfig == settings {
++				globalDialerAccess.Unlock()
++				t.Fatal("concurrent cache publication resurrected a retired owner")
++			}
++		}
++		globalDialerAccess.Unlock()
++	}
++}
+diff --git a/transport/internet/splithttp/mux.go b/transport/internet/splithttp/mux.go
+index 4897ace45f1c0a703b6d609be3ec62f4511955e6..c8499fa169d102c01cbcb486089b633dcc4a203d 100644
+--- a/transport/internet/splithttp/mux.go
++++ b/transport/internet/splithttp/mux.go
+@@ -1,15 +1,20 @@
++// ExVPN changes: enumerate and retire active as well as reusable clients, 2026-10-17.
++// Upstream file remains licensed under the MPL-2.0.
+ package splithttp
+ 
+ import (
+ 	"context"
+ 	"crypto/rand"
++	stderrors "errors"
+ 	"math"
+ 	"math/big"
++	"sync"
+ 	"sync/atomic"
+ 	"time"
+ 
+ 	"github.com/xtls/xray-core/common"
+ 	"github.com/xtls/xray-core/common/errors"
++	"google.golang.org/protobuf/proto"
+ )
+ 
+ type XmuxConn interface {
+@@ -23,6 +28,9 @@ type XmuxClient struct {
+ 	LeftRequests atomic.Int32
+ 	UnreusableAt time.Time
+ 	NotUsed      atomic.Bool
++	owner        *XmuxManager
++	closeOnce    sync.Once
++	closeErr     error
+ }
+ 
+ func (c *XmuxClient) AddRunning() {
+@@ -37,25 +45,46 @@ func (c *XmuxClient) DoneRunning() {
+ // close the XmuxConn if it is not used and has no running requests
+ func (c *XmuxClient) maybeClose() {
+ 	if c.NotUsed.Load() && c.Running.Load() <= 0 {
+-		common.Close(c.XmuxConn)
++		err := c.close()
++		if c.owner != nil && err == nil {
++			c.owner.mu.Lock()
++			delete(c.owner.owned, c)
++			c.owner.mu.Unlock()
++		}
+ 	}
+ }
+ 
++func (c *XmuxClient) close() error {
++	c.closeOnce.Do(func() { c.closeErr = common.Close(c.XmuxConn) })
++	return c.closeErr
++}
++
+ type XmuxManager struct {
+-	xmuxConfig  XmuxConfig
++	mu          sync.Mutex
++	closed      bool
++	closeOnce   sync.Once
++	closeErr    error
++	xmuxConfig  *XmuxConfig
+ 	concurrency int32
+ 	connections int32
+ 	newConnFunc func() XmuxConn
+ 	xmuxClients []*XmuxClient
++	owned       map[*XmuxClient]struct{}
+ }
+ 
+-func NewXmuxManager(xmuxConfig XmuxConfig, newConnFunc func() XmuxConn) *XmuxManager {
++func NewXmuxManager(xmuxConfig *XmuxConfig, newConnFunc func() XmuxConn) *XmuxManager {
++	if xmuxConfig == nil {
++		xmuxConfig = &XmuxConfig{}
++	} else {
++		xmuxConfig = proto.Clone(xmuxConfig).(*XmuxConfig)
++	}
+ 	return &XmuxManager{
+ 		xmuxConfig:  xmuxConfig,
+ 		concurrency: xmuxConfig.GetNormalizedMaxConcurrency().rand(),
+ 		connections: xmuxConfig.GetNormalizedMaxConnections().rand(),
+ 		newConnFunc: newConnFunc,
+ 		xmuxClients: make([]*XmuxClient, 0),
++		owned:       make(map[*XmuxClient]struct{}),
+ 	}
+ }
+ 
+@@ -63,6 +92,7 @@ func (m *XmuxManager) newXmuxClient() *XmuxClient {
+ 	xmuxClient := &XmuxClient{
+ 		XmuxConn:  m.newConnFunc(),
+ 		leftUsage: -1,
++		owner:     m,
+ 	}
+ 	if x := m.xmuxConfig.GetNormalizedCMaxReuseTimes().rand(); x > 0 {
+ 		xmuxClient.leftUsage = x - 1
+@@ -75,10 +105,22 @@ func (m *XmuxManager) newXmuxClient() *XmuxClient {
+ 		xmuxClient.UnreusableAt = time.Now().Add(time.Duration(x) * time.Second)
+ 	}
+ 	m.xmuxClients = append(m.xmuxClients, xmuxClient)
++	m.owned[xmuxClient] = struct{}{}
+ 	return xmuxClient
+ }
+ 
+-func (m *XmuxManager) GetXmuxClient(ctx context.Context) *XmuxClient { // when locking
++func (m *XmuxManager) GetXmuxClient(ctx context.Context) *XmuxClient {
++	m.mu.Lock()
++	var retired []*XmuxClient
++	defer func() {
++		m.mu.Unlock()
++		for _, client := range retired {
++			client.maybeClose()
++		}
++	}()
++	if m.closed {
++		return nil
++	}
+ 	for i := 0; i < len(m.xmuxClients); {
+ 		xmuxClient := m.xmuxClients[i]
+ 		if xmuxClient.XmuxConn.IsClosed() ||
+@@ -91,7 +133,7 @@ func (m *XmuxManager) GetXmuxClient(ctx context.Context) *XmuxClient { // when l
+ 				", LeftRequests = ", xmuxClient.LeftRequests.Load(),
+ 				", UnreusableAt = ", xmuxClient.UnreusableAt)
+ 			xmuxClient.NotUsed.Store(true)
+-			xmuxClient.maybeClose()
++			retired = append(retired, xmuxClient)
+ 			m.xmuxClients = append(m.xmuxClients[:i], m.xmuxClients[i+1:]...)
+ 		} else {
+ 			i++
+@@ -131,3 +173,25 @@ func (m *XmuxManager) GetXmuxClient(ctx context.Context) *XmuxClient { // when l
+ 	}
+ 	return xmuxClient
+ }
++
++// Close forcibly retires every client owned by this manager, including clients
++// removed from the reuse list while an existing stream was still active.
++func (m *XmuxManager) Close() error {
++	m.closeOnce.Do(func() {
++		m.mu.Lock()
++		m.closed = true
++		owned := make([]*XmuxClient, 0, len(m.owned))
++		for client := range m.owned {
++			owned = append(owned, client)
++		}
++		m.owned = nil
++		m.xmuxClients = nil
++		m.newConnFunc = nil
++		m.mu.Unlock()
++		for _, client := range owned {
++			client.NotUsed.Store(true)
++			m.closeErr = stderrors.Join(m.closeErr, client.close())
++		}
++	})
++	return m.closeErr
++}
+diff --git a/transport/internet/splithttp/mux_test.go b/transport/internet/splithttp/mux_test.go
+index 2f5b3520e9c304d55977bbee8ab3f5175b169f42..b532a0bdc99c5716c581336035713986c9a815a6 100644
+--- a/transport/internet/splithttp/mux_test.go
++++ b/transport/internet/splithttp/mux_test.go
+@@ -1,3 +1,5 @@
++// ExVPN changes: pass protobuf configuration without copying its mutex, 2026-10-17.
++// Upstream file remains licensed under the MPL-2.0.
+ package splithttp_test
+ 
+ import (
+@@ -18,7 +20,7 @@ func TestMaxConnections(t *testing.T) {
+ 		MaxConnections: &RangeConfig{From: 4, To: 4},
+ 	}
+ 
+-	xmuxManager := NewXmuxManager(xmuxConfig, func() XmuxConn {
++	xmuxManager := NewXmuxManager(&xmuxConfig, func() XmuxConn {
+ 		return &fakeRoundTripper{}
+ 	})
+ 
+@@ -37,7 +39,7 @@ func TestCMaxReuseTimes(t *testing.T) {
+ 		CMaxReuseTimes: &RangeConfig{From: 2, To: 2},
+ 	}
+ 
+-	xmuxManager := NewXmuxManager(xmuxConfig, func() XmuxConn {
++	xmuxManager := NewXmuxManager(&xmuxConfig, func() XmuxConn {
+ 		return &fakeRoundTripper{}
+ 	})
+ 
+@@ -56,7 +58,7 @@ func TestMaxConcurrency(t *testing.T) {
+ 		MaxConcurrency: &RangeConfig{From: 2, To: 2},
+ 	}
+ 
+-	xmuxManager := NewXmuxManager(xmuxConfig, func() XmuxConn {
++	xmuxManager := NewXmuxManager(&xmuxConfig, func() XmuxConn {
+ 		return &fakeRoundTripper{}
+ 	})
+ 
+@@ -75,7 +77,7 @@ func TestMaxConcurrency(t *testing.T) {
+ func TestDefault(t *testing.T) {
+ 	xmuxConfig := XmuxConfig{}
+ 
+-	xmuxManager := NewXmuxManager(xmuxConfig, func() XmuxConn {
++	xmuxManager := NewXmuxManager(&xmuxConfig, func() XmuxConn {
+ 		return &fakeRoundTripper{}
+ 	})
+ 
+diff --git a/transport/internet/transport_lifetime.go b/transport/internet/transport_lifetime.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..8e67c4f80385080d480ffa6cb3498ffc5142ad9f
+--- /dev/null
++++ b/transport/internet/transport_lifetime.go
+@@ -0,0 +1,120 @@
++// ExVPN modifications, Copyright 2026 ExVPN contributors.
++// SPDX-License-Identifier: MPL-2.0
++
++package internet
++
++import (
++	"context"
++	"errors"
++	"sync"
++)
++
++// ErrTransportClosed rejects new resources belonging to a retired stream owner.
++var ErrTransportClosed = errors.New("transport owner is closed")
++
++// Protects only lazy owner pointer initialization; it does not retain configs.
++// A MemoryStreamConfig must not be copied concurrently with its first use.
++var memoryStreamLifetimeAccess sync.Mutex
++
++// Lifecycle returns the stable lifetime of this parsed stream configuration.
++// Configurations derived before publication can share this pointer explicitly.
++func (s *MemoryStreamConfig) Lifecycle() *TransportLifetime {
++	memoryStreamLifetimeAccess.Lock()
++	defer memoryStreamLifetimeAccess.Unlock()
++	if s.transportLifetime == nil {
++		ctx, cancel := context.WithCancel(context.Background())
++		s.transportLifetime = &TransportLifetime{ctx: ctx, cancel: cancel, done: make(chan struct{})}
++	}
++	return s.transportLifetime
++}
++
++// ShareTransportLifetime attaches an unused derived config to its parent's
++// owner. Call before publishing the child. A previously used owner cannot be
++// replaced or resurrected, including when that owner has already closed.
++func (s *MemoryStreamConfig) ShareTransportLifetime(parent *MemoryStreamConfig) error {
++	if s == nil || parent == nil {
++		return errors.New("transport owner is missing")
++	}
++	owner := parent.Lifecycle()
++	memoryStreamLifetimeAccess.Lock()
++	defer memoryStreamLifetimeAccess.Unlock()
++	if s.transportLifetime != nil && s.transportLifetime != owner {
++		return errors.New("transport owner is already initialized")
++	}
++	s.transportLifetime = owner
++	return nil
++}
++
++// Close retires this config and every derived config sharing its lifetime.
++func (s *MemoryStreamConfig) Close() error {
++	if s == nil {
++		return nil
++	}
++	return s.Lifecycle().Close()
++}
++
++// TransportLifetime owns transport caches and their background work. A cache
++// may hold its mutex while calling Register or IsClosed. Close never invokes
++// callbacks under this lifetime's mutex, so callbacks may acquire cache locks.
++// The zero value is not usable; obtain an instance through Lifecycle.
++type TransportLifetime struct {
++	mu      sync.Mutex
++	ctx     context.Context
++	cancel  context.CancelFunc
++	closed  bool
++	closers []func() error
++	done    chan struct{}
++	err     error
++}
++
++// Context is canceled as soon as retirement begins, before resource closers.
++func (l *TransportLifetime) Context() context.Context { return l.ctx }
++
++func (l *TransportLifetime) IsClosed() bool {
++	l.mu.Lock()
++	defer l.mu.Unlock()
++	return l.closed
++}
++
++// Register transfers a closer to this owner. On rejection the caller retains
++// responsibility for cleanup; the callback is never invoked synchronously.
++// A callback must not recursively Close its own lifetime or wait for that Close.
++func (l *TransportLifetime) Register(closer func() error) error {
++	if closer == nil {
++		return errors.New("transport closer is missing")
++	}
++	l.mu.Lock()
++	defer l.mu.Unlock()
++	if l.closed {
++		return ErrTransportClosed
++	}
++	l.closers = append(l.closers, closer)
++	return nil
++}
++
++// Close is idempotent and joins all registered closers. Concurrent callers wait
++// for the same cleanup and receive its stable error. Registration is forbidden
++// from the moment closed is set, so delayed dials cannot revive this owner.
++func (l *TransportLifetime) Close() error {
++	l.mu.Lock()
++	if l.closed {
++		done := l.done
++		l.mu.Unlock()
++		<-done
++		return l.err
++	}
++	l.closed = true
++	closers := l.closers
++	l.closers = nil
++	l.mu.Unlock()
++	l.cancel()
++	var errs []error
++	for _, closer := range closers {
++		if err := closer(); err != nil {
++			errs = append(errs, err)
++		}
++	}
++	l.err = errors.Join(errs...)
++	close(l.done)
++	return l.err
++}
+diff --git a/transport/internet/transport_lifetime_test.go b/transport/internet/transport_lifetime_test.go
+new file mode 100644
+index 0000000000000000000000000000000000000000..8390fc27b1763e420166bc1c15b692c79dd1d369
+--- /dev/null
++++ b/transport/internet/transport_lifetime_test.go
+@@ -0,0 +1,160 @@
++// ExVPN modifications, Copyright 2026 ExVPN contributors.
++// SPDX-License-Identifier: MPL-2.0
++
++package internet
++
++import (
++	"context"
++	"errors"
++	"sync"
++	"sync/atomic"
++	"testing"
++	"time"
++)
++
++func TestExVPNTransportLifetimeCloseJoinsAndCancels(t *testing.T) {
++	settings := new(MemoryStreamConfig)
++	lifetime := settings.Lifecycle()
++	want := errors.New("synthetic close failure")
++	entered := make(chan struct{})
++	release := make(chan struct{})
++	var calls atomic.Int32
++	if err := lifetime.Register(func() error {
++		calls.Add(1)
++		if !lifetime.IsClosed() || !errors.Is(lifetime.Context().Err(), context.Canceled) {
++			t.Error("cleanup ran before owner retirement/cancellation")
++		}
++		close(entered)
++		<-release
++		return want
++	}); err != nil {
++		t.Fatal(err)
++	}
++	first := make(chan error, 1)
++	go func() { first <- settings.Close() }()
++	<-entered
++	second := make(chan error, 1)
++	go func() { second <- settings.Close() }()
++	select {
++	case <-second:
++		t.Fatal("concurrent Close returned before owned cleanup finished")
++	case <-time.After(20 * time.Millisecond):
++	}
++	lateCalled := false
++	if err := lifetime.Register(func() error { lateCalled = true; return nil }); !errors.Is(err, ErrTransportClosed) || lateCalled {
++		t.Fatal("late registration was accepted or executed synchronously")
++	}
++	close(release)
++	if !errors.Is(<-first, want) || !errors.Is(<-second, want) || !errors.Is(settings.Close(), want) || calls.Load() != 1 {
++		t.Fatal("Close did not preserve the one completed cleanup result")
++	}
++}
++
++func TestExVPNTransportLifetimeRegisterCloseRace(t *testing.T) {
++	for round := 0; round < 100; round++ {
++		settings := new(MemoryStreamConfig)
++		lifetime := settings.Lifecycle()
++		var accepted, cleaned atomic.Int32
++		start := make(chan struct{})
++		var workers sync.WaitGroup
++		for i := 0; i < 12; i++ {
++			workers.Add(1)
++			go func() {
++				defer workers.Done()
++				<-start
++				err := lifetime.Register(func() error { cleaned.Add(1); return nil })
++				if err == nil {
++					accepted.Add(1)
++				} else if !errors.Is(err, ErrTransportClosed) {
++					t.Errorf("unexpected registration failure: %v", err)
++				}
++			}()
++		}
++		workers.Add(1)
++		go func() { defer workers.Done(); <-start; _ = settings.Close() }()
++		close(start)
++		workers.Wait()
++		if err := settings.Close(); err != nil || cleaned.Load() != accepted.Load() {
++			t.Fatalf("lost or duplicated cleanup: accepted=%d cleaned=%d err=%v", accepted.Load(), cleaned.Load(), err)
++		}
++	}
++}
++
++func TestExVPNTransportLifetimeSharingAndLazyInitialization(t *testing.T) {
++	parent := new(MemoryStreamConfig)
++	owners := make(chan *TransportLifetime, 32)
++	var workers sync.WaitGroup
++	for i := 0; i < cap(owners); i++ {
++		workers.Add(1)
++		go func() { defer workers.Done(); owners <- parent.Lifecycle() }()
++	}
++	workers.Wait()
++	close(owners)
++	for owner := range owners {
++		if owner != parent.Lifecycle() {
++			t.Fatal("one config acquired multiple lifetimes")
++		}
++	}
++	child := new(MemoryStreamConfig)
++	if err := child.ShareTransportLifetime(parent); err != nil || child.Lifecycle() != parent.Lifecycle() {
++		t.Fatal("download config did not share owner", err)
++	}
++	copyOfParent := *parent // no copied mutex or Once; a stable owner pointer.
++	if copyOfParent.Lifecycle() != parent.Lifecycle() {
++		t.Fatal("parsed config copy lost its initialized owner")
++	}
++	if err := parent.Close(); err != nil || !child.Lifecycle().IsClosed() || !copyOfParent.Lifecycle().IsClosed() {
++		t.Fatal("derived configs survived parent retirement", err)
++	}
++	if err := child.ShareTransportLifetime(new(MemoryStreamConfig)); err == nil {
++		t.Fatal("retired owner was replaced")
++	}
++	lateChild := new(MemoryStreamConfig)
++	if err := lateChild.ShareTransportLifetime(parent); err != nil || !lateChild.Lifecycle().IsClosed() {
++		t.Fatal("late derived config resurrected retired parent", err)
++	}
++	if err := parent.Lifecycle().Register(nil); err == nil {
++		t.Fatal("nil closer accepted")
++	}
++	var missing *MemoryStreamConfig
++	if err := missing.Close(); err != nil {
++		t.Fatal(err)
++	}
++	if err := child.ShareTransportLifetime(nil); err == nil {
++		t.Fatal("missing parent accepted")
++	}
++}
++
++func TestExVPNTransportLifetimeCacheLockOrder(t *testing.T) {
++	settings := new(MemoryStreamConfig)
++	var cache sync.Mutex
++	cache.Lock()
++	removed := false
++	if err := settings.Lifecycle().Register(func() error {
++		cache.Lock()
++		defer cache.Unlock()
++		removed = true
++		return nil
++	}); err != nil {
++		t.Fatal(err)
++	}
++	closed := make(chan error, 1)
++	go func() { closed <- settings.Close() }()
++	select {
++	case <-settings.Lifecycle().Context().Done():
++	case <-time.After(time.Second):
++		t.Fatal("retirement held lifetime lock while waiting on cache")
++	}
++	if err := settings.Lifecycle().Register(func() error { return nil }); !errors.Is(err, ErrTransportClosed) {
++		t.Fatal("retired cache owner accepted publication")
++	}
++	cache.Unlock()
++	select {
++	case err := <-closed:
++		if err != nil || !removed {
++			t.Fatal("cache cleanup failed", err)
++		}
++	case <-time.After(time.Second):
++		t.Fatal("cache/lifetime lock inversion")
++	}
++}

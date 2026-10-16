@@ -26,6 +26,7 @@ Assert-Lanes @('packages/exvpn_client_state/lib/src/snapshot_codec.dart') @('sta
 Assert-Lanes @('packages/exvpn_updates/pubspec.lock') @('updates', 'app')
 Assert-Lanes @('packages/exvpn_domain/lib/src/profile.dart') @('domain', 'state', 'app', 'core', 'android', 'windows', 'installer')
 Assert-Lanes @('native/core/new.go') @('domain', 'state', 'app', 'core', 'android', 'windows', 'installer')
+Assert-Lanes @('native/patches/xray-lifecycle.patch') @('domain', 'state', 'app', 'core', 'android', 'windows', 'xray', 'installer')
 Assert-Lanes @('native\core\go.sum') @('domain', 'state', 'app', 'core', 'android', 'windows', 'installer')
 Assert-Lanes @('native/android/bridge/jni.go') @('app', 'android')
 Assert-Lanes @('apps/exvpn/android/app/src/main/MainActivity.kt') @('app', 'android')

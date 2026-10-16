@@ -9,6 +9,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 if (-not $IsWindows) { throw 'This script uses the Windows x64 Android NDK toolchain.' }
 $repository = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
+. (Join-Path $repository 'scripts/bootstrap/enter-environment.ps1') -NativeOnly
 $goPath = Join-Path $repository '.tools/go/bin/go.exe'
 $toolchainLock = Get-Content -LiteralPath (Join-Path $repository 'scripts/bootstrap/toolchain.lock.json') -Raw | ConvertFrom-Json
 if (-not (Test-Path -LiteralPath $goPath)) { throw 'Run scripts/bootstrap/bootstrap.ps1 -Component Go first.' }

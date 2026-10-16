@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "module": "github.com/xtls/xray-core",
+  "upstream": {
+    "version": "v1.260327.1-0.20261010092107-701af60772cd",
+    "commit": "701af60772cda123492f86e383e1fdba066614a9",
+    "zipSha256": "7d3dcd882361a1e9112c021339135b150e50e01aefec26df2801a5a8c2cc921c",
+    "sum": "h1:Am/9Pzw5PZr7+hMN1Vs5faeSXRoutnrwMAgtUDnh/J8=",
+    "goModSum": "h1:YAACF9L/Pu1GznixHOBtrBqVcE95nhFjgU+gIEdWKlo="
+  },
+  "patch": {
+    "path": "xray-lifecycle.patch",
+    "sha256": "c55d66ad1dc551057eb899b7916e32d897e00acf6e891844ef9b6d7613dddfbb"
+  },
+  "patched": {
+    "version": "v1.260327.1-exvpn.3",
+    "time": "2026-10-16T22:24:15Z",
+    "sum": "h1:m+ZEAwh0kFl/jMMtP2k0k88K5oK7tfNGSeJ+I4pi9tQ=",
+    "goModSum": "h1:YAACF9L/Pu1GznixHOBtrBqVcE95nhFjgU+gIEdWKlo="
+  }
+}

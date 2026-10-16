@@ -4,7 +4,7 @@
 Set-StrictMode -Version Latest
 
 function Get-FastValidationLaneNames {
-    @('domain', 'state', 'updates', 'app', 'core', 'android', 'windows', 'installer', 'scripts')
+    @('domain', 'state', 'updates', 'app', 'core', 'android', 'windows', 'xray', 'installer', 'scripts')
 }
 
 function Get-FastValidationPlan {
@@ -22,6 +22,7 @@ function Get-FastValidationPlan {
         core = @('domain', 'android', 'windows')
         android = @('app')
         windows = @('app', 'installer')
+        xray = @('core')
     }
     if ($Full) {
         foreach ($lane in $all) { $pending.Enqueue($lane) }
@@ -39,6 +40,7 @@ function Get-FastValidationPlan {
                 '^native/core/' { 'core'; break }
                 '^native/android/' { 'android'; break }
                 '^native/windows/' { 'windows'; break }
+                '^native/patches/' { 'xray'; break }
                 '^(docs|design)/.*\.(md|png|jpe?g|gif|webp|svg|pdf)$' { 'documentation'; break }
                 '^(README\.md|LICENSE|NOTICE)$' { 'documentation'; break }
                 default { 'all' }

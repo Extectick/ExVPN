@@ -2,7 +2,7 @@
 #requires -Version 7.0
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)][ValidateSet('domain', 'state', 'updates', 'app', 'core', 'android', 'windows', 'installer', 'scripts')][string]$Lane,
+    [Parameter(Mandatory)][ValidateSet('domain', 'state', 'updates', 'app', 'core', 'android', 'windows', 'xray', 'installer', 'scripts')][string]$Lane,
     [switch]$FreshGoTests,
     [ValidateRange(1, 16)][int]$TestConcurrency = 2,
     [switch]$OnlineDependencies
@@ -48,6 +48,11 @@ switch ($Lane) {
         Invoke-Check $go @('vet', '-mod=readonly', '-p', "$TestConcurrency", './...')
         break
     }
+    'xray' {
+        & (Join-Path $PSScriptRoot 'test-xray-lifecycle.ps1') -TestConcurrency $TestConcurrency
+        if (!$?) { throw 'Pinned Xray transport lifecycle regression failed.' }
+        break
+    }
     'installer' {
         # This suite only mutates its own disposable file fixtures. SCM/ACL are
         # mocked; the actual installer is NOT run on the development host.
@@ -71,12 +76,18 @@ switch ($Lane) {
         if (!$?) { throw 'Validation coordinator regression failed.' }
         & (Join-Path $PSScriptRoot 'android-https-probe/test.ps1')
         if (!$?) { throw 'Android QA probe parser regression failed.' }
+        & (Join-Path $PSScriptRoot 'test-android-lifecycle-tools.ps1')
+        if (!$?) { throw 'Android lifecycle QA helper regression failed.' }
+        & (Join-Path $PSScriptRoot 'test-windows-transport-lifecycle.ps1')
+        if (!$?) { throw 'Windows transport lifecycle QA helper regression failed.' }
         & (Join-Path $repository 'scripts/release/test-notice-inputs.ps1')
         if (!$?) { throw 'Release notice input regression failed.' }
         & (Join-Path $repository 'scripts/release/test-artifact-audit.ps1')
         if (!$?) { throw 'Release artifact audit regression failed.' }
         & (Join-Path $repository 'scripts/release/test-android-notices.ps1')
         if (!$?) { throw 'Android notice snapshot regression failed.' }
+        & (Join-Path $repository 'scripts/core/test-xray-patch.ps1')
+        if (!$?) { throw 'Pinned Xray source reconstruction regression failed.' }
         break
     }
 }

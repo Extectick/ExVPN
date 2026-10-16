@@ -127,3 +127,45 @@ function Assert-NoticePackageBinding($Inventory, [string]$AppVersion, [string]$D
         if ($entries.Count -ne 1 -or $entries[0].version -cne $AppVersion) { throw 'Application notices have an incorrect version.' }
     }
 }
+
+function Get-NoticeXrayPatch([string]$Repository, [string]$Version, [string]$ModuleSum) {
+    # Historical stock artifacts still resolve to their original public module.
+    # ExVPN prereleases must be backed by the committed patch and exact h1.
+    if ($Version -notmatch '-exvpn\.') { return $null }
+    $lockPath = Join-Path $Repository 'native/patches/xray-lifecycle.lock.json'
+    $patchPath = Join-Path $Repository 'native/patches/xray-lifecycle.patch'
+    $pin = Get-Content -LiteralPath $lockPath -Raw | ConvertFrom-Json
+    if ($pin.schemaVersion -ne 1 -or $pin.module -cne 'github.com/xtls/xray-core' -or
+        $pin.patch.path -cne 'xray-lifecycle.patch' -or
+        $pin.patch.sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+        $pin.upstream.commit -cnotmatch '^[a-f0-9]{40}$' -or
+        $pin.patched.version -cne $Version -or !$ModuleSum -or
+        $pin.patched.sum -cne $ModuleSum) {
+        throw 'Modified Xray binary does not match the committed patch pin.'
+    }
+    if ((Get-FileHash -LiteralPath $patchPath -Algorithm SHA256).Hash.ToLowerInvariant() -cne $pin.patch.sha256) {
+        throw 'Modified Xray source patch differs from its committed checksum.'
+    }
+    [pscustomobject]@{
+        lockPath = $lockPath
+        patchPath = $patchPath
+        sourceUrl = 'https://github.com/Extectick/ExVPN/tree/main/native/patches'
+        upstreamCommit = $pin.upstream.commit
+        patchSha256 = $pin.patch.sha256
+        version = $Version
+        moduleSum = $ModuleSum
+    }
+}
+
+function Assert-NoticeXraySourceBundle($PatchEvidence, $NoticeFiles) {
+    $requiredSources = @{
+        'sources/xray-lifecycle.patch' = $PatchEvidence.patchSha256
+        'sources/xray-lifecycle.lock.json' = (Get-FileHash -LiteralPath $PatchEvidence.lockPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    foreach ($entry in $requiredSources.GetEnumerator()) {
+        if (!$NoticeFiles.ContainsKey($entry.Key) -or $NoticeFiles[$entry.Key].sha256 -cne $entry.Value) {
+            throw 'modified_xray_provenance_mismatch'
+        }
+    }
+    if (!$NoticeFiles.ContainsKey('sources/XRAY-EXVPN-NOTICE.txt')) { throw 'modified_xray_notice_missing' }
+}

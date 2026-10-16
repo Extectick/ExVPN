@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "appVersion": "0.1.0+11",
+  "sourceState": "working tree; commit pending",
+  "upstreamCommit": "701af60772cda123492f86e383e1fdba066614a9",
+  "patchedModule": "v1.260327.1-exvpn.3",
+  "patchedModuleSum": "h1:m+ZEAwh0kFl/jMMtP2k0k88K5oK7tfNGSeJ+I4pi9tQ=",
+  "patchSha256": "c55d66ad1dc551057eb899b7916e32d897e00acf6e891844ef9b6d7613dddfbb",
+  "originalRegression": {
+    "format": 1,
+    "date": "2026-10-17",
+    "test": "TestRuntimeCloseReleasesTransportResources",
+    "command": "go test . -run '^TestRuntimeCloseReleasesTransportResources$' -count=1 -timeout 60s",
+    "module": "native/core",
+    "upstreamVersion": "v1.260327.1-0.20261010092107-701af60772cd",
+    "upstreamCommit": "701af60772cda123492f86e383e1fdba066614a9",
+    "result": "FAIL",
+    "elapsedSeconds": 12.246,
+    "testSourceSha256": "f91aba8544ec71b03e3cee8600eb87a2ab50fcd99722ccdf014f12d6b3ed8cbd",
+    "scope": "Loopback only; actual Runtime.Close invokes core.Instance.Close; verified destination HTTPS; independent live core retained",
+    "failedCases": [
+      {
+        "case": "grpc-h2c",
+        "generation": 1,
+        "activePeerSockets": 1
+      },
+      {
+        "case": "grpc-tls",
+        "generation": 1,
+        "activePeerSockets": 1
+      },
+      {
+        "case": "xhttp-h1-packet-up",
+        "generation": 1,
+        "activePeerSockets": 2
+      },
+      {
+        "case": "xhttp-h2-stream-one",
+        "generation": 1,
+        "activePeerSockets": 1
+      }
+    ],
+    "peerDrainDeadlineMs": 1500,
+    "otherCases": [
+      "xhttp-h1-stream-up",
+      "xhttp-h1-stream-one"
+    ],
+    "hostNetworkChanged": false,
+    "systemTrustChanged": false,
+    "realSubscriptionsUsed": false
+  },
+  "finalRegression": {
+    "module": "native/core",
+    "command": "go test -mod=readonly -count=1 ./...",
+    "status": "passed",
+    "actualRuntimeClose": true,
+    "httpsVerified": true,
+    "transportCases": 6,
+    "retiredGenerationsPerCase": 3,
+    "independentLiveCore": true,
+    "fullFastRun": "passed: ten lanes, fresh Go tests; source fingerprint unchanged"
+  },
+  "race": {
+    "command": "pwsh -NoProfile -File scripts/qa/test-xray-lifecycle.ps1 -Race -Count 5",
+    "status": "passed",
+    "count": 5,
+    "packages": [
+      "transport/internet",
+      "transport/internet/grpc",
+      "transport/internet/splithttp",
+      "app/proxyman/outbound"
+    ],
+    "packageSeconds": [
+      1.388,
+      9.994,
+      4.957,
+      1.101
+    ],
+    "vetPassed": true,
+    "testFunctions": 26
+  },
+  "limitations": [
+    "Loopback source regression is not Android/Windows system acceptance",
+    "Race detector covers executed paths",
+    "BrowserDialer external process not enabled or tested"
+  ],
+  "hostNetworkChanged": false,
+  "systemTrustChanged": false,
+  "realSubscriptionsUsed": false
+}

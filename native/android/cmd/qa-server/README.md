@@ -15,7 +15,7 @@ Pop-Location
 
 The output directory must have a `.private` path component. Each run creates new
 random credentials and free ports for VLESS TCP, VLESS REALITY, VLESS Vision,
-VLESS XHTTP, XHTTP REALITY, VMess and Shadowsocks. Import `subscription.b64` using
+VLESS XHTTP, XHTTP REALITY, VLESS gRPC h2c, VMess and Shadowsocks. Import `subscription.b64` using
 the app's Text dialog. Do not print, commit or capture the populated form. The
 URI host is Android Emulator's host-loopback gateway; this bundle is not intended
 for physical devices. Stop with Ctrl+C and discard the stale test subscription.
@@ -36,8 +36,15 @@ certificate validation to make a device test pass.
 
 Only fixture names and aggregate inbound bytes are printed. Independent protected
 UID HTTPS probes and server counter increments provide evidence; simply starting
-the server or importing all seven profiles does not prove runtime connectivity.
+the server or importing all eight profiles does not prove runtime connectivity.
 See `docs/ANDROID_VALIDATION.md` for tested APK hashes and limits.
+
+The gRPC fixture uses cleartext HTTP/2 only on this explicit QA listener; it does
+not add a trust exception to ExVPN. For emulator-only lifecycle checks, pass
+`-client-address 127.0.0.1` and use an exact `adb reverse tcp:<port> tcp:<port>` for
+each chosen fixture port. Remove those exact mappings after the run. Repeated
+ordinary app connect/disconnect plus independent HTTPS and fixture-side TCP peer
+drain are runtime checks; they do not expose internal client cache object counts.
 
 Configuration sources: pinned local `native/core/runtime_test.go` and
 `runtime_secure_test.go`, plus the official [REALITY documentation](https://github.com/XTLS/Xray-docs-next/blob/main/docs/en/config/transports/reality.md).

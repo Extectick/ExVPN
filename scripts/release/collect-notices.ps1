@@ -88,12 +88,32 @@ foreach ($key in @($modules.Keys | Sort-Object)) {
     $dependency = $modules[$key]
     if (!$dependency.Sum -or $download.Sum -ne $dependency.Sum) { throw "Embedded/source checksum mismatch: $key" }
     $sourceUrl = 'https://proxy.golang.org/' + ($dependency.Path -creplace '[A-Z]', '!$0').ToLowerInvariant() + '/@v/' + $dependency.Version + '.zip'
+    $xrayPatch = $null
+    if ($dependency.Path -ceq 'github.com/xtls/xray-core') {
+        $xrayPatch = Get-NoticeXrayPatch $repository $dependency.Version $dependency.Sum
+        if ($xrayPatch) { $sourceUrl = $xrayPatch.sourceUrl }
+    }
     Add-Notice $dependency.Path $dependency.Version $download.Dir 'linked-go-module' $sourceUrl $dependency.Sum
     if ($dependency.Path -eq 'github.com/xtls/xray-core') {
-        # Include the exact, unmodified covered source with each native bundle.
+        # Include exactly the covered source linked by this binary. ExVPN's
+        # modified prerelease retains the upstream license and patch provenance.
         $sourceDirectory = Join-Path $output 'sources'
         New-Item -ItemType Directory -Path $sourceDirectory -Force | Out-Null
         Copy-Item -LiteralPath $download.Zip -Destination (Join-Path $sourceDirectory 'xray-core.zip')
+        if ($xrayPatch) {
+            Copy-Item -LiteralPath $xrayPatch.lockPath -Destination (Join-Path $sourceDirectory 'xray-lifecycle.lock.json')
+            Copy-Item -LiteralPath $xrayPatch.patchPath -Destination (Join-Path $sourceDirectory 'xray-lifecycle.patch')
+            @"
+Xray-core contains ExVPN transport-lifecycle modifications.
+Upstream commit: $($xrayPatch.upstreamCommit)
+Module version: $($xrayPatch.version)
+Linked source checksum: $($xrayPatch.moduleSum)
+Patch SHA-256: $($xrayPatch.patchSha256)
+Covered original and modified files remain under MPL-2.0.
+The accompanying xray-core.zip is the complete corresponding module source.
+Reconstruction and review instructions: $($xrayPatch.sourceUrl)
+"@ | Set-Content -LiteralPath (Join-Path $sourceDirectory 'XRAY-EXVPN-NOTICE.txt') -Encoding utf8NoBOM
+        }
     }
 }
 
@@ -139,7 +159,9 @@ included full notices. It also records hashes and embedded module versions of
 the inspected native binaries. Dart entries conservatively include development
 dependencies. This document is not a complete Gradle/installer SBOM.
 
-The exact unmodified Xray module source is included as sources/xray-core.zip.
+The exact linked Xray module source is included as sources/xray-core.zip.
+For an ExVPN prerelease, sources/ also contains the patch, its pinned metadata,
+and XRAY-EXVPN-NOTICE.txt describing the modifications and corresponding source.
 Xray is licensed under MPL-2.0; the ExVPN Apache-2.0 license does not replace it.
 The signed Wintun DLL uses its own Prebuilt Binaries License, separately from
 the MIT Go binding. Full upstream license texts are preserved here.

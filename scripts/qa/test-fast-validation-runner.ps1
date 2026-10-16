@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'fast-validation-plan.ps1')
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $fixture = Join-Path $repository ('artifacts/qa/runner-fixture-' + [Guid]::NewGuid().ToString('N'))
-foreach ($directory in @('scripts/qa', 'scripts/bootstrap', 'scripts/ci', 'apps/exvpn/lib')) {
+foreach ($directory in @('scripts/qa', 'scripts/bootstrap', 'scripts/ci', 'apps/exvpn/lib', 'native/core', 'native/android', 'native/windows')) {
     New-Item -ItemType Directory -Path (Join-Path $fixture $directory) -Force | Out-Null
 }
 # Run the real coordinator in an isolated fixture. Replace ONLY its worker with
@@ -25,6 +25,21 @@ New-Item -ItemType Junction -Path (Join-Path $fixture '.tools') -Target (Join-Pa
 Set-Content -LiteralPath (Join-Path $fixture '.gitignore') -Value ".tools/`nartifacts/`n*.log"
 Set-Content -LiteralPath (Join-Path $fixture 'apps/exvpn/pubspec.yaml') -Value 'version: 0.1.0+1'
 Set-Content -LiteralPath (Join-Path $fixture 'apps/exvpn/lib/build_identity.dart') -Value "const appVersion = '0.1.0';`nconst appBuild = 1;"
+# The real environment reads every native manifest before choosing a pinned
+# module proxy. Synthetic workers need no Xray or module download; keep these
+# fixture-only manifests explicit instead of modifying the environment helper.
+foreach ($module in @('core', 'android', 'windows')) {
+    Set-Content -LiteralPath (Join-Path $fixture "native/$module/go.mod") -Value "module example.invalid/coordinator-fixture/$module"
+}
+$expectedLanes = @(Get-FastValidationLaneNames)
+function Assert-CompleteLaneResults($Report) {
+    $expected = ($expectedLanes | Sort-Object) -join ','
+    $selected = (@($Report.selectedLanes | Sort-Object) -join ',')
+    $actual = (@($Report.lanes.lane | Sort-Object) -join ',')
+    if ($Report.lanes.Count -ne $expectedLanes.Count -or $selected -cne $expected -or $actual -cne $expected) {
+        throw 'Coordinator lost, duplicated or substituted a selected child result.'
+    }
+}
 $null = Invoke-FastValidationGit $fixture @('init', '--quiet')
 $worker = Join-Path $fixture 'scripts/qa/run-fast-validation-lane.ps1'
 Set-Content -LiteralPath $worker -Value @'
@@ -39,8 +54,9 @@ if ($LASTEXITCODE -eq 0) { throw 'Coordinator returned success despite a failed 
 $reportPath = Get-ChildItem -LiteralPath (Join-Path $fixture 'artifacts/qa') -Directory -Filter 'fast-*' |
     Sort-Object Name -Descending | Select-Object -First 1 -ExpandProperty FullName
 $report = Get-Content -LiteralPath (Join-Path $reportPath 'summary.json') -Raw | ConvertFrom-Json
+Assert-CompleteLaneResults $report
 $failed = @($report.lanes | Where-Object status -eq 'failed')
-if ($report.status -ne 'failed' -or $report.lanes.Count -ne 9 -or $failed.Count -ne 1 -or
+if ($report.status -ne 'failed' -or $failed.Count -ne 1 -or
     $failed[0].lane -ne 'android' -or $failed[0].exitCode -ne 7 -or !$report.sourceUnchanged) {
     throw 'Coordinator lost a child result or failed for an unrelated reason.'
 }
@@ -58,8 +74,9 @@ if ($LASTEXITCODE -eq 0) { throw 'Coordinator accepted a source edit during the 
 $reportPath = Get-ChildItem -LiteralPath (Join-Path $fixture 'artifacts/qa') -Directory -Filter 'fast-*' |
     Sort-Object Name -Descending | Select-Object -First 1 -ExpandProperty FullName
 $report = Get-Content -LiteralPath (Join-Path $reportPath 'summary.json') -Raw | ConvertFrom-Json
+Assert-CompleteLaneResults $report
 if ($report.status -ne 'source-changed-during-run' -or $report.sourceUnchanged -or
-    $report.lanes.Count -ne 9 -or @($report.lanes | Where-Object status -ne 'passed').Count) {
+    @($report.lanes | Where-Object status -ne 'passed').Count) {
     throw 'Coordinator did not distinguish source drift from child failure.'
 }
-Write-Host 'Fast-validation runner: child exit 7 and concurrent source edit both rejected; all nine child results preserved.'
+Write-Host "Fast-validation runner: child exit 7 and concurrent source edit both rejected; all $($expectedLanes.Count) selected child results preserved exactly once."

@@ -38,7 +38,7 @@ class MainActivity : FlutterActivity() {
             try { when (call.method) {
                 "getStatus" -> result.success(VpnRuntime.status())
                 "getExclusions" -> { VpnRuntime.ensurePolicy(this); result.success(VpnRuntime.exclusions.sorted()) }
-                "coreVersion" -> result.success("26.10.10")
+                "coreVersion" -> result.success("26.10.10-exvpn.3")
                 "connect" -> {
                     if (permissionResult != null) { result.error("operation_in_progress", "VPN permission request pending", null); return@setMethodCallHandler }
                     if (!NativeCore.available) { result.error("native_core_unavailable", "Native core is not installed", null); return@setMethodCallHandler }

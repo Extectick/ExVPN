@@ -16,7 +16,8 @@ String safeDiagnostics({
 }) {
   final core =
       coreVersion != null &&
-          RegExp(r'^\d{1,4}\.\d{1,3}\.\d{1,3}$').hasMatch(coreVersion)
+          RegExp(r'^\d{1,4}\.\d{1,3}\.\d{1,3}(?:-exvpn\.[1-9]\d{0,3})?$')
+              .hasMatch(coreVersion)
       ? coreVersion
       : null;
   final os =
