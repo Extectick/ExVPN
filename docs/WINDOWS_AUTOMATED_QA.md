@@ -5,6 +5,28 @@ Windows Sandbox и отдельные HTTPS-процессы. Мышь, клав
 не используются. Приложение создаёт настоящее Windows-окно; `tester.tap`
 доставляет события непосредственно в работающий Flutter widget tree.
 
+## Дополнение 2026-10-17: сохранение исключений
+
+NSIS upgrade **+3 → +4** и повторный полный Flutter/SCM fault run прошли.
+Выбранное в UI исключение теперь сохраняется после аварии и рестарта службы,
+а также после явного отключения. WFP оставался активным до disconnect, затем
+маршруты/DNS и production client binding восстановились; fixture остановлен.
+См. [отчёт +4](evidence/windows-policy-build4.json),
+[снимок после аварии](evidence/windows-policy-after-crash-build4.png) и
+[хранилище политики](WINDOWS_POLICY.md). Исходники:
+[c3061b4](https://github.com/Extectick/ExVPN/commit/c3061b489608cc37b767479436a2bac16f0b5a73).
+
+На **+5** отдельный тест повреждения и явного сброса policy также прошёл:
+настоящая SCM/DPAPI запись повреждена после protected backup, UI показал ошибку,
+повторное чтение не перезаписало данные, кнопка сброса восстановила список и
+состояние. Повторный запуск службы/QA UI подтвердил сохранение; encrypted baseline
+и production binding восстановлены, network fingerprint совпал. Upgrade +4 → +5
+успешен. [Отчёт](evidence/windows-policy-recovery-build5.json),
+[ошибка UI](evidence/windows-policy-corrupt-build5.png),
+[после сброса](evidence/windows-policy-reset-build5.png),
+[исходники fd08979](https://github.com/Extectick/ExVPN/commit/fd089794723f1db0ede022e01804b4026e90de80).
+Протокольный suite в этом отдельном прогоне +5 не запускался.
+
 ## Проверено 2026-10-16
 
 См. [обезличенный отчёт](evidence/windows-flutter-sandbox-smoke.json) и
@@ -100,8 +122,8 @@ QA executable с прежним owner SID; проверка PID/SID/пути IPC
   Разные IP обычного/исключённого приложения этой топологией не доказаны.
 - Trojan/Hysteria2, UDP, полный IPv6/DNS packet capture, холодный кеш Xray,
   sleep/resume, перезагрузка и смена сети остаются открытыми. Проверенные исключения
-  и SCM crash относятся только к описанному TCP/IPv4 сценарию; сохранность настроек
-  исключений после аварии этим тестом не доказана.
+  и SCM crash относятся только к описанному TCP/IPv4 сценарию. Сохранность настроек
+  исключений подтверждена отдельным повтором +4; старые +2/+3 этого не проверяли.
 - Используется временный `AppController` без persistence. Хранилище, QR/picker,
   OTA и повторный запуск обычного UI этим сценарием не приняты.
 - Ввод текста синтезирует штатный Flutter test IME. Системная клавиатура/IME,
@@ -133,10 +155,12 @@ entry point и изменение сети. Полный репозиторий/
    Нужен desktop administrator; NSIS намеренно отвергает неподходящий token owner.
    Если требуемый build уже установлен, upgrade пропустить.
 6. `wsb exec --run-as System`: `guest-app-qa.ps1 -Action Setup -ConfirmDisposableGuest`.
-   Для повтора с существующим QA tree — `-Action Refresh`; версия службы должна
-   оставаться той же. Обычный UI должен быть закрыт, TUN отсутствовать.
-   После обычного UI upgrade Refresh допускает рост build только при сохранённых
-   service SHA-256/owner SID и production binding; downgrade отвергается.
+   Для повтора с существующим QA tree — `-Action Refresh`. Обычный UI должен
+   быть закрыт, TUN отсутствовать. После upgrade допускается рост build с тем же
+   owner SID и восстановленным production binding; новый бинарник службы должен
+   совпасть с protected installed manifest. На прежнем build изменение service
+   SHA-256 запрещено. Downgrade отвергается. Если служба обновилась, Refresh
+   выполняется до Prepare координатора, чтобы принять проверенный новый manifest.
 7. `wsb exec --run-as ExistingLogin`: `guest-app-launch.ps1 -ConfirmDisposableGuest`.
    Ждать завершения, читать `flutter-report.json` и `exit-report.json`.
    Успех требует **frameworkPassed=true, allProtocolsPassed=true, exitCode=0**.
@@ -163,3 +187,23 @@ Refresh и запуск UI; управляет только тремя фикс�
 Для успеха обязательны `faultsPassed`, `frameworkPassed`, `allProtocolsPassed`,
 `cleanupPassed` и нулевой exit code. Каждый повтор использует свежий nonce и
 новые эфемерные credentials; stale output не считается текущим результатом.
+
+## Повреждение и восстановление policy
+
+Для отдельного storage/UI сценария подготовить bundle командой
+`scripts/windows/prepare-app-sandbox.ps1 -Installer <development-exe> -PolicyRecovery`.
+Этот режим компилирует `windows_policy_test.dart` в отдельном каталоге, проверяет
+совпадение app version/build с установщиком и задаёт `policyRecovery=reset`.
+`-IncludeFaults` и `-PolicyRecovery` взаимоисключающие. Private mapping и
+протокольный fixture этому тесту не нужны; input/output mappings и Setup/Refresh
+выполняются по той же методике. Build уже должен быть установлен.
+
+Запуск: `scripts/windows/run-app-policy-sandbox.ps1 -SandboxId <id>
+-BundleDirectory <path>`. Координатор проверяет гостя/nonce, сохраняет сетевой
+baseline, повреждает только фиксированное значение собственной policy, запускает
+UI reset, перезапускает SCM и запускает UI reopen. Guest helper проверяет
+LocalSystem, owner SID, полный manifest, service hash и ACL перед изменением.
+Только encrypted backup хранится в protected Program Files гостя, не в общей
+папке результатов. В `finally` восстанавливаются policy и production binding,
+сверяются сеть/guard/TUN. Успех требует двух `frameworkPassed`/`passed`,
+`policy-coordinator.passed=true`, `cleanupPassed=true` и нулевого exit code.

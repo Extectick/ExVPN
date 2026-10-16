@@ -23,9 +23,12 @@ has no ExVPN service or TUN. Keep E1-007–010 and E5 open.
   `getExclusions`, `setExclusions`. Profiles go through the shared strict core
   decoder. Exclusions are existing canonical absolute `.exe` paths, at most
   128; changing an active policy requires disconnect/reconnect. The service
-  retains effective exclusions across UI restarts. If its own process restarts
-  with an armed guard and no recoverable policy, it reports
-  `exclusions_unavailable`, never an invented empty list.
+  persists confirmed exclusions across UI/SCM restarts in an installer-owner-bound
+  HKLM64 record with a SYSTEM/admin-only protected DACL and LocalSystem user-scoped
+  DPAPI. Writes/flush finish before acknowledgement; failed reads never invent an
+  empty list. The UI offers an explicit reset while disconnected. Recovery does
+  not clear an armed guard. Real SCM crash/restart persistence passed on build +4;
+  see [storage design and evidence](../../docs/WINDOWS_POLICY.md).
 - Xray's pinned TUN inbound config captures IPv4/IPv6, assigns adapter-specific
   DNS, prioritizes DNS above exact executable exclusions, then sends remaining
   traffic through the chosen proxy. The first/default outbound is blackhole.
@@ -219,7 +222,7 @@ These scripts are prepared and syntax checked, not elevated/install tested.
 - Controlled WFP/TUN/leak/crash tests above; production guard capability remains
   unverified. Link-local DHCP/IPv6 discovery handling needs that validation.
 - Hostname bootstrap end-to-end/expiry/network-change tests, crash ownership journal/adapter recovery,
-  durable encrypted service policy and robust route/DNS restore after abrupt death.
+  full policy storage failure matrix and robust route/DNS restore after abrupt death.
   Existing `ExVPN-Tunnel` adapters are currently refused rather than adopted.
 - Real end-to-end IPC with a signed installed UI/service; measured live traffic
   statistics and full installed-app picker. Owner snapshots are not an atomic

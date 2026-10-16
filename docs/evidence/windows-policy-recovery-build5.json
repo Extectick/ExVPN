@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "date": "2026-10-17",
+  "sourceCommit": "fd089794723f1db0ede022e01804b4026e90de80",
+  "appVersion": "0.1.0+5",
+  "installerSha256": "5cbde88ded7ac0074201b2c54664986ff37422643f58b510954f446725086fcc",
+  "serviceSha256": "0dda5b2c3949308c748b98f500a4e5de39f85ce7172991d49a190995b0ca55ff",
+  "qaAotSha256": "7e8220919cbd0f2d31e314db532942fa4c81808674e89c29bdf951bd5726f6e5",
+  "startedUtc": "2026-10-16T17:33:16.2532703Z",
+  "finishedUtc": "2026-10-16T17:36:42.309036Z",
+  "computerUse": false,
+  "nativeVpnMocked": false,
+  "passed": true,
+  "frameworkPassed": true,
+  "upgrade": {
+    "passed": true,
+    "fromBuild": 4,
+    "toBuild": 5,
+    "exitCode": 0
+  },
+  "corruptPolicyErrorDisplayed": true,
+  "readDidNotSilentlyReset": true,
+  "explicitResetThroughUi": true,
+  "errorCleared": true,
+  "policyPersistedAfterScmRestart": true,
+  "reopenedState": "disconnected",
+  "cleanup": {
+    "passed": true,
+    "encryptedBaselineRestored": true,
+    "guardArmed": false,
+    "tunnelAbsent": true,
+    "networkRestored": true,
+    "productionBindingRestored": true,
+    "serviceRunning": true,
+    "hostNetworkChanged": false
+  },
+  "ordinaryUserTokenTested": false,
+  "physicalDiskFailureTested": false,
+  "powerLossTested": false,
+  "networkProtocolsRetestedInThisRun": false
+}
