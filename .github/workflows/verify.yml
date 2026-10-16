@@ -2,6 +2,14 @@ name: ExVPN checks and development builds
 
 on:
   push:
+    # Documentation-only pushes must not cancel an in-flight native build.
+    # Pull requests stay unfiltered so required checks are always reported.
+    paths-ignore:
+      - 'docs/**'
+      - 'design/**'
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'CONTRIBUTING.md'
   pull_request:
   workflow_dispatch:
 
