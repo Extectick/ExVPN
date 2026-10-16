@@ -27,5 +27,6 @@
     "networkRestored": true,
     "ownedFixtureStopped": true
   },
-  "interpretation": "Peer did not drain within the deadline; runtime acceptance failed. TCP state and cause require a separate diagnostic run; no retrospective PASS."
+  "interpretation": "Peer did not drain within the deadline; runtime acceptance failed. TCP state and cause require a separate diagnostic run; no retrospective PASS.",
+  "qaCodeCommit": "932cd0f04b4bc1e2ed0ae80a98f04d425b419eea"
 }

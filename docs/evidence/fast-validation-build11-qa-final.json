@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "mode": "Full",
   "scope": "behavioral checks only; excludes builds and real VPN/security/release acceptance",
-  "startedAt": "2026-10-16T22:58:39.7198841+00:00",
-  "endedAt": "2026-10-16T22:59:53.4219993+00:00",
+  "startedAt": "2026-10-17T05:58:39.7198841+07:00",
+  "endedAt": "2026-10-17T05:59:53.4219993+07:00",
   "durationSeconds": 73.7,
   "status": "passed",
   "sourceFingerprintBefore": "bb82127b8561093aabe2ee5c11f1865a51b66a426603f42e48bbd488353b166e",
@@ -121,5 +121,6 @@
     "Windows native/UI build",
     "isolated VPN/IPv4/IPv6/DNS/fault acceptance",
     "signed release and upgrade acceptance"
-  ]
+  ],
+  "qaCodeCommit": "932cd0f04b4bc1e2ed0ae80a98f04d425b419eea"
 }

@@ -7,5 +7,6 @@
   "exitCode": 0,
   "negativeCrlfCaseRetained": true,
   "productionValidatorChanged": false,
-  "originalSourceUnchanged": true
+  "originalSourceUnchanged": true,
+  "qaCodeCommit": "932cd0f04b4bc1e2ed0ae80a98f04d425b419eea"
 }
