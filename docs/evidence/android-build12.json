@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "evidenceType": "android-local-build",
+  "status": "PASS",
+  "application": {
+    "versionName": "0.1.0",
+    "versionCode": 12,
+    "packageName": "ru.exvpn.exvpn",
+    "minimumApi": 30,
+    "core": "26.10.10-exvpn.3",
+    "demo": false,
+    "development": true
+  },
+  "artifact": {
+    "path": "artifacts/android/build12-local/ExVPN-0.1.0-12-android-development.apk",
+    "sha256": "7adb71bb8eef781cd9893152251c977b767f1cfafd7e1a5e6532bd5d9e141644",
+    "bytes": 220455299,
+    "metadataPath": "artifacts/android/build12-local/artifact.json",
+    "metadataSha256": "e07e9d9002c5a2dbd4a71bc9da07cad37671769fbe87e89172f7f2a4b86116ca"
+  },
+  "build": {
+    "startedAtUtc": "2026-10-17T01:19:04.0361265Z",
+    "finishedAtUtc": "2026-10-17T01:21:50.1897401Z",
+    "durationMs": 166154,
+    "stages": [
+      {
+        "name": "jni-both-abi",
+        "status": "PASS",
+        "startedAtUtc": "2026-10-17T01:19:05.0805564Z",
+        "durationMs": 38107
+      },
+      {
+        "name": "apk-and-jvm",
+        "status": "PASS",
+        "startedAtUtc": "2026-10-17T01:19:43.1918467Z",
+        "durationMs": 126043
+      }
+    ],
+    "targetPlatforms": [
+      "android-arm64",
+      "android-x64"
+    ],
+    "abis": [
+      {
+        "abi": "arm64-v8a",
+        "sha256": "c90d2ee8c5abd4f70750698279056b03210c5bbce4a4a107d3912516f9024a92",
+        "bytes": 37158544,
+        "go": "1.27.2",
+        "ndk": "27.1.12297006",
+        "elf16KiBAlignmentVerified": true,
+        "requiredJniExportsVerified": true
+      },
+      {
+        "abi": "x86_64",
+        "sha256": "281d91227ca4217c26ba330f3be59bcb38fff5295a5eb6abbc36e2ff0bf18980",
+        "bytes": 39643120,
+        "go": "1.27.2",
+        "ndk": "27.1.12297006",
+        "elf16KiBAlignmentVerified": true,
+        "requiredJniExportsVerified": true
+      }
+    ]
+  },
+  "signature": {
+    "verified": true,
+    "debug": true,
+    "matchesBuild11": true,
+    "releaseSignerPinned": false
+  },
+  "source": {
+    "head": "ea9f2cad3ba5e39108d67497e0397d8ff07b29fe",
+    "vcsModified": true,
+    "unchanged": true,
+    "fingerprintBefore": "967ff52163ca9aacf4eb939aa7041252bf4b5cfd2a63397032f013bdb327d47e",
+    "fingerprintAfter": "967ff52163ca9aacf4eb939aa7041252bf4b5cfd2a63397032f013bdb327d47e",
+    "fileCount": 482,
+    "excludedPaths": [
+      "docs/**"
+    ],
+    "reason": "Documentation may change independently and is not a package input."
+  },
+  "jvm": {
+    "requested": true,
+    "gradleTask": ":app:testDebugUnitTest",
+    "taskOutcome": "UP-TO-DATE",
+    "executedInThisBuild": false,
+    "cachedResultVerified": true,
+    "suites": 1,
+    "tests": 8,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "reports": [
+      {
+        "name": "TEST-ru.exvpn.exvpn.BoundedQrReaderTest.xml",
+        "sha256": "7a745ffa346791faa0050765f2d8f3f920f4e7d7922ee31a7691178641097b6d",
+        "lastWriteUtc": "2026-10-16T22:33:18.8415532Z"
+      }
+    ]
+  },
+  "packaging": {
+    "nativeAndNoticesMatchSealedInputs": true,
+    "sealedInputsSha256": "a9213fe06c908c03ec31ec3eab18f1de990c3f58d249a6fecb82d167aabcf96f",
+    "embeddedNoticesSource": "actual-apk-entries",
+    "noticeComponents": 139,
+    "noticeFiles": 221,
+    "noticeInventorySha256": "4ffa8ccd39dba02fc92aecb3f1a1cb20ca6272d30cdbee759205826a1e73e3da",
+    "noticeFileSetSha256": "b0bd00546ceba9528cbf188f80d0d32a2c7186853773794af366275a29123334",
+    "xraySource": {
+      "present": true,
+      "zipSha256": "7f6a8d0c00aa677c3a880ed6e9296bfd7bbaad0261cf8e50bb30d59f525843d7",
+      "linkedModuleSum": "h1:m+ZEAwh0kFl/jMMtP2k0k88K5oK7tfNGSeJ+I4pi9tQ=",
+      "actualGoSum": "h1:m+ZEAwh0kFl/jMMtP2k0k88K5oK7tfNGSeJ+I4pi9tQ=",
+      "matched": true,
+      "patch": {
+        "upstreamCommit": "701af60772cda123492f86e383e1fdba066614a9",
+        "sha256": "c55d66ad1dc551057eb899b7916e32d897e00acf6e891844ef9b6d7613dddfbb",
+        "included": true
+      }
+    }
+  },
+  "audit": {
+    "path": "artifacts/release-audit/build12-android-local/audit.json",
+    "sha256": "0c5e92a853d254b8a86fa24229afd5c3d4861062be8daccd02c24881d29669d3",
+    "exitCode": 2,
+    "releaseReady": false,
+    "blockers": [
+      "android_debug_signer",
+      "android_gradle_maven_runtime_inventory_missing",
+      "apk_debuggable",
+      "dart_flutter_runtime_link_inventory_incomplete",
+      "license_expressions_and_distribution_obligations_not_fully_reviewed",
+      "release_signer_not_pinned"
+    ]
+  },
+  "installed": false,
+  "runtimeTested": false,
+  "limitations": [
+    "This is a local development APK signed with the existing debug certificate, not a stable release.",
+    "The Android JVM task reused Gradle up-to-date results; eight tests were not re-executed in this build.",
+    "DNS/server-outage runtime evidence belongs to immutable APK +11 and does not establish runtime acceptance of +12.",
+    "No installation or additional VPN matrix was performed.",
+    "The full E1 security/protocol and physical-device acceptance gates remain open."
+  ]
+}

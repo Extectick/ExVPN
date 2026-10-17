@@ -4,6 +4,19 @@
 Дополнение API30: исходники APK [6fe2d3a](https://github.com/Extectick/ExVPN/commit/6fe2d3a288493b57ce9a7aa698a9df087f2fc50e). Это ограниченные проверки
 эмуляторов, **не закрытие E1/E4 и не готовность стабильного выпуска**.
 
+## Локальная сборка +12, 2026-10-17
+
+Собран development APK **0.1.0+12** для arm64-v8a и x86_64, Android 11+.
+SHA-256 `7adb71bb8eef781cd9893152251c977b767f1cfafd7e1a5e6532bd5d9e141644`;
+прежняя debug-подпись совпадает с +11. JNI, APK, встроенные notices и Xray
+source/patch binding проверены; 482 tracked inputs вне документации не менялись.
+Полная команда заняла **166,154 с**. Gradle `:app:testDebugUnitTest` вернул
+`UP-TO-DATE`: сохранённые 8 PASS сверены, но в этой сборке не выполнялись заново.
+
+APK +12 не устанавливался. DNS/server-fault доказательство ниже относится к
+неизменному APK +11. Аудит сохраняет шесть блокировок release, включая debug
+signer и неполную Maven/Flutter инвентаризацию. [Артефакт, хеши и ограничения](evidence/android-build12.json).
+
 ## Стенд и сборки
 
 Android 16/API36, x86_64, эмулятор Pixel 4a с WHPX. Стенд запущен read-only,
