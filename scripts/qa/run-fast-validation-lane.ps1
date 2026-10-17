@@ -108,6 +108,7 @@ switch ($Lane) {
         Invoke-ScriptCheck 'scripts/qa/test-fast-validation-runner.ps1'
         Invoke-ScriptCheck 'scripts/qa/android-https-probe/test.ps1'
         Invoke-ScriptCheck 'scripts/qa/test-android-lifecycle-tools.ps1'
+        Invoke-ScriptCheck 'scripts/qa/test-android-exclusions-selectors.ps1'
         Invoke-ScriptCheck 'scripts/qa/android-dns-capture/test.ps1'
         Invoke-ScriptCheck 'scripts/qa/test-windows-transport-lifecycle.ps1'
         Invoke-ScriptCheck 'scripts/qa/test-windows-subscriptions.ps1'

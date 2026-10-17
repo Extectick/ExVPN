@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<hierarchy rotation="0">
+  <!-- Synthetic QA labels; hierarchy and geometry model the before/after-keyboard layouts. No installed-app inventory or device identifiers. -->
+  <node index="0" text="" class="android.widget.FrameLayout" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,0][1080,2148]">
+    <node index="0" text="" class="android.widget.LinearLayout" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,0][1080,2148]">
+      <node index="0" text="" class="android.widget.FrameLayout" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,0][1080,2148]">
+        <node index="0" text="" class="android.widget.FrameLayout" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="true" focused="true" scrollable="false" bounds="[0,0][1080,2148]">
+          <node index="0" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,0][1080,2148]">
+            <node index="0" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,0][1080,2148]">
+              <node index="0" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,0][1080,2148]">
+                <node index="0" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,0][1080,2148]">
+                  <node index="0" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,0][1080,237]">
+                    <node index="0" text="" class="android.widget.Button" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" bounds="[11,94][143,226]" />
+                    <node index="1" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="Исключения приложений" checkable="false" checked="false" clickable="false" enabled="true" focusable="true" focused="false" scrollable="false" bounds="[198,122][956,199]" />
+                  </node>
+                  <node index="1" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,237][1080,1928]">
+                    <node index="0" text="" class="android.widget.ScrollView" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="true" focused="false" scrollable="true" bounds="[0,237][1080,1928]">
+                      <node index="0" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="true" focused="false" scrollable="false" bounds="[0,237][1080,545]" />
+                      <node index="1" text="" class="android.widget.EditText" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" bounds="[0,545][1080,721]" />
+                      <node index="2" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="Выбрано всего: 0" checkable="false" checked="false" clickable="false" enabled="true" focusable="true" focused="false" scrollable="false" bounds="[0,721][1080,798]" />
+                      <node index="3" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,798][1080,996]">
+                        <node index="0" text="" class="android.widget.CheckBox" package="ru.exvpn.exvpn" content-desc="Example application 1&#xA;com.example.sample1" checkable="true" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" bounds="[0,798][1080,996]" />
+                      </node>
+                      <node index="4" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,996][1080,1194]">
+                        <node index="0" text="" class="android.widget.CheckBox" package="ru.exvpn.exvpn" content-desc="Example application 2&#xA;com.example.sample2" checkable="true" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" bounds="[0,996][1080,1194]" />
+                      </node>
+                      <node index="5" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,1194][1080,1392]">
+                        <node index="0" text="" class="android.widget.CheckBox" package="ru.exvpn.exvpn" content-desc="Example application 3&#xA;com.example.sample3" checkable="true" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" bounds="[0,1194][1080,1392]" />
+                      </node>
+                      <node index="6" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,1392][1080,1590]">
+                        <node index="0" text="" class="android.widget.CheckBox" package="ru.exvpn.exvpn" content-desc="Example application 4&#xA;com.example.sample4" checkable="true" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" bounds="[0,1392][1080,1590]" />
+                      </node>
+                      <node index="7" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,1590][1080,1788]">
+                        <node index="0" text="" class="android.widget.CheckBox" package="ru.exvpn.exvpn" content-desc="Example application 5&#xA;com.example.sample5" checkable="true" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" bounds="[0,1590][1080,1788]" />
+                      </node>
+                      <node index="8" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,1788][1080,1928]">
+                        <node index="0" text="" class="android.widget.CheckBox" package="ru.exvpn.exvpn" content-desc="Example application 6&#xA;com.example.sample6" checkable="true" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" bounds="[0,1788][1080,1928]" />
+                      </node>
+                    </node>
+                  </node>
+                  <node index="2" text="" class="android.widget.Button" package="ru.exvpn.exvpn" content-desc="Сохранить" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" bounds="[370,1972][710,2104]" />
+                </node>
+              </node>
+            </node>
+          </node>
+        </node>
+      </node>
+    </node>
+    <node index="1" text="" class="android.view.View" package="ru.exvpn.exvpn" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" bounds="[0,0][0,0]" />
+  </node>
+</hierarchy>

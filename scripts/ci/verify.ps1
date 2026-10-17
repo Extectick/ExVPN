@@ -81,6 +81,10 @@ Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
 )
 Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
     '-NoProfile', '-NonInteractive', '-File',
+    (Join-Path $repository 'scripts/qa/test-android-exclusions-selectors.ps1')
+)
+Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
+    '-NoProfile', '-NonInteractive', '-File',
     (Join-Path $repository 'scripts/qa/android-dns-capture/test.ps1')
 )
 Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
