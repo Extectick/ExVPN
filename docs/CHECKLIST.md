@@ -358,6 +358,12 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   Дополнение +10: итоговый `-Full` на [924493a](https://github.com/Extectick/ExVPN/commit/924493a511547bb2b4c93262ab93df82fe127479) — **37,77 с**, девять наборов PASS, fresh Go tests, fingerprint совпал; добавлены 23+41+29 release-tooling fixtures и Windows lifetime/reconnect tests. [Отчёт](evidence/fast-validation-build10.json). Native Windows/Android QA и сборки выполнялись независимыми владельцами; docs-only push больше не отменяет native CI ([84489a2](https://github.com/Extectick/ExVPN/commit/84489a2)). Полная системная приёмка не сокращена.
 
 - [x] **EXVPN-E7-001** — Настроить CI для анализа, тестов и Android/Windows сборок. Зависимость: E0 GitHub, E1 toolchain. Критерий: clean checkout проходит pipeline; secrets не включены в job output; версии и lock-файлы воспроизводимы.
+  2026-10-17, +16: полный [run 39024609151](https://github.com/Extectick/ExVPN/actions/runs/39024609151)
+  на [37b65b5](https://github.com/Extectick/ExVPN/commit/37b65b5085a6617c5a1996214fcdea3627b7c8e6)
+  прошёл Android (17:19) и Windows (6:20), включая сборки и development artifacts.
+  Исправлены выбор SDK и корневая ссылка hosted runner; оба прежних отказа
+  сохранены. [Доказательства](evidence/ci-build16.json). Это не Shorebird OTA
+  или системная VPN-приёмка; E1/E6/E7-002 остаются открытыми.
   CI +13, 2026-10-17: [run 38996842672](https://github.com/Extectick/ExVPN/actions/runs/38996842672)
   на `36c6094` — **SUCCESS**: Windows 11:45, Android 14:58, tests/build/upload.
   [Отчёт](evidence/ci-build13.json) сохраняет точный commit и digest двух
@@ -375,6 +381,11 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   Shorebird запрещена; граф и привязка APK/AAB пока не получены, E7-002 открыт.
   [Отчёт](evidence/android-inventory-shorebird-selector.json),
   [код 8908ca2](https://github.com/Extectick/ExVPN/commit/8908ca237124c7bdfca1f8661fa1ded077f5e7e8).
+  Отдельное чтение неизменённого AAB +16: 52 Maven-записи и 48 digest,
+  все 48 совпали с локальными AAR/JAR; четыре записи остаются без digest.
+  Официальная схема AGP 9.1.0 и границы проверки подтверждены. Это ещё не
+  полный inventory и не привязка отдельно собранного APK; E7-002 открыт.
+  [Исследование](evidence/android-aab-dependency-metadata-build16.json).
   Дополнение 2026-10-17: `app.so` готового Windows +14 совпал с cached AOT output.
   733 сохранённых Flutter input hashes проверены реальным pinned-алгоритмом;
   для 896 входов исторических хешей нет. Это неполное доказательство build inputs,

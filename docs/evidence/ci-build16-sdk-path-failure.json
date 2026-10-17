@@ -34,7 +34,8 @@
     "ndkVersion": "28.2.13676358",
     "missingFile": "ndk/28.2.13676358/source.properties",
     "logSha256": "f54feacfb69323e4cded6af231bb8cff3371f9d4b00cd31d9080c310a2490ffc",
-    "fixedRun": "pending"
+    "fixedRun": 39024609151,
+    "fixedRunEvidence": "docs/evidence/ci-build16.json"
   },
   "limitations": [
     "Ordinary Flutter CI builds, not Shorebird native OTA acceptance.",

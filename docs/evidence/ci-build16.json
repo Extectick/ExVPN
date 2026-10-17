@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "appVersion": "0.1.0+16",
+  "sourceCommit": "37b65b5085a6617c5a1996214fcdea3627b7c8e6",
+  "runId": 39024609151,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/39024609151",
+  "status": "completed",
+  "conclusion": "success",
+  "runtime": "ordinary Flutter",
+  "jobs": [
+    {
+      "name": "Windows",
+      "conclusion": "success",
+      "startedUtc": "2026-10-17T10:21:55Z",
+      "completedUtc": "2026-10-17T10:28:15Z",
+      "durationSeconds": 380,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39024609151/job/117373021786",
+      "validationAndBuild": "success"
+    },
+    {
+      "name": "Android",
+      "conclusion": "success",
+      "startedUtc": "2026-10-17T10:21:56Z",
+      "completedUtc": "2026-10-17T10:39:15Z",
+      "durationSeconds": 1039,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39024609151/job/117373021951",
+      "validationAndBuild": "success"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 12098172189,
+      "name": "exvpn-android-debug-37b65b5085a6617c5a1996214fcdea3627b7c8e6",
+      "bytes": 100022275,
+      "digest": "sha256:9f6c60b90199ab26fc9aa284a068dc724088a6b2bcdfc519647d7df02299683e",
+      "expiredAtObservation": false
+    },
+    {
+      "id": 12097987008,
+      "name": "exvpn-windows-debug-37b65b5085a6617c5a1996214fcdea3627b7c8e6",
+      "bytes": 72387628,
+      "digest": "sha256:2d20055d2c77411873f4985ccd84e405ac338fa00a286093edd4dc2d9de9ecc3",
+      "expiredAtObservation": false
+    }
+  ],
+  "metadataSha256": "442b70698fbbd7b5c74418d60e5d04e9377791900e2fb708a2edc1e4e7a8fac0",
+  "artifactMetadataSha256": "31ff63e7b18680c9722a4d3bc58ab7ecaf510858e32de501a67af3ef08c344df",
+  "runLogSha256": "2e7ea502c77b898eb84c9de7def826ed3323521e21abfb650b3e6c6152080031",
+  "priorFailures": [
+    39020527988,
+    39022959765
+  ],
+  "corrections": [
+    "Resolve selected Android SDK consistently from explicit path or environment",
+    "Resolve one hosted-runner SDK directory alias to a physical path; nested links and unpinned tools remain rejected"
+  ],
+  "limits": [
+    "Development CI outputs only; not Shorebird engine or signed OTA acceptance.",
+    "Artifact digests recorded from GitHub metadata; uploaded archives were not downloaded in this verification.",
+    "Existing immutable local Shorebird bases were not rebuilt or replaced.",
+    "Job durations depend on runner and caches; this is not a controlled speed benchmark.",
+    "Full VPN system acceptance and production signing remain open."
+  ]
+}

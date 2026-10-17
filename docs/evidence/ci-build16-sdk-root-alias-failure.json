@@ -33,7 +33,8 @@
     "logSha256": "60719570399d5e9babceecfd352e0cb8ef4e465b5d1e1f05c93bd0cab21aba2f",
     "runnerImageTag": "win25-vs2026/20261007.264",
     "runnerSdkInstallScriptSha256": "9a4db3f31b0b4b2755ab7012d2ce45cedc6953958891d6db431d90f35a7953d7",
-    "fixedRun": "pending"
+    "fixedRun": 39024609151,
+    "fixedRunEvidence": "docs/evidence/ci-build16.json"
   },
   "limitations": [
     "Original failed result is retained. A later run must verify the root alias correction.",

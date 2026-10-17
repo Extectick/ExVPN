@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-10-17T17:34:41.469552+07:00",
+  "status": "AAB_METADATA_PARSED_AND_REPORTED_BINARY_DIGESTS_MATCH_LOCAL_CACHE",
+  "scope": "Offline research of existing immutable Shorebird 0.1.0+16 AAB; no acceptance gate changed.",
+  "aab": {
+    "path": "artifacts/shorebird/0.1.0+16-android-b70e8a8f1a0b4cadad0808d70f208665/ExVPN-0.1.0+16-shorebird-beta.aab",
+    "bytes": 66305847,
+    "sha256": "b20ae67c651bdf3d210910d20bffc8bf3ac294dc49d950b148194c90e0e6e11f",
+    "uniqueMetadataEntry": "BUNDLE-METADATA/com.android.tools.build.libraries/dependencies.pb",
+    "metadataBytes": 5424,
+    "metadataSha256": "e2b69aa84f09a8f603d3d0b1f72de2278ffd9011f11104936aa7873fee8bb5a1",
+    "extractionRecheckedFromArchive": true,
+    "embeddedAgpVersion": "9.1.0",
+    "appMetadataSha256": "a470f8965c422d001e6d29c63af71d0b06441f6e6e918dfdc5d8e838878d6c5b",
+    "artifactSignatureVerificationPerformedInThisResearch": false
+  },
+  "schema": {
+    "officialRepository": "https://android.googlesource.com/platform/tools/base",
+    "officialTag": "studio-2025.3.2",
+    "officialCommit": "2b8e201cce105f143339212b276c2f0eafb60b93",
+    "officialSchemaSha256": "f499cfed9932de17feec50b6e53a3cdd4c38898ec9761fe8b64215d7a266f675",
+    "embeddedSchemaSha256": "f499cfed9932de17feec50b6e53a3cdd4c38898ec9761fe8b64215d7a266f675",
+    "embeddedAndOfficialBytesIdentical": true,
+    "parser": "com.android.tools.build.libraries.metadata.AppDependencies from existing AGP 9.1.0 JAR",
+    "parserJarSha256": "74b47a2a57349371273fb0893f61977a68dc40d5fb5e012a71d9e00c76ad728d",
+    "execution": "Existing generated parser invoked with local JShell; no Gradle or project build.",
+    "sourceFiles": [
+      {
+        "file": "official-schema.proto",
+        "sha256": "f499cfed9932de17feec50b6e53a3cdd4c38898ec9761fe8b64215d7a266f675",
+        "url": "https://android.googlesource.com/platform/tools/base/+/2b8e201cce105f143339212b276c2f0eafb60b93/build-system/gradle-core/src/main/proto/app_bundle_dependencies_metadata.proto?format=TEXT"
+      },
+      {
+        "file": "PerModuleReportDependenciesTask.kt",
+        "sha256": "3564c644514be25a03b90e90866f8b42346be50ef0cd44218bd842b70a665318",
+        "url": "https://android.googlesource.com/platform/tools/base/+/2b8e201cce105f143339212b276c2f0eafb60b93/build-system/gradle-core/src/main/java/com/android/build/gradle/internal/tasks/PerModuleReportDependenciesTask.kt?format=TEXT"
+      },
+      {
+        "file": "SdkDependencyDataGeneratorTask.kt",
+        "sha256": "e242e157a0073c26256a1c05d2560b2d910f31cda8aa8e4f7a876c69eedf163f",
+        "url": "https://android.googlesource.com/platform/tools/base/+/2b8e201cce105f143339212b276c2f0eafb60b93/build-system/gradle-core/src/main/java/com/android/build/gradle/internal/tasks/SdkDependencyDataGeneratorTask.kt?format=TEXT"
+      },
+      {
+        "file": "BundleReportDependenciesTask.kt",
+        "sha256": "98b007c979deee7323742cdfc5bfa91671248954e497cb62d2260d6c07fa3953",
+        "url": "https://android.googlesource.com/platform/tools/base/+/2b8e201cce105f143339212b276c2f0eafb60b93/build-system/gradle-core/src/main/java/com/android/build/gradle/internal/tasks/BundleReportDependenciesTask.kt?format=TEXT"
+      },
+      {
+        "file": "PackageBundleTask.kt",
+        "sha256": "1cdd125fb528199e5491dcf127cc673ec8dfff22796afefc06cbe4adc6c4971b",
+        "url": "https://android.googlesource.com/platform/tools/base/+/2b8e201cce105f143339212b276c2f0eafb60b93/build-system/gradle-core/src/main/java/com/android/build/gradle/internal/tasks/PackageBundleTask.kt?format=TEXT"
+      }
+    ]
+  },
+  "parsed": {
+    "status": "PARSED_VALIDATED",
+    "parser": "AGP_9.1.0_generated_AppDependencies",
+    "bytes": 5424,
+    "sha256": "e2b69aa84f09a8f603d3d0b1f72de2278ffd9011f11104936aa7873fee8bb5a1",
+    "libraries": 52,
+    "mavenLibraries": 52,
+    "nonMavenLibraries": 0,
+    "digestCount": 48,
+    "missingDigestCount": 4,
+    "libraryDependencyRecords": 44,
+    "libraryEdges": 229,
+    "modules": 1,
+    "moduleEdges": 6,
+    "repositories": 9,
+    "libraryRepositoryReferences": 52,
+    "nonemptyPackagingCount": 0,
+    "nonemptyClassifierCount": 0,
+    "duplicateCoordinates": 0,
+    "emptyCoordinates": 0,
+    "unknownFieldCount": 0,
+    "allIndicesInRange": true,
+    "allPresentDigests32Bytes": true,
+    "reserializedBytesIdentical": true,
+    "malformedParserControlRejected": true
+  },
+  "localCacheComparison": {
+    "reportedDigests": 48,
+    "exactUniqueMatches": 48,
+    "unmatched": 0,
+    "ambiguous": 0,
+    "aar": 27,
+    "jar": 21,
+    "metadataRecordsWithoutFileDigest": 4,
+    "missingDigestRecordsWithLocalAarOrJar": 0,
+    "missingDigestRecordsWithPomPackagingPom": 3,
+    "missingDigestRecordsWithoutExplicitPomPackaging": 1,
+    "cacheWasOnlyRead": true,
+    "freshResolutionProven": false,
+    "currentPackagedCodeIdentityProven": false
+  },
+  "meaning": [
+    "The immutable AAB contains these 52 declared Maven coordinates, graph edges and 48 source-file digests.",
+    "Pinned AGP hashes unprocessed external runtime-classpath AAR/JAR files, then merges module reports and places dependencies.pb in this AAB.",
+    "All 48 present file digests match one existing local artifact each. This is an offline byte match, not a new Gradle resolution.",
+    "The four graph records without file digests remain explicitly unbound to binary bytes.",
+    "All 52 packaging/classifier fields are empty. Repository URLs are declarations, not independent download-origin proof."
+  ],
+  "limitations": [
+    "This metadata is not a complete SBOM or license/distribution-obligation review.",
+    "It does not bind POM or Gradle module descriptor contents and does not inventory Dart, Go/JNI or all Flutter runtime inputs.",
+    "It does not prove final post-R8/DEX/native packaged-code identity.",
+    "The producer selects one file if a component maps to multiple files; metadata alone cannot prove all classifiers/variant files are covered.",
+    "AAB signature authentication was not repeated; binding here is to the exact coordinator-provided artifact SHA-256."
+  ],
+  "separateApk": {
+    "path": "artifacts/shorebird/0.1.0+16-android-b70e8a8f1a0b4cadad0808d70f208665/ExVPN-0.1.0+16-shorebird-beta.apk",
+    "bytes": 125029599,
+    "sha256": "9401f733a242a7258f69345e40bd4ca66a7300d8160d2416ce82f5b9438018da",
+    "matchingPlaintextDependencyZipEntries": 0,
+    "aabMetadataTransferredAsApkProof": false,
+    "mutableIntermediateFilesCurrentlyMatchAabMetadata": true,
+    "mutableIntermediatesAcceptedAsHistoricalApkBinding": false,
+    "explanation": "Same version, adjacent files and matching current mutable intermediate outputs do not establish the dependency bytes consumed by the separate APK build. AGP APK dependency metadata is compressed and hybrid-encrypted; this AAB plaintext report cannot be read back as APK plaintext proof."
+  },
+  "proposedNextMechanism": [
+    "Add an AAB-only inventory binding stage: verify artifact SHA, extract exactly one bounded metadata entry, use the pinned schema/parser, validate graph references and digests, and join external inventory binary rows by exact GAV plus SHA-256.",
+    "Keep four no-digest nodes separate and require descriptor/variant evidence before classifying them; reject unexplained binary, missing, extra, duplicate or mismatched joins.",
+    "Record binding kind aab_embedded_agp_dependencies and the exact AAB, entry and schema hashes. Preserve separate Maven descriptor and licensing gates.",
+    "For a separately built APK, require preserved same-invocation graph/input/artifact evidence, or a verifiable APK derivation from the bound AAB. Do not upgrade APK9401 evidence from this report."
+  ],
+  "actions": {
+    "existingLocalBinaryInputsOnly": true,
+    "networkReads": "Official AOSP source text and primary documentation only.",
+    "binaryDownloads": 0,
+    "gradleInvocations": 0,
+    "applicationBuilds": 0,
+    "pubGetInvocations": 0,
+    "sourceEdits": 0,
+    "releaseGateEdits": 0,
+    "ciActions": 0,
+    "cloudActions": 0,
+    "guestActions": 0
+  },
+  "releaseGateSatisfied": false,
+  "originalReport": "artifacts/qa/android-aab-dependencies-20e0777ff7774ae084c7dcb0ad4c10b2/report.json",
+  "originalReportSha256": "341ac0dc30418cfd6536412dfada3c742e1215deddc27f10cb44ff4cbd2b4a2d",
+  "productSourceCommit": "e707d942c5bfd01075ba57f512b6aabec954980f",
+  "rootReview": {
+    "manifestSha256": "df7a76d5d4625a5e4387ca37455b53e64d58160aa4d881ef553d726e1c8f9334",
+    "scope": "Read-only AAB metadata and cache byte matching. APK provenance, complete runtime inventory and release gates remain unproven.",
+    "inputAndEvidenceFilesVerified": 27,
+    "hashMismatches": 0
+  }
+}
