@@ -14,6 +14,7 @@ class ExclusionsSheet extends StatefulWidget {
 class _ExclusionsSheetState extends State<ExclusionsSheet> {
   List<ApplicationIdentity>? _apps;
   final Set<String> _selected = {};
+  final _searchController = TextEditingController();
   String? _error;
   bool _saving = false;
   bool _policyReadFailed = false;
@@ -21,6 +22,12 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -102,95 +109,149 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Исключения приложений')),
-    body: Column(
-      children: [
-        const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text(
-            'Выбранные приложения выходят в интернет напрямую. Изменения доступны при отключённом VPN. Приложения с общей системной учётной записью исключить нельзя.',
-          ),
-        ),
-        if (widget.vpn.canDisconnect)
-          const Padding(
-            padding: EdgeInsets.all(12),
-            child: Text('Сначала отключите VPN.'),
-          ),
-        if (_error != null)
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ),
-        if (_policyReadFailed)
-          Wrap(
-            alignment: WrapAlignment.center,
-            children: [
-              TextButton(
-                onPressed: _saving ? null : _load,
-                child: const Text('Повторить чтение'),
-              ),
-              TextButton(
-                key: const Key('reset-exclusions'),
-                onPressed:
-                    _saving ||
-                        widget.vpn.canDisconnect ||
-                        widget.vpn.commandPending
-                    ? null
-                    : _reset,
-                child: Text(_saving ? 'Сброс…' : 'Сбросить исключения'),
-              ),
-            ],
-          ),
-        Expanded(
-          child: _apps == null
-              ? Center(
-                  child: _error == null
-                      ? const CircularProgressIndicator()
-                      : const Text('Список недоступен'),
-                )
-              : ListView(
-                  children: [
-                    for (final app in _apps!)
-                      CheckboxListTile(
-                        title: Text(app.displayName),
-                        subtitle: Text(
-                          app.sharedIdentityGroup == null
-                              ? app.id
-                              : 'Общий системный UID · исключение недоступно',
-                        ),
-                        value: _selected.contains(app.id),
-                        onChanged:
+  Widget build(BuildContext context) {
+    final query = _searchController.text.trim().toLowerCase();
+    final visibleApps = _apps
+        ?.where(
+          (app) =>
+              app.displayName.toLowerCase().contains(query) ||
+              app.id.toLowerCase().contains(query),
+        )
+        .toList(growable: false);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Исключения приложений')),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'Выбранные приложения выходят в интернет напрямую. Изменения доступны при отключённом VPN. Приложения с общей системной учётной записью исключить нельзя.',
+                  ),
+                ),
+                if (widget.vpn.canDisconnect)
+                  const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Text('Сначала отключите VPN.'),
+                  ),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      _error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                if (_policyReadFailed)
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    children: [
+                      TextButton(
+                        onPressed: _saving ? null : _load,
+                        child: const Text('Повторить чтение'),
+                      ),
+                      TextButton(
+                        key: const Key('reset-exclusions'),
+                        onPressed:
                             _saving ||
                                 widget.vpn.canDisconnect ||
-                                app.sharedIdentityGroup != null
+                                widget.vpn.commandPending
                             ? null
-                            : (value) => setState(() {
-                                if (value == true) {
-                                  _selected.add(app.id);
-                                } else {
-                                  _selected.remove(app.id);
-                                }
-                              }),
+                            : _reset,
+                        child: Text(_saving ? 'Сброс…' : 'Сбросить исключения'),
                       ),
-                  ],
-                ),
-        ),
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: FilledButton(
-              onPressed: _apps == null || _saving || widget.vpn.canDisconnect
-                  ? null
-                  : _save,
-              child: Text(_saving ? 'Сохранение…' : 'Сохранить'),
+                    ],
+                  ),
+                if (_apps != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: TextField(
+                      key: const Key('exclusions-search'),
+                      controller: _searchController,
+                      enabled: !_saving,
+                      textInputAction: TextInputAction.search,
+                      decoration: const InputDecoration(
+                        labelText: 'Поиск приложений',
+                        hintText: 'Название, пакет или путь',
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                if (_apps != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Выбрано всего: ${_selected.length}',
+                        key: const Key('exclusions-selected-count'),
+                      ),
+                    ),
+                  ),
+                if (_apps == null)
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Center(
+                      child: _error == null
+                          ? const CircularProgressIndicator()
+                          : const Text('Список недоступен'),
+                    ),
+                  )
+                else if (visibleApps!.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Center(
+                      child: Text(
+                        query.isEmpty
+                            ? 'Список приложений пуст'
+                            : 'Ничего не найдено',
+                      ),
+                    ),
+                  )
+                else
+                  for (final app in visibleApps)
+                    CheckboxListTile(
+                      title: Text(app.displayName),
+                      subtitle: Text(
+                        app.sharedIdentityGroup == null
+                            ? app.id
+                            : 'Общий системный UID · исключение недоступно',
+                      ),
+                      value: _selected.contains(app.id),
+                      onChanged:
+                          _saving ||
+                              widget.vpn.canDisconnect ||
+                              app.sharedIdentityGroup != null
+                          ? null
+                          : (value) => setState(() {
+                              if (value == true) {
+                                _selected.add(app.id);
+                              } else {
+                                _selected.remove(app.id);
+                              }
+                            }),
+                    ),
+              ],
             ),
           ),
-        ),
-      ],
-    ),
-  );
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: FilledButton(
+                onPressed: _apps == null || _saving || widget.vpn.canDisconnect
+                    ? null
+                    : _save,
+                child: Text(_saving ? 'Сохранение…' : 'Сохранить'),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
