@@ -128,6 +128,6 @@
   "date": "2026-10-17",
   "originalProof": "artifacts/qa/release-sdk-root-alias-79738d7677034400a2fc02e69d77f5a6/proof.json",
   "originalProofSha256": "e541ace8279217eb9d64b7161193d04bedda1d63091d5a2793b7294311f292ff",
-  "rootReview": "Two-file change reviewed; both source hashes verified; runner SDK alias resolved without weakening nested input or exact transform checks.",
-  "sourceState": "working tree; commit pending"
+  "rootReview": "Two-file change reviewed; two source hashes, four test logs and RED/GREEN receipts verified without mismatches. Root aliases resolve physically; nested no-links and transform pins are preserved.",
+  "sourceCommit": "37b65b5085a6617c5a1996214fcdea3627b7c8e6"
 }

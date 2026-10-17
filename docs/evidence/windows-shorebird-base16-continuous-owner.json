@@ -1,0 +1,295 @@
+{
+  "schemaVersion": 1,
+  "runId": "bf4bb947-542a-43a9-ba4c-555331902804",
+  "date": "2026-10-17",
+  "scope": "Ordinary installed Windows +16 local updater UI, continuous held process observation, and read-only postcheck.",
+  "status": "REFUSED",
+  "releaseGatePromoted": false,
+  "artifact": {
+    "version": "0.1.0+16",
+    "development": true,
+    "installerSha256": "6fdeb9899dc0878e88ea9c1d88ab2588658e4b3b4ecea2a0e140efad5adcc87e",
+    "uiSha256": "3ee65db567cccc7c5a18c10b02776a832e7d46d4093c668cd4563f6f26c30135",
+    "serviceSha256": "3582d238cf50419fc43c596b539c99a374effe19c99d3382e9aac68ef3626e72",
+    "auditPath": "artifacts/release-audit/windows-shorebird16-package-20261017/audit.json",
+    "auditSha256": "7acba435e59cc7a0416a0977ea8df8c99d6491c803f03378fe65ce51c3545688",
+    "engineBytesBoundBySeparateAudit": true,
+    "releaseReady": false
+  },
+  "source": {
+    "sourceSealSha256": "dd6c9b506983e648563fbf0018aa50c574c26330eba0871b7055dd6f72844019",
+    "sourceFileCount": 17,
+    "sourceMismatches": 0,
+    "hostSha256": "ef321c2550cad40d06486192d361d3cfd108da89df49a0d8d0732c8bc8dc33e1",
+    "preparationProofSha256": "a7e8c2420fe859f2f837562d6eaf6f585453b880fb54cfaad930fef2019e1201",
+    "normalizedDiffSha256": "62512fa243e665ac6f8f1d6442705927e990288f3e7ec98b2205d7789b182099",
+    "fixtures": [
+      {
+        "name": "fixtures-ps5-final.json",
+        "sha256": "60fa1cd20a1d52883950bbf7f7cfc567fc77d4a8ae144f5ea712eb7ab081a2bf",
+        "status": "PASS",
+        "checks": 92,
+        "powerShell": "5.1.26100.9711"
+      },
+      {
+        "name": "fixtures-ps7-final.json",
+        "sha256": "acc97a1cd97b04628c2de46e893a52dab6f0ac945a5703061968bf29b7468679",
+        "status": "PASS",
+        "checks": 92,
+        "powerShell": "7.6.7"
+      }
+    ],
+    "bounds": {
+      "actionsSeconds": 300,
+      "cleanupSeconds": 120,
+      "semanticChildMs": 15000,
+      "semanticSessionMs": 12000,
+      "semanticWaitMs": 5000,
+      "startupReadMs": 8000,
+      "stageBreadcrumbsPerStep": 16
+    },
+    "preparationProofIsImmutablePreRunSnapshot": true
+  },
+  "lineage": {
+    "previousPublishedReport": "docs/evidence/windows-shorebird-base16-first-attempts.json",
+    "preparedPriorRun": "c389b49c-e97d-465a-b4ab-ae90cc4571e3",
+    "preparedPriorStatus": "NOT_AUTHORIZED_NOT_RUN",
+    "correction": "JSON Int32/Int64 exit-code validation within signed32 range; no UI action or deadline expansion.",
+    "priorRuntimeVerdictsUnchanged": true
+  },
+  "runtime": {
+    "installActions": 0,
+    "cloudCheckInvoked": false,
+    "cloudDownloadInvoked": false,
+    "vpnActions": 0,
+    "fixtureStarted": false,
+    "hostNetworkChanged": false,
+    "settings": "PASS",
+    "versions": {
+      "status": "REFUSED",
+      "failureCode": "semantic_readback_deadline",
+      "actualScreenObserved": true,
+      "actionIssued": true,
+      "actionReturnedWithoutException": true,
+      "successfulPostCaptureCount": 39,
+      "failedReadCount": 0,
+      "selectorMismatch": "Expected title role 41 and separate static labels; saved tree has title GROUP role 20 and composite rows.",
+      "exactSavedLabels": [
+        {
+          "label": "Версии и обновления",
+          "msaaRole": 20,
+          "msaaState": 3145728,
+          "enabled": true,
+          "visible": true
+        },
+        {
+          "label": "Приложение\nExVPN 0.1.0",
+          "msaaRole": 41,
+          "msaaState": 3145728,
+          "enabled": true,
+          "visible": true
+        },
+        {
+          "label": "Сборка\n16",
+          "msaaRole": 41,
+          "msaaState": 3145728,
+          "enabled": true,
+          "visible": true
+        },
+        {
+          "label": "Dart-патч\nБазовый выпуск",
+          "msaaRole": 41,
+          "msaaState": 3145728,
+          "enabled": true,
+          "visible": true
+        },
+        {
+          "label": "Обновления интерфейса\nКанал Dart-патчей: beta\nИсправления интерфейса загружаются отдельно. Ядро VPN и системные компоненты требуют полного обновления приложения.",
+          "msaaRole": 20,
+          "msaaState": 3145728,
+          "enabled": true,
+          "visible": true
+        },
+        {
+          "label": "Проверить Dart-патчи",
+          "msaaRole": 43,
+          "msaaState": 3145728,
+          "enabled": true,
+          "visible": true
+        }
+      ],
+      "checkButtonClicked": false,
+      "displayedCurrent": "Базовый выпуск",
+      "displayedChannel": "beta",
+      "displayedBuild": "16",
+      "preparedNextIndicatorObserved": false,
+      "nativeCurrentRead": "NOT_PROVEN",
+      "nextRead": "NOT_PROVEN",
+      "nativeConfig": "NOT_PROVEN",
+      "ota": "NOT_TESTED",
+      "baseLabelLimitation": "The native C API may return 0 on a read error; these UI labels do not prove successful native configuration or current/next patch reads.",
+      "receiptSha256": "02659bc1b38cd9cb76fc8c4b61f8c08a3cefa2532200ac21459cd48d7dcd3e2e"
+    },
+    "coordinator": {
+      "status": "REFUSED",
+      "error": "guest_stage_refused",
+      "startedUtc": "2026-10-17T10:08:03.8115881Z",
+      "finishedUtc": "2026-10-17T10:11:56.0392321Z",
+      "elapsedMs": 232223,
+      "timingScope": "Host coordinator including its bounded cleanup wait; not the continuous observer interval.",
+      "cleanupElapsedMs": 120007,
+      "unknownGuestAtCompletion": true,
+      "phases": [
+        {
+          "name": "preflight",
+          "status": "PASS",
+          "elapsedMs": 4274
+        },
+        {
+          "name": "actor-baseline",
+          "status": "PASS",
+          "elapsedMs": 61079
+        },
+        {
+          "name": "step-001",
+          "status": "PASS",
+          "elapsedMs": 14234
+        },
+        {
+          "name": "step-002",
+          "status": "REFUSED",
+          "elapsedMs": 18537
+        },
+        {
+          "name": "step-003",
+          "status": "REFUSED",
+          "elapsedMs": 12866
+        },
+        {
+          "name": "ui-owner",
+          "status": "UNKNOWN",
+          "elapsedMs": 163390
+        }
+      ],
+      "reportSha256": "e8b8e09b58980fcc644407ac82e846514c7dc52c1b11fd352f56d56d3c3b7f11"
+    },
+    "continuousObserver": {
+      "heldOriginalProcessHandle": true,
+      "status": "UNKNOWN",
+      "ownedProcessState": "live_at_deadline",
+      "actualExitCode": null,
+      "forcedUiTermination": false,
+      "uiOutputRedirected": false,
+      "elapsedMs": 300011,
+      "timingScope": "Independent owner stopwatch from its original invocation, including readiness and all observation; same original 300 second deadline.",
+      "finishedUtc": "2026-10-17T10:14:15.7724161Z",
+      "terminalStatus": "REFUSED",
+      "terminalError": "owner_ui_exit_unknown",
+      "terminalElapsedMs": 300136,
+      "parentWasContinuousObserver": true,
+      "uiJobQuerySucceeded": true,
+      "uiInJob": false,
+      "observerJobQuerySucceeded": true,
+      "observerInJob": false,
+      "exitObserved": false,
+      "crashProven": false,
+      "watchSha256": "29245e795ff41b1fcf12425292ab3040fd9a2c76a4df94945dd8f39b36eea402",
+      "terminalSha256": "7053840f0abc9b9a1c4097c4c3469619e44f33fee2f686027dee1eef62a2a82b"
+    },
+    "coldReopen": "NOT_TESTED",
+    "notRun": [
+      "first-local-read",
+      "first-graceful-exit",
+      "cold-local-read",
+      "cold-graceful-exit"
+    ]
+  },
+  "cleanup": {
+    "completed": false,
+    "coordinatorStatus": "REFUSED",
+    "coordinatorError": "cleanup_owner_outcome_unknown",
+    "trayAttempt": {
+      "status": "REFUSED",
+      "failureCode": "ui_window_missing_or_changed",
+      "phase": "tray_callback",
+      "injectedOwnedCallback": true,
+      "callbackReturnedWithoutException": true,
+      "actualShellGestureTested": false,
+      "menuItemInvoked": false,
+      "exitConfirmInvoked": false,
+      "receiptSha256": "1bb2b6b0d46f941d0c7369e715839152e67affd945a260be71134024d9a77524"
+    },
+    "readOnlyPostcheck": {
+      "status": "PASS",
+      "cleanupState": "INCOMPLETE_UI_LEFT_UNCHANGED",
+      "guestElapsedMs": 54974,
+      "hostElapsedMs": 58468,
+      "timingScope": "Separate authorized read-only inspection after observer termination.",
+      "uiStillOwnedAndLive": true,
+      "observerAbsent": true,
+      "exvpnProcessCount": 1,
+      "originalMainAndChildExist": true,
+      "originalMainAndChildVisible": true,
+      "originalWindowsSameOwnedPidAndThread": true,
+      "dotNetMainWindowHandleSelectionChanged": true,
+      "windowObservationLimit": "The original pinned windows still exist; the class and cause of the alternate .NET MainWindowHandle were not established.",
+      "installedPayloadVerified": true,
+      "productionBindingVerified": true,
+      "ownerSidEqual": true,
+      "serviceGenerationUnchanged": true,
+      "serviceState": "Running",
+      "installedStateSha256": "801106b87c07ddc0ab0201e3cb5dc0cfa7b93691db37c181383e24785f432070",
+      "scmAclUnchanged": true,
+      "networkUnchanged": true,
+      "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+      "guardArmed": false,
+      "tunnelPresent": false,
+      "storageFileCount": 0,
+      "storageUnchanged": true,
+      "backupCount": 20,
+      "backupInventorySha256": "44e69176e8012a3a132cad1c95791982223bda742e2544fb751121f38e48acd5",
+      "backupsUnchanged": true,
+      "protectedQaReceiptsRemaining": [
+        {
+          "name": "native-baseline.json",
+          "length": 129918,
+          "sha256": "039eec0235387bf16c2289598f16764a23d9d920a98025ca864e81241e869a42"
+        },
+        {
+          "name": "owner.json",
+          "length": 146,
+          "sha256": "cbcbf4912a0154f2ffbf037f499f1efaf6a6da9af38b8c3d2ba6033fb023412f"
+        }
+      ],
+      "uiActions": 0,
+      "signals": 0,
+      "processesStopped": 0,
+      "networkChanges": 0,
+      "reportSha256": "d2c504717fc2c709f523346904f67f572633aa3eb0a44dc7addb267d77535367",
+      "hostReportSha256": "924722b140a05e6cc1f73e9e0ce7519098c8f720e4570c39807c63494027db91"
+    },
+    "finalDisposition": "Exact owned UI left running and two protected QA receipts left unchanged; no further actions or runtime attempts."
+  },
+  "screenshots": [],
+  "visualLayout": "NOT_TESTED",
+  "limitations": [
+    "REFUSED runtime and incomplete cleanup remain unchanged despite successful read-only observations.",
+    "Actual exit, graceful shutdown and cold reopen were not demonstrated.",
+    "Base/current/channel UI text does not prove native current/next reads or OTA configuration.",
+    "The tray callback was injected into the owned window; no real Shell gesture was tested.",
+    "No cloud check, download, VPN, install or network mutation occurred in this diagnostic."
+  ],
+  "privateEvidence": {
+    "manifestPath": ".private/windows-shorebird-evidence-bf4bb947/private-evidence-manifest.json",
+    "manifestSha256": "95a8e958eeaf74f120017fa6346d6423b2a46f94655e7844b74c773606e2b02a",
+    "fileCount": 88,
+    "verificationMismatches": 0
+  },
+  "productSourceCommit": "e707d942c5bfd01075ba57f512b6aabec954980f",
+  "originalCandidateSha256": "7fb6624a0c56a9426f33dbdc3e980a7560a6d6977f9057a105d259aca6062ccb",
+  "rootReview": {
+    "hashMismatches": 0,
+    "manifestRecordsVerified": 88,
+    "interpretation": "Saved UI labels observed; runtime refusal and incomplete cleanup preserved. Original windows remained bound to the same live UI; graceful exit, cold reopen and native configuration are not proven."
+  }
+}

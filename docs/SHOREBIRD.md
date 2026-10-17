@@ -198,6 +198,15 @@ Windows Authenticode отсутствует.
 полный Dart/Flutter linker inventory и проверка лицензионных обязательств.
 Windows дополнительно требует подпись и завершение development release gate.
 
+Для следующего шага inventory добавлен явный `ordinary|shorebird` selector:
+закреплённые SDK/CLI/engine проверяются до сбора, source/plugin paths должны
+соответствовать выбранному SDK. Shorebird допускает только release/offline;
+подготовка POM по прежней ordinary-policy отклоняется до создания файлов.
+157 inventory и 106 runtime/notices fixtures PASS, оба настоящих SDK проверены
+чтением. Сам граф зависимостей и связь с APK/AAB этим шагом не получены;
+release blockers сохранены. [Доказательства](evidence/android-inventory-shorebird-selector.json),
+[исходники 8908ca2](https://github.com/Extectick/ExVPN/commit/8908ca237124c7bdfca1f8661fa1ded077f5e7e8).
+
 ## Проверки установленной базы +16
 
 Android API30 x86_64: проверены уже установленный подписанный release APK,
@@ -223,6 +232,21 @@ CRCRLF в ответе emulator console и объединённых Flutter acce
 подтверждены. Исходный отказ cleanup сохранён, отдельная проверенная очистка
 удалила только пять файлов своего стенда. Root сверил 112 файлов доказательств.
 [Результаты первых попыток Windows](evidence/windows-shorebird-base16-first-attempts.json).
+
+Повторный Windows-прогон удерживал исходный process handle непрерывно.
+Экран действительно открылся: сохранены labels сборки 16, базового Dart-выпуска,
+канала beta и активной кнопки проверки. Стенд ожидал другой MSAA role заголовка;
+39 чтений дерева прошли без COM-ошибок, но predicate завершился отказом.
+Затем cleanup guard отказал из-за изменившегося `Process.MainWindowHandle`,
+хотя исходные main/Flutter HWND продолжали существовать и принадлежать тому же
+процессу. UI остался жив после 300 с наблюдения; exit code не получен,
+graceful exit и cold reopen не проверены. Это не доказательство crash.
+Отдельный read-only postcheck за 58,468 с подтвердил неизменность payload,
+службы, сети, пустого storage и 20 backup-копий. UI оставлен открытым,
+два защищённых файла этого стенда сохранены; cleanup остаётся незавершённым.
+Повторных UI-действий, принудительного завершения, VPN или облачных запросов
+не было. [Результат наблюдения](evidence/windows-shorebird-base16-continuous-owner.json).
+Скриншот не снимался; эти данные не являются визуальной приёмкой layout.
 
 Даже успешное отображение «Базовый выпуск» подтверждает лишь локальное
 поведение UI. Native-функции current/next закреплённого updater возвращают

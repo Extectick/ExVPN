@@ -55,8 +55,8 @@
     "Existing APK/AAB binding and release blockers remain unchanged."
   ],
   "date": "2026-10-17",
-  "sourceState": "working tree; commit pending",
   "originalProof": "artifacts/qa/android-inventory-runtime-selector-c2c139e7847a41449908785de1e17b4c/proof.json",
   "originalProofSha256": "43e249d532e754e7569f4e00411ba8704a847ec0d029ef9d3700def6ac51b46e",
-  "rootReview": "Four-file scope inspected; source and fixture hashes verified; no release gate removed."
+  "rootReview": "Four-file scope inspected; source and fixture hashes verified; no release gate removed.",
+  "sourceCommit": "8908ca237124c7bdfca1f8661fa1ded077f5e7e8"
 }

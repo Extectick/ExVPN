@@ -224,6 +224,12 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   Windows upgrade +13 → +16 прошёл, но первый переход к версиям дал timeout,
   UI исчез без сохранённого exit code; причина и updater остаются открытыми.
   [Отчёт Windows](evidence/windows-shorebird-base16-first-attempts.json).
+  Повторное непрерывное наблюдение подтвердило экран сборки 16/base/beta;
+  стенд отказал на MSAA role и изменении MainWindowHandle. Исходный UI
+  оставался жив на 300-секундном deadline и последующем read-only postcheck.
+  Сеть/служба/storage/20 backups неизменны; UI и два QA receipts оставлены,
+  cleanup, graceful exit и cold reopen не подтверждены. Это не crash verdict.
+  [Наблюдение Windows](evidence/windows-shorebird-base16-continuous-owner.json).
   Надпись base сама по себе не доказывает успешную native-конфигурацию:
   current/next C API допускает `0` при ошибке чтения. E6 не закрыт.
   Код базы: [e707d94](https://github.com/Extectick/ExVPN/commit/e707d942c5bfd01075ba57f512b6aabec954980f); проверка SDK: [c227570](https://github.com/Extectick/ExVPN/commit/c2275700c0b849bba47c468c06e1412ddb1993a7).
@@ -364,6 +370,11 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   CI +10: [run 38969281066](https://github.com/Extectick/ExVPN/actions/runs/38969281066) на [924493a](https://github.com/Extectick/ExVPN/commit/924493a511547bb2b4c93262ab93df82fe127479) — **SUCCESS**, Windows 7:56, Android 14:50; tests/build/upload прошли. [Отчёт](evidence/ci-build10.json). Docs-only push не запустил дубликат и не отменил сборку. Это development artifacts, не подписанная beta.
   CI +11, 2026-10-17: [run 38979241913](https://github.com/Extectick/ExVPN/actions/runs/38979241913) на [292d3dc](https://github.com/Extectick/ExVPN/commit/292d3dc05f1b694a26ca9e2cb30953850e5b8373) — **SUCCESS**, Windows 9:11, Android 18:48; tests/build/upload прошли. [Отчёт](evidence/ci-build11.json). Это проверка данного commit; последующие QA/CI-изменения и системная приёмка имеют отдельные результаты.
 - [ ] **EXVPN-E7-002** — Подготовить лицензии/SBOM, подпись и артефакты beta. Зависимости: E4–E6, доступ к ключам. Критерий: APK и Windows installer подписаны; полный комплект уведомлений соответствует бинарникам; исходники MPL доступны.
+  2026-10-17: Android inventory получил явный selector закреплённого Shorebird
+  release SDK; 157 + 106 focused checks PASS. Подготовка POM старой policy для
+  Shorebird запрещена; граф и привязка APK/AAB пока не получены, E7-002 открыт.
+  [Отчёт](evidence/android-inventory-shorebird-selector.json),
+  [код 8908ca2](https://github.com/Extectick/ExVPN/commit/8908ca237124c7bdfca1f8661fa1ded077f5e7e8).
   Дополнение 2026-10-17: `app.so` готового Windows +14 совпал с cached AOT output.
   733 сохранённых Flutter input hashes проверены реальным pinned-алгоритмом;
   для 896 входов исторических хешей нет. Это неполное доказательство build inputs,
