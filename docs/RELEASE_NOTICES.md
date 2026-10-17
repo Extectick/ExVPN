@@ -99,6 +99,12 @@ release blockers. Проверены SHA/signature установщика и о�
 закрепляет три dynamic debug зависимости `integration_test`; actual collector
 выявил этот отказ. Такой отказ не снимает ни один release blocker.
 
+Три зависимости закреплены в проекте без изменения SDK; 92 проверки прошли.
+Следующий actual offline run дошёл до POM query и остановился с
+`exvpn_inventory_pom_missing_or_ambiguous`. Точный компонент пока не установлен,
+полный граф не сохранён; причина не приписывается произвольно кешу или Gradle API.
+[Доказательства и незакрытые границы](evidence/android-runtime-inventory-build13.json).
+
 Эта инвентаризация не является полным SBOM: Gradle/Maven runtime, отдельные NSIS
 компоненты и комплект Windows runtime проверяются дополнительно по фактическому
 пакету. Проверка совместимости лицензий, подписи и воспроизводимости выпуска

@@ -17,7 +17,20 @@ Go unit/loopback tests и файловые сценарии установщик
 запускают установленный VPN, службу, TUN, WFP или смену маршрутов/DNS хоста.
 Приватные подписки и действующие VPN-серверы в них не участвуют.
 
-Последний общий прогон, 2026-10-17: **10/10 наборов за 106,66 с**, все Go tests
+Последний общий прогон +13, 2026-10-17: **10/10 наборов за 111,93 с**, без
+Go result cache и изменения исходников. Прошли 192 domain, 57 state, 31 updates
+и 168 Flutter tests, Go verify/test/vet, Xray lifecycle, installer и QA fixtures.
+В том числе проверены 144 CI selector cases, 54 быстрых Android inventory cases
+и Windows subscription validators под PS7/PS5.1. Отдельные 92 проверки с
+реальным синтетическим Gradle repo подтверждают dependency pin и изоляцию.
+[Отчёт](evidence/fast-validation-build13.json),
+[проверенный код](https://github.com/Extectick/ExVPN/commit/03b5d6c).
+Новые standalone Windows subscription QA файлы включены в точный CI allowlist;
+их отдельное изменение не требует native rebuild, все тесты сохраняются.
+Android APK и Windows installer/QA bundles собирались независимыми владельцами;
+общий app build-каталог передавался между ними последовательно.
+
+Предыдущий общий прогон, 2026-10-17: **10/10 наборов за 106,66 с**, все Go tests
 выполнены заново, fingerprint исходников совпал. В общий runner и CI добавлены
 offline DNS capture fixtures, nonce-проба Android и Windows teardown fixtures
 под PS7/PS5.1; проверены 131 CI selector/graph/JUnit fixtures и строгие границы
