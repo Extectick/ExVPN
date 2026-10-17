@@ -32,6 +32,12 @@ $unknownCounter=ConvertFrom-AndroidLifecycleProbe ($good+"INSTRUMENTATION_RESULT
 if ($unknownCounter.uidTxBytes -ne -1) { throw 'qa_unknown_counter_was_fabricated' }
 $checks++
 Assert-QaReject { ConvertFrom-AndroidLifecycleProbe ($good+"INSTRUMENTATION_RESULT: durationMs=-1`n") }
+$nonceReply=$base+"INSTRUMENTATION_RESULT: success=false`nINSTRUMENTATION_RESULT: dnsQueryAttempted=true`nINSTRUMENTATION_RESULT: dnsQuerySha256=$('a'*64)`nINSTRUMENTATION_RESULT: dnsOutcome=no_answer`nINSTRUMENTATION_CODE: -1`n"
+$nonceResult=ConvertFrom-AndroidLifecycleProbe $nonceReply
+if ($nonceResult.success -or !$nonceResult.dnsQueryAttempted -or $nonceResult.dnsOutcome -cne 'no_answer') { throw 'qa_dns_no_answer_was_success' }
+$checks++
+Assert-QaReject { ConvertFrom-AndroidLifecycleProbe ($nonceReply.Replace('no_answer','example.invalid')) }
+Assert-QaReject { ConvertFrom-AndroidLifecycleProbe ($nonceReply+"INSTRUMENTATION_RESULT: nonce=0123456789abcdef0123456789abcdef`n") }
 
 [xml]$tree='<hierarchy><node package="ru.exvpn.exvpn" text="" content-desc="Подключить VPN" bounds="[2,4][12,24]" /></hierarchy>'
 $node=Find-AndroidLifecycleLabel $tree 'Подключить VPN'

@@ -17,6 +17,7 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -28,11 +29,14 @@ import javax.net.ssl.HttpsURLConnection;
 /** Separate-UID QA only. Never reads ExVPN credentials or binds around its VPN. */
 public final class HttpsProbe extends Instrumentation {
     private String mode;
+    private String nonce;
+    private volatile boolean dnsQueryAttempted;
     private volatile HttpsURLConnection activeConnection;
 
     @Override public void onCreate(Bundle arguments) {
         super.onCreate(arguments);
         mode = arguments == null ? "health" : arguments.getString("mode", "health");
+        nonce = arguments == null ? null : arguments.getString("nonce");
         start();
     }
 
@@ -67,6 +71,11 @@ public final class HttpsProbe extends Instrumentation {
         result.putLong("durationMs", SystemClock.elapsedRealtime() - started);
         result.putLong("uidTxBytes", delta(tx, TrafficStats.getUidTxBytes(uid)));
         result.putLong("uidRxBytes", delta(rx, TrafficStats.getUidRxBytes(uid)));
+        if ("dnsNonce".equals(mode)) {
+            result.putBoolean("dnsQueryAttempted", dnsQueryAttempted);
+            String name = DnsNonce.name(nonce);
+            if (name != null) result.putString("dnsQuerySha256", DnsNonce.sha256(name));
+        }
         finish(Activity.RESULT_OK, result);
     }
 
@@ -76,6 +85,34 @@ public final class HttpsProbe extends Instrumentation {
 
     private Bundle runProbe() throws Exception {
         Bundle result = new Bundle();
+        if ("dnsNonce".equals(mode)) {
+            String name = DnsNonce.name(nonce);
+            if (name == null) {
+                result.putString("error", "invalid_dns_nonce");
+                return result;
+            }
+            int ipv4 = 0;
+            int ipv6 = 0;
+            dnsQueryAttempted = true;
+            try {
+                // A unique name avoids positive/negative resolver caches. This
+                // is the ordinary system resolver, with no network binding,
+                // DNS server override, trust override or direct fallback.
+                for (InetAddress address : InetAddress.getAllByName(name)) {
+                    if (address instanceof Inet4Address) ipv4++;
+                    if (address instanceof Inet6Address) ipv6++;
+                }
+                result.putString("dnsOutcome", "answers");
+            } catch (UnknownHostException noAnswer) {
+                // This is not proof of NXDOMAIN or successful protection:
+                // the accompanying packet capture supplies that evidence.
+                result.putString("dnsOutcome", "no_answer");
+            }
+            result.putInt("ipv4Answers", ipv4);
+            result.putInt("ipv6Answers", ipv6);
+            result.putBoolean("success", ipv4 + ipv6 > 0);
+            return result;
+        }
         if ("dns".equals(mode)) {
             int ipv4 = 0;
             int ipv6 = 0;
@@ -159,6 +196,28 @@ public final class HttpsProbe extends Instrumentation {
         } finally {
             connection.disconnect();
             activeConnection = null;
+        }
+    }
+}
+
+/** Fixed-domain nonce only; no arbitrary hostname or resolver configuration. */
+final class DnsNonce {
+    private DnsNonce() {}
+
+    static String name(String nonce) {
+        return nonce != null && nonce.matches("[a-f0-9]{32}")
+                ? "exvpn-" + nonce + ".example.com" : null;
+    }
+
+    static String sha256(String name) {
+        try {
+            StringBuilder digest = new StringBuilder();
+            for (byte value : MessageDigest.getInstance("SHA-256").digest(name.getBytes(StandardCharsets.US_ASCII))) {
+                digest.append(String.format(java.util.Locale.ROOT, "%02x", value & 255));
+            }
+            return digest.toString();
+        } catch (java.security.NoSuchAlgorithmException unavailable) {
+            throw new IllegalStateException("sha256_unavailable");
         }
     }
 }

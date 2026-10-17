@@ -42,6 +42,33 @@ bypass or successful tunnelling by themselves. Successful DNS resolution does no
 prove absence of DNS leaks; packet-level leak checks remain a separate gate.
 Removing the helper APKs after QA does not affect ExVPN data.
 
+## Uncached DNS capture check
+
+`dnsNonce` issues one ordinary `InetAddress.getAllByName` lookup for a fixed
+`exvpn-<nonce>.example.com` name. Its `nonce` argument must be exactly 32 lowercase
+hexadecimal characters; no arbitrary domain, resolver, socket or TLS policy is
+accepted. Generate a new nonce for every phase in a private driver and keep the
+nonce, phase input and raw capture under `.private/`. The result contains only
+`dnsQueryAttempted`, `dnsQuerySha256`, answer counts and `dnsOutcome` (`answers` or
+`no_answer`). `no_answer` alone does not distinguish NXDOMAIN from blocked DNS and
+does not prove protection. The host JVM fixtures also cover this input contract.
+
+The offline companion `../android-dns-capture/test.ps1` checks synthetic classic
+PCAP fixtures using the existing pinned Go module graph. Its CLI takes `-pcap`
+and `-phases` paths inside `.private/`, with at most eight disjoint phase windows,
+90 seconds per phase and 32 MiB per capture. It hashes the same immutable bytes it
+parses and emits only counts, timestamps and digests. `PARSED` describes parser
+completion, never a leak-test PASS. Truncation, fragments, TCP DNS requiring stream
+reassembly, uncertain clocks and unknown input fail as `INDETERMINATE`.
+
+A runtime check must separately confirm an uncached direct DNS query and its
+response in the capture, actual independent-UID HTTPS egress and VPN state, then
+repeat a fresh direct DNS control after explicit disconnect. A TCP port 53 SYN
+control proves capture visibility of TCP 53, not DNS payload decoding. Classic
+emulator PCAP supplies no drop counter; report that limitation and the tested
+address families. An IPv4-only emulator with an ADB reverse fixture does not
+establish physical-device, IPv6 or all DNS-transport protection.
+
 ## Fast focused text input
 
 The protected QA APK also registers

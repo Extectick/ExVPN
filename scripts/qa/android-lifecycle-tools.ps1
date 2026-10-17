@@ -60,9 +60,9 @@ function Invoke-AndroidLifecycleAdb {
 function ConvertFrom-AndroidLifecycleProbe {
     param([Parameter(Mandatory)][string]$Output)
     $numbers = @('durationMs','uid','uidRxBytes','uidTxBytes','httpStatus','responseBytes','publicIpFamily','ipv4Answers','ipv6Answers')
-    $booleans = @('vpnTransport','success')
-    $digests = @('bodySha256','publicIpSha256')
-    $errors = @('deadline','network','unsupported_mode','http_status','too_large','invalid_ip_response')
+    $booleans = @('vpnTransport','success','dnsQueryAttempted')
+    $digests = @('bodySha256','publicIpSha256','dnsQuerySha256')
+    $errors = @('deadline','network','unsupported_mode','http_status','too_large','invalid_ip_response','invalid_dns_nonce')
     $result = [ordered]@{}
     foreach ($match in [regex]::Matches($Output, '(?m)^INSTRUMENTATION_RESULT: ([a-zA-Z0-9]+)=([^\r\n]*)\r?$')) {
         $key=$match.Groups[1].Value; $value=$match.Groups[2].Value
@@ -73,6 +73,7 @@ function ConvertFrom-AndroidLifecycleProbe {
             $result[$key] = $number
         } elseif ($key -in $booleans -and $value -cin @('true','false')) { $result[$key] = $value -ceq 'true' }
         elseif ($key -in $digests -and $value -cmatch '^[a-f0-9]{64}$') { $result[$key] = $value }
+        elseif ($key -eq 'dnsOutcome' -and $value -cin @('answers','no_answer')) { $result[$key] = $value }
         elseif ($key -eq 'error' -and $value -cin $errors) { $result[$key] = $value }
         else { throw 'qa_invalid_probe_field' }
     }
