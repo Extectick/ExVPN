@@ -142,6 +142,7 @@ function Assert-AndroidPackagedNotices([string]$Repository, [string]$InputDirect
     foreach ($file in $seal.nativeFiles) { $expected.Add("lib/$($file.path)", $file) }
     foreach ($file in $seal.assetFiles) { $expected.Add("assets/$($file.path)", $file) }
     $actual = Get-AuditZipFiles $ApkPath
+    Assert-AuditAndroidAbiCoverage $actual
     foreach ($path in $expected.Keys) {
         if (!$actual.ContainsKey($path) -or $actual[$path].sha256 -cne $expected[$path].sha256 -or $actual[$path].size -ne $expected[$path].size) {
             throw 'android_packaged_native_or_notice_mismatch'

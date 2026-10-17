@@ -9,7 +9,7 @@ the APK onto a device. A successful build does not prove VPN functionality.
 .EXAMPLE
 ./scripts/bootstrap/build-android-debug.ps1
 .EXAMPLE
-./scripts/bootstrap/build-android-debug.ps1 -Demo -TargetPlatform android-x64
+./scripts/bootstrap/build-android-debug.ps1 -Demo
 #>
 [CmdletBinding()]
 param(
@@ -21,6 +21,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if (@($TargetPlatform | Sort-Object -Unique).Count -ne 2) {
+    throw 'The sealed ExVPN APK requires android-arm64 and android-x64 together. Single-ABI packaging is not supported by this build helper.'
+}
 $workspacePath = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'enter-environment.ps1') -AndroidSdkPath $AndroidSdkPath
 $requiredPackages = @(

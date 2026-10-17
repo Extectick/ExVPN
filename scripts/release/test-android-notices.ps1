@@ -191,11 +191,18 @@ function New-FixtureApk($Fixture, [string]$Change = '') {
                 try { $stream.Write($bytes, 0, $bytes.Length) } finally { $stream.Dispose() }
             }
         }
+        foreach ($abi in @('arm64-v8a', 'x86_64')) {
+            if ($Change -eq 'missing-flutter' -and $abi -eq 'arm64-v8a') { continue }
+            $stream = $zip.CreateEntry("lib/$abi/libflutter.so").Open()
+            try { $stream.WriteByte(42) } finally { $stream.Dispose() }
+        }
         # Other application assets are permitted, but new notice/native entries
         # must be part of the verified snapshot rather than silently appended.
         $extra = switch ($Change) {
             'extra-notice' { 'assets/exvpn_notices/unlisted.txt' }
             'extra-abi' { 'lib/armeabi-v7a/libexvpn.so' }
+            'foreign-abi-only' { 'lib/armeabi-v7a/libdartjni.so' }
+            'x86-dependency' { 'lib/x86/libdependency.so' }
             'case-alias' { 'assets/EXVPN_NOTICES/README.txt' }
             default { 'assets/flutter_assets/example.txt' }
         }
@@ -208,7 +215,7 @@ $f = New-NoticeFixture
 $apk = New-FixtureApk $f
 Assert-AndroidPackagedNotices $f.Root $f.Stage $apk
 $checks++
-foreach ($change in @('changed-native', 'missing-native', 'changed-notice', 'missing-notice', 'extra-notice', 'extra-abi', 'case-alias')) {
+foreach ($change in @('changed-native', 'missing-native', 'changed-notice', 'missing-notice', 'extra-notice', 'extra-abi', 'foreign-abi-only', 'x86-dependency', 'missing-flutter', 'case-alias')) {
     $apk = New-FixtureApk $f $change
     Assert-Refused { Assert-AndroidPackagedNotices $f.Root $f.Stage $apk } "final APK $change"
 }

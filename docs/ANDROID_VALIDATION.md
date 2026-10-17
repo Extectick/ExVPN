@@ -37,6 +37,21 @@ INDETERMINATE и cleanup сохранены отдельно. Единствен
 Это не проверка обновления активного туннеля, других протоколов, IPv6 или
 физического устройства. APK +12 предшествует новым изменениям интерфейса подписок.
 
+### Проверка полноты ABI
+
+Последующий аудит точного +12 APK обнаружил `armeabi-v7a/libdartjni.so` без
+Flutter engine и ExVPN core для этой ABI. Runtime API30 x86_64 выше остаётся
+действительным, но пакет не следует считать пригодным для 32-битного Android.
+[Состав исходного APK и воспроизведение отказа](evidence/android-abi-coverage.json).
+
+В +13 отключено автоматическое добавление ABI закреплённым Flutter plugin;
+сохраняется allowlist `arm64-v8a`/`x86_64`. Build helper и release audit проверяют
+готовый ZIP: любые другие ABI и отсутствие engine/core в поддерживаемой ABI
+дают отказ. Sealed helper заранее отклоняет single-ABI запрос, поскольку его
+JNI/notice contract включает обе архитектуры. 38 offline packaging fixtures
+PASS, включая dependency-only armv7, x86 и отсутствующий Flutter engine.
+Новая упаковка ещё должна пройти эту проверку; физическое устройство не проверено.
+
 ## Стенд и сборки
 
 Android 16/API36, x86_64, эмулятор Pixel 4a с WHPX. Стенд запущен read-only,

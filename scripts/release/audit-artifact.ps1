@@ -136,6 +136,7 @@ try {
             $signature.trustedSignerMatched = !!$ExpectedSignerSha256 -and $signature.certificateSha256.Count -eq 1 -and $signature.certificateSha256[0] -ceq $ExpectedSignerSha256.ToLowerInvariant()
             if ($signature.debug) { Add-AuditFinding $findings 'android_debug_signer' }
         } catch { Add-AuditFinding $findings 'android_signature_not_verified' }
+        try { Assert-AuditAndroidAbiCoverage $files } catch { Add-AuditFinding $findings $_.Exception.Message }
         $nativePaths = @('lib/arm64-v8a/libexvpn.so', 'lib/x86_64/libexvpn.so')
         $bundles = @($files.Keys | Where-Object { $_ -cmatch '^assets/(?:exvpn_notices|notices)/inventory\.json$' })
         if ($bundles.Count -gt 1) { throw 'ambiguous_apk_notice_bundle' }

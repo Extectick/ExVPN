@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "observedAtUtc": "2026-10-17T02:15:11.1365883+00:00",
+  "historicalVersion": "0.1.0+12",
+  "apkSha256": "7adb71bb8eef781cd9893152251c977b767f1cfafd7e1a5e6532bd5d9e141644",
+  "status": "DEFECT_CONFIRMED",
+  "nativeEntries": [
+    "lib/arm64-v8a/libdartjni.so",
+    "lib/arm64-v8a/libexvpn.so",
+    "lib/arm64-v8a/libflutter.so",
+    "lib/arm64-v8a/libVkLayer_khronos_validation.so",
+    "lib/armeabi-v7a/libdartjni.so",
+    "lib/x86_64/libdartjni.so",
+    "lib/x86_64/libexvpn.so",
+    "lib/x86_64/libflutter.so"
+  ],
+  "packagingGuard": "android_packaged_unsupported_abi",
+  "explanation": "Dependency-only armeabi-v7a advertised without ExVPN core or Flutter engine",
+  "revisedApkVerified": false,
+  "limitation": "Offline final ZIP inspection; no unsupported device was used."
+}

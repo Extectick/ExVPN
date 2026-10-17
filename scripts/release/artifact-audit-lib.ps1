@@ -231,6 +231,22 @@ function Test-AuditGoBinary($Info, [string]$RelativePath, [string]$Sha256, $Pins
     [ordered]@{ path = $RelativePath; sha256 = $Sha256; go = $Info.GoVersion; modules = @($modules | Sort-Object { $_.name } -CaseSensitive -Culture en-US) }
 }
 
+function Assert-AuditAndroidAbiCoverage($Files) {
+    # A dependency must not advertise an ABI which lacks the VPN core or Flutter
+    # engine. Inspect final ZIP entries, not the Gradle DSL's intended filters.
+    $allowed = @('arm64-v8a', 'x86_64')
+    foreach ($path in $Files.Keys) {
+        if ($path -cmatch '^lib/([^/]+)/[^/]+\.so$' -and $Matches[1] -cnotin $allowed) {
+            throw 'android_packaged_unsupported_abi'
+        }
+    }
+    foreach ($abi in $allowed) {
+        foreach ($library in @('libexvpn.so', 'libflutter.so')) {
+            if (!$Files.ContainsKey("lib/$abi/$library")) { throw 'android_packaged_incomplete_abi' }
+        }
+    }
+}
+
 function Test-AuditNotices($Inventory, $Files, $Native, [string]$Target, [string]$AppVersion, [string]$DartLockHash, $Findings) {
     if ($Inventory.schema -ne 1 -or $Inventory.target -cne $Target -or !$Inventory.components.Count) { throw 'invalid_notice_inventory' }
     if (!$Inventory['app'] -or $Inventory.app.version -cne $AppVersion) { Add-AuditFinding $Findings 'notice_app_identity_missing_or_mismatch' }
