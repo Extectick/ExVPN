@@ -14,6 +14,7 @@ function Get-BuildImpactPathKind([string]$Path) {
         'apps/exvpn/integration_test/windows_policy_test.dart',
         'apps/exvpn/integration_test/windows_subscriptions_test.dart',
         'scripts/windows/prepare-app-sandbox.ps1',
+        'scripts/windows/sandbox/app-qa-inputs.ps1',
         'scripts/windows/sandbox/guest-system-qa.ps1',
         'scripts/windows/sandbox/guest-qa.ps1',
         'scripts/windows/sandbox/guest-client-qa.ps1',

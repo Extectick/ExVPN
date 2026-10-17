@@ -32,4 +32,33 @@ $edit=Report;$reopen=Report 'reopen';Assert-SubscriptionColdPair $edit $reopen;G
 foreach($field in @('runId','version','executableSha256','snapshotSha256','ciphertextSha256')){$reopen=Report 'reopen';$reopen.$field='different';Bad {Assert-SubscriptionColdPair $edit $reopen} ('cold identity '+$field)}
 $reopen=Report 'reopen';$reopen.processId=$edit.processId;Bad {Assert-SubscriptionColdPair $edit $reopen} 'widget rebuild is not cold restore'
 $reopen=Report 'reopen';$reopen.coldRestoreMatched=$false;$m=Marker;$m.subscriptionPhase='reopen';Bad {Assert-SubscriptionReport $reopen $m ('a'*64)} 'unconfirmed cold restore'
-Write-Host "Windows subscription QA validators: $checks checks PASS; no guest, process, storage or network mutations."
+$repository=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+. (Join-Path $repository 'scripts/windows/installer/package-common.ps1')
+. (Join-Path $repository 'scripts/windows/sandbox/app-qa-inputs.ps1')
+$fixture=Join-Path $repository ('artifacts/qa/subscription-overlay-fixture-'+[guid]::NewGuid().ToString('N'))
+$legacyTransport=Join-Path $fixture 'legacy-transport'
+$legacySubscription=Join-Path $fixture 'legacy-subscription'
+$transport=Join-Path $fixture 'transport'
+$subscription=Join-Path $fixture 'subscription'
+foreach($directory in @($legacyTransport,$legacySubscription,$transport,$subscription)) {[IO.Directory]::CreateDirectory($directory)|Out-Null}
+# Reproduce RO-share overlay semantics with ordinary synthetic directories.
+# The old per-mode staging left the previous observer unknown to the next seal.
+Copy-Item -LiteralPath (Join-Path $repository 'scripts/qa/guest-transport-observe.ps1') -Destination $legacyTransport
+Copy-Item -LiteralPath (Join-Path $repository 'scripts/windows/sandbox/guest-app-subscriptions.ps1'),(Join-Path $repository 'scripts/qa/windows-subscriptions-lib.ps1') -Destination $legacySubscription
+$oldManifest=@(Get-TreeManifest $legacySubscription)
+foreach($file in Get-ChildItem -LiteralPath $legacySubscription -File){Copy-Item -LiteralPath $file.FullName -Destination $legacyTransport}
+Bad {Assert-TreeManifest $legacyTransport $oldManifest} 'old transport to subscription overlay rejects stale observer'
+Copy-AppQaModeHelpers $repository $transport
+Copy-AppQaModeHelpers $repository $subscription
+$transportManifest=@(Get-TreeManifest $transport)
+$subscriptionManifest=@(Get-TreeManifest $subscription)
+foreach($pair in @(@{from=$subscription;to=$transport;manifest=$subscriptionManifest},@{from=$transport;to=$subscription;manifest=$transportManifest})) {
+    foreach($file in Get-ChildItem -LiteralPath $pair.from -File){Copy-Item -LiteralPath $file.FullName -Destination $pair.to}
+    Assert-TreeManifest $pair.to $pair.manifest
+    Good $true 'both mode overlay directions have the exact sealed helper set'
+}
+[IO.File]::WriteAllText((Join-Path $transport 'unknown.ps1'),'synthetic untrusted helper')
+Bad {Assert-TreeManifest $transport $transportManifest} 'unknown overlay file remains forbidden'
+[IO.File]::AppendAllText((Join-Path $subscription 'guest-transport-observe.ps1'),'synthetic tampering')
+Bad {Assert-TreeManifest $subscription $subscriptionManifest} 'known helper hash mismatch remains forbidden'
+Write-Host "Windows subscription QA validators: $checks checks PASS; only synthetic fixture files; no guest, process or network changes."

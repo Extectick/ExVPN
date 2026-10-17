@@ -74,12 +74,8 @@ Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'installer/package-common.ps1'),
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'sandbox/guest-app-faults.ps1') -Destination $inputRoot
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'sandbox/guest-app-policy.ps1') -Destination $inputRoot
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'sandbox/guest-app-network.ps1') -Destination $inputRoot
-if ($TransportCycles) {
-    Copy-Item -LiteralPath (Join-Path $repository 'scripts/qa/guest-transport-observe.ps1') -Destination $inputRoot
-}
-if ($SubscriptionUi) {
-    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'sandbox/guest-app-subscriptions.ps1'),(Join-Path $repository 'scripts/qa/windows-subscriptions-lib.ps1') -Destination $inputRoot
-}
+. (Join-Path $PSScriptRoot 'sandbox/app-qa-inputs.ps1')
+Copy-AppQaModeHelpers $repository $inputRoot
 $manifest = @(Get-TreeManifest $inputRoot)
 [ordered]@{format=1;forbiddenHost=$env:COMPUTERNAME;build=$build;runId=$runId;faults=[bool]($IncludeFaults -or $PolicyRecovery);policyRecovery=$(if ($PolicyRecovery) { 'reset' } else { $null });unelevated=[bool]$Unelevated;providerMatrix=[bool]$ProviderMatrix;networkRecovery=[bool]$NetworkRecovery;transportCycles=$TransportCycles;subscriptionUi=[bool]$SubscriptionUi;subscriptionPhase=$(if ($SubscriptionUi) { 'edit' } else { $null });files=$manifest} | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Encoding utf8NoBOM
 [ordered]@{directory=$output;input=$inputRoot;output=$resultRoot} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $repository 'artifacts/windows/app-qa-latest.json') -Encoding utf8
