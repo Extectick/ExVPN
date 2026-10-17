@@ -225,9 +225,125 @@ function Invoke-AndroidLifecycleVpnUi {
     }
 }
 
-function Read-AndroidLifecycleUi {
+function ConvertFrom-AndroidLifecycleVpnNetworks {
+    param([Parameter(Mandatory)][AllowEmptyString()][string]$Output, [Nullable[int]]$ExpectedOwnerUid)
+    # Inspect only the complete Current Networks section. Historical event logs
+    # may contain retired VPNs; missing output is never evidence of no VPN.
+    if ($Output.Length -lt 128 -or $Output.Length -gt 2097152 -or
+        ($null -ne $ExpectedOwnerUid -and $ExpectedOwnerUid -lt 10000)) { throw 'qa_connectivity_dump_invalid' }
+    $text=$Output.Replace("`r`r`n","`n").Replace("`r`n","`n")
+    if ($text.Contains("`r")) { throw 'qa_connectivity_line_endings_invalid' }
+    $sections=[regex]::Matches($text,'(?ms)^Current Networks:\n(.*?)^Status for known UIDs:\n')
+    if ($sections.Count -ne 1 -or [regex]::Matches($text,'(?m)^Current Networks:$').Count -ne 1 -or
+        [regex]::Matches($text,'(?m)^Status for known UIDs:$').Count -ne 1) { throw 'qa_connectivity_section_missing_or_duplicate' }
+    $rows=@($sections[0].Groups[1].Value -split "`n" | Where-Object { $_ -cmatch '^  NetworkAgentInfo\{' })
+    if (!$rows.Count -or $rows.Count -gt 16 -or
+        $rows.Count -ne [regex]::Matches($sections[0].Groups[1].Value,'NetworkAgentInfo\{').Count) { throw 'qa_connectivity_rows_invalid' }
+    $ids=[Collections.Generic.HashSet[string]]::new()
+    $interfaces=[Collections.Generic.List[string]]::new()
+    foreach ($row in $rows) {
+        $type=[regex]::Match($row,'^  NetworkAgentInfo\{ ni\{\[type: ([A-Z_]+)\[[^\]]*\], state: ([A-Z_]+/[A-Z_]+),')
+        $network=[regex]::Matches($row,' network\{(\d+)\}')
+        $link=[regex]::Matches($row,' lp\{\{InterfaceName: ([A-Za-z0-9_.:-]+) ')
+        $transport=[regex]::Matches($row,' nc\{\[ Transports: ([A-Z_|]+) Capabilities: ')
+        if (!$type.Success -or $network.Count -ne 1 -or $link.Count -ne 1 -or $transport.Count -ne 1 -or
+            !$row.EndsWith(' }') -or !$ids.Add($network[0].Groups[1].Value)) { throw 'qa_connectivity_row_unrecognized' }
+        $typeVpn=$type.Groups[1].Value -ceq 'VPN'
+        $transportVpn=@($transport[0].Groups[1].Value.Split('|')) -ccontains 'VPN'
+        if ($typeVpn -ne $transportVpn) { throw 'qa_connectivity_vpn_conflict' }
+        $interface=$link[0].Groups[1].Value
+        if (!$typeVpn) {
+            if ($interface -cmatch '^tun[0-9]+$') { throw 'qa_connectivity_unclassified_tun' }
+            continue
+        }
+        $owners=[regex]::Matches($row,' OwnerUid: (\d+)(?= |\])')
+        $owner=0
+        if ($type.Groups[2].Value -cne 'CONNECTED/CONNECTED' -or $interface -cnotmatch '^tun[0-9]+$' -or
+            $owners.Count -ne 1 -or ![int]::TryParse($owners[0].Groups[1].Value,[ref]$owner) -or
+            $null -eq $ExpectedOwnerUid -or $owner -ne $ExpectedOwnerUid) { throw 'qa_connectivity_vpn_owner_or_state_unconfirmed' }
+        $interfaces.Add($interface)
+    }
+    if ($interfaces.Count -gt 1) { throw 'qa_connectivity_vpn_not_unique' }
+    # Owner UID must come from the caller's independently verified installed
+    # package. This observer does not enumerate every kernel interface or prove traffic.
+    return [ordered]@{mechanism='connectivity_service_v1';networkCount=$rows.Count;vpnCount=$interfaces.Count;
+        vpnInterfaces=@($interfaces.ToArray());ownerUidMatched=($interfaces.Count -eq 1);activeVpnNetworkAbsent=($interfaces.Count -eq 0)}
+}
+
+function Read-AndroidLifecycleVpnNetworks {
+    param([Parameter(Mandatory)][ValidatePattern('^[a-zA-Z0-9_-]{1,60}$')][string]$Step, [Nullable[int]]$ExpectedOwnerUid)
+    $output=Invoke-AndroidLifecycleAdb -Step $Step -TimeoutSeconds 10 -AdbArguments @('shell','dumpsys','connectivity')
+    ConvertFrom-AndroidLifecycleVpnNetworks -Output $output -ExpectedOwnerUid $ExpectedOwnerUid
+}
+
+function Find-AndroidLifecycleVpnConsentButton {
+    param([Parameter(Mandatory)][xml]$Tree)
+    if (@($Tree.SelectNodes('//node[@package="ru.exvpn.exvpn"]')).Count) { throw 'qa_permission_mixed_window' }
+    $buttons=@($Tree.SelectNodes('//node[@package="com.android.vpndialogs" and @resource-id="android:id/button1"]'))
+    $cancel=@($Tree.SelectNodes('//node[@package="com.android.vpndialogs" and @resource-id="android:id/button2"]'))
+    $titles=@($Tree.SelectNodes('//node[@package="com.android.vpndialogs" and @resource-id="android:id/alertTitle"]'))
+    $messages=@($Tree.SelectNodes('//node[@package="com.android.vpndialogs" and (@resource-id="android:id/message" or @resource-id="com.android.vpndialogs:id/warning")]'))
+    if ($buttons.Count -ne 1 -or $cancel.Count -ne 1 -or $titles.Count -ne 1 -or $messages.Count -ne 1) { throw 'qa_permission_dialog_ambiguous' }
+    foreach ($button in @($buttons[0],$cancel[0])) {
+        if ($button.GetAttribute('class') -cne 'android.widget.Button' -or $button.GetAttribute('clickable') -cne 'true' -or
+            $button.GetAttribute('enabled') -cne 'true') { throw 'qa_permission_button_unavailable' }
+    }
+    if ($messages[0].GetAttribute('text') -cnotmatch '\bExVPN\b') { throw 'qa_permission_app_unconfirmed' }
+    if ($titles[0].GetAttribute('text') -cnotin @('Connection request','Запрос на подключение')) { throw 'qa_permission_title_unrecognized' }
+    if ($buttons[0].GetAttribute('text') -cnotin @('OK','ОК')) { throw 'qa_permission_positive_unrecognized' }
+    $bounds=[regex]::Match($buttons[0].GetAttribute('bounds'),'^\[(\d{1,5}),(\d{1,5})\]\[(\d{1,5}),(\d{1,5})\]$')
+    if (!$bounds.Success -or [int]$bounds.Groups[3].Value -le [int]$bounds.Groups[1].Value -or
+        [int]$bounds.Groups[4].Value -le [int]$bounds.Groups[2].Value) { throw 'qa_permission_bounds_invalid' }
+    return $buttons[0]
+}
+
+function Assert-AndroidLifecycleNoVpnService {
     param([Parameter(Mandatory)][string]$Step)
-    $output = Invoke-AndroidLifecycleAdb -Step $Step -AdbArguments @('exec-out','uiautomator','dump','/dev/tty')
+    $output=Invoke-AndroidLifecycleAdb -Step $Step -TimeoutSeconds 5 -AdbArguments @('shell','dumpsys','activity','services','ru.exvpn.exvpn')
+    $text=$output.Replace("`r`r`n","`n").Replace("`r`n","`n").Trim()
+    if ($text -cnotmatch '\AACTIVITY MANAGER SERVICES \(dumpsys activity services\)\n[ \t]+\(nothing\)\z') { throw 'qa_vpn_service_absence_unconfirmed' }
+}
+
+function Invoke-AndroidLifecycleVpnConsent {
+    param([Parameter(Mandatory)][Collections.IDictionary]$ConnectResult,
+        [Parameter(Mandatory)][ValidatePattern('^[a-zA-Z0-9_-]{1,40}$')][string]$Step)
+    foreach ($key in @('mechanism','runId','command','status','beforePhase','afterPhase','actionAttempted','actionAccepted','targetCount','timeoutCleanup')) {
+        if (!$ConnectResult.Contains($key)) { throw 'qa_permission_connect_receipt_missing' }
+    }
+    if ($ConnectResult.mechanism -cne 'instrumentation_semantics_v1' -or $ConnectResult.command -cne 'connect' -or
+        $ConnectResult.status -cne 'wrong_window_package' -or $ConnectResult.beforePhase -cne 'disconnected' -or
+        $ConnectResult.afterPhase -cne 'requesting_permission' -or $ConnectResult.actionAttempted -isnot [bool] -or
+        !$ConnectResult.actionAttempted -or $ConnectResult.actionAccepted -isnot [bool] -or !$ConnectResult.actionAccepted -or
+        ($ConnectResult.targetCount -isnot [int] -and $ConnectResult.targetCount -isnot [long]) -or
+        $ConnectResult.targetCount -ne 1 -or $ConnectResult.timeoutCleanup -cne 'not_needed' -or
+        $ConnectResult.runId -cnotmatch '\A[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\z' -or
+        $ConnectResult.runId -ceq '00000000-0000-0000-0000-000000000000') { throw 'qa_permission_connect_receipt_unconfirmed' }
+    $context=$script:AndroidLifecycleContext
+    if ($context.Serial -cnotmatch '^emulator-[0-9]{4,5}$') { throw 'qa_invalid_serial' }
+    if (!$context.ContainsKey('VpnConsentAttempts')) { $context.VpnConsentAttempts=[Collections.Generic.HashSet[string]]::new() }
+    # Consume the receipt before any device call: an unknown tap outcome must not
+    # cause this command to be repeated. A new Connect is never issued here.
+    if (!$context.VpnConsentAttempts.Add($ConnectResult.runId)) { throw 'qa_permission_already_attempted' }
+    Assert-AndroidLifecycleNoVpnService "$Step-service-before"
+    $networks=Read-AndroidLifecycleVpnNetworks -Step "$Step-networks-before"
+    if (!$networks.activeVpnNetworkAbsent) { throw 'qa_permission_active_vpn' }
+    $top=Invoke-AndroidLifecycleAdb -Step "$Step-top-before" -TimeoutSeconds 5 -AdbArguments @('shell','dumpsys','activity','activities')
+    if ([regex]::Matches($top,'(?m)^\s*(?:mResumedActivity|topResumedActivity):[^\r\n]*com\.android\.vpndialogs/\.ConfirmDialog(?:\s|\})').Count -ne 1) { throw 'qa_permission_not_top' }
+    $tree=Read-AndroidLifecycleUi -Step "$Step-fresh-ui" -TimeoutSeconds 10
+    $button=Find-AndroidLifecycleVpnConsentButton $tree
+    Assert-AndroidLifecycleNoVpnService "$Step-service-immediate"
+    $top=Invoke-AndroidLifecycleAdb -Step "$Step-top-immediate" -TimeoutSeconds 5 -AdbArguments @('shell','dumpsys','activity','activities')
+    if ([regex]::Matches($top,'(?m)^\s*(?:mResumedActivity|topResumedActivity):[^\r\n]*com\.android\.vpndialogs/\.ConfirmDialog(?:\s|\})').Count -ne 1) { throw 'qa_permission_not_top' }
+    $bounds=[regex]::Match($button.GetAttribute('bounds'),'^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$')
+    $x=[int](([int]$bounds.Groups[1].Value+[int]$bounds.Groups[3].Value)/2)
+    $y=[int](([int]$bounds.Groups[2].Value+[int]$bounds.Groups[4].Value)/2)
+    $null=Invoke-AndroidLifecycleAdb -Step "$Step-once" -TimeoutSeconds 5 -AdbArguments @('shell','input','tap',[string]$x,[string]$y)
+    return [ordered]@{mechanism='system_vpn_consent_v1';status='tap_sent';positiveTapCount=1;treeDerivedBounds=$true;vpnConnectionConfirmed=$false}
+}
+
+function Read-AndroidLifecycleUi {
+    param([Parameter(Mandatory)][string]$Step, [ValidateRange(1,30)][int]$TimeoutSeconds=30)
+    $output = Invoke-AndroidLifecycleAdb -Step $Step -TimeoutSeconds $TimeoutSeconds -AdbArguments @('exec-out','uiautomator','dump','/dev/tty')
     $start = $output.IndexOf('<?xml', [StringComparison]::Ordinal)
     $end = $output.LastIndexOf('</hierarchy>', [StringComparison]::Ordinal)
     if ($start -lt 0 -or $end -le $start) { throw 'qa_ui_xml_unavailable' }

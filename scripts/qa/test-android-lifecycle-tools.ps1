@@ -159,4 +159,138 @@ foreach ($mode in @('timeout','wrong','stale','missing','stop-failed')) {
 $script:uiMode='busy'; $script:uiCalls.Clear()
 Assert-QaReject { Invoke-AndroidLifecycleVpnUi -Command connect -Step synthetic }
 if ($script:uiCalls.Count -ne 1) { throw 'qa_ui_busy_process_touched' }; $checks++
+
+# Synthetic ConnectivityService records: no real addresses, package UIDs or dumps.
+$physicalRow='  NetworkAgentInfo{ ni{[type: WIFI[], state: CONNECTED/CONNECTED, reason: (unspecified)]} network{100} lp{{InterfaceName: wlan0 LinkAddresses: [] }} nc{[ Transports: WIFI Capabilities: INTERNET&NOT_VPN]} }'
+$vpnRow='  NetworkAgentInfo{ ni{[type: VPN[], state: CONNECTED/CONNECTED, reason: agentConnect]} network{101} lp{{InterfaceName: tun0 LinkAddresses: [] }} nc{[ Transports: WIFI|VPN Capabilities: INTERNET OwnerUid: 10042 RequestorUid: -1]} }'
+$directDump="Active default network: 100`nCurrent Networks:`n$physicalRow`nStatus for known UIDs:`n"
+$vpnDump=$directDump.Replace("`nStatus for known UIDs:","`n$vpnRow`nStatus for known UIDs:")
+$direct=ConvertFrom-AndroidLifecycleVpnNetworks -Output $directDump
+if (!$direct.activeVpnNetworkAbsent -or $direct.vpnCount -ne 0 -or $direct.vpnInterfaces.Count -ne 0 -or $direct.ownerUidMatched) { throw 'qa_direct_network_fixture_failed' }; $checks++
+$network=ConvertFrom-AndroidLifecycleVpnNetworks -Output $vpnDump -ExpectedOwnerUid 10042
+if ($network.activeVpnNetworkAbsent -or $network.vpnCount -ne 1 -or !$network.ownerUidMatched -or
+    $network.vpnInterfaces.Count -ne 1 -or $network.vpnInterfaces[0] -cne 'tun0') { throw 'qa_vpn_network_fixture_failed' }; $checks++
+foreach ($ending in @("`r`n","`r`r`n")) {
+    $network=ConvertFrom-AndroidLifecycleVpnNetworks -Output $vpnDump.Replace("`n",$ending) -ExpectedOwnerUid 10042
+    if ($network.vpnCount -ne 1) { throw 'qa_network_line_ending_failed' }; $checks++
+}
+$history=ConvertFrom-AndroidLifecycleVpnNetworks -Output ($directDump+"`nEvent log:`n$vpnRow`n")
+if (!$history.activeVpnNetworkAbsent) { throw 'qa_historical_vpn_counted_as_active' }; $checks++
+Assert-QaReject { ConvertFrom-AndroidLifecycleVpnNetworks -Output $vpnDump }
+Assert-QaReject { ConvertFrom-AndroidLifecycleVpnNetworks -Output $vpnDump -ExpectedOwnerUid 10043 }
+Assert-QaReject { ConvertFrom-AndroidLifecycleVpnNetworks -Output $directDump -ExpectedOwnerUid 9999 }
+foreach ($badDump in @('', 'request send failed: Permission denied',
+    $vpnDump.Replace('Current Networks:','Unknown section:'),
+    $vpnDump.Replace('Status for known UIDs:','Unknown end:'),
+    ($vpnDump+$vpnDump),
+    $vpnDump.Replace('OwnerUid: 10042 ','OwnerUid: 10042 OwnerUid: 10042 '),
+    $vpnDump.Replace('OwnerUid: 10042 ',''),
+    $vpnDump.Replace('OwnerUid: 10042','OwnerUid: 999999999999'),
+    $vpnDump.Replace('Transports: WIFI|VPN','Transports: WIFI'),
+    $vpnDump.Replace('type: VPN[]','type: WIFI[]'),
+    $vpnDump.Replace('InterfaceName: tun0','InterfaceName: wlan1'),
+    $vpnDump.Replace($vpnRow,$vpnRow.Replace('CONNECTED/CONNECTED','CONNECTING/CONNECTING')),
+    $vpnDump.Replace($vpnRow,$vpnRow.Substring(0,$vpnRow.Length-2)),
+    $vpnDump.Replace($vpnRow,"$vpnRow`n$vpnRow"),
+    $vpnDump.Replace($vpnRow,($vpnRow+"`n"+$vpnRow.Replace('network{101}','network{102}').Replace('tun0','tun1'))),
+    $directDump.Replace('InterfaceName: wlan0','InterfaceName: tun0'),
+    "Current Networks:`nStatus for known UIDs:`n$physicalRow`n")) {
+    Assert-QaReject { ConvertFrom-AndroidLifecycleVpnNetworks -Output $badDump -ExpectedOwnerUid 10042 }
+}
+
+# The system dialog is distinct from the application's semantics. Its warning
+# resource differs on API30; both supported IDs still require a single message.
+$consentXml='<hierarchy><node package="com.android.vpndialogs"><node package="com.android.vpndialogs" resource-id="android:id/alertTitle" text="Connection request"/><node package="com.android.vpndialogs" resource-id="com.android.vpndialogs:id/warning" text="ExVPN requests a VPN connection."/><node package="com.android.vpndialogs" resource-id="android:id/button2" class="android.widget.Button" clickable="true" enabled="true" text="Cancel"/><node package="com.android.vpndialogs" resource-id="android:id/button1" class="android.widget.Button" clickable="true" enabled="true" text="OK" bounds="[20,40][80,100]"/></node></hierarchy>'
+foreach ($validXml in @($consentXml,$consentXml.Replace('com.android.vpndialogs:id/warning','android:id/message'),
+    $consentXml.Replace('Connection request','Запрос на подключение').Replace('text="OK"','text="ОК"'))) {
+    $positive=Find-AndroidLifecycleVpnConsentButton -Tree ([xml]$validXml)
+    if ($positive.GetAttribute('resource-id') -cne 'android:id/button1') { throw 'qa_consent_button_fixture_failed' }; $checks++
+}
+foreach ($badXml in @($consentXml.Replace('ExVPN requests','Other requests'),
+    $consentXml.Replace('ExVPN requests','ExVPNOther requests'),
+    $consentXml.Replace('com.android.vpndialogs','another.package'),
+    $consentXml.Replace('Connection request','Different request'),
+    $consentXml.Replace('text="OK"','text="Yes"'),
+    $consentXml.Replace('enabled="true" text="OK"','enabled="false" text="OK"'),
+    $consentXml.Replace('clickable="true" enabled="true" text="OK"','clickable="false" enabled="true" text="OK"'),
+    $consentXml.Replace('class="android.widget.Button"','class="android.view.View"'),
+    $consentXml.Replace('bounds="[20,40][80,100]"','bounds="[20,40][20,100]"'),
+    $consentXml.Replace('</hierarchy>','<node package="ru.exvpn.exvpn"/></hierarchy>'),
+    $consentXml.Replace('</hierarchy>','<node package="com.android.vpndialogs" resource-id="android:id/button1" enabled="false"/></hierarchy>'),
+    $consentXml.Replace('</hierarchy>','<node package="com.android.vpndialogs" resource-id="android:id/message" text="ExVPN requests a VPN connection."/></hierarchy>'))) {
+    Assert-QaReject { Find-AndroidLifecycleVpnConsentButton -Tree ([xml]$badXml) }
+}
+
+$consentReply=$uiGood.Replace('status=completed','status=wrong_window_package').Replace('afterPhase=connected','afterPhase=requesting_permission')
+function New-ConsentReceipt {
+    $receipt=ConvertFrom-AndroidLifecycleVpnUi -Output $consentReply -RunId $uiRun -Command connect
+    $receipt.runId=[guid]::NewGuid().ToString('D'); $receipt.timeoutCleanup='not_needed'
+    return $receipt
+}
+$script:consentMode='normal'
+$script:consentCalls=[Collections.Generic.List[object]]::new()
+function Invoke-AndroidLifecycleAdb {
+    param([string[]]$AdbArguments,[string]$Step,[int]$TimeoutSeconds=30)
+    $script:consentCalls.Add([pscustomobject]@{Arguments=$AdbArguments;Step=$Step;Timeout=$TimeoutSeconds})
+    $command=$AdbArguments -join ' '
+    switch ($command) {
+        'shell dumpsys activity services ru.exvpn.exvpn' {
+            if ($script:consentMode -ceq 'service-before' -or ($script:consentMode -ceq 'service-immediate' -and $Step.EndsWith('-immediate'))) {
+                return "ACTIVITY MANAGER SERVICES (dumpsys activity services)`nServiceRecord{ ru.exvpn.exvpn/.ExVpnService }`n"
+            }
+            if ($script:consentMode -ceq 'incomplete-service') { return 'ACTIVITY MANAGER SERVICES (dumpsys activity services)' }
+            return "ACTIVITY MANAGER SERVICES (dumpsys activity services)`n  (nothing)`n"
+        }
+        'shell dumpsys connectivity' {
+            if ($script:consentMode -cin @('active-vpn','observe-vpn')) { return $vpnDump }
+            if ($script:consentMode -ceq 'incomplete-network') { return 'Current Networks:' }
+            return $directDump
+        }
+        'shell dumpsys activity activities' {
+            if ($script:consentMode -ceq 'wrong-top' -or ($script:consentMode -ceq 'changed-top' -and $Step.EndsWith('-immediate'))) {
+                return "mResumedActivity: ActivityRecord{synthetic other.package/.OtherDialog}`n"
+            }
+            return "mResumedActivity: ActivityRecord{synthetic com.android.vpndialogs/.ConfirmDialog}`n"
+        }
+        'exec-out uiautomator dump /dev/tty' {
+            $body=if ($script:consentMode -ceq 'wrong-message') { $consentXml.Replace('ExVPN requests','Other requests') } else { $consentXml }
+            return '<?xml version="1.0" encoding="UTF-8"?>'+$body
+        }
+        'shell input tap 50 70' {
+            if ($script:consentMode -ceq 'tap-deadline') { throw 'qa_adb_deadline' }
+            return ''
+        }
+        default { throw 'qa_unexpected_consent_mock_command' }
+    }
+}
+$script:consentMode='observe-vpn'
+$observedNetwork=Read-AndroidLifecycleVpnNetworks -Step synthetic -ExpectedOwnerUid 10042
+if ($observedNetwork.vpnCount -ne 1 -or $script:consentCalls.Count -ne 1 -or $script:consentCalls[0].Timeout -ne 10) { throw 'qa_network_read_contract_failed' }; $checks++
+$script:consentMode='normal'; $script:consentCalls.Clear(); $receipt=New-ConsentReceipt
+$sent=Invoke-AndroidLifecycleVpnConsent -ConnectResult $receipt -Step synthetic
+if ($sent.status -cne 'tap_sent' -or $sent.positiveTapCount -ne 1 -or $sent.vpnConnectionConfirmed -or
+    @($script:consentCalls | Where-Object { $_.Arguments -contains 'tap' }).Count -ne 1 -or $script:consentCalls.Count -ne 7 -or
+    @($script:consentCalls | Where-Object { $_.Timeout -gt 10 }).Count) { throw 'qa_consent_action_contract_failed' }; $checks++
+$previousCount=$script:consentCalls.Count
+Assert-QaReject { Invoke-AndroidLifecycleVpnConsent -ConnectResult $receipt -Step synthetic }
+if ($script:consentCalls.Count -ne $previousCount) { throw 'qa_consent_repeated_device_action' }; $checks++
+foreach ($change in @(@('status','accepted_unconfirmed'),@('command','observe'),@('afterPhase','unknown'),
+    @('actionAccepted',$false),@('actionAccepted','true'),@('actionAttempted',$false),@('timeoutCleanup','cleanup_refused'),
+    @('targetCount',2),@('targetCount','1'),@('targetCount',$true),
+    @('runId','00000000-0000-0000-0000-000000000000'))) {
+    $badReceipt=New-ConsentReceipt; $badReceipt[$change[0]]=$change[1]; $script:consentCalls.Clear()
+    Assert-QaReject { Invoke-AndroidLifecycleVpnConsent -ConnectResult $badReceipt -Step synthetic }
+    if ($script:consentCalls.Count) { throw 'qa_invalid_consent_receipt_touched_device' }; $checks++
+}
+foreach ($mode in @('service-before','incomplete-service','active-vpn','incomplete-network','wrong-top','wrong-message','service-immediate','changed-top','tap-deadline')) {
+    $script:consentMode=$mode; $script:consentCalls.Clear(); $receipt=New-ConsentReceipt
+    Assert-QaReject { Invoke-AndroidLifecycleVpnConsent -ConnectResult $receipt -Step synthetic }
+    $tapCount=if ($mode -ceq 'tap-deadline') { 1 } else { 0 }
+    if (@($script:consentCalls | Where-Object { $_.Arguments -contains 'tap' }).Count -ne $tapCount) { throw 'qa_consent_guard_tapped_or_retried' }; $checks++
+    if ($mode -cin @('service-before','incomplete-service','active-vpn','incomplete-network','wrong-top') -and
+        @($script:consentCalls | Where-Object { $_.Arguments -contains 'uiautomator' }).Count) { throw 'qa_active_or_unconfirmed_vpn_ui_dumped' }; $checks++
+    $previousCount=$script:consentCalls.Count
+    Assert-QaReject { Invoke-AndroidLifecycleVpnConsent -ConnectResult $receipt -Step synthetic }
+    if ($script:consentCalls.Count -ne $previousCount) { throw 'qa_consent_unknown_action_retried' }; $checks++
+}
 [ordered]@{status='PASS'; checks=$checks; adbInvoked=$false; networkChanged=$false} | ConvertTo-Json -Compress
