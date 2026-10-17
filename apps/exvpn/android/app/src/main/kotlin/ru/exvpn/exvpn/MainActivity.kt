@@ -47,7 +47,7 @@ class MainActivity : FlutterActivity() {
                     knownApplicationIcons.addAll(VpnRuntime.applicationRouting.applications)
                     result.success(VpnRuntime.applicationRouting.wire())
                 }
-                "coreVersion" -> result.success("26.10.10-exvpn.4")
+                "coreVersion" -> result.success("26.10.10-exvpn.5")
                 "connect", "reconnect" -> {
                     if (permissionResult != null) { result.error("operation_in_progress", "VPN permission request pending", null); return@setMethodCallHandler }
                     if (!NativeCore.available) { result.error("native_core_unavailable", "Native core is not installed", null); return@setMethodCallHandler }

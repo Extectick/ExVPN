@@ -135,6 +135,10 @@ public final class VpnUiSemanticsTest {
             Snapshot refusedCancel = state("Отменить VPN", phase);
             refusedCancel.accepted = false;
             run("cancel", "action_rejected", 1, new Reader(pendingCancel, refusedCancel));
+            Snapshot pendingDisconnect = state(DISCONNECT, phase);
+            run("observe", "observed", 0, new Reader(pendingDisconnect));
+            run("cancel", "completed", 1, new Reader(pendingDisconnect, pendingDisconnect, off));
+            run("cancel", "stale_target", 0, new Reader(pendingDisconnect, on));
         }
         run("cancel", "precondition_failed", 0, new Reader(off));
         run("cancel", "precondition_failed", 0, new Reader(on));

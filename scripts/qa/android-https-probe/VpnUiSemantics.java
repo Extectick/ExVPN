@@ -112,6 +112,11 @@ final class VpnUiSemantics {
         if (count == 0) throw new Rejected("target_missing");
         if (!snapshot.nodes.get(index).isButton()) throw new Rejected("invalid_target");
         if (phase == null) throw new Rejected("phase_unavailable");
+        // The ordinary UI may retain its Disconnect label while connecting.
+        // Only the independently observed pending phase makes that action a
+        // cancel. Fresh-root/phase checks below still reject a completed tunnel.
+        if (("connecting".equals(phase) || "requesting_permission".equals(phase)) &&
+                "disconnect".equals(button)) button = "cancel";
         if (("disconnected".equals(phase) && !"connect".equals(button)) ||
                 (("connected".equals(phase) || "reconnecting".equals(phase) ||
                   "blocked".equals(phase)) && !"disconnect".equals(button)) ||

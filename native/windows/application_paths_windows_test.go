@@ -12,6 +12,29 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// CI may expose TEMP through an 8.3 alias. Fixtures that promise an exact image
+// path must use the directory's real path; production must still reject aliases.
+func physicalApplicationTempDir(t *testing.T) string {
+	t.Helper()
+	name, err := windows.UTF16PtrFromString(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	handle, err := windows.CreateFile(name, windows.FILE_READ_ATTRIBUTES,
+		windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE|windows.FILE_SHARE_DELETE,
+		nil, windows.OPEN_EXISTING, windows.FILE_FLAG_BACKUP_SEMANTICS|windows.FILE_FLAG_OPEN_REPARSE_POINT, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer windows.CloseHandle(handle)
+	buffer := make([]uint16, 32768)
+	length, err := windows.GetFinalPathNameByHandle(handle, &buffer[0], uint32(len(buffer)), 0)
+	if err != nil || length == 0 || length >= uint32(len(buffer)) {
+		t.Fatal("physical fixture directory unavailable", err)
+	}
+	return strings.TrimPrefix(windows.UTF16ToString(buffer[:length]), `\\?\`)
+}
+
 func TestFamilyAnchorRequiresInstalledLegitimateCandidate(t *testing.T) {
 	// The root is not created. A valid-looking remembered identity must not by
 	// itself establish an executable's existence or earn direct permission.
@@ -23,7 +46,7 @@ func TestFamilyAnchorRequiresInstalledLegitimateCandidate(t *testing.T) {
 }
 
 func TestApplicationPathsRejectReparseComponents(t *testing.T) {
-	root := t.TempDir()
+	root := physicalApplicationTempDir(t)
 	real := filepath.Join(root, "real")
 	link := filepath.Join(root, "link")
 	if err := os.Mkdir(real, 0700); err != nil {
@@ -35,6 +58,18 @@ func TestApplicationPathsRejectReparseComponents(t *testing.T) {
 	}
 	if _, err := canonicalApplicationExecutable(file); err != nil {
 		t.Fatal("ordinary exact file rejected", err)
+	}
+	// Retain the security distinction even when the runner's original TEMP was
+	// short: canonical fixture identity succeeds, its real 8.3 alias must fail.
+	short := make([]uint16, 32768)
+	length, err := windows.GetShortPathName(windows.StringToUTF16Ptr(file), &short[0], uint32(len(short)))
+	if err == nil && length > 0 && length < uint32(len(short)) {
+		alias := windows.UTF16ToString(short[:length])
+		if !strings.EqualFold(alias, file) {
+			if _, err := canonicalApplicationExecutable(alias); err == nil {
+				t.Fatal("short image alias accepted")
+			}
+		}
 	}
 	left, _ := windows.UTF16PtrFromString(link)
 	right, _ := windows.UTF16PtrFromString(real)

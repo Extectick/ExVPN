@@ -38,6 +38,14 @@ if (!$version.Success -or
     !$identity.Contains("const appBuild = $($version.Groups[2].Value);")) {
     throw 'Displayed app identity must match pubspec.yaml version/build.'
 }
+$coreSource = [IO.File]::ReadAllText((Join-Path $repository 'native/core/config.go'))
+$androidActivity = [IO.File]::ReadAllText((Join-Path $repository 'apps/exvpn/android/app/src/main/kotlin/ru/exvpn/exvpn/MainActivity.kt'))
+$coreVersion = [regex]::Matches($coreSource, '(?m)^const CoreVersion = "([^"\r\n]+)"\r?$')
+$androidCoreVersion = [regex]::Matches($androidActivity, '"coreVersion"\s*->\s*result\.success\("([^"\r\n]+)"\)')
+if ($coreVersion.Count -ne 1 -or $androidCoreVersion.Count -ne 1 -or
+    $coreVersion[0].Groups[1].Value -cne $androidCoreVersion[0].Groups[1].Value) {
+    throw 'Android displayed core identity must match the pinned native core.'
+}
 
 foreach ($package in @('packages/exvpn_domain', 'packages/exvpn_client_state', 'packages/exvpn_updates')) {
     Push-Location (Join-Path $repository $package)

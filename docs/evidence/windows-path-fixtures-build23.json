@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "utc": "2026-10-17T22:56:19.6110102Z",
+  "source": "working tree; commit pending",
+  "ciRun": 39076459772,
+  "ciFailureLog": "artifacts/qa/ci-build23-windows.log",
+  "realShortAliasUsed": true,
+  "tempAndTestExecutableBothAliased": true,
+  "before": {
+    "exitCode": 1,
+    "failures": [
+      "TestApplicationPathsRejectReparseComponents",
+      "TestRealTwoProcessTCPReuseMatchesRemoteTuple",
+      "TestRealLoopbackVerifiedImageRespectsAllApplicationRoutingModes"
+    ]
+  },
+  "after": {
+    "exitCode": 0,
+    "repetitions": 3,
+    "tests": [
+      "TestApplicationPathsRejectReparseComponents",
+      "TestRealTwoProcessUDPReuseRejectsAmbiguousOwner",
+      "TestRealTwoProcessTCPReuseMatchesRemoteTuple",
+      "TestRealLoopbackVerifiedImageRespectsAllApplicationRoutingModes"
+    ],
+    "symlinkFixtureSkipped": false,
+    "canonicalHelperPidAndImageAsserted": true
+  },
+  "productionFilesChanged": false,
+  "serviceOrNetworkConfigurationChanged": false,
+  "files": [
+    "native/windows/application_paths_windows_test.go",
+    "native/windows/owner_process_windows_test.go"
+  ]
+}

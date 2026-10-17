@@ -67,12 +67,25 @@ func TestOwnerSocketHelper(t *testing.T) {
 	os.Exit(0)
 }
 
-func startOwnerHelper(t *testing.T, network string, port, remote int) (int, uint32) {
+func ownerHelperExecutable(t *testing.T) string {
 	t.Helper()
 	ctxExecutable, err := os.Executable()
 	if err != nil {
 		t.Fatal(err)
 	}
+	// os.Executable may retain the go-build TEMP alias used to launch this test.
+	// Launch the child by its physical image so QueryFullProcessImageName returns
+	// the same exact identity that the production owner verifier requires.
+	ctxExecutable, err = canonicalExecutable(ctxExecutable)
+	if err != nil {
+		t.Fatal("canonical loopback helper image unavailable", err)
+	}
+	return ctxExecutable
+}
+
+func startOwnerHelper(t *testing.T, network string, port, remote int) (int, uint32) {
+	t.Helper()
+	ctxExecutable := ownerHelperExecutable(t)
 	command := exec.Command(ctxExecutable, "-test.run=^TestOwnerSocketHelper$")
 	command.Env = append(os.Environ(), fmt.Sprintf("EXVPN_TEST_OWNER_SOCKET=%s,%d,%d", network, port, remote))
 	stdin, err := command.StdinPipe()
@@ -124,6 +137,7 @@ func TestRealTwoProcessUDPReuseRejectsAmbiguousOwner(t *testing.T) {
 }
 
 func TestRealTwoProcessTCPReuseMatchesRemoteTuple(t *testing.T) {
+	expectedImage := processPathKey(ownerHelperExecutable(t))
 	one, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -143,24 +157,28 @@ func TestRealTwoProcessTCPReuseMatchesRemoteTuple(t *testing.T) {
 	}{{remoteOne, first}, {remoteTwo, second}} {
 		flow := flowTuple{network: "tcp", local: netip.AddrPortFrom(netip.MustParseAddr("127.0.0.1"), uint16(port)), remote: netip.AddrPortFrom(netip.MustParseAddr("127.0.0.1"), uint16(test.remote))}
 		owner, err := resolveProcessOwner(flow)
-		if err != nil || owner.pid != test.pid || owner.created == 0 || owner.path == "" {
+		if err != nil || owner.pid != test.pid || owner.created == 0 || owner.path != expectedImage {
 			t.Fatal("full TCP tuple did not identify the correct real process")
 		}
 	}
 }
 
 func TestRealLoopbackVerifiedImageRespectsAllApplicationRoutingModes(t *testing.T) {
+	expectedImage := processPathKey(ownerHelperExecutable(t))
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer listener.Close()
 	remote := listener.Addr().(*net.TCPAddr).Port
-	port, _ := startOwnerHelper(t, "tcp", 0, remote)
+	port, helperPID := startOwnerHelper(t, "tcp", 0, remote)
 	flow := flowTuple{network: "tcp", local: netip.AddrPortFrom(netip.MustParseAddr("127.0.0.1"), uint16(port)), remote: netip.AddrPortFrom(netip.MustParseAddr("127.0.0.1"), uint16(remote))}
 	owner, err := resolveProcessOwner(flow)
 	if err != nil {
 		t.Fatal("real owner unavailable", err)
+	}
+	if owner.pid != helperPID || owner.path != expectedImage || owner.created == 0 {
+		t.Fatal("real owner did not match the canonical helper image and process")
 	}
 	for _, mode := range []string{exvpn.RoutingDisabled, exvpn.RoutingExclude, exvpn.RoutingInclude} {
 		for _, selected := range []bool{false, true} {
