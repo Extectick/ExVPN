@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.0+13",
+  "status": "DIAGNOSTIC_STRICT_INPUT_GRAPH_PASS",
+  "scope": "Saved debug snapshot input graph; no APK build or package binding",
+  "postprocessorCommit": "1181e1ac3b3e04daa2ee17a63b9a7ea6517ed6ad",
+  "sourceReportSha256": "fe44861db752d5bf7341e2ac768322a6975bce36eb4b97bce6526cc07ff968ad",
+  "standardCommandFreshRunVerified": false,
+  "metadataPreparationScope": "One-off exact public metadata preparation for the saved snapshot, with a bounded separate parent/BOM allowlist; no new runtime dependency",
+  "fixturesPassed": 67,
+  "snapshotFingerprint": "3c9e52481cfd257ee1254a5e67d1eb7af4379cd09feb412702e7737f3909d33f",
+  "snapshotFiles": 759,
+  "snapshotTrees": 8,
+  "snapshotBeforeVerified": true,
+  "snapshotAfterVerified": true,
+  "previousOutputsUnchanged": true,
+  "gradleVersion": "9.3.1",
+  "engineRevision": "deb287481e3ce9468f3434937ced4240a70539ca",
+  "variant": "debug",
+  "configuration": "debugRuntimeClasspath",
+  "rootTaskGraph": [
+    ":app:exvpnRuntimeInventory"
+  ],
+  "preparation": {
+    "phase": "preparation",
+    "exitCode": 0,
+    "elapsedSeconds": 13.059,
+    "maximumSeconds": 180,
+    "timedOut": false
+  },
+  "offline": {
+    "phase": "offline",
+    "exitCode": 0,
+    "elapsedSeconds": 13.672,
+    "maximumSeconds": 180,
+    "timedOut": false
+  },
+  "components": {
+    "components": 74,
+    "maven": 68,
+    "projects": 6,
+    "edges": 279
+  },
+  "runtimeArtifactCount": 66,
+  "runtimeArtifactKinds": [
+    {
+      "extension": ".aar",
+      "count": 34
+    },
+    {
+      "extension": ".jar",
+      "count": 32
+    }
+  ],
+  "metadataRoles": [
+    {
+      "role": "selected-component-module-candidate",
+      "count": 34
+    },
+    {
+      "role": "selected-component-pom",
+      "count": 68
+    }
+  ],
+  "preparedPrivatePoms": 77,
+  "runtimeSelectedGavs": 68,
+  "metadataOnlyGavs": 9,
+  "preparationReadOnlyCacheEnabled": false,
+  "offlineReadOnlyCacheEnabled": true,
+  "originalCollectorLibHash": "d737ff25cff4cd2d5d6c4538b6c7db74afc477b52f39aa01b989df489d27df28",
+  "fixedHostPostprocessorHash": "3a1f3b4cd6fbd35cc791c661c8dea3699f8a14bb99649c182cbcfe849d32780e",
+  "dependencyInputFingerprint": {
+    "sha256": "961617c991deff43feb28ac25ce963e9332e4960a29df3add8b529ffe8ed0ddd",
+    "rows": 168,
+    "format": "Ordinal-sorted UTF-8 LF rows, trailing LF: compact JSON array of Maven component id, role, filename, decimal size string, SHA256. Includes runtime artifacts, POMs, and module candidates; excludes project binaries and graph edges."
+  },
+  "abiObservation": {
+    "finalVariantAbiFiltersStatus": "unknown",
+    "finalApkNativeCoverageVerified": false,
+    "evaluatedDslAvailable": true,
+    "defaultConfigFilters": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "buildTypeFilters": [],
+    "productFlavorFilters": [],
+    "flutterDefaultAbiInsertionDisabled": true
+  },
+  "files": [
+    {
+      "name": "summary.json",
+      "sha256": "c436a9c81e7feab25eef4ed1680aa27bb51d263b000af2dcb9e5e4cbadddb6ef"
+    },
+    {
+      "name": "verified-input-graph.json",
+      "sha256": "ea27b9ee3df311372faf584e2d4bb603abefc450cdd4ad676fe629c65bf85603"
+    },
+    {
+      "name": "offline-resolved-graph.json",
+      "sha256": "9de72412ca0098bd0147549600a5e11926e82b77449e6c2beae42e6bb46cb191"
+    },
+    {
+      "name": "prepared-poms.json",
+      "sha256": "85d5fc1c396cdf7bf184a28c9e61c0a4caec792a2433169022ed09bd25a4f8fd"
+    }
+  ],
+  "boundaries": {
+    "apkBindingVerified": false,
+    "licensesReviewed": false,
+    "projectBinariesVerified": false,
+    "exactLinkedCodeInventory": false,
+    "metadataSourceSelectionVerified": false
+  },
+  "productionInventoryComplete": false,
+  "oldFailuresRetained": true,
+  "priorFindings": [
+    "POM-as-artifact query initially resolved only 1 of 68; cached file presence alone did not supply the offline artifact index",
+    "Preparation that returned read-only-cache files did not create private artifact-cache entries; pinned Gradle source confirms that behavior",
+    "Private preparation required 9 exact parent/BOM metadata coordinates beyond 68 selected runtime coordinates",
+    "Pinned Gradle strips leading SHA1 zeroes in cache directory keys; fixed host postprocessor verifies the canonical key against actual bytes"
+  ]
+}

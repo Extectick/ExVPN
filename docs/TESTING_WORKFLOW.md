@@ -17,7 +17,18 @@ Go unit/loopback tests и файловые сценарии установщик
 запускают установленный VPN, службу, TUN, WFP или смену маршрутов/DNS хоста.
 Приватные подписки и действующие VPN-серверы в них не участвуют.
 
-Последний общий прогон +13 после исправления Sandbox-стенда, 2026-10-17:
+Последний общий прогон +13 после изменения очереди, 2026-10-17:
+**10/10 наборов за 87,11 с**, 448 Dart/Flutter tests и все Go/installer/QA checks
+PASS; source fingerprint совпал, Go result cache отключён. Тяжёлые независимые
+`scripts`, `app`, `core` запускаются первыми при прежнем лимите трёх процессов.
+Выбранное множество тестов сохраняется; это проверено для всех 1024 подмножеств
+и в запуске настоящего coordinator с ошибкой дочернего процесса и source drift.
+В отчёте отдельно записаны `selectedLanes` и `executionOrder`.
+[Отчёт](evidence/fast-validation-build13-scheduling.json),
+[исходники](https://github.com/Extectick/ExVPN/commit/2670357).
+В этот прогон также вошли 67 обновлённых Android metadata fixtures.
+
+Предыдущий общий прогон +13 после исправления Sandbox-стенда, 2026-10-17:
 **10/10 наборов за 127,43 с**, без Go result cache и изменения исходников.
 Проверены 448 Dart/Flutter tests, Go verify/test/vet, Xray lifecycle и installer;
 147 CI selector cases и 54 Windows subscription fixtures под PS7/PS5.1.

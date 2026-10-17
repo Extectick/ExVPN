@@ -176,6 +176,12 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   Предварительная локальная проверка 2026-10-17: 92 selector/graph/JUnit fixtures PASS; точный Android helper в чистом source archive прошёл 8/8 за 43,13 с, SDK/dependency caches общие. Независимый review не оставил замечаний. [Доказательство](evidence/ci-build-impact-build11.json), [правила и docs-only граница](CI.md). Исходники [9d035ae](https://github.com/Extectick/ExVPN/commit/9d035aee717604dafa31e0b2818b3767bfac0efe). Этот локальный результат сам по себе не закрывал фактический GitHub QA-only gate.
 
 - [x] **EXVPN-E7-005** — Ускорить локальную проверку и разделить разработку между агентами. Зависимость: E1 toolchain, E7-001. Критерий: одна команда выбирает тесты с учётом зависимостей, параллельно запускает готовые Dart/Flutter/Go runners, сохраняет результаты и не скрывает ошибки/изменения исходников; итоговый полный быстрый прогон проходит после завершения записи агентами. Системная приёмка остаётся отдельной.
+  Оптимизация очереди +13, 2026-10-17: **87,11 с, 10/10 PASS**, 448 Dart/Flutter
+  tests, свежие Go checks и неизменные исходники. Долгие независимые наборы
+  запускаются первыми; все 1024 подмножества сохраняют точный состав. Повторно
+  подтверждены отказы при child error/source drift. 67 metadata fixtures PASS.
+  [Отчёт](evidence/fast-validation-build13-scheduling.json),
+  [исходники](https://github.com/Extectick/ExVPN/commit/2670357).
   Повтор +13 после исправления Sandbox staging, 2026-10-17: **127,43 с,
   10/10 PASS**, source fingerprint совпал, Go result cache отключён. 147 CI
   selector fixtures, 54 Windows subscription fixtures под PS7/PS5.1; реальные

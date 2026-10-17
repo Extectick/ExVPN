@@ -108,10 +108,19 @@ Windows unsigned; это development packages с открытыми release bloc
 выявил этот отказ. Такой отказ не снимает ни один release blocker.
 
 Три зависимости закреплены в проекте без изменения SDK; 92 проверки прошли.
-Следующий actual offline run дошёл до POM query и остановился с
-`exvpn_inventory_pom_missing_or_ambiguous`. Точный компонент пока не установлен,
-полный граф не сохранён; причина не приписывается произвольно кешу или Gradle API.
-[Доказательства и незакрытые границы](evidence/android-runtime-inventory-build13.json).
+Первый actual offline run остановился на POM query. Этот отказ сохранён в
+[историческом отчёте](evidence/android-runtime-inventory-build13.json).
+Последующая диагностика выявила отсутствие подходящего offline artifact index,
+а затем некорректное ожидание 40-значного ключа кеша: Gradle удаляет ведущие нули
+SHA1. Исправленный postprocessor проверяет ключ по реальным байтам; 67 fixtures
+PASS, включая подмену и неоднозначность. [Исходники](https://github.com/Extectick/ExVPN/commit/1181e1a).
+
+После отдельной подготовки точных 68 POM и 9 parent/BOM метаданных сохранённый
+snapshot прошёл строгую offline-инвентаризацию за 13,672 с: 68 Maven-компонентов,
+6 проектов, 279 связей, 34 AAR и 32 JAR. Старые отказы и snapshot сохранены.
+[Отчёт](evidence/android-runtime-inputs-build13.json). Это диагностическая
+проверка разрешённых входов: новый запуск штатной команды с пустым private cache,
+связь графа с готовым APK, project binaries и лицензионная проверка ещё не закрыты.
 
 Эта инвентаризация не является полным SBOM: Gradle/Maven runtime, отдельные NSIS
 компоненты и комплект Windows runtime проверяются дополнительно по фактическому
