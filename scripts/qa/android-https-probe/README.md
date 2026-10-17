@@ -112,6 +112,63 @@ input, exact/over-limit input, a streaming size-limit bypass and a known SHA-256
 vector. Run `test.ps1`; on-device focus/paste/readback remains a separate check.
 Do not invoke multiple instrumentation components for the same QA package at once.
 
+## Semantic Connect / Disconnect without UIAutomator
+
+The protected QA APK registers `ru.exvpn.netprobe.VpnUiProbe`. It uses the normal
+ExVPN accessibility surface; it adds no production hook, intent, permission or
+test mode. This avoids `uiautomator dump` and its idle-wait dependence while the
+connection animation is running. Build into a separate directory to preserve an
+earlier helper APK and its evidence:
+
+```powershell
+./scripts/qa/android-https-probe/build.ps1 -OutputDirectory "$PWD/artifacts/android-network-probe-vpn-ui"
+# Install the protected APK on the explicitly owned disposable emulator first.
+./scripts/qa/android-https-probe/vpn-ui.ps1 -Serial emulator-5576 -Command observe -OutputDirectory "$PWD/.private/vpn-ui-run"
+```
+
+Commands are `observe`, `connect`, and `disconnect`; there is no toggle or retry.
+The active package must be exactly `ru.exvpn.exvpn`. The helper requires one
+visible, enabled, clickable Button with the expected exact Russian accessibility
+label, plus a consistent visible connection status. It rejects dialogs, editable
+fields, duplicates, wrong windows and conflicting state. Before an action it
+obtains a second root, confirms the same window/phase, refreshes the target and
+validates it again. It then performs **one** `ACTION_CLICK`. A connect request
+while already connected, or disconnect while already disconnected, returns
+`precondition_failed` without clicking.
+
+Results explicitly identify `mechanism=instrumentation_semantics_v1`, the run ID,
+command, before/after phases, and separate `actionAttempted` / `actionAccepted`.
+`observed` is a read only result. `completed` means the expected UI phase was
+subsequently observed; it does **not** establish HTTPS, native service stop, TUN
+state, socket drain or process-generation identity. Those remain independent
+runtime gates. `accepted_unconfirmed`, any refusal, and a timeout return nonzero.
+The report never contains node text, subscription labels, the UI tree or payloads.
+
+There is no `waitForIdle`. Readiness has a three-second budget, terminal readback
+at most 20 seconds, and the instrumentation's total budget is 30 seconds; traversal
+is capped at 2048 nodes and each obtained node is recycled. Binder calls can still
+hang, so the host imposes a separate 35-second instrumentation deadline. After
+that deadline the action outcome is **unknown**, and the wrapper never retries.
+
+The host takes a per-serial mutex and refuses a pre-existing protected QA process.
+Before accessibility access the helper records its run ID, PID and Linux process
+start ticks in its own private `files/qa-vpn-ui-owner.txt`; normal completion
+removes it in `finally`. Timeout cleanup may stop only `ru.exvpn.netprobe`, after
+the exact run/PID/start marker matches the live process. Missing, foreign or stale
+ownership refuses cleanup; failure to stop remains a failure. Cleanup has five
+bounded three-second ADB calls. It never force-stops ExVPN, substitutes for its
+Disconnect action or changes the network. Run the HTTPS/text/UI instrumentations
+sequentially; a cached or externally started QA process is a setup refusal.
+
+`test.ps1` covers the pure semantic state machine with synthetic states, stale
+snapshots, duplicate/disabled targets, action rejection and bounded readback.
+`../test-android-lifecycle-tools.ps1` tests strict report parsing and mocked
+timeout ownership/cleanup without ADB. Actual emulator behavior remains a
+separate test. The production APK can stay immutable while this helper is rebuilt.
+The adapter uses [`getUiAutomation(flags)`](https://developer.android.com/reference/android/app/Instrumentation#getUiAutomation(int))
+with `FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES` and
+[`AccessibilityNodeInfo.performAction`](https://developer.android.com/reference/android/view/accessibility/AccessibilityNodeInfo#performAction(int)).
+
 Build uses installed API 36 / build-tools 36.0.0 and an existing Android debug
 keystore. It accepts no licenses and creates no release credentials. Source APIs:
 [Instrumentation](https://developer.android.com/reference/android/app/Instrumentation),
