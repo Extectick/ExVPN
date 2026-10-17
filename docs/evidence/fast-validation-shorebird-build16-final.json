@@ -144,5 +144,5 @@
     "isolated VPN/IPv4/IPv6/DNS/fault acceptance",
     "signed release and upgrade acceptance"
   ],
-  "sourceCommit": "working tree; commit pending"
+  "sourceCommit": "e707d942c5bfd01075ba57f512b6aabec954980f"
 }

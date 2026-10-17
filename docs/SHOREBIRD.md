@@ -179,7 +179,7 @@ engine/Dart hashes и соответствующие лицензии. Windows e
 остаётся release blocker. Исторические build manifest и pre-build seal
 не переписываются после появления нового checker: отдельный финальный аудит
 ссылается на тот же неизменённый APK. Целевые проверки: 84 notices/runtime,
-44 Android seal и 72 audit cases PASS. Рабочее дерево; commit ожидается.
+44 Android seal и 72 audit cases PASS. Исходники и запись доказательств: [e707d94](https://github.com/Extectick/ExVPN/commit/e707d942c5bfd01075ba57f512b6aabec954980f).
 Полный цикл release → patch →
 restart → rollback этим результатом ещё не подтверждён. Настоящие Android
 APK/AAB и Windows база +16 затем собраны закреплённым Shorebird CLI с

@@ -36,7 +36,7 @@ UID/netId и callback time. PID подтверждён отдельно querylog
 в callback его нет. Очистка PASS, исходное устройство/настройки/store сохранены.
 PCAP/VPN в этом control не запускались; девять прежних неоднозначных wire
 запросов не переатрибутированы, DNS gate остаётся открытым.
-[Доказательство](evidence/android-dns-additive-control.json). Рабочее дерево; commit ожидается.
+[Доказательство](evidence/android-dns-additive-control.json). Исходники и запись доказательств: [e707d94](https://github.com/Extectick/ExVPN/commit/e707d942c5bfd01075ba57f512b6aabec954980f).
 
 Диагностика EXVPN-E1-009, 2026-10-17: два ограниченных запуска отдельного
 Android API30 AVD не дождались завершения загрузки ОС. DNS observer не
@@ -227,7 +227,7 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   493 Dart/Flutter-теста и Go без result cache, fingerprint совпал.
   [Базы и release blockers](evidence/shorebird-base-build16.json),
   [Full](evidence/fast-validation-shorebird-build16-final.json),
-  [контракт и ограничения](SHOREBIRD.md). Рабочее дерево; commit ожидается.
+  [контракт и ограничения](SHOREBIRD.md). Исходники и запись доказательств: [e707d94](https://github.com/Extectick/ExVPN/commit/e707d942c5bfd01075ba57f512b6aabec954980f).
   Реальные подписанные patch/rollback и изоляция каналов пока не подтверждены.
   Дополнение +15, 2026-10-17: пользователь завершил CLI login, проект ExVPN
   создан на free account; doctor 6/6 PASS. В клиент добавлены ручные SDK
@@ -257,7 +257,7 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   +12/+13; +16 и changed public IP этим стендом не подтверждены. Успешное
   удаление при ещё работающем VPN, power loss/disk-full/IPv6 и release signing
   остаются открытыми. [Отчёт](evidence/windows-maintenance-build13.json).
-  Рабочее дерево; commit ожидается.
+  Исходники и запись доказательств: [e707d94](https://github.com/Extectick/ExVPN/commit/e707d942c5bfd01075ba57f512b6aabec954980f).
 
 Прогресс E6 от 2026-10-16: библиотека подписанных данных реализована и прошла
 24 runtime-теста и 7 тестов офлайн-подготовки пакета, анализ чистый. Проверены
