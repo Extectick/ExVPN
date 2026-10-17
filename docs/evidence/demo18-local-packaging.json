@@ -1,0 +1,166 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "purpose": "local prerelease diagnostics; not GitHub-delivered assets or runtime acceptance",
+  "codeCommit": "6466b7096c43f3d7442bfe55a513d180485596dd",
+  "android": {
+    "schema": 1,
+    "status": "POSTBUILD_GATES_PASS",
+    "apkSha256": "86a393767a89e6e251fcaed31ca0802e7752c228628789b67fc7b5c2c90191aa",
+    "identity": {
+      "package": "ru.exvpn.exvpn",
+      "version": "0.1.0+18",
+      "minimumSdk": 30,
+      "targetSdk": 36,
+      "debuggable": false
+    },
+    "signature": {
+      "verified": true,
+      "trustedSignerMatched": true,
+      "v2Verified": true,
+      "debug": false,
+      "certificateSha256": "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093"
+    },
+    "nativeAndPackagedNoticesVerified": true,
+    "engineBytesBound": true,
+    "jvm": {
+      "task": ":app:testReleaseUnitTest",
+      "freshReports": true,
+      "tests": 8,
+      "suites": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "mavenComponents": 52,
+    "fullTextFiles": 61,
+    "postR8InventoryComplete": false,
+    "stableReady": false,
+    "publicFileAllowlistVerified": true,
+    "publicFileCount": 7,
+    "promoted": false,
+    "sourceCleanCommitGateReplayed": false,
+    "assets": [
+      {
+        "file": "android-audit.json",
+        "bytes": 28488,
+        "sha256": "1f47205b529fa458510d4f6df343f5a2daa2607e21ae2eb4bc8387d4ef3f24d9"
+      },
+      {
+        "file": "android-build.json",
+        "bytes": 6755,
+        "sha256": "7ae360a5dfb7c3dd227684422e7af778b263ca311c56c9bc40f1492545632d56"
+      },
+      {
+        "file": "android-maven-notices.json",
+        "bytes": 1145,
+        "sha256": "f0552b6802fcd4e400f69b9fe52c01427d4568a66f6d2a4301f8d0b7666ff745"
+      },
+      {
+        "file": "android-maven-notices.zip",
+        "bytes": 171611,
+        "sha256": "e38579f3deef8dec9e60411fd351fc216a6adfe5d35d5f964a3a0c0324e16367"
+      },
+      {
+        "file": "android-notices.zip",
+        "bytes": 1604843,
+        "sha256": "82a2cde138367871f93c6a3b21b2879ae3dda09e76077da09d92a5fea092bb96"
+      },
+      {
+        "file": "android-sbom.cdx.json",
+        "bytes": 275156,
+        "sha256": "32c0cb49a3f232aba12c603c2dada682cba544df8bfd98f2c18ee6149ef9ae45"
+      },
+      {
+        "file": "ExVPN-0.1.0-demo-android.apk",
+        "bytes": 120185533,
+        "sha256": "86a393767a89e6e251fcaed31ca0802e7752c228628789b67fc7b5c2c90191aa"
+      }
+    ]
+  },
+  "windows": {
+    "schema": 1,
+    "status": "PASS",
+    "version": "0.1.0+18",
+    "sourceCommit": "6dbe6283b39a63e801d455ea5f61d66e4e7cd280",
+    "consumedSourceFiles": 389,
+    "consumedSourceUnchanged": true,
+    "unrelatedDirtyFiles": [
+      "scripts/release/demo-android-lib.ps1",
+      "scripts/release/test-build-demo-android.ps1"
+    ],
+    "builderSeconds": 105.074,
+    "ordinaryRuntime": true,
+    "authenticodeSigned": false,
+    "stableReady": false,
+    "cloudPublished": false,
+    "installerExecuted": false,
+    "sourceBeforeSha256": "298c224cd5a4b992cb2ed6b8d9bf2ff0daaad7c4bf8f21451ea382c01e34531d",
+    "sourceAfterSha256": "7b7acbc16427dfb30de7ec18cf635f115bf677b5c0147fe68673d19cf6865495",
+    "rawBuilderLogSha256": "1a156dd05c32dead00dde19943df0d6f495c7fe9bd3fa4ed3f77c65c1aee0fd8",
+    "serviceSha256": "b1cd3a7b60933d8e5959483cc660596ae0af372636e5091f3468196bb5ada4b1",
+    "uiSha256": "d32b9574070dd75e7eb86681c7e57992d0b4d792a4b1fa0060e293e1bcc32712",
+    "noticeZipExactFiles": 235,
+    "auditCounts": {
+      "files": 269,
+      "nativeBinaries": 1,
+      "noticeComponents": 142
+    },
+    "assets": [
+      {
+        "file": "ExVPN-0.1.0-demo-windows-x64.exe",
+        "bytes": 34473657,
+        "sha256": "d10d247b6ab72b2c178f75b02a9fbef5ef63d52dce9c983e03b64cbcea796b4a"
+      },
+      {
+        "file": "windows-audit.json",
+        "bytes": 18766,
+        "sha256": "62f7ad31973612cfd04731c42c7707e064759fcf0b39f1233e20eb7c9836d6ed"
+      },
+      {
+        "file": "windows-build.json",
+        "bytes": 635,
+        "sha256": "ae41426d5e3c916a3b0ca1a45bd8b736e834241714e8d504d9129f83bd1601f4"
+      },
+      {
+        "file": "windows-notices.zip",
+        "bytes": 1641711,
+        "sha256": "e070f126b87dfc7e9ed2556b2e1b17d1e95682bf2030c76f7eca328c8d27ccd7"
+      },
+      {
+        "file": "windows-sbom.cdx.json",
+        "bytes": 256696,
+        "sha256": "4b30cfabe79bb39b80c48935e84eb749af6466503be9849608755478dbf3b508"
+      }
+    ],
+    "expectedReleaseBlockers": [
+      "dart_flutter_runtime_link_inventory_incomplete",
+      "development_package",
+      "license_expressions_and_distribution_obligations_not_fully_reviewed",
+      "release_signer_not_pinned",
+      "windows_signature_not_valid"
+    ]
+  },
+  "focusedChecks": {
+    "androidBuilder": 86,
+    "mavenNotices": 32,
+    "demoPolicy": 33,
+    "publisherMockedEndToEnd": 11,
+    "nsisPure": 31,
+    "msvcPure": 41
+  },
+  "cancelledBeforePublication": [
+    {
+      "run": 39047540114,
+      "reason": "draft release lookup corrected to numeric identity"
+    },
+    {
+      "run": 39048352780,
+      "reason": "actual release Maven graph required listenablefuture 1.0 notices"
+    },
+    {
+      "run": 39048627733,
+      "reason": "pinned aapt2 emits minSdkVersion"
+    }
+  ]
+}

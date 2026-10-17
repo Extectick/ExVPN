@@ -6,7 +6,7 @@
 
 ## Сводка этапов
 
-- [ ] **EXVPN-E7-007** — Выпустить 0.1.0 Demo для Android и Windows через
+- [x] **EXVPN-E7-007** — Выпустить 0.1.0 Demo для Android и Windows через
   GitHub Actions. Поручение пользователя: 2026-10-17. Критерий: обе сборки +18
   получены одним workflow, APK подписан прежним release-ключом, Windows явно
   unsigned/prerelease, версии/хеши/notices/source проверены; опубликованные
@@ -18,7 +18,22 @@
   Android builder 68, MSVC pure 41 checks PASS. Независимый review завершён.
   Первый CI остановлен до публикации на NSIS checksum и отсутствии release
   JVM task в AGP9. [Отчёт](evidence/demo18-first-ci-failure.json).
-  Исправления и повтор проверяются отдельно; публикация пока не подтверждена.
+  Исправлены AGP release JVM task, распознавание `minSdkVersion`, точный
+  `listenablefuture:1.0` release input, проверяемые зеркала NSIS и чтение
+  черновика по GitHub ID. [Исходники 6466b70](https://github.com/Extectick/ExVPN/commit/6466b7096c43f3d7442bfe55a513d180485596dd).
+  Заключительный [Full](evidence/demo18-final-fast-validation.json): **11/11 PASS,
+  79,61 с**, fingerprint совпал, Go result cache выключен. Локальные APK
+  post-build gates (8/8 JVM tests, подпись, notices) и полный Windows builder
+  прошли; [доказательства](evidence/demo18-local-packaging.json). Эти локальные
+  пакеты не подменяют результат workflow.
+  **Выполнено 2026-10-17:** [workflow 39049490539](https://github.com/Extectick/ExVPN/actions/runs/39049490539)
+  на `6466b70` завершился SUCCESS: Android, Windows и публикация.
+  [Релиз v0.1.0-demo](https://github.com/Extectick/ExVPN/releases/tag/v0.1.0-demo)
+  опубликован как prerelease. Все **15 файлов скачаны**, 15 GitHub digests,
+  14 записей SHA256SUMS и 13 manifest assets сверены; APK +18/minSDK30/target36
+  прошёл apksigner с прежним release-сертификатом. Windows — NotSigned,
+  разрешение сетевых тестов требует явного opt-in. [Итоговое доказательство](evidence/demo18-published.json).
+  Стабильная приёмка, физический Android, полный SBOM и Dart OTA не закрыты.
 
 | Этап | Состояние | Что требуется для закрытия |
 |---|---|---|

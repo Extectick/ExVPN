@@ -21,7 +21,24 @@ Windows получает прежние три CRT DLL из неизменяем
 Первый [demo run](https://github.com/Extectick/ExVPN/actions/runs/39044659742)
 остановлен до публикации: Windows UI/служба собраны, но NSIS download не
 прошёл SHA-256; Android APK собран, но release JVM task завершился отказом.
-[Обезличенный результат](evidence/demo18-first-ci-failure.json). Повтор проверяется отдельно.
+[Обезличенный результат](evidence/demo18-first-ci-failure.json). Исходный отказ сохранён.
+
+Исправления проверены локально до нового облачного запуска: release JVM task
+включается явным AGP-параметром; SDK identity распознаёт `minSdkVersion`;
+Maven-каталог покрывает фактический `listenablefuture:1.0`. NSIS загружается
+из ограниченного списка официальных зеркал с прежним SHA-256. Черновик
+GitHub читается через его numeric ID до публикации. [Локальные результаты](evidence/demo18-local-packaging.json),
+[заключительный Full](evidence/demo18-final-fast-validation.json).
+
+Итоговый [run 39049490539](https://github.com/Extectick/ExVPN/actions/runs/39049490539)
+на [6466b70](https://github.com/Extectick/ExVPN/commit/6466b7096c43f3d7442bfe55a513d180485596dd)
+завершился **SUCCESS** во всех трёх jobs. Опубликован
+[v0.1.0-demo](https://github.com/Extectick/ExVPN/releases/tag/v0.1.0-demo).
+Все 15 release assets скачаны и независимо сверены с GitHub SHA-256,
+SHA256SUMS, manifest и отчётами сборки. Подпись скачанного APK проверена
+apksigner; версия +18, Android 11+, прежний постоянный release-сертификат.
+Windows-пакет ожидаемо NotSigned. [Итоговый отчёт](evidence/demo18-published.json).
+Полная системная приёмка и стабильный выпуск остаются отдельными задачами.
 
 ## Общие проверки
 
