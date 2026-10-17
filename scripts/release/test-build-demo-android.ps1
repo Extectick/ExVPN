@@ -67,6 +67,19 @@ Assert-Refused { ConvertFrom-DemoAndroidSignature $validSignature 'not-a-digest'
 $validBadging = "package: name='ru.exvpn.exvpn' versionCode='18' versionName='0.1.0' platformBuildVersionName='16'`nsdkVersion:'30'`ntargetSdkVersion:'36'`napplication-label:'ExVPN'`n"
 $identity = ConvertFrom-DemoAndroidIdentity $validBadging
 Assert-True ($identity.version -ceq '0.1.0+18' -and !$identity.debuggable -and $identity.minimumSdk -eq 30)
+# Identity lines from actual pinned build-tools 36.0.0 aapt2 release output.
+$buildTools36Badging = "package: name='ru.exvpn.exvpn' versionCode='18' versionName='0.1.0' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'`r`nminSdkVersion:'30'`r`ntargetSdkVersion:'36'`r`n"
+$buildTools36Identity = ConvertFrom-DemoAndroidIdentity $buildTools36Badging
+Assert-True ($buildTools36Identity.version -ceq '0.1.0+18' -and $buildTools36Identity.minimumSdk -eq 30 -and $buildTools36Identity.targetSdk -eq 36 -and !$buildTools36Identity.debuggable)
+foreach ($text in @(
+    ($buildTools36Badging + "minSdkVersion:'30'`r`n"),
+    ($buildTools36Badging + "sdkVersion:'30'`r`n"),
+    ($buildTools36Badging + "sdkVersion:'29'`r`n"),
+    $buildTools36Badging.Replace("minSdkVersion:'30'", "minSdkVersion:'29'"),
+    $buildTools36Badging.Replace("minSdkVersion:'30'`r`n", ''),
+    ($buildTools36Badging + "targetSdkVersion:'35'`r`n"))) {
+    Assert-Refused { ConvertFrom-DemoAndroidIdentity $text }
+}
 foreach ($text in @(
     $validBadging.Replace('ru.exvpn.exvpn','ru.other.app'),
     $validBadging.Replace("versionCode='18'","versionCode='17'"),

@@ -75,7 +75,9 @@ function Get-DemoAndroidCertificateSha256([string]$Path, [switch]$Pem) {
 
 function ConvertFrom-DemoAndroidIdentity([string]$Badging) {
     $packages = [regex]::Matches($Badging, "(?m)^package: name='([^']+)' versionCode='([0-9]+)' versionName='([^']+)'")
-    $minimum = [regex]::Matches($Badging, "(?m)^sdkVersion:'([0-9]+)'\r?$")
+    # Pinned build-tools 36 emits minSdkVersion; older aapt uses sdkVersion.
+    # Count both forms together so duplicate or conflicting values still fail.
+    $minimum = [regex]::Matches($Badging, "(?m)^(?:minSdkVersion|sdkVersion):'([0-9]+)'\r?$")
     $target = [regex]::Matches($Badging, "(?m)^targetSdkVersion:'([0-9]+)'\r?$")
     if ($packages.Count -ne 1 -or $minimum.Count -ne 1 -or $target.Count -ne 1 -or
         $packages[0].Groups[1].Value -cne 'ru.exvpn.exvpn' -or
