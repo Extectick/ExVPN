@@ -93,7 +93,8 @@ diff**, новые неигнорируемые файлы, удаления и 
 
 Xray lifecycle — десятый быстрый набор: тесты из точно закреплённого исходного
 ZIP проверяют закрытие gRPC/XHTTP, активные и зависшие запросы, повторные поколения
-и конкурентный Dial/Close. В scripts lane также проверяются реконструкция ZIP,
+и конкурентный Dial/Close. В `exvpn.4` добавлены memory-only gVisor/DNS пакеты,
+закрытие TUN UDP workers и ошибки частичного запуска. В scripts lane также проверяются реконструкция ZIP,
 отказ при подмене и сохранение offline при повторном входе в окружение.
 Race detector запускается отдельно и в Windows CI; первый запуск скачивает
 проверенный по SHA-256 portable w64devkit в `.tools/`, без изменения PATH машины.
@@ -152,6 +153,12 @@ Android QA-probe, 12 проверок DNS nonce и 14 проверок UTF-8/р�
 ввода. Offline PCAP parser использует уже закреплённый Go graph без новой
 зависимости; Windows teardown helpers проверяются под PS7 и PS5.1. Сеть и
 установленный VPN для этих fixtures не используются.
+
+В scripts lane и CI добавлены лёгкие проверки Android runtime inventory:
+точные версии/engine, граф связей, хеши и отрицательные fixtures. Полное Gradle
+разрешение dependency graph запускается отдельной командой; быстрые тесты его
+не повторяют. Проверка готового APK отклоняет также dependency-only ABI без
+VPN-ядра/Flutter engine — это граница упаковки, а не VPN runtime acceptance.
 
 JSON-отчёты под `docs/evidence` классифицируются как документация, как и в CI.
 Произвольный `docs/configuration.json` или `runner.json.ps1` по-прежнему требует

@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "createdUtc": "2026-10-17T09:19:51.728461+07:00",
+  "sourceState": "0493c89ca7b83797656507ae9c02be281e931a3e",
+  "scope": "Pinned Xray TUN inbound DNS/UDP ownership and shutdown",
+  "module": "github.com/xtls/xray-core",
+  "upstream": {
+    "version": "v1.260327.1-0.20261010092107-701af60772cd",
+    "commit": "701af60772cda123492f86e383e1fdba066614a9",
+    "zipSha256": "7d3dcd882361a1e9112c021339135b150e50e01aefec26df2801a5a8c2cc921c",
+    "sum": "h1:Am/9Pzw5PZr7+hMN1Vs5faeSXRoutnrwMAgtUDnh/J8=",
+    "goModSum": "h1:YAACF9L/Pu1GznixHOBtrBqVcE95nhFjgU+gIEdWKlo="
+  },
+  "patched": {
+    "version": "v1.260327.1-exvpn.4",
+    "time": "2026-10-17T02:13:49Z",
+    "sum": "h1:GVK3CNV0df7huIKSKGgF1VCiXIzEdZWv0W7JjeBWeq0=",
+    "goModSum": "h1:YAACF9L/Pu1GznixHOBtrBqVcE95nhFjgU+gIEdWKlo=",
+    "zipSha256": "60ac841f499df7923b3cacdf39a5836650f8bfd4a94fc995459091fdf99828ae",
+    "patchSha256": "28eb0aa8382da104bacbf133f450eec74be3bd34fe4568d218c253cdce28afc1",
+    "lockSha256": "f53dac9ee479334c6eb9d08c322be69e67290e60293c87b050336ae7b123ca9f"
+  },
+  "red": {
+    "version": "v1.260327.1-exvpn.3",
+    "positiveDnsResponse": true,
+    "parentCancellationControlPassed": 3,
+    "closeWorkerRegressionFailed": 3,
+    "boundSeconds": 2,
+    "testSha256": "704869467a43323ac03853e4f0908990739d6ae55db44369945fcf7e0459e946",
+    "resultLogSha256": "c8eb105c1f73b0917c1b20f59475bd4e1d03e515dac0de7dca0794a78b192fda"
+  },
+  "green": {
+    "topLevelTunRegressionTests": 9,
+    "startupFailureSubcases": [
+      "factory",
+      "stack",
+      "tun",
+      "dns"
+    ],
+    "ownedContextOnly": true,
+    "concurrentClosePreservesErrors": true,
+    "latePacketPublicationRejected": true,
+    "activeDnsInstancesIndependent": true,
+    "allPinnedLifecyclePackages": [
+      "transport/internet",
+      "transport/internet/grpc",
+      "transport/internet/splithttp",
+      "app/proxyman/outbound",
+      "proxy/tun"
+    ],
+    "pinnedRace": {
+      "exitCode": 0,
+      "elapsedSeconds": 43.3559157,
+      "race": true,
+      "count": 5
+    },
+    "pinnedRaceLogSha256": "a6a55bf1c3d589b75f10ee96dfdbab59850cf16a9afcf66da9926bef79b96824",
+    "wholeTunPackageAndVet": {
+      "vetElapsedSeconds": 0.4648152,
+      "packageElapsedSeconds": 0.7368903,
+      "packageExit": 0,
+      "vetExit": 0
+    },
+    "nativeChecks": [
+      {
+        "lane": "core",
+        "verify": 0,
+        "tests": 0,
+        "vet": 0,
+        "elapsedSeconds": 51.3627533
+      },
+      {
+        "lane": "android",
+        "verify": 0,
+        "tests": 0,
+        "vet": 0,
+        "elapsedSeconds": 2.9588785
+      },
+      {
+        "lane": "windows",
+        "verify": 0,
+        "tests": 0,
+        "vet": 0,
+        "elapsedSeconds": 5.1022626
+      }
+    ],
+    "proxyFixtureChecksPassed": 61,
+    "noticeFixtureChecksPassed": 35
+  },
+  "reproducibility": {
+    "independentArchiveGeneration": true,
+    "identicalArchiveSha256": "60ac841f499df7923b3cacdf39a5836650f8bfd4a94fc995459091fdf99828ae",
+    "correspondingSourceIncludesTests": true,
+    "upstreamLicenseUnchanged": true,
+    "licenseSha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+    "moduleCacheProofs": [
+      {
+        "version": "v1.260327.1-0.20261010092107-701af60772cd",
+        "archiveSha256": "7d3dcd882361a1e9112c021339135b150e50e01aefec26df2801a5a8c2cc921c",
+        "sourceFileCount": 1151,
+        "cachedSourceExactlyMatchesArchive": true
+      },
+      {
+        "version": "v1.260327.1-exvpn.3",
+        "archiveSha256": "7f6a8d0c00aa677c3a880ed6e9296bfd7bbaad0261cf8e50bb30d59f525843d7",
+        "sourceFileCount": 1157,
+        "cachedSourceExactlyMatchesArchive": true
+      },
+      {
+        "version": "v1.260327.1-exvpn.4",
+        "archiveSha256": "60ac841f499df7923b3cacdf39a5836650f8bfd4a94fc995459091fdf99828ae",
+        "sourceFileCount": 1160,
+        "cachedSourceExactlyMatchesArchive": true
+      }
+    ]
+  },
+  "writePathReview": {
+    "windows": "WindowsTun.WritePacket uses AllocateSendPacket/SendPacket; the SHA-verified Wintun 0.14.1 header documents full-ring ERROR_BUFFER_OVERFLOW. No wait for TUN.Close in the write path.",
+    "android": "AndroidTun sets the fd nonblocking; pinned gVisor fdbased.writePacket uses one NonBlockingWriteIovec and returns errno rather than waiting for fd closure.",
+    "wintunArchiveSha256": "07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51",
+    "wintunSource": "https://git.zx2c4.com/wintun/tree/api/session.c",
+    "runtimeValidated": false
+  },
+  "changedRepositoryFiles": [
+    {
+      "path": "native/core/go.mod",
+      "beforeSha256": "832374c1bc673b5ad1d547406e0ca46bae594977d11baba95c89d533f2c84e8b",
+      "afterSha256": "332e7245c317628f0f1f267c5a009a84575f68a29af20208ed0bc23bb9a6ff77"
+    },
+    {
+      "path": "native/android/go.mod",
+      "beforeSha256": "ad0980acd7ac9af39a2b078595fede0226f2a57e175d65033cd10530efc761b2",
+      "afterSha256": "032594842e460c6a52816ec82a64ad19514cc172e3cffb2fe93a83304e44061a"
+    },
+    {
+      "path": "native/windows/go.mod",
+      "beforeSha256": "34e1923fc15204f2dd7ecc35913e8f9ee9d736556c8055e84a037bcf5a22da3e",
+      "afterSha256": "287a418fc35cf774e6a3ff5e19ffd119a943163cef89784c3b034078732d9f6b"
+    },
+    {
+      "path": "native/core/go.sum",
+      "beforeSha256": "a26493b85e43bf8d080bcaed1e2f41dbb675d295ed7c121bef2f23adda47cdf5",
+      "afterSha256": "afaa67ad9cf72870cf3eebf263722dee625e4cac5b66014d28d85eca122ebbb7"
+    },
+    {
+      "path": "native/android/go.sum",
+      "beforeSha256": "1bce8e233196140d6a69c1d3534362bdf9c853e37798c3115b67c202f0b8f958",
+      "afterSha256": "b7279d3c794e5079f695dc2dcc1b994556d5b4d2792bcff4ebeb9f19a947fc56"
+    },
+    {
+      "path": "native/windows/go.sum",
+      "beforeSha256": "700607f3a72de0362d8ad9249b970ae1137303fb59146464c369890b5623c674",
+      "afterSha256": "23008870ef2e566d83842e0be82a2205a862acc13008a5a64eb9a13b1cbd3f1b"
+    },
+    {
+      "path": "native/core/config.go",
+      "beforeSha256": "6baef6b08edfab670201e4fdd486650f1f7789786350a1e550dfebf49565b06c",
+      "afterSha256": "6891e75b64e1e347d106113baec558f40fabf758cdc13216708c842965d11262"
+    },
+    {
+      "path": "native/android/build.ps1",
+      "beforeSha256": "5de5ca496da938a5b9100fc13799f455aa232d87a9d70c014be49588f485cec9",
+      "afterSha256": "c6ef95f842dd98877a6d8196778e3a5942f6e7a3ac3beb311400183cf175d7c8"
+    },
+    {
+      "path": "apps/exvpn/windows/runner/vpn_bridge.cpp",
+      "beforeSha256": "733de7773d77446b073b6fdd41375b711e35287336ceba05d80361c76cefd35c",
+      "afterSha256": "7798b3f642bc8c73ffe14543a9b4f6205737b4e66409ad4613c323c19eb0133e"
+    },
+    {
+      "path": "apps/exvpn/android/app/src/main/kotlin/ru/exvpn/exvpn/MainActivity.kt",
+      "beforeSha256": "eca21f365eebadb24410283b851655e6dca88d03013ba3739ba4eb81b7ebd2db",
+      "afterSha256": "030bc94345c37e5c58b250eac2bd1115b0f03ab9e01007ba8a2e7f5d9c35ecb0"
+    },
+    {
+      "path": "scripts/qa/test-xray-lifecycle.ps1",
+      "beforeSha256": "9731dfc56be97f8ddccdfab15d39f177bf9a5c3bd18ee7f837664efd7999df72",
+      "afterSha256": "679f42a6b27aa4d3f58bc9d49ecdf00c0434c0374df66904bf8896723cb5c960"
+    },
+    {
+      "path": "native/patches/xray-lifecycle.patch",
+      "beforeSha256": "c55d66ad1dc551057eb899b7916e32d897e00acf6e891844ef9b6d7613dddfbb",
+      "afterSha256": "28eb0aa8382da104bacbf133f450eec74be3bd34fe4568d218c253cdce28afc1"
+    },
+    {
+      "path": "native/patches/xray-lifecycle.lock.json",
+      "beforeSha256": "2f3a92aa8212c011f9560e1424124dd4a7f7d463dc1ad8d2d34c550b4c81c710",
+      "afterSha256": "f53dac9ee479334c6eb9d08c322be69e67290e60293c87b050336ae7b123ca9f"
+    }
+  ],
+  "systemTunCreatedByTests": false,
+  "hostNetworkingChanged": false,
+  "newDependencyAdded": false,
+  "productionApplicationRebuilt": false,
+  "limits": [
+    "No new Windows/Android package or device runtime is claimed by this evidence.",
+    "The regression proves ownership of an answered DNS/UDP handler, not attribution of all Windows handles or private bytes.",
+    "A bound for long-running process memory/handle growth is not established.",
+    "Native TUN read-loop and all TCP/gVisor worker teardown are outside this targeted UDP regression."
+  ],
+  "originalEvidenceSha256": "df81a8d37eb915e8ad1ebc07fdf949aa566a801c4febfb93da63c13d1f9c12e3"
+}

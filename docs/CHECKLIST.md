@@ -52,6 +52,12 @@
 - [ ] **EXVPN-E1-010** — Собрать Android и Windows технические пакеты и закрыть gate. Зависимости: E1-001–009, E1-011. Критерий: отчёт с версиями, устройствами, командами и обезличенными доказательствами; сборка без системных испытаний не закрывает этот пункт.
   Пакеты +12, 2026-10-17: Windows installer собран и прошёл upgrade/9 циклов; Android APK обеих ABI собран за 166,154 с с прежним debug signer и неизменными inputs. 8 Android JVM results были UP-TO-DATE, не новым выполнением. Затем тот же Android APK прошёл upgrade +11 → +12, cold restore, HTTPS 200/204 через TUN и cleanup за 137,532 с в отдельном API30 x86_64 emulator. [Android build](evidence/android-build12.json), [Android runtime](evidence/android-upgrade-build12.json), [Windows build/runtime](evidence/windows-lifecycle-build12.json); source [ea9f2ca](https://github.com/Extectick/ExVPN/commit/ea9f2ca), product fix [402245f](https://github.com/Extectick/ExVPN/commit/402245f8e701610f8ef8bafc6eebe365d7c30940). Оба пакета development; активный VPN при upgrade, физический Android и полная системная приёмка открыты.
 - [ ] **EXVPN-E1-011** — Ограничить жизненный цикл upstream transport caches при повторном создании ядра. Зависимость: E1-002. Критерий: старое ядро не оставляет gRPC/XHTTP владельцев, фоновые повторные подключения или растущие ресурсы; параллельный Dial/Close не воскрешает завершённого владельца; Android и Windows проверены отдельно. Наблюдение 2026-10-17: закреплённый Xray хранит gRPC ClientConn/XHTTP XmuxManager в process-global maps после Instance.Close. Windows lease закрывает sockets и изолирует поколения, но не освобождает эти upstream objects. [Контракт, точные источники и следующий шаг](WINDOWS_RECONNECT.md); готовность не подтверждена.
+  Дополнение 2026-10-17: отдельно воспроизведён retained DNS/UDP worker в TUN
+  `exvpn.3` (3/3). `exvpn.4` владеет отменой и завершением UDP workers, включая
+  частичные ошибки Start. Девять новых tests ×5, общий pinned race ×5/vet и
+  native verify/unit/vet PASS; ZIP/h1 воспроизводимы. [Исходники](https://github.com/Extectick/ExVPN/commit/0493c89),
+  [доказательства](evidence/xray-tun-lifecycle-exvpn4.json). Платформенный runtime
+  нового ядра и ограниченность всех ресурсов ещё не подтверждены.
   Исправление Windows +12, 2026-10-17: Close предшествует обязательному Suspend, при ошибках владелец и persistent guard сохраняются; гонка Shutdown/Disconnect закрыта. Focused/race ×10/vet и независимое review прошли. [Исходники](https://github.com/Extectick/ExVPN/commit/402245f8e701610f8ef8bafc6eebe365d7c30940), [Full 10/10 за 93,06 с](evidence/fast-validation-build12.json). Последующий runtime +12 подтвердил 9/9 циклов gRPC/XHTTP/XHTTP+REALITY и cleanup после upgrade +11 → +12; [отчёт](evidence/windows-lifecycle-build12.json). Конечный прогон не доказывает отсутствие роста памяти; E1 остаётся открытым.
   Уточнение Windows 2026-10-17: TCP-синхронизация A/B/C подтвердила EOF/peer drain за 26 мс в A и при сохранённом self-permit в B. Только Suspend перед Close в C оставил host Established за пределами 10 с (381 наблюдение), при исчезнувшем guest tuple. Контроль не продлевает deadline; cleanup прошёл. [Отчёт](evidence/windows-teardown-tcp-build11.json), [QA commit](https://github.com/Extectick/ExVPN/commit/173cdf0d99552eae5c1e8bf0e35b5c72c4d8daf5). На момент этой диагностики product fix ещё не проверялся; последующий +12 runtime приведён выше.
   Диагностика Windows 2026-10-17: отдельный A/B/C helper подтвердил baseline A Established и EOF; gate наблюдателя занял 1 мс после контрольной отметки, не всю длительность Close. B остановился на синхронизации файлов стенда, C не выполнялся. Причина сохранения VPN peer не доказана, production не менялся. Проверена очистка с исходными SCM/service hash/routes/DNS, без TUN/guard. [Отчёт](evidence/windows-teardown-diagnosis-build11.json), QA исходники [5ca1b36](https://github.com/Extectick/ExVPN/commit/5ca1b3633b81f463ac8f19bd166a5c373187c22c). Прежний runtime FAIL сохраняется.
@@ -88,6 +94,14 @@
   [Границы и доказательства](VLESS_ENCRYPTION.md).
   Исходники: [f5901bc](https://github.com/Extectick/ExVPN/commit/f5901bc7d0b61d22f555bc760cbfcb5e3c85de81).
 - [ ] **EXVPN-E3-008** — Уточнить диагностику отдельных отклонённых записей и частичного обновления. Критерий: безопасный номер записи/причина, явное решение пользователя о частичной замене, отсутствие незаметной потери рабочего списка. В +7 показано число шести отказов; ручное Android-обновление сохранило список, точная причина не снята в runtime-отчёте.
+  Прогресс 2026-10-17: реализованы безопасные причины по индексам и подтверждение
+  точного нормализованного кандидата. Фоновое обновление сохраняет старый список;
+  новый запрос, удаление, перезапуск и поздний HTTP не применяют устаревшее согласие.
+  11 новых state tests и 35 focused Flutter tests PASS, analyze без замечаний;
+  проверены отмена/подтверждение, persistence round-trip, HTTP race и 40 причин
+  на узком экране с увеличенным шрифтом. Контракт: [ARCHITECTURE.md](ARCHITECTURE.md).
+  Новый native UI runtime ещё не выполнен; пункт открыт.
+  Исходники: [b2cc272](https://github.com/Extectick/ExVPN/commit/b2cc272).
 
 ## E4 — Android-клиент
 
