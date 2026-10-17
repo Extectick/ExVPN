@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "headSha": "42cb55dd100c5040668e7b17d5b67b7b6a7eb790",
+  "runId": 39003487938,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/39003487938",
+  "status": "completed",
+  "conclusion": "success",
+  "createdAt": "2026-10-17T04:41:08Z",
+  "updatedAt": "2026-10-17T04:57:43Z",
+  "jobs": [
+    {
+      "name": "Android",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T04:41:11Z",
+      "completedAt": "2026-10-17T04:57:43Z",
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39003487938/job/117311099173"
+    },
+    {
+      "name": "Windows",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T04:41:11Z",
+      "completedAt": "2026-10-17T04:48:18Z",
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39003487938/job/117311099359"
+    }
+  ],
+  "scope": "Both native CI lanes on +14 tray source; does not cover installed tray runtime, Android DNS acceptance or release signing."
+}

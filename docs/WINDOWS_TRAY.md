@@ -59,6 +59,10 @@ maintenance scripts и закреплённые NSIS plugins. Пять release b
 465 Dart/Flutter tests и прежние Go/installer/QA checks; Go result cache отключён,
 исходники до/после совпали. [Отчёт](evidence/fast-validation-build14-tray.json).
 
+GitHub CI того же +14 также завершил Android и Windows native build/test jobs
+успешно. [CI evidence](evidence/ci-build14-tray.json). Это не заменяет проверки
+установленного приложения ниже.
+
 До закрытия EXVPN-E5-003 нужны реальные проверки установленного +14 в Windows:
 обычный token, close/show, commands через службу и независимый HTTPS,
 клавиатура, Explorer restart, DPI/несколько мониторов и выход при работающем

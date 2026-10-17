@@ -5,7 +5,8 @@ source fingerprint неизменен, Go result cache отключён. Чет�
 регрессии прошли вместе с остальным набором. Повторный разбор сохранённого +13
 PCAP воспроизвёл шесть открытых DNS-пакетов до Disconnect и один в переходе;
 новый VPN-сеанс не запускался. [Full](evidence/fast-validation-continuous-dns-build14.json),
-[reparse](evidence/android-dns-continuous-parser-build13.json).
+[reparse](evidence/android-dns-continuous-parser-build13.json),
+[исходники](https://github.com/Extectick/ExVPN/commit/b27b685).
 
 Прогон **+14 после source freeze**, 2026-10-17: **10/10 наборов за 96,93 с**,
 465 Dart/Flutter tests, Go/installer/QA checks PASS; Go result cache отключён,
@@ -23,9 +24,9 @@ child завершился за 3187 мс. 32 private evidence hashes прове
 admin token; обычный установленный EXE не означает unelevated acceptance.
 [Отчёт и ограничения](evidence/windows-msaa-discovery-build13.json).
 
-CI исходников +13 после Instrumentation/metadata изменений успешно завершил обе
-native lanes. Он не покрывает новый tray +14.
-[CI evidence](evidence/ci-build13-instrumentation.json).
+CI исходников +14 с треем успешно завершил обе native lanes — Android и Windows.
+Системная проверка установленного трея, DNS и release-подпись остаются отдельными
+критериями. [CI evidence](evidence/ci-build14-tray.json).
 
 Из корня проекта в PowerShell 7:
 
