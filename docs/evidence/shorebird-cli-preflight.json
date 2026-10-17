@@ -1,0 +1,120 @@
+{
+  "format": 1,
+  "recordedUtc": "2026-10-17T00:43:19.5018079+00:00",
+  "task": "EXVPN-E6-004",
+  "status": "CLI_READY_INTEGRATION_NOT_CONFIGURED",
+  "cli": {
+    "repository": "https://github.com/shorebirdtech/shorebird.git",
+    "version": "1.6.129",
+    "revision": "9fe1370bdd1d2f117cc08c57ae416b794ed92440",
+    "folder": "shorebird-1.6.129",
+    "pubspecLockSha256": "5788be4fc7149239309a313f4fc06af4ef4560dca887517d62881c0b26137bae",
+    "powershellEntrypointSha256": "078304c0dafde2e57bdfa86232136f54291609811e4dd997a852629f15e8f641",
+    "apacheLicenseSha256": "95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc",
+    "mitLicenseSha256": "1847e0e0698142ed4347c1441a9fa81c8fbddd44b1d8bbcd5e3647f991759d7f"
+  },
+  "flutter": {
+    "repository": "https://github.com/shorebirdtech/flutter.git",
+    "version": "3.47.7",
+    "revision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+    "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+    "dartVersion": "3.13.5"
+  },
+  "versionCommand": {
+    "exitCode": 0,
+    "data": {
+      "shorebird_version": "1.6.129",
+      "flutter_version": "3.47.7",
+      "flutter_revision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+      "engine_revision": "4b936a0c03e13389ddfb1ac48823f187964975c2"
+    },
+    "dependencyLockUnchanged": true
+  },
+  "doctorCommand": {
+    "exitCode": 0,
+    "network": [
+      {
+        "url": "https://api.shorebird.dev",
+        "reachable": true
+      },
+      {
+        "url": "https://console.shorebird.dev",
+        "reachable": true
+      },
+      {
+        "url": "https://oauth2.googleapis.com",
+        "reachable": true
+      },
+      {
+        "url": "https://storage.googleapis.com",
+        "reachable": true
+      },
+      {
+        "url": "https://cdn.shorebird.cloud",
+        "reachable": true
+      }
+    ],
+    "validators": [
+      {
+        "name": "Shorebird is up-to-date",
+        "ok": false,
+        "issues": [
+          {
+            "severity": "error",
+            "message": "Failed to get shorebird version. Error: fatal: HEAD does not point to a branch\n"
+          }
+        ]
+      },
+      {
+        "name": "AndroidManifest.xml files contain INTERNET permission",
+        "ok": true,
+        "issues": []
+      },
+      {
+        "name": "android/app/build.gradle(.kts) does not contain a legacy keepDebugSymbols line for libapp.so",
+        "ok": true,
+        "issues": []
+      },
+      {
+        "name": "Xcode project does not override FLUTTER_ build settings",
+        "ok": true,
+        "issues": []
+      },
+      {
+        "name": "shorebird.yaml found in pubspec.yaml assets",
+        "ok": false,
+        "issues": [
+          {
+            "severity": "error",
+            "message": "No shorebird.yaml found in pubspec.yaml assets"
+          }
+        ]
+      },
+      {
+        "name": "Lock files are tracked in source control",
+        "ok": true,
+        "issues": []
+      }
+    ],
+    "javaVersionAvailable": false,
+    "gradleVersion": "9.3.1"
+  },
+  "accountAccessed": false,
+  "cloudAppCreated": false,
+  "keysCreated": false,
+  "releaseCreated": false,
+  "patchCreated": false,
+  "appSdkChanged": false,
+  "systemGitConfigChanged": false,
+  "sourceState": "working tree; commit pending",
+  "evidence": [
+    {
+      "sha256": "363e54ecb6ede9e6a73da708fa1535c92f8c0eaeb9724b85fcbf059e0ae27aaf",
+      "path": ".private/shorebird-preflight-20261017/version.stdout.txt"
+    },
+    {
+      "sha256": "47a67a8bb7d44a11d142d97b649f9bdcd2ca4ac85d14cef1e728db50ebb36ffe",
+      "path": ".private/shorebird-preflight-20261017/doctor.stdout.txt"
+    }
+  ]
+}

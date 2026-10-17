@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-17",
+  "scope": "development CLI preflight; not included in current application builds",
+  "cli": {
+    "repository": "https://github.com/shorebirdtech/shorebird.git",
+    "version": "1.6.129",
+    "revision": "9fe1370bdd1d2f117cc08c57ae416b794ed92440",
+    "folder": "shorebird-1.6.129",
+    "pubspecLockSha256": "5788be4fc7149239309a313f4fc06af4ef4560dca887517d62881c0b26137bae",
+    "powershellEntrypointSha256": "078304c0dafde2e57bdfa86232136f54291609811e4dd997a852629f15e8f641",
+    "apacheLicenseSha256": "95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc",
+    "mitLicenseSha256": "1847e0e0698142ed4347c1441a9fa81c8fbddd44b1d8bbcd5e3647f991759d7f"
+  },
+  "flutter": {
+    "repository": "https://github.com/shorebirdtech/flutter.git",
+    "version": "3.47.7",
+    "revision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+    "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+    "dartVersion": "3.13.5"
+  }
+}
