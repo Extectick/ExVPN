@@ -5,7 +5,7 @@ go 1.27.1
 require (
 	github.com/Extectick/ExVPN/native/core v0.0.0
 	github.com/Microsoft/go-winio v0.6.2
-	github.com/xtls/xray-core v1.260327.1-exvpn.4
+	github.com/xtls/xray-core v1.260327.1-exvpn.5
 	golang.org/x/net v0.59.0
 	golang.org/x/sys v0.48.0
 	golang.zx2c4.com/wireguard/windows v1.1.1

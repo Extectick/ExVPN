@@ -1,6 +1,6 @@
 # Pinned Xray transport lifecycle patch
 
-ExVPN's modified Xray module is **`v1.260327.1-exvpn.4`**, based on upstream
+ExVPN's modified Xray module is **`v1.260327.1-exvpn.5`**, based on upstream
 `v1.260327.1-0.20261010092107-701af60772cd`, commit
 `701af60772cda123492f86e383e1fdba066614a9`. It is not an official Xray release.
 The upstream source and license are retained. Original and modified covered
@@ -26,6 +26,17 @@ retires it from the outbound handler's `Close`:
   sessions; late packets cannot create new sessions. Init/Start/Close are
   serialized and concurrent callers retain cleanup errors. Memory-only tests
   exercise actual gVisor packets and the DNS proxy without a system TUN.
+- Windows Wintun sessions reject new I/O during retirement, wake pending event
+  waits, and join admitted receive/release/send/wait operations before `End`.
+  Receive buffers are released after gVisor's existing copy, so a retained
+  packet cannot call Wintun after session teardown. A failed wake or five-second
+  drain timeout preserves native handles and returns a stable cleanup error.
+  Synthetic session tests include retained packets, blocked operations,
+  concurrent Read/Write/Close, and real cancellation events without a TUN.
+
+The Windows lifetime defect was reproduced deterministically as a release after
+`End` on the previous source. This does not establish the cause of the separate
+Windows +16 service exit, whose process crash evidence is still incomplete.
 
 The optional upstream browser dialer is not enabled by ExVPN. Its external
 browser process is outside this patch's teardown contract. The patch does not

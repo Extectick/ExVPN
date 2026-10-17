@@ -4272,3 +4272,944 @@ new file mode 100644
 +		t.Fatal("cache/lifetime lock inversion")
 +	}
 +}
+diff --git a/proxy/tun/exvpn_windows_session_test.go b/proxy/tun/exvpn_windows_session_test.go
+new file mode 100644
+--- /dev/null
++++ b/proxy/tun/exvpn_windows_session_test.go
+@@ -0,0 +1,516 @@
++//go:build windows
++
++// ExVPN modifications. This Source Code Form is subject to the terms of the
++// Mozilla Public License, v. 2.0. See the LICENSE file at the module root.
++
++package tun
++
++import (
++	"bytes"
++	"errors"
++	"os"
++	"sync"
++	"testing"
++	"time"
++
++	"golang.org/x/sys/windows"
++	"gvisor.dev/gvisor/pkg/buffer"
++	"gvisor.dev/gvisor/pkg/tcpip/stack"
++)
++
++type qaWindowsSession struct {
++	callAfterEnd                                               bool
++	mu                                                         sync.Mutex
++	packet                                                     []byte
++	ended                                                      bool
++	releases, ends, receives, allocations, sends, nativeActive int
++	releaseAfterEnd, endWhileActive                            bool
++	receiveGate, releaseGate, sendGate                         func()
++	receiveErr                                                 error
++}
++
++func (s *qaWindowsSession) ReceivePacket() ([]byte, error) {
++	s.mu.Lock()
++	s.receives++
++	s.callAfterEnd = s.callAfterEnd || s.ended
++	s.nativeActive++
++	s.mu.Unlock()
++	if s.receiveGate != nil {
++		s.receiveGate()
++	}
++	s.mu.Lock()
++	s.nativeActive--
++	packet := append([]byte(nil), s.packet...)
++	s.mu.Unlock()
++	return packet, s.receiveErr
++}
++func (s *qaWindowsSession) ReleaseReceivePacket(packet []byte) {
++	s.mu.Lock()
++	s.nativeActive++
++	s.mu.Unlock()
++	if s.releaseGate != nil {
++		s.releaseGate()
++	}
++	s.mu.Lock()
++	defer s.mu.Unlock()
++	s.nativeActive--
++	s.releases++
++	s.releaseAfterEnd = s.releaseAfterEnd || s.ended
++	for i := range packet {
++		packet[i] = 0xff
++	}
++}
++func (s *qaWindowsSession) AllocateSendPacket(n int) ([]byte, error) {
++	s.mu.Lock()
++	s.allocations++
++	s.callAfterEnd = s.callAfterEnd || s.ended
++	s.mu.Unlock()
++	return make([]byte, n), nil
++}
++func (s *qaWindowsSession) SendPacket([]byte) {
++	s.mu.Lock()
++	s.nativeActive++
++	s.callAfterEnd = s.callAfterEnd || s.ended
++	s.mu.Unlock()
++	if s.sendGate != nil {
++		s.sendGate()
++	}
++	s.mu.Lock()
++	s.nativeActive--
++	s.sends++
++	s.mu.Unlock()
++}
++func (s *qaWindowsSession) End() {
++	s.mu.Lock()
++	defer s.mu.Unlock()
++	s.ended = true
++	s.ends++
++	s.endWhileActive = s.endWhileActive || s.nativeActive != 0
++}
++
++type qaWindowsEvents struct {
++	mu                               sync.Mutex
++	wakeCount, closeCount, waitCount int
++	wakeErr, closeErr, waitErr       error
++	woken                            chan struct{}
++	waitEntered                      chan struct{}
++	waitExit                         <-chan struct{}
++}
++
++func newQAWindowsEvents() *qaWindowsEvents { return &qaWindowsEvents{woken: make(chan struct{})} }
++func (e *qaWindowsEvents) wake() error {
++	e.mu.Lock()
++	defer e.mu.Unlock()
++	e.wakeCount++
++	if e.wakeErr != nil {
++		return e.wakeErr
++	}
++	close(e.woken)
++	return nil
++}
++func (e *qaWindowsEvents) wait() error {
++	e.mu.Lock()
++	e.waitCount++
++	e.mu.Unlock()
++	if e.waitEntered != nil {
++		close(e.waitEntered)
++	}
++	if e.waitErr != nil {
++		return e.waitErr
++	}
++	<-e.woken
++	if e.waitExit != nil {
++		<-e.waitExit
++	}
++	return nil
++}
++func (e *qaWindowsEvents) close() error {
++	e.mu.Lock()
++	defer e.mu.Unlock()
++	e.closeCount++
++	return e.closeErr
++}
++func qaAwait(t *testing.T, event <-chan struct{}) {
++	t.Helper()
++	select {
++	case <-event:
++	case <-time.After(2 * time.Second):
++		t.Fatal("test barrier timed out")
++	}
++}
++func qaWindowsPacket() *stack.PacketBuffer {
++	return stack.NewPacketBuffer(stack.PacketBufferOptions{Payload: buffer.MakeWithView(buffer.NewViewWithData([]byte{0x45, 1, 2, 3}))})
++}
++
++func TestExVPNWindowsTunPacketOutlivesClose(t *testing.T) {
++	want := []byte{0x45, 1, 2, 3}
++	session := &qaWindowsSession{packet: append([]byte(nil), want...)}
++	// No adapter, LUID, routes, DNS, callback or WFP handle is installed.
++	tun := &WindowsTun{options: &Config{}, session: newWindowsTunSession(session, newQAWindowsEvents())}
++	version, packet, err := tun.ReadPacket()
++	if err != nil || version != 4 || packet == nil {
++		t.Fatalf("ReadPacket: version=%d err=%v", version, err)
++	}
++	if err := tun.Close(); err != nil {
++		t.Fatal(err)
++	}
++	var got []byte
++	for _, part := range packet.AsSlices() {
++		got = append(got, part...)
++	}
++	packet.DecRef()
++	if !bytes.Equal(got, want) {
++		t.Fatal("retained packet aliases native storage")
++	}
++	session.mu.Lock()
++	defer session.mu.Unlock()
++	if session.ends != 1 || session.releases != 1 || session.releaseAfterEnd {
++		t.Fatalf("unsafe session order: End=%d Release=%d ReleaseAfterEnd=%t", session.ends, session.releases, session.releaseAfterEnd)
++	}
++}
++
++func TestExVPNWindowsSessionCloseJoinsNativeOperations(t *testing.T) {
++	for _, operation := range []string{"receive", "release", "send", "wait"} {
++		t.Run(operation, func(t *testing.T) {
++			entered, allow := make(chan struct{}), make(chan struct{})
++			gate := func() { close(entered); <-allow }
++			session := &qaWindowsSession{packet: []byte{0x45, 1, 2, 3}}
++			events := newQAWindowsEvents()
++			switch operation {
++			case "receive":
++				session.receiveGate = gate
++			case "release":
++				session.releaseGate = gate
++			case "send":
++				session.sendGate = gate
++			case "wait":
++				events.waitEntered = entered
++				events.waitExit = allow
++			}
++			owner := newWindowsTunSession(session, events)
++			opDone := make(chan struct{})
++			go func() {
++				defer close(opDone)
++				if operation == "wait" {
++					owner.Wait()
++					return
++				}
++				if operation == "send" {
++					p := qaWindowsPacket()
++					defer p.DecRef()
++					if owner.WritePacket(p) != nil {
++						t.Error("write failed")
++					}
++					return
++				}
++				_, p, err := owner.ReadPacket()
++				if err != nil {
++					t.Error(err)
++				}
++				if p != nil {
++					p.DecRef()
++				}
++			}()
++			qaAwait(t, entered)
++			closeDone := make(chan struct{})
++			go func() {
++				defer close(closeDone)
++				if err := owner.Close(); err != nil {
++					t.Error(err)
++				}
++			}()
++			qaAwait(t, events.woken)
++			if _, _, err := owner.ReadPacket(); !errors.Is(err, os.ErrClosed) {
++				t.Error("retiring owner admitted another receive")
++			}
++			late := qaWindowsPacket()
++			if owner.WritePacket(late) == nil {
++				t.Error("retiring owner admitted another send")
++			}
++			late.DecRef()
++			owner.Wait()
++			session.mu.Lock()
++			ends := session.ends
++			session.mu.Unlock()
++			events.mu.Lock()
++			handlesClosed := events.closeCount
++			events.mu.Unlock()
++			if ends != 0 || handlesClosed != 0 {
++				t.Error("session or event ended before operation completion")
++			}
++			close(allow)
++			qaAwait(t, opDone)
++			qaAwait(t, closeDone)
++			session.mu.Lock()
++			defer session.mu.Unlock()
++			if session.ends != 1 || session.endWhileActive || session.releaseAfterEnd {
++				t.Fatal("native lifetime order violated")
++			}
++		})
++	}
++}
++
++func TestExVPNWindowsSessionCloseFailureRetainsLiveHandles(t *testing.T) {
++	t.Run("wake", func(t *testing.T) {
++		fault := errors.New("wake failure")
++		events := newQAWindowsEvents()
++		events.wakeErr = fault
++		session := &qaWindowsSession{}
++		owner := newWindowsTunSession(session, events)
++		first := owner.Close()
++		if !errors.Is(first, fault) || owner.Close() != first {
++			t.Fatal("wake failure was not retained")
++		}
++		if session.ends != 0 || events.closeCount != 0 || events.wakeCount != 1 {
++			t.Fatal("failed wake freed native handles or was retried")
++		}
++		if _, _, err := owner.ReadPacket(); !errors.Is(err, os.ErrClosed) {
++			t.Fatal("failed retirement reopened admission")
++		}
++	})
++	t.Run("drain", func(t *testing.T) {
++		entered, allow := make(chan struct{}), make(chan struct{})
++		session := &qaWindowsSession{packet: []byte{0x45}, receiveGate: func() { close(entered); <-allow }}
++		events := newQAWindowsEvents()
++		owner := newWindowsTunSession(session, events)
++		owner.drainTimeout = 20 * time.Millisecond
++		done := make(chan struct{})
++		go func() {
++			defer close(done)
++			_, p, _ := owner.ReadPacket()
++			if p != nil {
++				p.DecRef()
++			}
++		}()
++		qaAwait(t, entered)
++		first := owner.Close()
++		if first == nil || owner.Close() != first {
++			t.Error("drain failure was not retained")
++		}
++		session.mu.Lock()
++		ends := session.ends
++		session.mu.Unlock()
++		if ends != 0 || events.closeCount != 0 {
++			t.Error("timeout ended an active session")
++		}
++		close(allow)
++		qaAwait(t, done)
++		if owner.Close() != first || session.ends != 0 {
++			t.Fatal("late completion discarded terminal cleanup error")
++		}
++	})
++}
++
++func TestExVPNWindowsSessionConcurrentCloseAndRetiredIO(t *testing.T) {
++	for _, closeFailure := range []bool{false, true} {
++		events := newQAWindowsEvents()
++		if closeFailure {
++			events.closeErr = errors.New("close event failure")
++		}
++		session := &qaWindowsSession{}
++		owner := newWindowsTunSession(session, events)
++		var group sync.WaitGroup
++		for range 16 {
++			group.Add(1)
++			go func() {
++				defer group.Done()
++				if err := owner.Close(); err != events.closeErr {
++					t.Error("close result changed")
++				}
++			}()
++		}
++		group.Wait()
++		if session.ends != 1 || events.wakeCount != 1 || events.closeCount != 1 {
++			t.Fatal("cleanup did not run exactly once")
++		}
++		if _, _, err := owner.ReadPacket(); !errors.Is(err, os.ErrClosed) {
++			t.Fatal("retired read accepted")
++		}
++		packet := qaWindowsPacket()
++		if owner.WritePacket(packet) == nil {
++			t.Fatal("retired write accepted")
++		}
++		packet.DecRef()
++		owner.Wait()
++		if session.receives != 0 || session.allocations != 0 || events.waitCount != 0 {
++			t.Fatal("retired operation reached native API")
++		}
++	}
++}
++
++func TestExVPNWindowsTunClosePreservesRetirementFailure(t *testing.T) {
++	fault := errors.New("wake failed")
++	events := newQAWindowsEvents()
++	events.wakeErr = fault
++	session := &qaWindowsSession{}
++	tun := &WindowsTun{options: &Config{}, session: newWindowsTunSession(session, events)}
++	first := tun.Close()
++	if !errors.Is(first, fault) || tun.Close() != first {
++		t.Fatal("WindowsTun lost the stable cleanup failure")
++	}
++	if session.ends != 0 || events.closeCount != 0 {
++		t.Fatal("WindowsTun freed handles after a failed retirement")
++	}
++}
++
++func TestExVPNWindowsSessionIndependentOwnerAndWaitFailure(t *testing.T) {
++	first := newWindowsTunSession(&qaWindowsSession{}, newQAWindowsEvents())
++	live := newWindowsTunSession(&qaWindowsSession{packet: []byte{0x45, 1}}, newQAWindowsEvents())
++	if err := first.Close(); err != nil {
++		t.Fatal(err)
++	}
++	_, packet, err := live.ReadPacket()
++	if err != nil {
++		t.Fatal("independent owner retired")
++	}
++	packet.DecRef()
++	if err := live.Close(); err != nil {
++		t.Fatal(err)
++	}
++	fault := errors.New("wait failed")
++	events := newQAWindowsEvents()
++	events.waitErr = fault
++	session := &qaWindowsSession{}
++	owner := newWindowsTunSession(session, events)
++	owner.Wait()
++	if _, _, err := owner.ReadPacket(); !errors.Is(err, fault) {
++		t.Fatal("wait error was hidden")
++	}
++	if session.receives != 0 {
++		t.Fatal("failed event wait reentered receive")
++	}
++	if err := owner.Close(); err != nil {
++		t.Fatal(err)
++	}
++}
++
++func TestExVPNWindowsSessionQueueAndInvalidData(t *testing.T) {
++	for _, err := range []error{windows.ERROR_NO_MORE_ITEMS, nil, windows.ERROR_HANDLE_EOF} {
++		session := &qaWindowsSession{receiveErr: err}
++		owner := newWindowsTunSession(session, newQAWindowsEvents())
++		_, packet, got := owner.ReadPacket()
++		want := err
++		if want == nil {
++			want = windows.ERROR_INVALID_DATA
++		}
++		if want == windows.ERROR_NO_MORE_ITEMS {
++			want = ErrQueueEmpty
++		}
++		if packet != nil || !errors.Is(got, want) {
++			t.Fatalf("wrong read failure: %v", got)
++		}
++		if session.releases != 0 {
++			t.Fatal("released a nonexistent receive buffer")
++		}
++		if err := owner.Close(); err != nil {
++			t.Fatal(err)
++		}
++	}
++}
++
++type qaWindowsObservedEvents struct {
++	*windowsTunEvents
++	entered chan struct{}
++}
++
++func (e *qaWindowsObservedEvents) wait() error {
++	close(e.entered)
++	return e.windowsTunEvents.wait()
++}
++
++func TestExVPNWindowsSessionActualEventCancellation(t *testing.T) {
++	// Kernel events only. No Wintun DLL, adapter, network or WFP operation.
++	read, err := windows.CreateEvent(nil, 1, 0, nil)
++	if err != nil {
++		t.Fatal(err)
++	}
++	defer windows.CloseHandle(read)
++	events, err := newWindowsTunEvents(read)
++	if err != nil {
++		t.Fatal(err)
++	}
++	session := &qaWindowsSession{}
++	observed := &qaWindowsObservedEvents{windowsTunEvents: events, entered: make(chan struct{})}
++	owner := newWindowsTunSession(session, observed)
++	done := make(chan struct{})
++	go func() { owner.Wait(); close(done) }()
++	qaAwait(t, observed.entered)
++	if err := owner.Close(); err != nil {
++		t.Fatal(err)
++	}
++	qaAwait(t, done)
++	if session.ends != 1 {
++		t.Fatal("session not ended")
++	}
++	if err := windows.SetEvent(events.stop); err == nil {
++		t.Fatal("stop event leaked")
++	}
++	if err := windows.SetEvent(read); err != nil {
++		t.Fatal("owner closed a foreign read event")
++	}
++	if _, err := newWindowsTunEvents(0); err == nil {
++		t.Fatal("missing read event accepted")
++	}
++}
++
++func TestExVPNWindowsSessionConcurrentReadWriteClose(t *testing.T) {
++	for range 25 {
++		readEntered, writeEntered := make(chan struct{}), make(chan struct{})
++		var readOnce, writeOnce sync.Once
++		session := &qaWindowsSession{packet: []byte{0x45, 1, 2, 3},
++			receiveGate: func() { readOnce.Do(func() { close(readEntered) }) },
++			sendGate:    func() { writeOnce.Do(func() { close(writeEntered) }) },
++		}
++		events := newQAWindowsEvents()
++		events.waitEntered = make(chan struct{})
++		owner := newWindowsTunSession(session, events)
++		start := make(chan struct{})
++		var group sync.WaitGroup
++		for worker := range 8 {
++			group.Add(1)
++			go func() {
++				defer group.Done()
++				<-start
++				for range 64 {
++					if worker%2 == 0 {
++						_, packet, err := owner.ReadPacket()
++						if errors.Is(err, os.ErrClosed) {
++							return
++						}
++						if err != nil {
++							t.Error(err)
++							return
++						}
++						packet.DecRef()
++					} else {
++						packet := qaWindowsPacket()
++						err := owner.WritePacket(packet)
++						packet.DecRef()
++						if err != nil {
++							return
++						}
++					}
++				}
++			}()
++		}
++		group.Add(1)
++		go func() { defer group.Done(); owner.Wait() }()
++		close(start)
++		qaAwait(t, readEntered)
++		qaAwait(t, writeEntered)
++		qaAwait(t, events.waitEntered)
++		for range 8 {
++			group.Add(1)
++			go func() {
++				defer group.Done()
++				if err := owner.Close(); err != nil {
++					t.Error(err)
++				}
++			}()
++		}
++		group.Wait()
++		if session.ends != 1 || session.callAfterEnd || session.releaseAfterEnd || session.endWhileActive || session.releases != session.receives {
++			t.Fatal("concurrent native IO escaped its session lifetime")
++		}
++	}
++}
+diff --git a/proxy/tun/tun_windows.go b/proxy/tun/tun_windows.go
+--- a/proxy/tun/tun_windows.go
++++ b/proxy/tun/tun_windows.go
+@@ -25,24 +25,21 @@
+ 	"golang.org/x/sys/windows"
+ 	"golang.zx2c4.com/wintun"
+ 	"golang.zx2c4.com/wireguard/windows/tunnel/winipcfg"
+-	"gvisor.dev/gvisor/pkg/buffer"
+ 	"gvisor.dev/gvisor/pkg/tcpip"
+ 	"gvisor.dev/gvisor/pkg/tcpip/stack"
+ )
+-
+-//go:linkname procyield runtime.procyield
+-func procyield(cycles uint32)
+ 
+ // WindowsTun is an object that handles tun network interface on Windows
+ // current version is heavily stripped to do nothing more,
+ // then create a network interface, to be provided as endpoint to gVisor ip stack
+ type WindowsTun struct {
+-	sync.RWMutex
++	// ExVPN: Close joins the session owner before freeing native resources.
++	closeOnce sync.Once
++	closeErr  error
+ 
+ 	options  *Config
+ 	adapter  *wintun.Adapter
+-	session  wintun.Session
+-	readWait windows.Handle
++	session  *windowsTunSession
+ 	luid     winipcfg.LUID
+ 	cbr      winipcfg.ChangeCallback
+ 	cbi      winipcfg.ChangeCallback
+@@ -51,7 +48,6 @@
+ 	resolver *savedResolver
+ 	skipStop chan struct{}
+ 	skipDone chan struct{}
+-	closed   bool
+ }
+ 
+ // WindowsTun implements Tun
+@@ -75,13 +71,18 @@
+ 		_ = adapter.Close()
+ 		return nil, err
+ 	}
++	events, err := newWindowsTunEvents(session.ReadWaitEvent())
++	if err != nil {
++		session.End()
++		_ = adapter.Close()
++		return nil, err
++	}
+ 
+ 	tun := &WindowsTun{
+-		options:  options,
+-		adapter:  adapter,
+-		session:  session,
+-		readWait: session.ReadWaitEvent(),
+-		luid:     winipcfg.LUID(adapter.LUID()),
++		options: options,
++		adapter: adapter,
++		session: newWindowsTunSession(session, events),
++		luid:    winipcfg.LUID(adapter.LUID()),
+ 	}
+ 
+ 	return tun, nil
+@@ -331,49 +332,51 @@
+ }
+ 
+ func (t *WindowsTun) Close() error {
+-	t.Lock()
+-	defer t.Unlock()
+-	if t.closed {
+-		return nil
+-	}
+-	t.closed = true
+-
+-	if t.cbr != nil {
+-		t.cbr.Unregister()
+-	}
+-	if t.cbi != nil {
+-		t.cbi.Unregister()
+-	}
+-	t.guard.restore()
+-	if t.luid != 0 {
+-		t.luid.FlushRoutes(windows.AF_INET)
+-		t.luid.FlushIPAddresses(windows.AF_INET)
+-		t.luid.FlushDNS(windows.AF_INET)
+-		t.luid.FlushRoutes(windows.AF_INET6)
+-		t.luid.FlushIPAddresses(windows.AF_INET6)
+-		t.luid.FlushDNS(windows.AF_INET6)
+-	}
+-	if t.wfp != 0 {
+-		closeWFPEngine(t.wfp)
+-	}
+-	if t.resolver != nil {
+-		t.resolver.restore()
+-	}
+-	if t.skipStop != nil {
+-		close(t.skipStop)
+-		<-t.skipDone
+-	}
+-	internet.SkipDNSServers(nil)
+-	if len(t.options.DNS) > 0 || len(t.options.AutoSystemRoutingTable) > 0 {
+-		flushDNSCache()
+-	}
+-	if t.session != (wintun.Session{}) {
+-		t.session.End()
+-	}
+-	if t.adapter != nil {
+-		t.adapter.Close()
+-	}
+-	return nil
++	t.closeOnce.Do(func() {
++		if t.session != nil {
++			if err := t.session.retire(); err != nil {
++				t.closeErr = err
++				return
++			}
++		}
++
++		if t.cbr != nil {
++			t.cbr.Unregister()
++		}
++		if t.cbi != nil {
++			t.cbi.Unregister()
++		}
++		t.guard.restore()
++		if t.luid != 0 {
++			t.luid.FlushRoutes(windows.AF_INET)
++			t.luid.FlushIPAddresses(windows.AF_INET)
++			t.luid.FlushDNS(windows.AF_INET)
++			t.luid.FlushRoutes(windows.AF_INET6)
++			t.luid.FlushIPAddresses(windows.AF_INET6)
++			t.luid.FlushDNS(windows.AF_INET6)
++		}
++		if t.wfp != 0 {
++			closeWFPEngine(t.wfp)
++		}
++		if t.resolver != nil {
++			t.resolver.restore()
++		}
++		if t.skipStop != nil {
++			close(t.skipStop)
++			<-t.skipDone
++		}
++		internet.SkipDNSServers(nil)
++		if len(t.options.DNS) > 0 || len(t.options.AutoSystemRoutingTable) > 0 {
++			flushDNSCache()
++		}
++		if t.session != nil {
++			t.closeErr = t.session.Close()
++		}
++		if t.adapter != nil {
++			t.closeErr = go_errors.Join(t.closeErr, t.adapter.Close())
++		}
++	})
++	return t.closeErr
+ }
+ 
+ type savedResolver struct {
+@@ -509,56 +512,18 @@
+ 
+ // WritePacket implements GVisorDevice method to write one packet to the tun device
+ func (t *WindowsTun) WritePacket(packetBuffer *stack.PacketBuffer) tcpip.Error {
+-	t.RLock()
+-	defer t.RUnlock()
+-	if t.closed {
+-		return &tcpip.ErrClosedForSend{}
+-	}
+-
+-	// request buffer from Wintun
+-	packet, err := t.session.AllocateSendPacket(packetBuffer.Size())
+-	if err != nil {
+-		return &tcpip.ErrAborted{}
+-	}
+-
+-	// copy the bytes of slices that compose the packet into the allocated buffer
+-	var index int
+-	for _, packetElement := range packetBuffer.AsSlices() {
+-		index += copy(packet[index:], packetElement)
+-	}
+-
+-	// signal Wintun to send that buffer as the packet
+-	t.session.SendPacket(packet)
+-
+-	return nil
++	return t.session.WritePacket(packetBuffer)
+ }
+ 
+ // ReadPacket implements GVisorDevice method to read one packet from the tun device
+ // It is expected that the method will not block, rather return ErrQueueEmpty when there is nothing on the line,
+ // which will make the stack call Wait which should implement desired push-back
+ func (t *WindowsTun) ReadPacket() (byte, *stack.PacketBuffer, error) {
+-	packet, err := t.session.ReceivePacket()
+-	if go_errors.Is(err, windows.ERROR_NO_MORE_ITEMS) {
+-		return 0, nil, ErrQueueEmpty
+-	}
+-	if err != nil {
+-		return 0, nil, err
+-	}
+-
+-	version := packet[0] >> 4
+-	packetBuffer := buffer.MakeWithView(buffer.NewViewWithData(packet))
+-	return version, stack.NewPacketBuffer(stack.PacketBufferOptions{
+-		Payload:           packetBuffer,
+-		IsForwardedPacket: true,
+-		OnRelease: func() {
+-			t.session.ReleaseReceivePacket(packet)
+-		},
+-	}), nil
++	return t.session.ReadPacket()
+ }
+ 
+ func (t *WindowsTun) Wait() {
+-	procyield(1)
+-	_, _ = windows.WaitForSingleObject(t.readWait, windows.INFINITE)
++	t.session.Wait()
+ }
+ 
+ func (t *WindowsTun) newEndpoint() (stack.LinkEndpoint, error) {
+diff --git a/proxy/tun/tun_windows_session.go b/proxy/tun/tun_windows_session.go
+new file mode 100644
+--- /dev/null
++++ b/proxy/tun/tun_windows_session.go
+@@ -0,0 +1,196 @@
++//go:build windows
++
++// ExVPN modifications. This Source Code Form is subject to the terms of the
++// Mozilla Public License, v. 2.0. See the LICENSE file at the module root.
++
++package tun
++
++import (
++	"errors"
++	"os"
++	"sync"
++	"time"
++
++	"golang.org/x/sys/windows"
++	"gvisor.dev/gvisor/pkg/buffer"
++	"gvisor.dev/gvisor/pkg/tcpip"
++	"gvisor.dev/gvisor/pkg/tcpip/stack"
++)
++
++// The interface admits a memory-only test double; the production implementation
++// remains the pinned Wintun session. It does not create or configure an adapter.
++type windowsTunSessionAPI interface {
++	ReceivePacket() ([]byte, error)
++	ReleaseReceivePacket([]byte)
++	AllocateSendPacket(int) ([]byte, error)
++	SendPacket([]byte)
++	End()
++}
++
++type windowsTunSessionEvents interface {
++	wait() error
++	wake() error
++	close() error
++}
++
++type windowsTunEvents struct {
++	read, stop windows.Handle
++}
++
++func newWindowsTunEvents(read windows.Handle) (*windowsTunEvents, error) {
++	if read == 0 {
++		return nil, errors.New("wintun read event is unavailable")
++	}
++	stop, err := windows.CreateEvent(nil, 1, 0, nil)
++	if err != nil {
++		return nil, err
++	}
++	return &windowsTunEvents{read: read, stop: stop}, nil
++}
++
++func (e *windowsTunEvents) wait() error {
++	// Own cancellation event cannot be reset by a concurrent Wintun receive.
++	_, err := windows.WaitForMultipleObjects([]windows.Handle{e.stop, e.read}, false, windows.INFINITE)
++	return err
++}
++
++func (e *windowsTunEvents) wake() error  { return windows.SetEvent(e.stop) }
++func (e *windowsTunEvents) close() error { return windows.CloseHandle(e.stop) }
++
++// ExVPN: admission, native memory and wait handles share one session lifetime.
++// Wintun ReceivePacket is nonblocking; only the explicit event wait can sleep.
++// A failed wake or bounded drain retains the handles instead of ending a
++// session which an unfinished operation could still access.
++type windowsTunSession struct {
++	api          windowsTunSessionAPI
++	events       windowsTunSessionEvents
++	mu           sync.Mutex
++	retired      bool
++	active       int
++	drained      chan struct{}
++	waitErr      error
++	drainTimeout time.Duration
++	retireOnce   sync.Once
++	retireErr    error
++	closeOnce    sync.Once
++	closeErr     error
++}
++
++func newWindowsTunSession(api windowsTunSessionAPI, events windowsTunSessionEvents) *windowsTunSession {
++	return &windowsTunSession{api: api, events: events, drained: make(chan struct{}), drainTimeout: 5 * time.Second}
++}
++
++func (s *windowsTunSession) begin() error {
++	s.mu.Lock()
++	defer s.mu.Unlock()
++	if s.retired {
++		return os.ErrClosed
++	}
++	if s.waitErr != nil {
++		return s.waitErr
++	}
++	s.active++
++	return nil
++}
++
++func (s *windowsTunSession) finish() {
++	s.mu.Lock()
++	defer s.mu.Unlock()
++	s.active--
++	if s.retired && s.active == 0 {
++		close(s.drained)
++	}
++}
++
++func (s *windowsTunSession) retire() error {
++	s.retireOnce.Do(func() {
++		s.mu.Lock()
++		s.retired = true
++		if s.active == 0 {
++			close(s.drained)
++		}
++		s.mu.Unlock()
++		// Signal before joining: Wait itself holds an active session lease.
++		if err := s.events.wake(); err != nil {
++			s.retireErr = errors.Join(errors.New("wintun cancellation failed"), err)
++			return
++		}
++		timer := time.NewTimer(s.drainTimeout)
++		defer timer.Stop()
++		select {
++		case <-s.drained:
++		case <-timer.C:
++			s.retireErr = errors.New("wintun session drain timed out")
++		}
++	})
++	return s.retireErr
++}
++
++func (s *windowsTunSession) Close() error {
++	s.closeOnce.Do(func() {
++		if err := s.retire(); err != nil {
++			s.closeErr = err
++			return
++		}
++		s.api.End()
++		s.api = nil
++		// The Wintun read handle belongs to End; only our stop event is ours.
++		s.closeErr = s.events.close()
++	})
++	return s.closeErr
++}
++
++func (s *windowsTunSession) ReadPacket() (byte, *stack.PacketBuffer, error) {
++	if err := s.begin(); err != nil {
++		return 0, nil, err
++	}
++	defer s.finish()
++	packet, err := s.api.ReceivePacket()
++	if errors.Is(err, windows.ERROR_NO_MORE_ITEMS) {
++		return 0, nil, ErrQueueEmpty
++	}
++	if err != nil {
++		return 0, nil, err
++	}
++	if len(packet) == 0 {
++		return 0, nil, windows.ERROR_INVALID_DATA
++	}
++	defer s.api.ReleaseReceivePacket(packet)
++	version := packet[0] >> 4
++	// NewViewWithData already copies. Release native memory before ending the
++	// lease; a retained gVisor packet must never call Wintun from OnRelease.
++	payload := buffer.MakeWithView(buffer.NewViewWithData(packet))
++	return version, stack.NewPacketBuffer(stack.PacketBufferOptions{Payload: payload, IsForwardedPacket: true}), nil
++}
++
++func (s *windowsTunSession) WritePacket(packet *stack.PacketBuffer) tcpip.Error {
++	if err := s.begin(); err != nil {
++		if errors.Is(err, os.ErrClosed) {
++			return &tcpip.ErrClosedForSend{}
++		}
++		return &tcpip.ErrAborted{}
++	}
++	defer s.finish()
++	native, err := s.api.AllocateSendPacket(packet.Size())
++	if err != nil {
++		return &tcpip.ErrAborted{}
++	}
++	var offset int
++	for _, part := range packet.AsSlices() {
++		offset += copy(native[offset:], part)
++	}
++	s.api.SendPacket(native)
++	return nil
++}
++
++func (s *windowsTunSession) Wait() {
++	if s.begin() != nil {
++		return
++	}
++	defer s.finish()
++	if err := s.events.wait(); err != nil {
++		s.mu.Lock()
++		s.waitErr = err
++		s.mu.Unlock()
++	}
++}
