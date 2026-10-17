@@ -4,13 +4,17 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
+	"io"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"golang.org/x/sys/windows"
@@ -19,6 +23,170 @@ import (
 
 func validConfig() config {
 	return config{RunID: "11111111-1111-4111-8111-111111111111", ForbiddenHost: "HOST", HelperSHA256: strings.Repeat("a", 64), ServiceSHA256: strings.Repeat("b", 64), ServiceCommand: `"C:\Program Files\ExVPN Service\exvpn-service.exe" -test`, Address: "192.0.2.1:32100", PayloadHex: strings.Repeat("c", 64)}
+}
+
+func TestWireFramesKeepBoundariesAndIdentity(t *testing.T) {
+	c := validConfig()
+	var b bytes.Buffer
+	for _, action := range []string{"positive", "close-intent", "close-ready", "result-request"} {
+		if err := writeFrame(&b, message(c, "B", action)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	r := iotest.OneByteReader(&b)
+	for _, action := range []string{"positive", "close-intent", "close-ready", "result-request"} {
+		if _, err := expectFrame(r, c, "B", action); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if b.Len() != 0 {
+		t.Fatal("unread framed payload")
+	}
+	for name, edit := range map[string]func(*wireMessage){
+		"version":       func(m *wireMessage) { m.Version = 2 },
+		"action":        func(m *wireMessage) { m.Action = "result-request" },
+		"run":           func(m *wireMessage) { m.RunID = "22222222-2222-4222-8222-222222222222" },
+		"case":          func(m *wireMessage) { m.Case = "C" },
+		"helper":        func(m *wireMessage) { m.HelperSHA256 = strings.Repeat("d", 64) },
+		"nonce":         func(m *wireMessage) { m.Nonce = strings.Repeat("e", 64) },
+		"result-in-ack": func(m *wireMessage) { m.Result = &peerResult{} },
+	} {
+		t.Run(name, func(t *testing.T) {
+			m := message(c, "B", "positive")
+			edit(&m)
+			if validateMessage(m, c, "B", "positive") == nil {
+				t.Fatal("unbound/stale frame accepted")
+			}
+		})
+	}
+}
+
+func TestWireRejectsMalformedBoundedFrames(t *testing.T) {
+	frame := func(payload string) []byte {
+		b := make([]byte, 4+len(payload))
+		binary.BigEndian.PutUint32(b, uint32(len(payload)))
+		copy(b[4:], payload)
+		return b
+	}
+	oversize := make([]byte, 4)
+	binary.BigEndian.PutUint32(oversize, wireLimit+1)
+	for name, b := range map[string][]byte{
+		"missing-header": nil, "short-header": {0, 0}, "empty": {0, 0, 0, 0}, "oversize": oversize,
+		"short-payload": {0, 0, 0, 2, '{'}, "unknown-field": frame(`{"unknown":1}`),
+		"wrong-type": frame(`{"version":"one"}`), "trailing-json": frame(`{} {}`), "damaged-json": frame(`{`),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := readFrame(bytes.NewReader(b)); err == nil {
+				t.Fatal("bad frame accepted")
+			}
+		})
+	}
+	if err := writeFrame(zeroWriter{}, message(validConfig(), "A", "positive")); err == nil {
+		t.Fatal("zero progress write accepted")
+	}
+	if err := writeFrame(failedWriter{}, message(validConfig(), "A", "positive")); err == nil {
+		t.Fatal("failed write accepted")
+	}
+}
+
+type zeroWriter struct{}
+
+func (zeroWriter) Write([]byte) (int, error) { return 0, nil }
+
+type failedWriter struct{}
+
+func (failedWriter) Write([]byte) (int, error) { return 0, io.ErrClosedPipe }
+
+func TestResultCannotClaimLateOrActivePeerSuccess(t *testing.T) {
+	c := validConfig()
+	base := peerResult{RunID: c.RunID, Case: "C", Positive: true, Passed: true, ReadEnd: "eof", EOF: true, ElapsedMS: 1, FinalStates: []uint32{}}
+	m := message(c, "C", "result")
+	m.Result = &base
+	if validateMessage(m, c, "C", "result") != nil {
+		t.Fatal("valid result rejected")
+	}
+	for name, edit := range map[string]func(*peerResult){
+		"deadline": func(r *peerResult) { r.ElapsedMS = 10000 }, "late": func(r *peerResult) { r.ElapsedMS = 11000 },
+		"established": func(r *peerResult) { r.FinalStates = []uint32{5} }, "close-wait": func(r *peerResult) { r.FinalStates = []uint32{8} },
+		"no-eof": func(r *peerResult) { r.ReadEnd = "pending" }, "wrong-run": func(r *peerResult) { r.RunID = "other" },
+		"wrong-case": func(r *peerResult) { r.Case = "A" }, "no-positive": func(r *peerResult) { r.Positive = false },
+	} {
+		t.Run(name, func(t *testing.T) {
+			p := base
+			edit(&p)
+			m.Result = &p
+			if validateMessage(m, c, "C", "result") == nil {
+				t.Fatal("false success accepted")
+			}
+		})
+	}
+}
+
+func TestGateDeadlineCannotMoveWithLateAckOrResult(t *testing.T) {
+	start := time.Unix(1, 0)
+	for name, tc := range map[string]struct {
+		initial time.Duration
+		states  []uint32
+		end     string
+		pass    bool
+	}{
+		"eof-empty": {time.Millisecond, nil, "eof", true}, "reset-time-wait": {time.Millisecond, []uint32{11}, "reset", true},
+		"empty-without-eof": {0, nil, "", false}, "eof-established": {0, []uint32{5}, "eof", false},
+		"eof-close-wait": {0, []uint32{8}, "eof", false}, "exact-deadline": {gate, nil, "eof", false},
+		"late-ready-ack": {gate + time.Second, nil, "eof", false}, "late-result-cannot-reset": {2 * gate, nil, "eof", false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			elapsed := tc.initial
+			done := make(chan string, 1)
+			if tc.end != "" {
+				done <- tc.end
+			}
+			result, err := observePeerGate(start, func() time.Time { return start.Add(elapsed) }, func() ([]uint32, error) { return tc.states, nil }, func() { elapsed += time.Second }, done)
+			if err != nil || result.Passed != tc.pass || result.GateStarted != start.UTC() {
+				t.Fatalf("gate result: %+v %v", result, err)
+			}
+			if !tc.pass && result.ElapsedMS < gate.Milliseconds() {
+				t.Fatal("failure used a new deadline")
+			}
+		})
+	}
+	_, err := observePeerGate(start, func() time.Time { return start.Add(-time.Second) }, func() ([]uint32, error) { return nil, nil }, func() { t.Fatal("pause") }, make(chan string))
+	if err == nil {
+		t.Fatal("backwards clock accepted")
+	}
+	_, err = observePeerGate(start, func() time.Time { return start }, func() ([]uint32, error) { return nil, errors.New("table failed") }, func() { t.Fatal("pause") }, make(chan string))
+	if err == nil {
+		t.Fatal("missing TCP state treated as success")
+	}
+	// A table call begun just before expiry can return after expiry. The EOF
+	// and empty table still cannot be reported as a timely PASS.
+	elapsed := gate - time.Millisecond
+	done := make(chan string, 1)
+	done <- "eof"
+	late, err := observePeerGate(start, func() time.Time { return start.Add(elapsed) }, func() ([]uint32, error) {
+		elapsed += 2 * time.Millisecond
+		return nil, nil
+	}, func() { t.Fatal("expired sample must finish") }, done)
+	if err != nil || late.Passed || late.ElapsedMS != 10001 {
+		t.Fatal("late table completion became a PASS")
+	}
+}
+
+func TestControlTupleCannotCountAsRetainedDataPeer(t *testing.T) {
+	local := netip.MustParseAddrPort("192.0.2.1:40000")
+	data := netip.MustParseAddrPort("192.0.2.2:50000")
+	control := netip.MustParseAddrPort("192.0.2.2:50001")
+	rows := []tcpRow{{local: local, remote: control, pid: 42, state: 5}}
+	if len(matchingTCPStates(rows, local, data, 0)) != 0 {
+		t.Fatal("control counted as data")
+	}
+	rows = append(rows, tcpRow{local: local, remote: data, pid: 0, state: 11})
+	if got := matchingTCPStates(rows, local, data, 0); !reflect.DeepEqual(got, []uint32{11}) {
+		t.Fatal("all-owner data snapshot lost TIME_WAIT")
+	}
+	if len(matchingTCPStates(rows, local, data, 42)) != 0 {
+		t.Fatal("specific owner accepted PID0")
+	}
 }
 
 func TestConfigBoundaries(t *testing.T) {

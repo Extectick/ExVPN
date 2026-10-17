@@ -7,6 +7,7 @@ package main
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -28,6 +29,7 @@ import (
 )
 
 const gate = 10 * time.Second
+const wireLimit = 64 << 10
 const absentLUID = uint64(24)<<48 | uint64(0xffffff)<<24 // Valid encoding; never assume absence.
 
 var runPattern = regexp.MustCompile(`^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`)
@@ -56,15 +58,110 @@ type ownership struct {
 }
 
 type peerResult struct {
-	RunID       string     `json:"runId"`
-	Case        string     `json:"case"`
-	Positive    bool       `json:"positiveEstablished"`
-	ReadEnd     string     `json:"readEnd"`
-	EOF         bool       `json:"eof"`
-	Passed      bool       `json:"passed"`
-	ElapsedMS   int64      `json:"elapsedMs"`
-	FinalStates []uint32   `json:"finalStates"`
-	Samples     []snapshot `json:"samples"`
+	RunID         string     `json:"runId"`
+	Case          string     `json:"case"`
+	Positive      bool       `json:"positiveEstablished"`
+	ReadEnd       string     `json:"readEnd"`
+	EOF           bool       `json:"eof"`
+	Passed        bool       `json:"passed"`
+	ElapsedMS     int64      `json:"elapsedMs"`
+	FinalStates   []uint32   `json:"finalStates"`
+	Samples       []snapshot `json:"samples"`
+	GateStarted   time.Time  `json:"gateStartedUtc"`
+	GateEnded     time.Time  `json:"gateEndedUtc"`
+	DataLocal     string     `json:"dataLocal"`
+	DataRemote    string     `json:"dataRemote"`
+	ControlLocal  string     `json:"controlLocal"`
+	ControlRemote string     `json:"controlRemote"`
+}
+
+// Fixed QA protocol. The random synthetic payload also binds frames to this
+// private run; no provider configuration or production command enters the wire.
+type wireMessage struct {
+	Version      int         `json:"version"`
+	Action       string      `json:"action"`
+	RunID        string      `json:"runId"`
+	Case         string      `json:"case"`
+	HelperSHA256 string      `json:"helperSha256"`
+	Nonce        string      `json:"nonce"`
+	Result       *peerResult `json:"result,omitempty"`
+}
+
+func message(c config, mode, action string) wireMessage {
+	return wireMessage{Version: 1, Action: action, RunID: c.RunID, Case: mode, HelperSHA256: c.HelperSHA256, Nonce: c.PayloadHex}
+}
+
+func validateMessage(m wireMessage, c config, mode, action string) error {
+	if m.Version != 1 || m.Action != action || m.RunID != c.RunID || m.Case != mode ||
+		m.HelperSHA256 != c.HelperSHA256 || m.Nonce != c.PayloadHex {
+		return errors.New("wire_identity_rejected")
+	}
+	if action != "result" {
+		if m.Result != nil {
+			return errors.New("wire_result_unexpected")
+		}
+		return nil
+	}
+	if m.Result == nil || m.Result.RunID != c.RunID || m.Result.Case != mode || !m.Result.Positive ||
+		m.Result.ElapsedMS < 0 || (m.Result.Passed && (m.Result.ElapsedMS >= gate.Milliseconds() ||
+		(m.Result.ReadEnd != "eof" && m.Result.ReadEnd != "reset") || activeTCP(m.Result.FinalStates))) {
+		return errors.New("wire_result_rejected")
+	}
+	return nil
+}
+
+func writeFrame(w io.Writer, m wireMessage) error {
+	b, err := json.Marshal(m)
+	if err != nil || len(b) == 0 || len(b) > wireLimit {
+		return errors.New("wire_size_rejected")
+	}
+	frame := make([]byte, 4+len(b))
+	binary.BigEndian.PutUint32(frame, uint32(len(b)))
+	copy(frame[4:], b)
+	for len(frame) > 0 {
+		n, e := w.Write(frame)
+		if e != nil {
+			return errors.New("wire_write_failed")
+		}
+		if n <= 0 || n > len(frame) {
+			return errors.New("wire_short_write")
+		}
+		frame = frame[n:]
+	}
+	return nil
+}
+
+func readFrame(r io.Reader) (wireMessage, error) {
+	var m wireMessage
+	var prefix [4]byte
+	if _, err := io.ReadFull(r, prefix[:]); err != nil {
+		return m, errors.New("wire_header_failed")
+	}
+	n := binary.BigEndian.Uint32(prefix[:])
+	if n == 0 || n > wireLimit {
+		return m, errors.New("wire_size_rejected")
+	}
+	b := make([]byte, int(n))
+	if _, err := io.ReadFull(r, b); err != nil {
+		return m, errors.New("wire_payload_failed")
+	}
+	d := json.NewDecoder(bytes.NewReader(b))
+	d.DisallowUnknownFields()
+	if err := d.Decode(&m); err != nil {
+		return m, errors.New("wire_json_rejected")
+	}
+	if d.Decode(new(any)) != io.EOF {
+		return m, errors.New("wire_trailing_rejected")
+	}
+	return m, nil
+}
+
+func expectFrame(r io.Reader, c config, mode, action string) (wireMessage, error) {
+	m, err := readFrame(r)
+	if err != nil {
+		return m, err
+	}
+	return m, validateMessage(m, c, mode, action)
 }
 
 type snapshot struct {
@@ -284,22 +381,17 @@ func runClient(c config, control string) error {
 	if waitJSON(filepath.Join(control, "authorized.json"), &authorized, 5*time.Second) != nil || authorized != id {
 		return errors.New("client_not_authorized")
 	}
-	inputRoot, err := guestInputRoot(c.RunID)
-	if err != nil {
-		return err
-	}
-	serverRoot := filepath.Join(inputRoot, "server")
 	resultRoot := filepath.Join(`C:\ExVPN-Lifecycle-QA-Results`, c.RunID)
 	payload, _ := hex.DecodeString(c.PayloadHex)
 	for _, mode := range []string{"A", "B", "C"} {
-		if err := runClientCase(c, control, serverRoot, resultRoot, mode, id, payload); err != nil {
+		if err := runClientCase(c, control, resultRoot, mode, id, payload); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func runClientCase(c config, control, serverRoot, resultRoot, mode string, id identity, payload []byte) (err error) {
+func runClientCase(c config, control, resultRoot, mode string, id identity, payload []byte) (err error) {
 	g := &service.WindowsGuard{}
 	armed, err := g.Armed()
 	if err != nil || armed {
@@ -349,41 +441,45 @@ func runClientCase(c config, control, serverRoot, resultRoot, mode string, id id
 	if _, err = io.ReadFull(conn, echo); err != nil || !bytes.Equal(echo, payload) {
 		return errors.New("echo_failed")
 	}
+	if _, err = expectFrame(conn, c, mode, "positive"); err != nil {
+		return errors.New("server_positive_control_failed")
+	}
 	local := conn.LocalAddr().(*net.TCPAddr).AddrPort()
 	remote := conn.RemoteAddr().(*net.TCPAddr).AddrPort()
 	states, err := tcpStates(local, remote, id.PID)
 	if err != nil || len(states) != 1 || states[0] != 5 {
 		return errors.New("client_positive_control_failed")
 	}
-	var ready struct {
-		RunID    string `json:"runId"`
-		Case     string `json:"case"`
-		Positive bool   `json:"positiveEstablished"`
+	if err = writeFrame(conn, message(c, mode, "close-intent")); err != nil {
+		return err
 	}
-	if waitJSON(filepath.Join(serverRoot, "ready-"+mode+".json"), &ready, 5*time.Second) != nil || ready.RunID != c.RunID || ready.Case != mode || !ready.Positive {
-		return errors.New("server_positive_control_failed")
+	if _, err = expectFrame(conn, c, mode, "close-ready"); err != nil {
+		return errors.New("close_ready_missing")
 	}
-	result := map[string]any{"runId": c.RunID, "case": mode, "identity": id, "positiveEstablished": true, "local": local.String(), "remote": remote.String(), "payloadBytes": len(payload), "payloadDrained": true, "luidAbsenceVerified": mode != "A"}
+	readyAt := time.Now()
+	result := map[string]any{"runId": c.RunID, "case": mode, "identity": id, "positiveEstablished": true, "local": local.String(), "remote": remote.String(), "payloadBytes": len(payload), "payloadDrained": true, "luidAbsenceVerified": mode != "A", "wireVersion": 1, "closeReadyUtc": readyAt.UTC()}
 	var peer peerResult
 	events := []map[string]any{}
 	closeErr := closeInOrder(mode, guardTrace{g, &events}, func() error {
+		result["readyToCloseStartedNanos"] = time.Since(readyAt).Nanoseconds()
 		result["closeStartedUtc"] = time.Now().UTC()
 		e := conn.Close()
 		result["closeReturnedUtc"] = time.Now().UTC()
+		result["readyToCloseReturnedNanos"] = time.Since(readyAt).Nanoseconds()
 		if e != nil {
 			return errors.New("close_failed")
 		}
 		return nil
 	}, func() error {
-		// In C this checkpoint occurs AFTER Disarm. Shared-folder IO must not
-		// extend the intentional Suspend -> Close -> immediate Disarm interval.
-		result["peerCheckpointUtc"] = time.Now().UTC()
-		if err := writeJSON(filepath.Join(resultRoot, "closed-"+mode+".json"), map[string]any{"runId": c.RunID, "case": mode}); err != nil {
+		// A separate owned control connection only retrieves the already-running
+		// gate. In C this happens after Disarm. No shared-folder IO is involved.
+		result["resultRequestUtc"] = time.Now().UTC()
+		var endpoints map[string]string
+		peer, endpoints, err = requestPeerResult(c, mode, local, remote)
+		if err != nil {
 			return err
 		}
-		if waitJSON(filepath.Join(serverRoot, "result-"+mode+".json"), &peer, 12*time.Second) != nil || peer.RunID != c.RunID || peer.Case != mode {
-			return errors.New("peer_report_missing")
-		}
+		result["control"] = endpoints
 		return nil // Record negative gate without preventing the next independent case.
 	})
 	result["closeSequenceFinishedUtc"] = time.Now().UTC()
@@ -404,10 +500,40 @@ func runClientCase(c config, control, serverRoot, resultRoot, mode string, id id
 	return nil
 }
 
+func requestPeerResult(c config, mode string, dataLocal, dataRemote netip.AddrPort) (peerResult, map[string]string, error) {
+	conn, err := net.DialTimeout("tcp4", c.Address, 4*time.Second)
+	if err != nil {
+		return peerResult{}, nil, errors.New("result_connect_failed")
+	}
+	defer conn.Close()
+	_ = conn.SetDeadline(time.Now().Add(12 * time.Second))
+	local := conn.LocalAddr().(*net.TCPAddr).AddrPort()
+	remote := conn.RemoteAddr().(*net.TCPAddr).AddrPort()
+	if local == dataLocal && remote == dataRemote {
+		return peerResult{}, nil, errors.New("control_is_data_socket")
+	}
+	if err = writeFrame(conn, message(c, mode, "result-request")); err != nil {
+		return peerResult{}, nil, err
+	}
+	m, err := expectFrame(conn, c, mode, "result")
+	if err != nil {
+		return peerResult{}, nil, err
+	}
+	return *m.Result, map[string]string{"local": local.String(), "remote": remote.String()}, nil
+}
+
 func runServer(c config, configPath string) error {
 	name, err := os.Hostname()
 	if err != nil || !strings.EqualFold(name, c.ForbiddenHost) || !filepath.IsAbs(c.HostResults) || !strings.Contains(strings.ToLower(c.HostResults), `\.private\windows-lifecycle-results\`) {
 		return errors.New("host_scope_required")
+	}
+	exe, err := os.Executable()
+	if err != nil {
+		return errors.New("host_identity_unavailable")
+	}
+	hash, err := fileHash(exe)
+	if err != nil || hash != c.HelperSHA256 {
+		return errors.New("host_helper_identity_changed")
 	}
 	root, err := serverReportRoot(c.HostResults, configPath)
 	if err != nil {
@@ -436,7 +562,7 @@ func runServer(c config, configPath string) error {
 		if e != nil {
 			return errors.New("accept_failed")
 		}
-		err = serveCase(c, root, mode, conn, payload)
+		err = serveCase(c, root, mode, conn, payload, listener.(*net.TCPListener))
 		_ = conn.Close()
 		if err != nil {
 			return err
@@ -483,7 +609,7 @@ func noReparseAncestors(path string) error {
 	}
 }
 
-func serveCase(c config, root, mode string, conn net.Conn, payload []byte) error {
+func serveCase(c config, root, mode string, conn net.Conn, payload []byte, listener *net.TCPListener) error {
 	defer conn.Close()
 	_ = conn.SetDeadline(time.Now().Add(30 * time.Second))
 	received := make([]byte, len(payload))
@@ -499,11 +625,22 @@ func serveCase(c config, root, mode string, conn net.Conn, payload []byte) error
 	if err != nil || len(states) != 1 || states[0] != 5 {
 		return errors.New("server_positive_control_failed")
 	}
-	if err = writeJSON(filepath.Join(root, "ready-"+mode+".json"), map[string]any{"runId": c.RunID, "case": mode, "positiveEstablished": true}); err != nil {
+	if err = writeFrame(conn, message(c, mode, "positive")); err != nil {
 		return err
 	}
+	if _, err = expectFrame(conn, c, mode, "close-intent"); err != nil {
+		return err
+	}
+	// This timestamp owns the entire gate. Neither the ready ACK flight nor a
+	// late control connection can reset or extend its ten-second deadline.
+	start := time.Now()
+	_ = conn.SetDeadline(start.Add(gate))
 	readDone := make(chan string, 1)
+	readerReady := make(chan struct{})
+	readerFinished := make(chan struct{})
 	go func() {
+		defer close(readerFinished)
+		close(readerReady)
 		var b [1]byte
 		n, e := conn.Read(b[:])
 		end := "other_error"
@@ -521,52 +658,95 @@ func serveCase(c config, root, mode string, conn net.Conn, payload []byte) error
 		}
 		readDone <- end
 	}()
-	var closed struct {
-		RunID string `json:"runId"`
-		Case  string `json:"case"`
+	<-readerReady
+	if err = writeFrame(conn, message(c, mode, "close-ready")); err != nil {
+		return err
 	}
-	if waitJSON(filepath.Join(c.HostResults, "closed-"+mode+".json"), &closed, 10*time.Second) != nil || closed.RunID != c.RunID || closed.Case != mode {
-		return errors.New("close_checkpoint_failed")
+	result, err := observePeerGate(start, time.Now, func() ([]uint32, error) {
+		return tcpStates(local, remote, 0) // Exact DATA tuple, all owners including PID0.
+	}, func() { time.Sleep(25 * time.Millisecond) }, readDone)
+	if err != nil {
+		return err
 	}
-	start := time.Now()
-	_ = conn.SetReadDeadline(start.Add(gate))
-	result := peerResult{RunID: c.RunID, Case: mode, Positive: true, ReadEnd: "pending", Samples: []snapshot{}}
+	result.RunID, result.Case, result.Positive = c.RunID, mode, true
+	result.DataLocal, result.DataRemote = local.String(), remote.String()
+	_ = conn.Close() // Only after the gate outcome has been frozen.
+	select {
+	case <-readerFinished:
+	case <-time.After(time.Second):
+		return errors.New("peer_reader_not_stopped")
+	}
+
+	// The queued control connection retrieves a frozen result; it never starts
+	// the gate. It has a different TCP tuple and is never sampled as the data peer.
+	_ = listener.SetDeadline(time.Now().Add(5 * time.Second))
+	control, err := listener.AcceptTCP()
+	if err != nil {
+		return errors.New("result_accept_failed")
+	}
+	defer control.Close()
+	_ = control.SetDeadline(time.Now().Add(4 * time.Second))
+	controlLocal := control.LocalAddr().(*net.TCPAddr).AddrPort()
+	controlRemote := control.RemoteAddr().(*net.TCPAddr).AddrPort()
+	if controlLocal == local && controlRemote == remote {
+		return errors.New("control_is_data_socket")
+	}
+	if _, err = expectFrame(control, c, mode, "result-request"); err != nil {
+		return err
+	}
+	result.ControlLocal, result.ControlRemote = controlLocal.String(), controlRemote.String()
+	m := message(c, mode, "result")
+	m.Result = &result
+	if err = writeFrame(control, m); err != nil {
+		return err
+	}
+	return writeJSON(filepath.Join(root, "result-"+mode+".json"), result)
+}
+
+func activeTCP(states []uint32) bool {
+	for _, state := range states {
+		if state != 1 && state != 11 && state != 12 {
+			return true
+		}
+	}
+	return false
+}
+
+// The injected clock/table functions let fixtures exercise deadline boundaries
+// without networking, wall-clock waits, WFP or SCM mutations.
+func observePeerGate(start time.Time, now func() time.Time, sample func() ([]uint32, error), pause func(), readDone <-chan string) (peerResult, error) {
+	result := peerResult{ReadEnd: "pending", Samples: []snapshot{}, GateStarted: start.UTC()}
 	for {
 		select {
 		case result.ReadEnd = <-readDone:
 		default:
 		}
-		states, e := tcpStates(local, remote, 0)
+		states, e := sample()
 		if e != nil {
-			return e
+			return result, e
+		}
+		observed := now()
+		elapsed := observed.Sub(start)
+		if elapsed < 0 {
+			return result, errors.New("gate_clock_rejected")
 		}
 		result.FinalStates = states
-		result.ElapsedMS = time.Since(start).Milliseconds()
+		result.ElapsedMS = elapsed.Milliseconds()
+		result.GateEnded = observed.UTC()
 		result.Samples = append(result.Samples, snapshot{result.ElapsedMS, states})
 		result.EOF = result.ReadEnd == "eof"
-		active := false
-		for _, state := range states {
-			if state != 1 && state != 11 && state != 12 {
-				active = true
-			}
+		// Check expiry BEFORE success. A late ACK/read/table result must never
+		// turn a deadline failure into a PASS, even when the socket is now gone.
+		if elapsed >= gate {
+			break
 		}
-		if !active && (result.EOF || result.ReadEnd == "reset") {
+		if !activeTCP(states) && (result.EOF || result.ReadEnd == "reset") {
 			result.Passed = true
 			break
 		}
-		if time.Since(start) >= gate {
-			break
-		}
-		time.Sleep(25 * time.Millisecond)
+		pause()
 	}
-	_ = conn.Close() // Owned server endpoint cleanup happens only after recording gate outcome.
-	if result.ReadEnd == "pending" {
-		select {
-		case <-readDone:
-		case <-time.After(time.Second):
-		}
-	}
-	return writeJSON(filepath.Join(root, "result-"+mode+".json"), result)
+	return result, nil
 }
 
 func recoverGuard(c config, control string) error {

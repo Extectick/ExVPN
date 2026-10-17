@@ -46,7 +46,7 @@ Write-TeardownCheckpoint (Join-Path $payloadRoot 'marker.json') $marker
 Write-TeardownCheckpoint (Join-Path $payloadRoot 'bundle.json') ([ordered]@{format=1;runId=$runId;files=@(Get-TreeManifest $payloadRoot)})
 $server=Start-Process -FilePath $helper -ArgumentList @('server',('"'+(Join-Path $payloadRoot 'marker.json')+'"')) -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $resultRoot 'server.stdout.log') -RedirectStandardError (Join-Path $resultRoot 'server.stderr.log')
 $created=$server.StartTime.ToUniversalTime().ToFileTimeUtc()
-$report=[ordered]@{runId=$runId;startedUtc=[DateTime]::UtcNow.ToString('o');helperSha256=$marker.helperSha256;hostNetworkChanged=$false;productionChanged=$false;gateMs=10000;serverStopped=$false;cleanupPassed=$false;crashInjection=$false;recoveryLimitation='hard_kill_after_arm_before_ownership_checkpoint_remains_fail_closed';cases=@()}
+$report=[ordered]@{runId=$runId;startedUtc=[DateTime]::UtcNow.ToString('o');helperSha256=$marker.helperSha256;hostNetworkChanged=$false;productionChanged=$false;wireVersion=1;gateStart='host_receives_data_close_intent';gateMs=10000;serverStopped=$false;cleanupPassed=$false;crashInjection=$false;recoveryLimitation='hard_kill_after_arm_before_ownership_checkpoint_remains_fail_closed';cases=@()}
 try {
     $deadline=[DateTime]::UtcNow.AddSeconds(10)
     while(!(Test-Path -LiteralPath (Join-Path $inputRoot 'server/listening.json'))){if($server.HasExited -or [DateTime]::UtcNow -gt $deadline){throw 'teardown_listener_not_ready'};Start-Sleep -Milliseconds 50}
@@ -60,8 +60,8 @@ try {
     $report.cleanupPassed=$cleanup.passed
     foreach($case in @('A','B','C')){
         $client=Get-Content (Join-Path $resultRoot ('client-'+$case+'.json')) -Raw|ConvertFrom-Json
-        if($client.runId -cne $runId -or $client.case -cne $case -or !$client.positiveEstablished -or !$client.peer.positiveEstablished){throw 'teardown_positive_evidence_missing'}
-        $report.cases+=@([ordered]@{case=$case;clientPositive=$client.positiveEstablished;serverPositive=$client.peer.positiveEstablished;eof=$client.peer.eof;readEnd=$client.peer.readEnd;passed=$client.peer.passed;elapsedMs=$client.peer.elapsedMs;serverFinalStates=$client.peer.finalStates;guestAfterStates=$client.guestAfterStates;payloadDrained=$client.payloadDrained})
+        if($client.runId -cne $runId -or $client.case -cne $case -or $client.wireVersion -ne 1 -or !$client.positiveEstablished -or !$client.peer.positiveEstablished){throw 'teardown_positive_evidence_missing'}
+        $report.cases+=@([ordered]@{case=$case;clientPositive=$client.positiveEstablished;serverPositive=$client.peer.positiveEstablished;eof=$client.peer.eof;readEnd=$client.peer.readEnd;passed=$client.peer.passed;elapsedMs=$client.peer.elapsedMs;serverFinalStates=$client.peer.finalStates;guestAfterStates=$client.guestAfterStates;payloadDrained=$client.payloadDrained;readyToCloseStartedNanos=$client.readyToCloseStartedNanos;readyToCloseReturnedNanos=$client.readyToCloseReturnedNanos})
     }
 } catch {$report.error='teardown_experiment_failed'} finally {
     $process=Get-Process -Id $server.Id -ErrorAction SilentlyContinue

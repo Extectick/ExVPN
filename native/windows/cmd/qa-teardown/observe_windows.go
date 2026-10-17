@@ -58,15 +58,19 @@ func tcpStates(local, remote netip.AddrPort, pid uint32) ([]uint32, error) {
 		if e != nil {
 			return nil, e
 		}
-		states := []uint32{}
-		for _, row := range rows {
-			if row.local == local && row.remote == remote && (pid == 0 || row.pid == pid) {
-				states = append(states, row.state)
-			}
-		}
-		return states, nil
+		return matchingTCPStates(rows, local, remote, pid), nil
 	}
 	return nil, errors.New("tcp_table_unstable")
+}
+
+func matchingTCPStates(rows []tcpRow, local, remote netip.AddrPort, pid uint32) []uint32 {
+	states := []uint32{}
+	for _, row := range rows {
+		if row.local == local && row.remote == remote && (pid == 0 || row.pid == pid) {
+			states = append(states, row.state)
+		}
+	}
+	return states
 }
 
 // Read-only view of FWPM_FILTER0; same x64 SDK layout used by WindowsGuard.
