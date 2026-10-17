@@ -10,7 +10,7 @@
   "nativeBuildsRun": false,
   "vpnTestsRun": false,
   "fullRunnerRun": false,
-  "sourceState": "working tree; commit pending",
+  "sourceState": "Working-tree implementation archived at 5b41a1c070aa1d19675d9af3aabb1939a097fe98; historical build identity retained",
   "dartAnalysis": "No issues found: 4 UI files",
   "sourceFiles": [
     {
@@ -83,5 +83,6 @@
       "file": "subscription-issue.jpg",
       "sha256": "3efc1246ae46d9943fd0cf0c447e9258facd66fc967b7f4d7e3caf72f590bbf4"
     }
-  ]
+  ],
+  "implementationCommit": "5b41a1c070aa1d19675d9af3aabb1939a097fe98"
 }

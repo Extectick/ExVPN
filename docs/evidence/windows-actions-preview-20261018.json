@@ -3,7 +3,7 @@
   "date": "2026-10-18",
   "scope": "Windows UI preview: bulk actions, latency colors, off button",
   "status": "VISUAL_PREVIEW_PASS",
-  "sourceState": "working tree; commit pending",
+  "sourceState": "Working-tree implementation archived at 5b41a1c070aa1d19675d9af3aabb1939a097fe98; historical build identity retained",
   "previewCallbacksOnly": true,
   "nativeNetworkProbesRun": false,
   "nativeBuildsRun": false,
@@ -73,5 +73,6 @@
       "file": "refresh-error-toast.jpg",
       "sha256": "3157070f13447435d608e9b8a3897e7c31b9543e1d4de862e7b9b766e124bcdd"
     }
-  ]
+  ],
+  "implementationCommit": "5b41a1c070aa1d19675d9af3aabb1939a097fe98"
 }

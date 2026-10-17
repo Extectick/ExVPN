@@ -2,13 +2,37 @@
   "date": "2026-10-18",
   "scope": "design-only browser preview",
   "version": "0.1.0+19 unchanged",
-  "source": "working tree; commit pending",
-  "agents": ["desktop_home_design", "settings_design", "appearance_i18n"],
+  "source": "Working-tree implementation archived at 5b41a1c070aa1d19675d9af3aabb1939a097fe98; historical build identity retained",
+  "agents": [
+    "desktop_home_design",
+    "settings_design",
+    "appearance_i18n"
+  ],
   "checks": {
     "targetedDartAnalyze": "PASS main.dart, design_preview.dart, src, presentation_models.dart",
-    "previewModes": ["minimal", "medium", "large"],
-    "reviewedLocales": ["ru", "en", "zh", "ar"],
-    "declaredLocales": ["ru", "en", "kk", "de", "fr", "es", "pt", "tr", "zh", "ar"],
+    "previewModes": [
+      "minimal",
+      "medium",
+      "large"
+    ],
+    "reviewedLocales": [
+      "ru",
+      "en",
+      "zh",
+      "ar"
+    ],
+    "declaredLocales": [
+      "ru",
+      "en",
+      "kk",
+      "de",
+      "fr",
+      "es",
+      "pt",
+      "tr",
+      "zh",
+      "ar"
+    ],
     "circularPointerTarget": "outside corner does not activate; disc center activates visual simulation",
     "themes": "dark, light, custom live palette reviewed",
     "minimalOverflow3px": "fixed by available-height sizing; repeated capture without overflow",
@@ -27,5 +51,6 @@
   "installedAppChanged": false,
   "serviceChanged": false,
   "releasePublished": false,
-  "openGate": "EXVPN-E2-013: Windows frameless/resize/DPI and native language/preferences acceptance"
+  "openGate": "EXVPN-E2-013: Windows frameless/resize/DPI and native language/preferences acceptance",
+  "implementationCommit": "5b41a1c070aa1d19675d9af3aabb1939a097fe98"
 }

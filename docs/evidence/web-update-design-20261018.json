@@ -1,10 +1,14 @@
 {
   "date": "2026-10-18",
   "scope": "web design only; synthetic update scenario",
-  "source": "working tree; commit pending",
+  "source": "Working-tree implementation archived at 5b41a1c070aa1d19675d9af3aabb1939a097fe98; historical build identity retained",
   "installedVersionUnchanged": "0.1.0+20",
   "settings": {
-    "themeChoices": ["Тёмная", "Светлая", "Я дизайнер"],
+    "themeChoices": [
+      "Тёмная",
+      "Светлая",
+      "Я дизайнер"
+    ],
     "systemThemeButtonRemoved": true,
     "languageDisplaysResolvedEndonym": true,
     "systemLocaleRemainsDefaultUntilManualSelection": true
@@ -19,18 +23,28 @@
     "logicalHeight": 24,
     "fullWidth": true,
     "windowCanvasUnchanged": true,
-    "observed": ["available", "download progress", "simulated reopen", "0.1.1 build21 label"],
+    "observed": [
+      "available",
+      "download progress",
+      "simulated reopen",
+      "0.1.1 build21 label"
+    ],
     "downloadAndRestartAreSimulated": true,
     "realUpdateHttpRequests": false,
     "nativeInstallOrRestart": false,
     "formatPreservedAfterMinimalToLargeAndSimulatedRestart": true
   },
-  "checkedModes": ["medium light", "minimal dark", "large dark"],
+  "checkedModes": [
+    "medium light",
+    "minimal dark",
+    "large dark"
+  ],
   "targetedDartAnalyze": "No issues found, six changed UI/preview files",
   "diffCheck": "PASS",
   "screenshots": "design/screenshots/windows-update-design/",
   "nativeBuilds": false,
   "functionalVpnTests": false,
   "fullRunner": false,
-  "published": false
+  "published": false,
+  "implementationCommit": "5b41a1c070aa1d19675d9af3aabb1939a097fe98"
 }

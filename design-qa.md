@@ -10,7 +10,7 @@ final result: passed — scoped browser design; real updater is not implemented.
 app crop 411×711 без изменения масштаба. Разница в верхней полосе и сдвиге
 контента внутри прежней высоты — требование пользователя, а не переполнение;
 последние строки остаются доступны в прокручиваемом списке.
-Рабочее дерево; commit ожидается. Только targeted analyze/browser UI;
+Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98). Только targeted analyze/browser UI;
 native builds, установка, VPN tests и Full не запускались.
 
 - **Типографика:** сохранён Inter; подпись strip 11 px, иконка 13, высота 24.
@@ -40,7 +40,7 @@ E6 открыт. Технические детали: `docs/ARCHITECTURE.md`.
 
 final result: passed — только браузерный UI; native frame/resize не приняты.
 
-Рабочее дерево; commit ожидается. Основание — выбранный
+Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98). Основание — выбранный
 `design/concepts/approved-close-wordmark.png`, текущие 14 пунктов пользователя
 и последующие замечания по overflow/иконкам/отступам. Native/VPN/Android tests,
 Full, build, установка и публикация в этом цикле не запускались.
@@ -105,7 +105,7 @@ final result: passed
 
 Область: браузерный просмотр главного Flutter-экрана по текущему поручению.
 Это не приёмка VPN, native host, Android или установочных пакетов.
-Рабочее дерево; commit ожидается. Автоматические функциональные тесты,
+Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98). Автоматические функциональные тесты,
 Full runner, native/release builds и GitHub workflow в этом цикле не запускались.
 
 ## Основание сравнения

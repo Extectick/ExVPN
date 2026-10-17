@@ -1,7 +1,7 @@
 {
   "date": "2026-10-18",
   "version": "0.1.0+20",
-  "source": "working tree; commit pending",
+  "source": "Working-tree implementation archived at 5b41a1c070aa1d19675d9af3aabb1939a097fe98; historical build identity retained",
   "scope": "requested quick Windows design build and installed upgrade",
   "build": {
     "flutter": "3.47.7 ordinary release, EXVPN_DEMO=false",
@@ -28,14 +28,26 @@
     "rollbackPath": "C:\\Program Files\\ExVPN Rollback\\8f735d74-c84e-4d23-99cc-3fe83969a3c2"
   },
   "readOnlyWindowCheck": {
-    "windowPixels": [440, 760],
-    "clientPixels": [440, 760],
+    "windowPixels": [
+      440,
+      760
+    ],
+    "clientPixels": [
+      440,
+      760
+    ],
     "dpi": 96,
     "fullClientFrame": true,
     "initialMode": "medium",
     "ratioMatchesMedium": true
   },
-  "notRun": ["VPN network tests", "Full runner", "all-edge resize and mixed-DPI acceptance", "visual acceptance of all three modes"],
+  "notRun": [
+    "VPN network tests",
+    "Full runner",
+    "all-edge resize and mixed-DPI acceptance",
+    "visual acceptance of all three modes"
+  ],
   "published": false,
-  "remaining": "EXVPN-E2-013: user visual review, resize smoothness, DPI/monitors and window controls"
+  "remaining": "EXVPN-E2-013: user visual review, resize smoothness, DPI/monitors and window controls",
+  "implementationCommit": "5b41a1c070aa1d19675d9af3aabb1939a097fe98"
 }

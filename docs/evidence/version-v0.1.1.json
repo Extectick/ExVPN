@@ -2,7 +2,7 @@
   "date": "2026-10-18",
   "version": "0.1.1+22",
   "tag": "v0.1.1",
-  "sourceState": "working tree; commit pending",
+  "sourceState": "Validated source committed; tag publication prepared",
   "validation": {
     "updaterPinsValidated": true,
     "result": "PASS",
@@ -27,5 +27,7 @@
   "limitations": [
     "Source tag only; no stable VPN acceptance implied.",
     "Existing binary/runtime evidence retains its historical 0.1.0 build identities."
-  ]
+  ],
+  "implementationCommit": "5b41a1c070aa1d19675d9af3aabb1939a097fe98",
+  "sourceCommit": "5b41a1c070aa1d19675d9af3aabb1939a097fe98"
 }

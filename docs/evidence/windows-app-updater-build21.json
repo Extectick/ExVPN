@@ -1,7 +1,7 @@
 {
   "date": "2026-10-18",
   "version": "0.1.0+21",
-  "source": "working tree; commit pending",
+  "source": "Working-tree implementation archived at 5b41a1c070aa1d19675d9af3aabb1939a097fe98; historical build identity retained",
   "scope": "Production UI/update integration, offline behavioral checks, manual baseline Windows installation; excludes live signed remote update acceptance",
   "implemented": [
     "Appearance dark/light/custom icons with custom label and resolved system language",
@@ -74,5 +74,6 @@
     "Release remains blocked by signing and existing inventory/license obligations"
   ],
   "computerUse": false,
-  "networkSettingsChangedByTests": false
+  "networkSettingsChangedByTests": false,
+  "implementationCommit": "5b41a1c070aa1d19675d9af3aabb1939a097fe98"
 }

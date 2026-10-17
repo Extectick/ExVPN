@@ -177,7 +177,7 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   таймер/свечение, масштаб, прокрутка/раскрытие и диалог замечаний.
   Анализ четырёх изменённых Dart-файлов — No issues found.
   [Инструкция](DESIGN_PREVIEW.md), [снимки](../design/screenshots/windows-layouts/overview.jpg),
-  [визуальный отчёт](../design-qa.md). Рабочее дерево; commit ожидается.
+  [визуальный отчёт](../design-qa.md). Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98).
   По явному ограничению пользователя Full, VPN-тесты, native/release builds
   и GitHub workflow не запускались. Это не закрывает E1/E2-005/E4/E5.
 - [ ] **EXVPN-E2-007** — Проверить новые пропорции реального Windows-окна.
@@ -195,7 +195,7 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   Program Files; проверены путь нового процесса, отвечающее окно и совпадение
   EXE/AOT с новой сборкой. Процесс службы не перезапускался.
   [Установленный запуск](evidence/windows-installed-design-20261018.json).
-  Рабочее дерево; commit ожидается.
+  Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98).
 
 - [x] **EXVPN-E2-008** — Доработать действия списка и отключённую кнопку в
   предпросмотре. Проверено 2026-10-18: обновление без chooser/dialog, короткое
@@ -206,7 +206,7 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   [обезличенный отчёт](evidence/windows-actions-preview-20261018.json).
   Анализ изменённых Dart-файлов чистый. Макетные действия не обращаются к сети;
   VPN-тесты, Full и native/release builds не запускались. Рабочее дерево;
-  commit ожидается.
+  Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98).
 - [ ] **EXVPN-E2-009** — Проверить пакетные действия на обычном Windows-клиенте:
   реальные URL, частичный отказ/сохранение, TCP/DNS deadlines и отмена при выходе.
   Исходники bulk refresh и ограниченного TCP latency probe подготовлены;
@@ -222,14 +222,14 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   и manifest сохранены; 8 файловых сценариев helper прошли без системных изменений.
   Пользовательская проверка последней редакции в Windows ещё требуется.
   [Доказательства](evidence/windows-installed-design-20261018.json).
-  Рабочее дерево; commit ожидается.
+  Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98).
 
 - [ ] **EXVPN-E2-011** — Принять светлую бело-голубую тему, белую кнопку с
   голубым ON-свечением, промежутки строк и выбор PROXY/VPN под кнопкой в трёх
   Windows-форматах. Исходники и targeted analyze готовы, Windows +19 собран;
   установлен и открыт 2026-10-18 с новым EXE/AOT;
   последняя визуальная приёмка в реальном окне ещё требуется. Тёмная тема
-  сохраняет прежнюю палитру. Рабочее дерево; commit ожидается.
+  сохраняет прежнюю палитру. Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98).
 
 - [x] **EXVPN-E2-012** — Выполнить последнюю редакцию дизайна в браузерном
   стенде. Критерий: три формата, круглый input без glow, фактура светлой кнопки,
@@ -241,14 +241,14 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   и повторно просмотрены. Верхние иконки унифицированы, иконки форматов 20 px,
   у групп симметричные зазоры 8 px. [Отчёт](../design-qa.md),
   [доказательства](evidence/windows-design-polish-20261018.json).
-  Только UI preview; native/Android приёмка не закрыта. Рабочее дерево; commit ожидается.
+  Только UI preview; native/Android приёмка не закрыта. Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98).
 - [ ] **EXVPN-E2-013** — Собрать и принять собственную рамку Windows и плавный
   resize на установленном приложении. Зависимость: E2-012; следующий отдельно
   разрешённый native цикл. Проверить drag, resize всех краёв/углов, уменьшение
   до min, 100/125/150/200% DPI, разные мониторы, minimize/tray-close, keyboard,
   startup и смену системного языка Windows/Android. Исходники подготовлены,
   native build/runtime не выполнялись по ограничению текущего задания.
-  До приёмки не утверждать устранение Windows resize jitter. Рабочее дерево; commit ожидается.
+  До приёмки не утверждать устранение Windows resize jitter. Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98).
   Прогресс 2026-10-18: пользователь разрешил сборку/обновление. +20 успешно
   собран (50,9 с), установлен поверх +19 и открыт от обычного пользователя.
   Read-only Win32: window/client 440×760 при 96 DPI, full-client frame true;
@@ -260,7 +260,7 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   сохранённая rollback-копия и ordinary-user запуск из Program Files.
   Проверка 2026-10-18: 0.1.0+20, installer exit 0, PID UI 47856 responding,
   SCM Running; бинарники совпадают с payload. Это запуск для визуальной проверки,
-  не завершение E2-013/VPN-приёмки. Рабочее дерево; commit ожидается.
+  не завершение E2-013/VPN-приёмки. Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98).
 
 - [x] **EXVPN-E2-015** — Подготовить web-дизайн обновления приложения и локальных
   проблем подписки. Критерий: три темы с «Я дизайнер», название текущего языка,
@@ -271,7 +271,7 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   download и итоговый Settings 0.1.1/build21 — только макет. Целевой analyze шести
   файлов без замечаний; Windows/APK builds, VPN tests, Full и установка не
   запускались. Реальная доставка/подпись/rollback/restart остаются в E6.
-  Рабочее дерево; commit ожидается.
+  Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98).
 
 ## E3 — Подписки и хранилище
 
@@ -451,14 +451,14 @@ Root сверил 43 файла доказательств. [Upgrade](evidence/w
   VPN-смена сервера сохраняет guard; recovered/unclean guard запрещает PROXY.
   Служба +19 собрана. [Контракт и границы](SYSTEM_PROXY.md).
   [Проверки и установленный запуск +19](evidence/windows-proxy-build19.json).
-  Рабочее дерево; commit ожидается. Это не закрывает E1/полную системную приёмку.
+  Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98). Это не закрывает E1/полную системную приёмку.
 
 - [ ] **EXVPN-E5-008** — Принять установленный Windows PROXY/VPN: WinINET,
   восстановление чужих/PAC-настроек, переключение/аварии, штатный exit,
   upgrade/uninstall и отсутствие прямого обхода при VPN-переподключении.
   Подготовлены C++ journal/WinINET bridge, recovery при недоступной службе и
   блокировка обслуживания с активным proxy lease. 11 fake C++ сценариев прошли;
-  это не проверка реальных WinINET-настроек Windows. Рабочее дерево; commit ожидается.
+  это не проверка реальных WinINET-настроек Windows. Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98).
   Установщик +19 применён с exit0, пакет EXE/AOT/service сверены; новый UI
   отвечает, SCM-служба Running. [Доказательство](evidence/windows-proxy-build19.json).
 
@@ -535,8 +535,8 @@ offline 8,339 с, без Gradle/сети. Root сверил 57 inputs и вос�
   создавались. [Доказательство](evidence/shorebird-user-install-doctor.json).
   Доказательства: [1fd0bd5](https://github.com/Extectick/ExVPN/commit/1fd0bd55b876a0251e803fc1123390546442568b).
   Подготовка 2026-10-17: отдельный CLI 1.6.129 закреплён commit/lock/entry-point hashes и успешно запущен; `doctor --json` выявил ожидаемые ограничения detached pin и отсутствие app config, несмотря на exit 0. Cloud app/release/patch/ключи не создавались. [Контракт](SHOREBIRD.md), [доказательство](evidence/shorebird-cli-preflight.json), исходники [aaaf6f4](https://github.com/Extectick/ExVPN/commit/aaaf6f43826508cea252c1fd0018c98b087bbde2). Это не проверка Dart OTA.
-- [x] **EXVPN-E6-007** — Реализовать и проверить локальные контракты полного Windows updater. Критерий: строгая подпись/метаданные/байтовая загрузка/кеш/протокол, сериализация обновлений, guarded restart и атомарный отказ установки при активной службе покрыты автономными проверками; helper включён в пакет. Проверка 2026-10-18: 54 helper checks, 29 controller tests, lifecycle/tray и installer fixtures PASS; итоговый Full **12/12 за 86,49 с**, 284 app tests, fingerprint неизменен. Кандидат **0.1.0+21** установлен вручную поверх +20, четыре основных бинарных компонента совпали с payload, service Running и UI открыт; installed helper check — exit0/upToDate/stderr0. Это базовая установка, не полный цикл E6-006. Рабочее дерево; commit ожидается. [Доказательства](evidence/windows-app-updater-build21.json), [Full](evidence/fast-validation-app-updater-build21.json).
-- [ ] **EXVPN-E6-006** — Подключить верхнюю полосу к реальным источникам обновлений Windows. Зависимости: E6-001/004/005. Критерий: подписанная HTTPS-доставка, реальная загрузка и повторное открытие новой версии; отмена UAC и отказ установки показаны корректно; активный VPN не отключается установщиком. Прогресс 2026-10-18: production controller, dedicated helper/ключ, фиксированный feed, проверка подписи/размера/хеша, guarded restart и упаковка реализованы. Локальные fixtures не заменяют полный цикл; пункт открыт. Рабочее дерево; commit ожидается. [Контракт](WINDOWS_APP_UPDATES.md).
+- [x] **EXVPN-E6-007** — Реализовать и проверить локальные контракты полного Windows updater. Критерий: строгая подпись/метаданные/байтовая загрузка/кеш/протокол, сериализация обновлений, guarded restart и атомарный отказ установки при активной службе покрыты автономными проверками; helper включён в пакет. Проверка 2026-10-18: 54 helper checks, 29 controller tests, lifecycle/tray и installer fixtures PASS; итоговый Full **12/12 за 86,49 с**, 284 app tests, fingerprint неизменен. Кандидат **0.1.0+21** установлен вручную поверх +20, четыре основных бинарных компонента совпали с payload, service Running и UI открыт; installed helper check — exit0/upToDate/stderr0. Это базовая установка, не полный цикл E6-006. Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98). [Доказательства](evidence/windows-app-updater-build21.json), [Full](evidence/fast-validation-app-updater-build21.json).
+- [ ] **EXVPN-E6-006** — Подключить верхнюю полосу к реальным источникам обновлений Windows. Зависимости: E6-001/004/005. Критерий: подписанная HTTPS-доставка, реальная загрузка и повторное открытие новой версии; отмена UAC и отказ установки показаны корректно; активный VPN не отключается установщиком. Прогресс 2026-10-18: production controller, dedicated helper/ключ, фиксированный feed, проверка подписи/размера/хеша, guarded restart и упаковка реализованы. Локальные fixtures не заменяют полный цикл; пункт открыт. Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98). [Контракт](WINDOWS_APP_UPDATES.md).
 - [ ] **EXVPN-E6-005** — Проверить полное обновление APK/Windows. Зависимости: E4–E5, ключи подписи. Критерий: сохранены подписки/настройки, идентичность подписи, непрерывность защиты и явный безопасный перезапуск ядра.
   Дополнение 2026-10-17: Windows Sandbox maintenance matrix +12/+13 PASS,
   63 этапа/17 UI-шагов за 1222,735 с, включая 65,440 с cleanup. Проверены

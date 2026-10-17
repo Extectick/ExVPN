@@ -2,7 +2,7 @@
   "schema": 1,
   "date": "2026-10-18T01:23:06+07:00",
   "sourceCommit": "4b791fd9a79304543affcbf1f9b0597f439799b7",
-  "sourceState": "working tree; commit pending",
+  "sourceState": "Working-tree implementation archived at 5b41a1c070aa1d19675d9af3aabb1939a097fe98; historical build identity retained",
   "version": "0.1.0+18",
   "uiRevision": "design-20261018.2",
   "scope": "Windows UI changes and installed UI-only replacement; no VPN acceptance",
@@ -45,5 +45,6 @@
     "manual inspection of latest picker and pinned header pending",
     "DPI/multi-monitor acceptance pending",
     "VPN tests, Full runner and publication not run"
-  ]
+  ],
+  "implementationCommit": "5b41a1c070aa1d19675d9af3aabb1939a097fe98"
 }
