@@ -56,6 +56,16 @@ UIAutomator не завершилось до deadline; повторные connec
 засчитаны. [Android runtime и границы](evidence/android-runtime-build13.json).
 Полная E1/release-приёмка остаётся открытой.
 
+Повторная Android-проверка +13 с отдельным Instrumentation helper завершила
+**4/4 gRPC/XHTTP цикла**: HTTPS/DNS через VPN, штатное Disconnect, закрытие
+соединений и восстановление сети. Циклы — 50,442 с, весь сценарий — 177 с.
+APK не менялся; прежний UIAutomator timeout сохранён отдельно.
+[Доказательства и ограничения](evidence/android-transport-semantics-build13.json).
+Общий быстрый прогон после завершения работы агентов — 10/10 PASS за 115,59 с.
+Независимый аудит Windows EXE подтвердил 265 payload-файлов и встроенные
+maintenance scripts; подготовленный Android dependency graph прошёл отдельную
+offline-проверку. Это частичные результаты E1/E7, не готовая beta.
+
 ## 1. Цель и первый выпуск
 
 Создать собственный открытый VPN-клиент ExVPN с общей кодовой базой для Android, Windows, Linux и iOS. Flutter отвечает за интерфейс и общую логику, Xray-core через собственный Go-адаптер — за протоколы; системная VPN-интеграция реализуется отдельно для каждой ОС. libXray изучен как исходный вариант, но не включён в текущую Android/Windows линковку.

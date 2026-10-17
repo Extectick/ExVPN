@@ -52,6 +52,13 @@
 - [ ] **EXVPN-E1-010** — Собрать Android и Windows технические пакеты и закрыть gate. Зависимости: E1-001–009, E1-011. Критерий: отчёт с версиями, устройствами, командами и обезличенными доказательствами; сборка без системных испытаний не закрывает этот пункт.
   Пакеты +12, 2026-10-17: Windows installer собран и прошёл upgrade/9 циклов; Android APK обеих ABI собран за 166,154 с с прежним debug signer и неизменными inputs. 8 Android JVM results были UP-TO-DATE, не новым выполнением. Затем тот же Android APK прошёл upgrade +11 → +12, cold restore, HTTPS 200/204 через TUN и cleanup за 137,532 с в отдельном API30 x86_64 emulator. [Android build](evidence/android-build12.json), [Android runtime](evidence/android-upgrade-build12.json), [Windows build/runtime](evidence/windows-lifecycle-build12.json); source [ea9f2ca](https://github.com/Extectick/ExVPN/commit/ea9f2ca), product fix [402245f](https://github.com/Extectick/ExVPN/commit/402245f8e701610f8ef8bafc6eebe365d7c30940). Оба пакета development; активный VPN при upgrade, физический Android и полная системная приёмка открыты.
 - [ ] **EXVPN-E1-011** — Ограничить жизненный цикл upstream transport caches при повторном создании ядра. Зависимость: E1-002. Критерий: старое ядро не оставляет gRPC/XHTTP владельцев, фоновые повторные подключения или растущие ресурсы; параллельный Dial/Close не воскрешает завершённого владельца; Android и Windows проверены отдельно. Наблюдение 2026-10-17: закреплённый Xray хранит gRPC ClientConn/XHTTP XmuxManager в process-global maps после Instance.Close. Windows lease закрывает sockets и изолирует поколения, но не освобождает эти upstream objects. [Контракт, точные источники и следующий шаг](WINDOWS_RECONNECT.md); готовность не подтверждена.
+  Android +13, 2026-10-17: **4/4 цикла gRPC/XHTTP PASS**, тот же процесс приложения,
+  четыре поколения ядра, HTTPS/DNS независимого UID и отсутствие службы/peers
+  после каждого штатного Disconnect. Циклы 50,442 с, весь прогон 177 с.
+  Instrumentation заменяет только управление обычной кнопкой; native/network
+  доказательства независимы. Полная ресурсная/IPv6/fault матрица и физическое
+  устройство остаются открытыми. [Отчёт](evidence/android-transport-semantics-build13.json),
+  [QA исходники](https://github.com/Extectick/ExVPN/commit/2259bb7).
   Дополнение 2026-10-17: отдельно воспроизведён retained DNS/UDP worker в TUN
   `exvpn.3` (3/3). `exvpn.4` владеет отменой и завершением UDP workers, включая
   частичные ошибки Start. Девять новых tests ×5, общий pinned race ×5/vet и
@@ -186,6 +193,14 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   Предварительная локальная проверка 2026-10-17: 92 selector/graph/JUnit fixtures PASS; точный Android helper в чистом source archive прошёл 8/8 за 43,13 с, SDK/dependency caches общие. Независимый review не оставил замечаний. [Доказательство](evidence/ci-build-impact-build11.json), [правила и docs-only граница](CI.md). Исходники [9d035ae](https://github.com/Extectick/ExVPN/commit/9d035aee717604dafa31e0b2818b3767bfac0efe). Этот локальный результат сам по себе не закрывал фактический GitHub QA-only gate.
 
 - [x] **EXVPN-E7-005** — Ускорить локальную проверку и разделить разработку между агентами. Зависимость: E1 toolchain, E7-001. Критерий: одна команда выбирает тесты с учётом зависимостей, параллельно запускает готовые Dart/Flutter/Go runners, сохраняет результаты и не скрывает ошибки/изменения исходников; итоговый полный быстрый прогон проходит после завершения записи агентами. Системная приёмка остаётся отдельной.
+  Последний Full, 2026-10-17: **115,59 с, 10/10 PASS**, source fingerprint совпал,
+  Go result cache отключён. 448 Dart/Flutter tests, 52 Java UI-сценария,
+  81 Android lifecycle, 129 metadata и 72 artifact audit fixtures PASS.
+  Android runtime, dependency preparation и независимый review разделены между
+  агентами; coordinator проверил общее дерево после freeze. [Отчёт](evidence/fast-validation-build13-instrumentation.json),
+  исходники [541be0d](https://github.com/Extectick/ExVPN/commit/541be0d).
+  Это длительность расширенного набора при отдельном Gradle inventory, не
+  сравнительный коэффициент ускорения.
   Оптимизация очереди +13, 2026-10-17: **87,11 с, 10/10 PASS**, 448 Dart/Flutter
   tests, свежие Go checks и неизменные исходники. Долгие независимые наборы
   запускаются первыми; все 1024 подмножества сохраняют точный состав. Повторно
@@ -236,6 +251,14 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   CI +10: [run 38969281066](https://github.com/Extectick/ExVPN/actions/runs/38969281066) на [924493a](https://github.com/Extectick/ExVPN/commit/924493a511547bb2b4c93262ab93df82fe127479) — **SUCCESS**, Windows 7:56, Android 14:50; tests/build/upload прошли. [Отчёт](evidence/ci-build10.json). Docs-only push не запустил дубликат и не отменил сборку. Это development artifacts, не подписанная beta.
   CI +11, 2026-10-17: [run 38979241913](https://github.com/Extectick/ExVPN/actions/runs/38979241913) на [292d3dc](https://github.com/Extectick/ExVPN/commit/292d3dc05f1b694a26ca9e2cb30953850e5b8373) — **SUCCESS**, Windows 9:11, Android 18:48; tests/build/upload прошли. [Отчёт](evidence/ci-build11.json). Это проверка данного commit; последующие QA/CI-изменения и системная приёмка имеют отдельные результаты.
 - [ ] **EXVPN-E7-002** — Подготовить лицензии/SBOM, подпись и артефакты beta. Зависимости: E4–E6, доступ к ключам. Критерий: APK и Windows installer подписаны; полный комплект уведомлений соответствует бинарникам; исходники MPL доступны.
+  Дополнение 2026-10-17: явный prepared-input режим прошёл в новом private cache:
+  77 POM, затем строгий offline граф из 68 Maven + 6 проектов / 279 связей совпал
+  с закреплённым seed. Подготовка 19,837 с, offline 110,423 с, всего 148,158 с;
+  129 fixtures и четыре Gradle guard-сценария PASS. Существующий dependency cache
+  читается отдельно; это не холодный bootstrap, сборка APK или полный SBOM.
+  [Отчёт](evidence/android-runtime-prepared-build13.json),
+  исходники [541be0d](https://github.com/Extectick/ExVPN/commit/541be0d).
+  Дополнение 2026-10-17: в готовом Windows EXE +13 независимо извлечены и сверены **265/265 payload-файлов**, обе maintenance-программы встроенного Uninstall.exe и шесть NSIS plugins/bitmap. Полный offline audit — **6,463 с**, 72 fixtures PASS. Установщик не исполнялся; снят только blocker проверки упакованных файлов, пять release blockers и системная приёмка остаются. [Отчёт](evidence/windows-nsis-build13.json); исходники [dfe753e](https://github.com/Extectick/ExVPN/commit/dfe753e2efc9ab9be7d4d830255332d3749b8196).
   Прогресс 2026-10-17: добавлен read-only аудит неизменяемых APK/Windows packages, проверка подписей, фактических native modules, hashes/notices и детерминированный CycloneDX 1.6 SBOM. 41 синтетический сценарий прошёл; четыре SBOM прошли официальную JSON schema. Проверка +9 закономерно блокирует выпуск: Windows unsigned, APK debug-signed, неполное покрытие лицензий; старый Windows notice inventory имел +1, Android bundle отсутствовал. Исправленный сборщик связывает version/lock/конкретные native inputs и прошёл 23 fixtures; отдельные sidecars не объявлены содержимым старых пакетов. [Отчёт](evidence/release-audit-build9.json), [методика](../scripts/release/ARTIFACT_AUDIT.md), [комплектация](RELEASE_NOTICES.md), исходники [dd7a221](https://github.com/Extectick/ExVPN/commit/dd7a2214a4894993698c7cc79083c4d50bcb455c). В +10 binding исправлен: [Android](evidence/android-packaging-build10.json), [Windows](evidence/windows-packaging-build10.json); release signing и полный SBOM/лицензионный gate остаются открытыми.
 - [ ] **EXVPN-E7-003** — Выполнить общую матрицу приёмки. Зависимости: E7-001–002. Критерий: все заявленные протоколы, IPv4/IPv6/DNS, исключения, аварии, обновления и UI Android/Windows доказаны; отсутствующие устройства/серверы не помечены пройденными.
   Дополнение 2026-10-17, Android +10: обычное обновление +9 → +10 в API30 emulator сохранило три подписки и выбранный профиль после cold restart. Независимый UID подтвердил реальный XHTTP/REALITY HTTPS204/200 и другой IPv4; disconnect вернул исходный выход, настройки ОС не изменились. [Отчёт](evidence/android-upgrade-build10.json), [комплектация APK](evidence/android-packaging-build10.json), исходники [b8dd91d](https://github.com/Extectick/ExVPN/commit/b8dd91da531c09449f98e17bcc9cfa2d5f7444da). Активный VPN во время upgrade, физическое устройство и полная матрица остаются открытыми.

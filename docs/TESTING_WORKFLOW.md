@@ -17,7 +17,17 @@ Go unit/loopback tests и файловые сценарии установщик
 запускают установленный VPN, службу, TUN, WFP или смену маршрутов/DNS хоста.
 Приватные подписки и действующие VPN-серверы в них не участвуют.
 
-Последний общий прогон +13 после изменения очереди, 2026-10-17:
+Последний общий прогон +13 после добавления Android Instrumentation и аудита
+упакованных файлов, 2026-10-17: **10/10 наборов за 115,59 с**, source fingerprint
+совпал, Go result cache отключён. Прошли 448 Dart/Flutter tests и Go/installer
+checks, 52 Java UI-сценария (826 assertions), 81 Android lifecycle fixture,
+129 inventory fixtures и 72 artifact audit fixtures. Это расширенный набор,
+выполненный одновременно с отдельной инвентаризацией Gradle; его время не является
+коэффициентом ускорения прежнего набора. [Полный отчёт](evidence/fast-validation-build13-instrumentation.json).
+Android runtime, подготовкой зависимостей и независимым review занимались разные
+агенты; общий Full запущен координатором после завершения записи исходников.
+
+Предыдущий общий прогон +13 после изменения очереди, 2026-10-17:
 **10/10 наборов за 87,11 с**, 448 Dart/Flutter tests и все Go/installer/QA checks
 PASS; source fingerprint совпал, Go result cache отключён. Тяжёлые независимые
 `scripts`, `app`, `core` запускаются первыми при прежнем лимите трёх процессов.
@@ -64,6 +74,18 @@ Android +13 проверялся независимо от Windows; UI подп�
 timeout перед Disconnect; повторные циклы не засчитаны. Такая автоматизация
 сокращает ручное управление, но отказ стенда остаётся отдельным результатом.
 [Доказательства](evidence/android-runtime-build13.json).
+
+Следующий Android-прогон использовал отдельный QA Instrumentation helper:
+свежий semantic snapshot, единственная обычная кнопка Connect/Disconnect и
+проверка нового состояния без ожидания окончания анимации. Нет retry-click при
+неизвестном исходе и остановки ExVPN вместо Disconnect. В активном VPN private
+driver запрещает UIAutomator XML. **4/4 цикла gRPC/XHTTP PASS за 50,442 с**,
+весь прогон с boot/setup/cleanup — **177 с**. Независимый UID подтвердил HTTPS,
+DNS и VPN transport; проверены native service, peer drain и возврат прямой сети.
+[Отчёт](evidence/android-transport-semantics-build13.json),
+[helper и ограничения](../scripts/qa/android-https-probe/README.md),
+[исходники](https://github.com/Extectick/ExVPN/commit/2259bb7).
+Прежний timeout сохранён; physical-device, IPv6/leak/fault gates остаются.
 
 Предыдущий общий прогон, 2026-10-17: **10/10 наборов за 106,66 с**, все Go tests
 выполнены заново, fingerprint исходников совпал. В общий runner и CI добавлены

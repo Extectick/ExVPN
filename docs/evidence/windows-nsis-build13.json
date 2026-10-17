@@ -1,0 +1,220 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "status": "PAYLOAD_VERIFIED_RELEASE_BLOCKED",
+  "source": "dfe753e2efc9ab9be7d4d830255332d3749b8196",
+  "appVersion": "0.1.0+13",
+  "artifact": {
+    "file": "ExVPN-0.1.0-13-windows-x64-development.exe",
+    "sha256": "fea39fdfa7e228dec3c9906f27e560912361ffaccd09f9111028a91450c68215",
+    "bytes": 34386052
+  },
+  "elapsedSeconds": 6.463,
+  "exitCode": 2,
+  "fixtureChecks": 72,
+  "fixtureStatus": "PASS",
+  "independentReview": "no actionable findings",
+  "extraction": {
+    "verified": true,
+    "installerExecuted": false,
+    "installerInstructionSemanticsVerified": false,
+    "toolVersion": "26.04",
+    "tools": [
+      {
+        "name": "7z.exe",
+        "sha256": "95fff19b73eff77c87c0d7bd32822e43fb90dd2932459f962eb532d8dfb6ba53"
+      },
+      {
+        "name": "7z.dll",
+        "sha256": "899cd73d7fc60e1c1c35c7de0f5bed3dc69bfe2cecbd48014d868a347970a0b1"
+      },
+      {
+        "name": "License.txt",
+        "sha256": "519ac0a4bded9c18ea02e0afb71f663d8c47373bd9facd3ac96a79f51d77765d"
+      }
+    ],
+    "payloadFiles": 265,
+    "installerEntries": 270,
+    "uninstallerEntries": 4,
+    "maintenanceScriptsMatched": 2,
+    "nsisSourceArchiveSha256": "ba63dffc4410ee89193e1cb5a41989991bd77c61068da17e3156d136b7b0b3d8",
+    "uninstallerSha256": "403b21823746215bd0e51377cc42502789bfafa0574ae4905b43cbc19db73b04",
+    "plugins": [
+      {
+        "container": "installer",
+        "path": "$PLUGINSDIR/modern-wizard.bmp",
+        "size": 26494,
+        "sha256": "3ad2dc318056d0a2024af1804ea741146cfc18cc404649a44610cbf8b2056cf2",
+        "pinnedArchiveEntry": "nsis-3.13/Contrib/Graphics/Wizard/win.bmp"
+      },
+      {
+        "container": "installer",
+        "path": "$PLUGINSDIR/nsDialogs.dll",
+        "size": 9728,
+        "sha256": "9c76f4d53ceee2a471c936e0899688405e1009ce962d140e9acb49ed68d114cb",
+        "pinnedArchiveEntry": "nsis-3.13/Plugins/x86-unicode/nsDialogs.dll"
+      },
+      {
+        "container": "installer",
+        "path": "$PLUGINSDIR/nsExec.dll",
+        "size": 7168,
+        "sha256": "1dee37f6abb2dec9e767bd022d29386b6b295bbd55bf316d2649b8d298f89e9d",
+        "pinnedArchiveEntry": "nsis-3.13/Plugins/x86-unicode/nsExec.dll"
+      },
+      {
+        "container": "installer",
+        "path": "$PLUGINSDIR/System.dll",
+        "size": 12288,
+        "sha256": "afe032f942e2ed0bf7494ec08ba813f5739fb522c640bde81d30ecaf9f894432",
+        "pinnedArchiveEntry": "nsis-3.13/Plugins/x86-unicode/System.dll"
+      },
+      {
+        "container": "uninstaller",
+        "path": "$PLUGINSDIR/nsExec.dll",
+        "size": 7168,
+        "sha256": "1dee37f6abb2dec9e767bd022d29386b6b295bbd55bf316d2649b8d298f89e9d",
+        "pinnedArchiveEntry": "nsis-3.13/Plugins/x86-unicode/nsExec.dll"
+      },
+      {
+        "container": "uninstaller",
+        "path": "$PLUGINSDIR/System.dll",
+        "size": 12288,
+        "sha256": "afe032f942e2ed0bf7494ec08ba813f5739fb522c640bde81d30ecaf9f894432",
+        "pinnedArchiveEntry": "nsis-3.13/Plugins/x86-unicode/System.dll"
+      }
+    ]
+  },
+  "counts": {
+    "files": 265,
+    "nativeBinaries": 1,
+    "noticeComponents": 140
+  },
+  "noticeSource": "installer-payload-verified",
+  "releaseReady": false,
+  "blockers": [
+    "dart_flutter_runtime_link_inventory_incomplete",
+    "development_package",
+    "license_expressions_and_distribution_obligations_not_fully_reviewed",
+    "release_signer_not_pinned",
+    "windows_signature_not_valid"
+  ],
+  "pins": [
+    {
+      "path": "apps/exvpn/pubspec.lock",
+      "sha256": "cc0c11868d81c4ffc299cb99ba17c03b0932d5a890cd5cc29dea6ffbb3f6c8c2"
+    },
+    {
+      "path": "apps/exvpn/pubspec.yaml",
+      "sha256": "cdeb8fd29734d56b697f31565ca675ad90ca15ad94658cace7c155e74dc09e0c"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "native/android/go.mod",
+      "sha256": "032594842e460c6a52816ec82a64ad19514cc172e3cffb2fe93a83304e44061a"
+    },
+    {
+      "path": "native/android/go.sum",
+      "sha256": "b7279d3c794e5079f695dc2dcc1b994556d5b4d2792bcff4ebeb9f19a947fc56"
+    },
+    {
+      "path": "native/core/go.mod",
+      "sha256": "332e7245c317628f0f1f267c5a009a84575f68a29af20208ed0bc23bb9a6ff77"
+    },
+    {
+      "path": "native/core/go.sum",
+      "sha256": "afaa67ad9cf72870cf3eebf263722dee625e4cac5b66014d28d85eca122ebbb7"
+    },
+    {
+      "path": "native/patches/xray-lifecycle.lock.json",
+      "sha256": "f53dac9ee479334c6eb9d08c322be69e67290e60293c87b050336ae7b123ca9f"
+    },
+    {
+      "path": "native/patches/xray-lifecycle.patch",
+      "sha256": "28eb0aa8382da104bacbf133f450eec74be3bd34fe4568d218c253cdce28afc1"
+    },
+    {
+      "path": "native/windows/go.mod",
+      "sha256": "287a418fc35cf774e6a3ff5e19ffd119a943163cef89784c3b034078732d9f6b"
+    },
+    {
+      "path": "native/windows/go.sum",
+      "sha256": "23008870ef2e566d83842e0be82a2205a862acc13008a5a64eb9a13b1cbd3f1b"
+    },
+    {
+      "path": "NOTICE",
+      "sha256": "173e538e04a70d561fdb729566833a33ae68338b1f3f4947a4c8b638c55bf261"
+    },
+    {
+      "path": "scripts/bootstrap/toolchain.lock.json",
+      "sha256": "cf56d254881434fad1a438e610944acfc60eb430e44aecb9386ac8eca2d065fe"
+    },
+    {
+      "path": "scripts/release/archive-inspector.lock.json",
+      "sha256": "28f6ace5cb159fa090026df787de2d984dc860cd2eba8a01c5d74cb2c457db5d"
+    },
+    {
+      "path": "scripts/release/artifact-audit-lib.ps1",
+      "sha256": "265e0866b0de8374b2e04b3cae5705550f2addfd710f2e514f1ceadb0e6e35c8"
+    },
+    {
+      "path": "scripts/release/audit-artifact.ps1",
+      "sha256": "82ef50a5499d431b56ee042aa7f3bdac9a0a917d0be278bf44e4c55b696e6bb9"
+    },
+    {
+      "path": "scripts/release/notice-inputs.ps1",
+      "sha256": "f9fb1468a8be5fe542a572ff359ad40f72e394c37354bf76f9a7adffc9934b65"
+    },
+    {
+      "path": "scripts/release/nsis-audit-lib.ps1",
+      "sha256": "18ab4db6e7960da0c0c32b2863d310479126a1702a22ffd5b9afaa0e0dd28a50"
+    },
+    {
+      "path": "scripts/windows/msvc-runtime.lock.json",
+      "sha256": "78e261203aad2a7d9c9d77afa55ef126df94112058ecbcaf24ffe89cd818a227"
+    },
+    {
+      "path": "scripts/windows/nsis.lock.json",
+      "sha256": "783844693606d8cf7d35aca13068aa442b120a44ca4e7f34e2833f053f68ed21"
+    },
+    {
+      "path": "scripts/windows/wintun.lock.json",
+      "sha256": "f4209394fc20765b728dc30e2b4730fbd7ead77b924e1768e7b40e86d059e15f"
+    }
+  ],
+  "proofs": [
+    {
+      "path": "artifacts/release-audit/windows-build13-nsis-97a04aa428bd4dbeac822e8708227a16/audit.json",
+      "sha256": "0b4eb71e22b4fe5c0160dbef66d021c350289d2a0ff2ab9c36b56b1c28460e44"
+    },
+    {
+      "path": "artifacts/release-audit/windows-build13-nsis-97a04aa428bd4dbeac822e8708227a16/sbom.cdx.json",
+      "sha256": "5d95f74890b3fbdc6cdd031b793663ef324375e3203016a4b4a244dd103fc2d1"
+    },
+    {
+      "path": "artifacts/release-audit/windows-build13-nsis-97a04aa428bd4dbeac822e8708227a16/invocation.json",
+      "sha256": "4d6c23361ad60df9796c244878b2de63f591bbbcb41e9ef2d98186237548eccf"
+    },
+    {
+      "path": "artifacts/qa/archive-inspector-preparation.json",
+      "sha256": "98783de0ccc6f8e5b0c56ef1443699f0ca438d7a48e461f6c2d5f4eac6271a1c"
+    }
+  ],
+  "priorAttempt": {
+    "path": "artifacts/release-audit/windows-build13-nsis-extraction/audit.json",
+    "sha256": "984e7993fa4bd7c03bc00797a6c6a53e9c094469f7853607328ec7de36232906",
+    "status": "FAILED",
+    "reason": "archive_entry_missing_or_too_large",
+    "correction": "MUI2 aliases the pinned win.bmp as modern-wizard.bmp; source path corrected, byte comparison retained"
+  },
+  "boundaries": [
+    "No installer or uninstaller was executed by this audit.",
+    "Matching archive payload does not verify installer instruction semantics or runtime install/upgrade/uninstall.",
+    "SBOM composition remains incomplete.",
+    "Release signing, license obligations, Dart/Flutter runtime linkage inventory and full VPN acceptance remain open.",
+    "No APK/EXE was rebuilt or modified; no host networking or trust settings changed.",
+    "7-Zip tools are pinned audit-only dependencies, not shipped in the ExVPN package."
+  ]
+}

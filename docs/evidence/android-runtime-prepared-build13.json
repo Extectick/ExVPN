@@ -1,0 +1,227 @@
+{
+  "schema": 1,
+  "status": "PREPARED_INPUT_WORKFLOW_VERIFIED_INCOMPLETE_RELEASE",
+  "observedAtUtc": "2026-10-17T04:06:59.6162838+00:00",
+  "appVersion": "0.1.0+13",
+  "variant": "debug",
+  "workflow": {
+    "kind": "explicit_prepared_inputs",
+    "option": "-PrepareMetadataFrom",
+    "defaultOffline": true,
+    "automaticOnlineFallback": false,
+    "coldDependencyBootstrapVerified": false,
+    "privateGradleCacheInitiallyEmpty": true,
+    "existingReadOnlyDependencyCacheRequired": true,
+    "androidProjectRuntimeBinariesNotBuilt": true,
+    "metadataPreparation": {
+      "phase": "preparation",
+      "exitCode": 0,
+      "elapsedSeconds": 19.837,
+      "maximumSeconds": 180,
+      "terminationReason": null,
+      "offline": false
+    },
+    "offlineVerification": {
+      "phase": "offline",
+      "exitCode": 0,
+      "elapsedSeconds": 110.423,
+      "maximumSeconds": 180,
+      "terminationReason": null,
+      "offline": true
+    },
+    "totalElapsedSeconds": 148.158
+  },
+  "seed": {
+    "name": "android-runtime-inventory-seed.json",
+    "sha256": "6a7fa7f2550fa296a45ae0ea290d7c71054a61318aed91eec78c361790697491",
+    "origin": "locally_observed_gradle_inputs",
+    "runtimeComponents": 68,
+    "metadataOnlyComponents": 9,
+    "metadataEdges": 18,
+    "semanticGraphAlgorithm": "exvpn-input-graph-v1",
+    "semanticGraphSha256": "c98a29e28ca3fc0d87363a99aa37eedbac79586715b48c7abbd9ea212511dccd",
+    "selectionSource": {
+      "count": 760,
+      "sha256": "373d6528e8598300525342b3507dd0fbf63e350c83b91d3b5207026584a523dc"
+    },
+    "sourceAndGraphMatch": true,
+    "independentPublisherVerification": false
+  },
+  "phases": {
+    "metadataTaskGraph": [
+      ":prepareExactPoms"
+    ],
+    "metadataRecords": 77,
+    "metadataRepositoryPolicy": "google-mavenCentral-flutter-public-v1",
+    "runtimeGraphCreatedDuringPreparation": false,
+    "offlineTaskGraph": [
+      ":app:exvpnRuntimeInventory"
+    ],
+    "offlineMode": true,
+    "maximumMetadataExtras": 64,
+    "maximumClosureDepth": 8,
+    "maximumSecondsPerPhase": 180
+  },
+  "result": {
+    "components": 74,
+    "mavenComponents": 68,
+    "projectComponents": 6,
+    "edges": 279,
+    "runtimeArtifactRecords": 66,
+    "aarRecords": 34,
+    "jarRecords": 32,
+    "selectedPoms": 68,
+    "moduleCandidates": 34,
+    "sourceFingerprint": "aa25a791089a880f05252d13eb7bbb6ae01b5a73d29826ec05e8ef978232170b",
+    "snapshotFingerprint": "38e65afe4e992d4668db1e7c5ac7cff206eef95d678d53ee43c052700fad0fff",
+    "dependencyFingerprint": "7feb0ebd4a0f2d668c807e93cb2d511733ac8badb80732e18f580c1587d94af3",
+    "sourceInputsUnchanged": true,
+    "sourceTreeMembershipUnchanged": true,
+    "snapshotTreeMembershipUnchanged": true,
+    "flutter": {
+      "version": "3.47.7",
+      "revision": "abaf9c523780a608bd46686fd5e53740a07077f8",
+      "engineRevision": "deb287481e3ce9468f3434937ced4240a70539ca"
+    },
+    "abiObservation": {
+      "finalVariantAbiFiltersStatus": "unknown",
+      "finalApkNativeCoverageVerified": false,
+      "evaluatedDslAvailable": true,
+      "defaultConfigFilters": [
+        "arm64-v8a",
+        "x86_64"
+      ],
+      "buildTypeFilters": [],
+      "productFlavorFilters": [],
+      "flutterDefaultAbiInsertionDisabled": true
+    }
+  },
+  "checks": {
+    "pureFixtures": 129,
+    "pureFixtureReportSha256": "36c7d3cac4505e79244c4ca8b9a2ed661c5e0c294a1865d5320620140b41dad3",
+    "metadataGuardCases": 4,
+    "metadataGuardCaseReportSha256": "ee1e46bbd7102b88ddfa432faedd20cd87f3618cbdd1f1d8e45b915568b181ad",
+    "artifactListTypeRegression": "RED_then_GREEN",
+    "metadataEmptyProjectRegression": "Gradle9.3.1_phase_specific_guard_checks",
+    "independentReview": "no_remaining_actionable_findings"
+  },
+  "preservedPriorAttempt": {
+    "kind": "fresh_prepared_input",
+    "status": "failed_before_artifact_query",
+    "code": "android_inventory_metadata_preparation_failed",
+    "underlyingGuard": "exvpn_metadata_project_not_metadata_only",
+    "fix": "explicit_Collection_isEmpty_instead_of_Groovy_Map_property",
+    "offlinePhaseStarted": false,
+    "overwritten": false
+  },
+  "boundaries": {
+    "apkBindingVerified": false,
+    "licensesReviewed": false,
+    "projectBinariesVerified": false,
+    "exactLinkedCodeInventory": false,
+    "metadataSourceSelectionVerified": false,
+    "independentPublisherVerification": false,
+    "releaseSigningVerified": false,
+    "runtimeAcceptanceVerified": false
+  },
+  "limitations": [
+    "Resolved runtime inputs are not an exact linked-code inventory.",
+    "No APK, JNI, project plugin AAR, or application code was built.",
+    "POM/module descriptors are not reviewed licenses; module cache availability does not prove internal metadata selection.",
+    "Artifact hashes identify bytes observed locally, not independent publisher verification.",
+    "APK binding, complete license obligations, release signing, and runtime acceptance remain open."
+  ],
+  "proofFiles": [
+    {
+      "name": "inventory.json",
+      "sha256": "a6f83b7fec573d1699606d4fa390df1c3bb3c7a45457db5e76fb7ba15b3d8e4c",
+      "size": 666210
+    },
+    {
+      "name": "resolved-graph.json",
+      "sha256": "1cf0ef44a01f8b0b188e46d03f6640cf2d57f280b8d29fbd675ac5348a537130",
+      "size": 763238
+    },
+    {
+      "name": "prepared-poms.json",
+      "sha256": "d9cec33219d38b8210d9da3b0af15bf89615b04199241ed1c3235c65e6f1e9fe",
+      "size": 49041
+    },
+    {
+      "name": "metadata-plan.json",
+      "sha256": "2ba160ea695aebc65d75ac45400fa125b35dada0585c886f434ffa9afb86907d",
+      "size": 38707
+    },
+    {
+      "name": "source-inputs.json",
+      "sha256": "280d1c6219b5ff05a275d3e831c4940341fcf292ba6ebbacdd0f19e65c8ff9fc",
+      "size": 293370
+    },
+    {
+      "name": "source-trees.json",
+      "sha256": "1ee1f718412bba655a9ae5fff422e35c0b9e0fcd24def8d61db0dbfd4284da53",
+      "size": 262012
+    },
+    {
+      "name": "snapshot-inputs.json",
+      "sha256": "8773c689ff8e9597266160e0b4b3f947524f19ba69339caf4f94acd8ace00cf0",
+      "size": 286515
+    },
+    {
+      "name": "snapshot-trees.json",
+      "sha256": "96c84c72d625426915df3b1f388db6c95de4dfb8522c49722c466798eab2dd0c",
+      "size": 304664
+    },
+    {
+      "name": "preparation-result.json",
+      "sha256": "673ec9ce38b7a7ff7eef7a7aebbdb927a56cdb322a0b84cc4eedec58693087b1",
+      "size": 156
+    },
+    {
+      "name": "offline-result.json",
+      "sha256": "1148aa5fb106b155a2df7c602e5a5d7029eb2390a63e5a232da7c92d7ca89092",
+      "size": 152
+    }
+  ],
+  "sourceProof": [
+    {
+      "name": "android-runtime-inventory.ps1",
+      "sha256": "15885b95610f1ec72c50b10e6fb61d99d668279c6aef5a5e5daacbf0bf683df5"
+    },
+    {
+      "name": "android-runtime-inventory-preparation.ps1",
+      "sha256": "0855497587b199923a5db131c0663b784307f9584a340898200d36e8b45052fb"
+    },
+    {
+      "name": "android-runtime-inventory-metadata.init.gradle",
+      "sha256": "b0466cb2257e08902d2da5609e13ae65363a0e9d3f42e5a930173f5e402f9145"
+    },
+    {
+      "name": "android-runtime-inventory.init.gradle",
+      "sha256": "d2293a1b4a6ab0d8d5f61cba4ed9f5fe9e01a152919e09f686f79502c4e0a4d0"
+    },
+    {
+      "name": "android-runtime-inventory-lib.ps1",
+      "sha256": "3a1f3b4cd6fbd35cc791c661c8dea3699f8a14bb99649c182cbcfe849d32780e"
+    },
+    {
+      "name": "android-runtime-inventory-test.ps1",
+      "sha256": "048382b645f05a2cf595159380111c15a86c0fc930b1e29748aae9d5b236c332"
+    },
+    {
+      "name": "android-runtime-inventory-seed.json",
+      "sha256": "6a7fa7f2550fa296a45ae0ea290d7c71054a61318aed91eec78c361790697491"
+    },
+    {
+      "name": "ANDROID_RUNTIME_INVENTORY.md",
+      "sha256": "882becf928fa53299b6284d677658836ef7cd651ddc64071f8e0b11c8fe88a92"
+    }
+  ],
+  "sourceCommit": "541be0d4f1fd6fcfc7f8f97bfa020db8c858375d",
+  "coordinatorProof": {
+    "path": "artifacts/qa/android-runtime-prepared-a7791a4a8b034e4db25422b6e4ea3845/coordinator-verification.json",
+    "sha256": "afa076160c0f1ce5db9efcb42e81934ab7faa73c2554c3f05227512dfbd4658a",
+    "verifiedFiles": 19,
+    "candidateSha256": "5644ed92d0bf47d7b29cc12f72bfdd29a7fa5de0788eb62c187ede2355767fdc"
+  }
+}

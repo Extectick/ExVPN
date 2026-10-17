@@ -1,0 +1,296 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "scope": "Android API30 disposable emulator repeated native runtime; no physical-device/full-E1 acceptance",
+  "startedAtUtc": "2026-10-17T04:00:25.0109457Z",
+  "finishedAtUtc": "2026-10-17T04:03:22.0181017Z",
+  "durationMs": 177000,
+  "fourCyclesDurationMs": 50442,
+  "product": {
+    "version": "0.1.0+13",
+    "core": "26.10.10-exvpn.4",
+    "apkPath": "artifacts/android/build13-pinned/ExVPN-0.1.0-13-android-development.apk",
+    "apkSha256": "7a85645227f045c3a8c5cb875ceb53e2ed3cfbd4d291658c368254868753fccd",
+    "installedExactApkVerified": true,
+    "productRebuiltOrInstalled": false,
+    "buildConsumedInputsFingerprint": "46c2150e4d20989733f68ca3c0056ab6e0336cf769cba5b270f3cf99f3238e03"
+  },
+  "helper": {
+    "mechanism": "instrumentation_semantics_v1",
+    "package": "ru.exvpn.netprobe",
+    "apkPath": "artifacts/android-network-probe-vpn-ui/protected-debug.apk",
+    "apkSha256": "6c6ced3231d41a69e6ad67fb034fdd3e1c9c3910995b82f964ce710418667b66",
+    "installedExactApkVerified": true,
+    "buildAndFixtureManifest": "artifacts/android-network-probe-vpn-ui/helper-evidence.json",
+    "buildAndFixtureManifestSha256": "2a1bce521d8d0e1e9f01745b456ddd5e4bfe39fc4a8782b53686992f5f4296c3",
+    "sourceFilesUnchanged": true,
+    "sourceFileCount": 9,
+    "nativeVpnProofDerivedFromUi": false,
+    "actionRetries": 0,
+    "activeVpnUiAutomatorCalls": 0,
+    "activeVpnUiAutomatorGuard": "Private driver rejects every XML read from before connect command until confirmed disconnected",
+    "timeoutCleanupInvoked": false
+  },
+  "fixture": {
+    "binaryPath": "artifacts/qa/build11-fixture/qa-protocol-server.exe",
+    "sha256": "79c2886d9178781ea47c053d9c1d2e8d4a2bf36e162bc78099c347898d5d540b",
+    "core": "26.10.10-exvpn.3",
+    "clientCore": "26.10.10-exvpn.4",
+    "topology": "Owned host-loopback fixture through emulator host alias",
+    "adbReverseUsed": false,
+    "hostNetworkChanged": false,
+    "listenerOwnershipVerified": true,
+    "publicIpBoundary": "Client and local fixture share host egress; equal public-IP hashes are expected and do not independently prove tunnelling",
+    "counterScope": "Aggregate fixture traffic from all captured applications, not only the independent QA probe"
+  },
+  "baseline": {
+    "noActiveService": true,
+    "uiDisconnected": true,
+    "semanticReadMs": 65,
+    "directHttps": true,
+    "directVpnTransport": false,
+    "removedPreviouslyRetainedOwnedGroups": 1,
+    "unknownGroupsRejected": true,
+    "emptyBeforeImport": true
+  },
+  "generations": {
+    "sameAppProcessAcrossAllCycles": true,
+    "freshCoreGenerations": 4,
+    "serviceAbsentAfterEveryDisconnect": true,
+    "onePersistentServiceInstanceClaimed": false,
+    "upstreamObjectCountsMeasured": false
+  },
+  "cycles": [
+    {
+      "generation": 1,
+      "transport": "grpc-h2c",
+      "status": "PASS",
+      "startedAtUtc": "2026-10-17T04:01:55.2568127Z",
+      "finishedAtUtc": "2026-10-17T04:02:12.1479179Z",
+      "sameAppProcess": true,
+      "serviceBefore": false,
+      "serviceConnected": true,
+      "servicePidMatchesApp": true,
+      "serviceAfter": false,
+      "connect": {
+        "status": "completed",
+        "oneAction": true,
+        "beforePhase": "disconnected",
+        "afterPhase": "connected",
+        "uiDurationMs": 865,
+        "hostDurationMs": 1130
+      },
+      "probes": {
+        "independentUid": true,
+        "healthHttpStatus": 204,
+        "traceHttpStatus": 200,
+        "canonicalIpv4HashPresent": true,
+        "dnsSuccess": true,
+        "allVpnTransport": true
+      },
+      "fixture": {
+        "establishedBefore": 0,
+        "establishedConnected": 1,
+        "establishedAfter": 0,
+        "postDisconnectPollMs": 19,
+        "aggregateUploadDelta": 36488,
+        "aggregateDownloadDelta": 42440
+      },
+      "disconnect": {
+        "status": "completed",
+        "oneAction": true,
+        "beforePhase": "connected",
+        "afterPhase": "disconnected",
+        "uiDurationMs": 179,
+        "hostDurationMs": 419,
+        "directHttpsRestored": true,
+        "originalPublicIpv4HashRestored": true
+      },
+      "privateCycleProofSha256": "cc9573f83136ead20dcea19f364550aba5175193e9aa6a62d28cdf4d7011bd0b"
+    },
+    {
+      "generation": 2,
+      "transport": "grpc-h2c",
+      "status": "PASS",
+      "startedAtUtc": "2026-10-17T04:02:12.150163Z",
+      "finishedAtUtc": "2026-10-17T04:02:23.0872427Z",
+      "sameAppProcess": true,
+      "serviceBefore": false,
+      "serviceConnected": true,
+      "servicePidMatchesApp": true,
+      "serviceAfter": false,
+      "connect": {
+        "status": "completed",
+        "oneAction": true,
+        "beforePhase": "disconnected",
+        "afterPhase": "connected",
+        "uiDurationMs": 1533,
+        "hostDurationMs": 1737
+      },
+      "probes": {
+        "independentUid": true,
+        "healthHttpStatus": 204,
+        "traceHttpStatus": 200,
+        "canonicalIpv4HashPresent": true,
+        "dnsSuccess": true,
+        "allVpnTransport": true
+      },
+      "fixture": {
+        "establishedBefore": 0,
+        "establishedConnected": 1,
+        "establishedAfter": 0,
+        "postDisconnectPollMs": 6,
+        "aggregateUploadDelta": 16570,
+        "aggregateDownloadDelta": 27392
+      },
+      "disconnect": {
+        "status": "completed",
+        "oneAction": true,
+        "beforePhase": "connected",
+        "afterPhase": "disconnected",
+        "uiDurationMs": 176,
+        "hostDurationMs": 377,
+        "directHttpsRestored": true,
+        "originalPublicIpv4HashRestored": true
+      },
+      "privateCycleProofSha256": "5988d36af8c784a359de1464e642e5759045626393a983c39d785825fba87370"
+    },
+    {
+      "generation": 3,
+      "transport": "xhttp-packet-up",
+      "status": "PASS",
+      "startedAtUtc": "2026-10-17T04:02:23.0881818Z",
+      "finishedAtUtc": "2026-10-17T04:02:34.2763254Z",
+      "sameAppProcess": true,
+      "serviceBefore": false,
+      "serviceConnected": true,
+      "servicePidMatchesApp": true,
+      "serviceAfter": false,
+      "connect": {
+        "status": "completed",
+        "oneAction": true,
+        "beforePhase": "disconnected",
+        "afterPhase": "connected",
+        "uiDurationMs": 1592,
+        "hostDurationMs": 1821
+      },
+      "probes": {
+        "independentUid": true,
+        "healthHttpStatus": 204,
+        "traceHttpStatus": 200,
+        "canonicalIpv4HashPresent": true,
+        "dnsSuccess": true,
+        "allVpnTransport": true
+      },
+      "fixture": {
+        "establishedBefore": 0,
+        "establishedConnected": 7,
+        "establishedAfter": 0,
+        "postDisconnectPollMs": 5,
+        "aggregateUploadDelta": 12862,
+        "aggregateDownloadDelta": 26055
+      },
+      "disconnect": {
+        "status": "completed",
+        "oneAction": true,
+        "beforePhase": "connected",
+        "afterPhase": "disconnected",
+        "uiDurationMs": 155,
+        "hostDurationMs": 390,
+        "directHttpsRestored": true,
+        "originalPublicIpv4HashRestored": true
+      },
+      "privateCycleProofSha256": "39181152b0de97b36bb9e69e6737b448af95d97babdc35b39101dd94a9cc32f5"
+    },
+    {
+      "generation": 4,
+      "transport": "xhttp-packet-up",
+      "status": "PASS",
+      "startedAtUtc": "2026-10-17T04:02:34.2772112Z",
+      "finishedAtUtc": "2026-10-17T04:02:45.6965354Z",
+      "sameAppProcess": true,
+      "serviceBefore": false,
+      "serviceConnected": true,
+      "servicePidMatchesApp": true,
+      "serviceAfter": false,
+      "connect": {
+        "status": "completed",
+        "oneAction": true,
+        "beforePhase": "disconnected",
+        "afterPhase": "connected",
+        "uiDurationMs": 1674,
+        "hostDurationMs": 1885
+      },
+      "probes": {
+        "independentUid": true,
+        "healthHttpStatus": 204,
+        "traceHttpStatus": 200,
+        "canonicalIpv4HashPresent": true,
+        "dnsSuccess": true,
+        "allVpnTransport": true
+      },
+      "fixture": {
+        "establishedBefore": 0,
+        "establishedConnected": 10,
+        "establishedAfter": 0,
+        "postDisconnectPollMs": 6,
+        "aggregateUploadDelta": 19925,
+        "aggregateDownloadDelta": 29168
+      },
+      "disconnect": {
+        "status": "completed",
+        "oneAction": true,
+        "beforePhase": "connected",
+        "afterPhase": "disconnected",
+        "uiDurationMs": 150,
+        "hostDurationMs": 375,
+        "directHttpsRestored": true,
+        "originalPublicIpv4HashRestored": true
+      },
+      "privateCycleProofSha256": "e4065cf2fbc38c42a7cb10010f00e065ade43d0b328a99f8d7c31274200fafcc"
+    }
+  ],
+  "cleanup": {
+    "uiDisconnected": true,
+    "qaGroupsRemoved": true,
+    "settingsUnchanged": true,
+    "serviceAbsent": true,
+    "fixtureStopped": true,
+    "guestShutdown": true,
+    "originalIdentitiesPreserved": true,
+    "inputDeleted": true,
+    "reverseEmpty": true,
+    "watchdogStopped": true,
+    "directNetworkRestored": true,
+    "forcedOwnedGuestShutdown": true
+  },
+  "cleanupNotes": [
+    "All VPN disconnects completed through the ordinary semantic UI button before guest shutdown.",
+    "The emulator console acknowledged shutdown; after 15 seconds the remaining owned guest process was stopped only after PID/path/start verification. This was guest cleanup, not a substitute for VPN Disconnect.",
+    "The synthetic group was deleted after the final screenshot; no unrelated subscriptions or original emulator were changed."
+  ],
+  "limitations": [
+    "IPv4-only emulator underlay and local synthetic gRPC h2c/XHTTP packet-up fixtures.",
+    "DNS success proves resolver availability, not absence of all DNS leaks; IPv6 and full leak matrix remain unverified.",
+    "Peer drain is the observed Established count at exact fixture ports; postDisconnectPollMs is polling time after UI confirmation, not total native teardown latency.",
+    "No physical Android device, full protocol matrix, live external Trojan/Hysteria2, network-loss/lockdown/crash matrix or release signing acceptance.",
+    "UiAutomation Binder calls remain bounded by a host deadline; a future timeout has unknown action outcome and is never automatically retried."
+  ],
+  "evidence": {
+    "privateResultPath": ".private/android-build13-transport-semantics-20261017/Transport/result.json",
+    "privateResultSha256": "adf4422202b152d0054fb2bc2db94fe4e62a10b621680b0c5772e3bdda46285a",
+    "privateDriverFingerprintPath": ".private/android-build13-transport-semantics-20261017/driver-fingerprint.json",
+    "privateDriverFingerprintSha256": "6cad2b5bab7e6f6cf0e30f310d9449c867d82def7932b5b716bfcb544cf39c62",
+    "driverUnchanged": true,
+    "screenshotPrivatePath": ".private/android-build13-transport-semantics-20261017/Transport/lifecycle-final-disconnected.png",
+    "screenshotSha256": "aaa8b2afa9fd3494a3d66075a22e9920a14f71846c4959688f9e32db80a9dea1",
+    "screenshotScope": "Disconnected after fourth cycle, before synthetic-group deletion; visually checked, no endpoints/keys/input visible",
+    "previousIndeterminateTransportPreserved": true,
+    "previousPrivateResultSha256": "a1b105b2a3395ee143874022a1836271eb902b42498c13efe8d916a8cc1de1e0",
+    "screenshotPath": "docs/evidence/android-transport-semantics-build13.png",
+    "coordinatorProof": "artifacts/qa/android-build13-transport-semantics/coordinator-verification.json",
+    "coordinatorProofSha256": "af6d2aebfd4ccbceaee8b541f8440a60ff9d5d77fdb73ded6ea4618fd08402fb",
+    "coordinatorCheckedProofs": 21
+  },
+  "qaImplementationCommit": "2259bb72deb933942871d004436c02208983adcc"
+}

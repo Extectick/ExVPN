@@ -4,7 +4,38 @@
 Дополнение API30: исходники APK [6fe2d3a](https://github.com/Extectick/ExVPN/commit/6fe2d3a288493b57ce9a7aa698a9df087f2fc50e). Это ограниченные проверки
 эмуляторов, **не закрытие E1/E4 и не готовность стабильного выпуска**.
 
-## Локальная сборка +12, 2026-10-17
+## Последние сборки и проверки, 2026-10-17
+
+### Последующая проверка +13: Instrumentation, 2026-10-17
+
+Неизменный APK **0.1.0+13 / exvpn.4** прошёл в отдельном API30 x86_64 эмуляторе
+два gRPC h2c и два XHTTP packet-up цикла в одном процессе приложения. После
+каждого Connect независимый QA UID получил HTTPS 204/200 и DNS с VPN transport;
+после каждого Disconnect служба отсутствовала, Established peers на точных
+fixture-портах стали равны нулю, прямой HTTPS и исходный IP hash восстановились.
+
+Кнопками управлял отдельный Instrumentation APK через свежую семантику обычного
+интерфейса. Production APK не перестраивался и не переустанавливался. В активном
+VPN UIAutomator не вызывался, повторных кликов не было. Четыре цикла заняли
+**50,442 с**, весь сценарий с подготовкой и очисткой — **177 с**. Connect UI
+readback — 865–1674 мс; Disconnect — 150–179 мс. Это время UI-наблюдения,
+а не измерение всей native teardown latency.
+
+Синтетические группы удалены, настройки сохранены, служба/fixture остановлены,
+прямой интернет восстановлен. После штатного Disconnect и всех cleanup gates
+завершение самого эмулятора потребовало остановить его оставшийся процесс по
+проверенным PID/path/start. Пользовательский эмулятор не изменён.
+[Отчёт](evidence/android-transport-semantics-build13.json),
+[снимок после четвёртого Disconnect](evidence/android-transport-semantics-build13.png),
+[QA исходники](https://github.com/Extectick/ExVPN/commit/2259bb7).
+
+Сервер fixture использовал exvpn.3, клиент — exvpn.4; общий внешний выход хоста
+не доказывает туннель равенством IP. DNS success не является полным leak audit.
+Физический Android, IPv6, fault/lockdown и все внешние протоколы остаются открытыми.
+Прежний незавершённый UIAutomator-прогон сохранён в
+[историческом отчёте](evidence/android-runtime-build13.json).
+
+### Сборка и прежняя приёмка +12
 
 Собран development APK **0.1.0+12** для arm64-v8a и x86_64, Android 11+.
 SHA-256 `7adb71bb8eef781cd9893152251c977b767f1cfafd7e1a5e6532bd5d9e141644`;
@@ -50,7 +81,9 @@ Flutter engine и ExVPN core для этой ABI. Runtime API30 x86_64 выше 
 дают отказ. Sealed helper заранее отклоняет single-ABI запрос, поскольку его
 JNI/notice contract включает обе архитектуры. 38 offline packaging fixtures
 PASS, включая dependency-only armv7, x86 и отсутствующий Flutter engine.
-Новая упаковка ещё должна пройти эту проверку; физическое устройство не проверено.
+Готовый +13 APK прошёл эту проверку с обеими точными JNI/Flutter libraries:
+[доказательства упаковки](evidence/android-packaging-build13.json).
+Физическое устройство не проверено.
 
 ## Стенд и сборки
 

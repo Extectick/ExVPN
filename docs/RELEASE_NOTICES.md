@@ -101,6 +101,19 @@ release blockers. Проверены SHA/signature установщика и о�
 [Windows](evidence/windows-packaging-build13.json). Android debug-signed,
 Windows unsigned; это development packages с открытыми release blockers.
 
+Готовый Windows EXE +13 дополнительно проверен независимым извлечением через
+закреплённый 7-Zip 26.04: **265/265 payload-файлов**, обе maintenance-программы
+внутри Uninstall.exe и шесть вхождений NSIS plugins/bitmap совпали по размеру и
+SHA-256. Полный audit занял **6,463 с**, 72 synthetic fixtures прошли.
+[Обезличенное доказательство](evidence/windows-nsis-build13.json).
+Предыдущий отказ из-за исходного пути MUI2 bitmap сохранён; исправлено только
+соответствие имени `modern-wizard.bmp` исходному `win.bmp` закреплённого NSIS.
+EXE и Uninstall.exe не исполнялись, исходный пакет не изменён. Проверка снимает
+только blocker независимого извлечения payload; пять release blockers остаются,
+exit code — 2, SBOM по-прежнему incomplete. Поведение installer instructions,
+установки, upgrade и удаления требует отдельной системной проверки.
+Исходники: [dfe753e](https://github.com/Extectick/ExVPN/commit/dfe753e2efc9ab9be7d4d830255332d3749b8196).
+
 Для Gradle/Maven добавлен отдельный offline [runtime inventory](../scripts/release/ANDROID_RUNTIME_INVENTORY.md).
 Он собирает разрешённый граф и хеши входов без APK/JNI, явно оставляя открытыми
 проверки готового APK и лицензий. Фиксированный Flutter SDK сам по себе не
@@ -121,6 +134,20 @@ snapshot прошёл строгую offline-инвентаризацию за 1
 [Отчёт](evidence/android-runtime-inputs-build13.json). Это диагностическая
 проверка разрешённых входов: новый запуск штатной команды с пустым private cache,
 связь графа с готовым APK, project binaries и лицензионная проверка ещё не закрыты.
+
+Теперь явный режим `-PrepareMetadataFrom` подтверждён новым snapshot и изначально
+пустым private cache: 77 точных POM подготовлены за 19,837 с; отдельный строгий
+offline graph прошёл за 110,423 с, весь workflow — 148,158 с. Совпали 68 Maven,
+6 project-компонентов, 279 связей и хеши 34 AAR / 32 JAR. Проверены неизменность
+исходников и состава snapshot; 129 fixtures и четыре Gradle guard-сценария PASS.
+[Отчёт](evidence/android-runtime-prepared-build13.json),
+[исходники](https://github.com/Extectick/ExVPN/commit/541be0d).
+Первый отказ guard пустого Gradle-проекта сохранён; после исправления проверены
+точные стадии отказа, а не только ненулевой exit code. Этот prepared-input режим
+использует существующий read-only dependency cache и не доказывает холодный
+bootstrap. По умолчанию collector остаётся offline, автоматического сетевого
+fallback нет. APK/JNI не собирались; привязка к APK и остальные release gates
+остаются открытыми.
 
 Эта инвентаризация не является полным SBOM: Gradle/Maven runtime, отдельные NSIS
 компоненты и комплект Windows runtime проверяются дополнительно по фактическому
