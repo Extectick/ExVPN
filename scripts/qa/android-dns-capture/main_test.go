@@ -100,6 +100,176 @@ func capture(t *testing.T, packets ...[]byte) []byte {
 	return output.Bytes()
 }
 
+func withIPv6HopByHop(t *testing.T, packet []byte) []byte {
+	t.Helper()
+	if len(packet) < 54 || binary.BigEndian.Uint16(packet[12:14]) != uint16(layers.EthernetTypeIPv6) {
+		t.Fatal("IPv6 fixture required")
+	}
+	result := append([]byte(nil), packet[:54]...)
+	// Router Alert followed by PadN, as in an MLDv2 report. The checksum of
+	// the upper protocol is unchanged by inserting this extension header.
+	result = append(result, packet[14+6], 0, 5, 2, 0, 0, 1, 0)
+	result = append(result, packet[54:]...)
+	result[14+6] = byte(layers.IPProtocolIPv6HopByHop)
+	binary.BigEndian.PutUint16(result[14+4:14+6], binary.BigEndian.Uint16(packet[14+4:14+6])+8)
+	return result
+}
+
+func mldv2Report(t *testing.T) []byte {
+	t.Helper()
+	ethernet := &layers.Ethernet{SrcMAC: net.HardwareAddr{0, 1, 2, 3, 4, 5}, DstMAC: net.HardwareAddr{0x33, 0x33, 0, 0, 0, 0x16}, EthernetType: layers.EthernetTypeIPv6}
+	ip := &layers.IPv6{Version: 6, NextHeader: layers.IPProtocolICMPv6, HopLimit: 1, SrcIP: net.ParseIP("fe80::1"), DstIP: net.ParseIP("ff02::16")}
+	icmp := &layers.ICMPv6{TypeCode: layers.CreateICMPv6TypeCode(143, 0)}
+	if err := icmp.SetNetworkLayerForChecksum(ip); err != nil {
+		t.Fatal(err)
+	}
+	// Reserved, one address record, CHANGE_TO_EXCLUDE_MODE, no sources.
+	body := make([]byte, 24)
+	body[3], body[4] = 1, 4
+	copy(body[8:], net.ParseIP("ff02::1").To16())
+	buffer := gopacket.NewSerializeBuffer()
+	if err := gopacket.SerializeLayers(buffer, gopacket.SerializeOptions{FixLengths: true, ComputeChecksums: true}, ethernet, ip, icmp, gopacket.Payload(body)); err != nil {
+		t.Fatal(err)
+	}
+	return withIPv6HopByHop(t, buffer.Bytes())
+}
+
+func TestDNSCaptureCompleteIPv6HopByHop(t *testing.T) {
+	config := fixtureConfig()
+	query := dnsPayload(t, queryName(config.Phases[0].Nonce), false)
+	reply := dnsPayload(t, queryName(config.Phases[0].Nonce), true)
+	mld := mldv2Report(t)
+	if len(mld) != 90 {
+		t.Fatal("MLDv2 regression must match the complete 90-byte frame shape")
+	}
+	decoded := gopacket.NewPacket(mld, layers.LayerTypeEthernet, gopacket.DecodeOptions{Lazy: true})
+	_ = decoded.NetworkLayer()
+	if !decoded.Metadata().Truncated {
+		t.Fatal("pinned gopacket Hop-by-Hop length bookkeeping regression changed")
+	}
+	pad1 := append([]byte(nil), mld...)
+	copy(pad1[56:62], []byte{0, 0, 0, 0, 0, 0})
+	padn := append([]byte(nil), mld...)
+	copy(padn[56:62], []byte{1, 4, 0, 0, 0, 0})
+	for _, test := range []struct {
+		name     string
+		packets  [][]byte
+		messages int
+	}{
+		{"mldv2", [][]byte{mld}, 0},
+		{"pad1", [][]byte{pad1}, 0},
+		{"padn", [][]byte{padn}, 0},
+		{"udp_dns", [][]byte{withIPv6HopByHop(t, networkPacket(t, true, false, false, false, query)), withIPv6HopByHop(t, networkPacket(t, true, false, true, false, reply))}, 2},
+		{"tcp_dns", [][]byte{withIPv6HopByHop(t, networkPacket(t, true, true, false, false, framed(query))), withIPv6HopByHop(t, networkPacket(t, true, true, true, false, framed(reply)))}, 2},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			r := analyze(bytes.NewReader(capture(t, test.packets...)), config)
+			if r.Status != "PARSED" || r.IPv6Packets != len(test.packets) || r.DNSMessages != test.messages {
+				t.Fatalf("complete Hop-by-Hop frame was rejected: %s/%s", r.Status, r.Reason)
+			}
+			if test.messages > 0 && (r.PhaseObservation[0].MarkerQueries != 1 || r.PhaseObservation[0].MarkerNXDomain != 1) {
+				t.Fatal("Hop-by-Hop DNS payload was not fully decoded")
+			}
+		})
+	}
+}
+
+func TestDNSCaptureIPv6HopByHopOptionBoundaries(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		options []byte
+		valid   bool
+	}{
+		{"nil", nil, false},
+		{"empty", []byte{}, false},
+		{"single_pad1", []byte{0}, true},
+		{"pad1_after_option", []byte{5, 2, 0, 0, 0, 0}, true},
+		{"empty_padn", []byte{1, 0}, true},
+		{"exact_padn", []byte{1, 4, 0, 0, 0, 0}, true},
+		{"unknown_exact_option", []byte{0x1e, 2, 1, 2}, true},
+		{"missing_option_length", []byte{1}, false},
+		{"missing_option_length_after_pad1", []byte{0, 1}, false},
+		{"missing_option_data", []byte{1, 1}, false},
+		{"crossing_option", []byte{5, 7, 0, 0, 1, 0}, false},
+		{"crossing_padn", []byte{1, 5, 0, 0, 0, 0}, false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if completeIPv6HopByHopOptions(test.options) != test.valid {
+				t.Fatal("Hop-by-Hop option boundary result differs")
+			}
+		})
+	}
+}
+
+func TestDNSCaptureIPv6HopByHopRejectsMalformedAndFragments(t *testing.T) {
+	config := fixtureConfig()
+	valid := mldv2Report(t)
+	destination := func(p []byte, optionLength byte) []byte {
+		extension := []byte{p[54], 0, 1, optionLength, 0, 0, 0, 0}
+		p[54] = byte(layers.IPProtocolIPv6Destination)
+		p = append(append(append([]byte(nil), p[:62]...), extension...), p[62:]...)
+		binary.BigEndian.PutUint16(p[18:20], 44)
+		return p
+	}
+	for _, test := range []struct {
+		name   string
+		mutate func([]byte) []byte
+	}{
+		{"truncated_ip_header", func(p []byte) []byte { return p[:14+39] }},
+		{"truncated_extension", func(p []byte) []byte { return p[:54+7] }},
+		{"truncated_payload", func(p []byte) []byte { return p[:len(p)-1] }},
+		{"ip_length_too_large", func(p []byte) []byte { binary.BigEndian.PutUint16(p[18:20], 37); return p }},
+		{"ip_length_too_small", func(p []byte) []byte { binary.BigEndian.PutUint16(p[18:20], 35); return p }},
+		{"zero_payload_without_jumbo", func(p []byte) []byte { binary.BigEndian.PutUint16(p[18:20], 0); return p }},
+		{"extension_exceeds_payload", func(p []byte) []byte { p[55] = 5; return p }},
+		{"option_exceeds_extension", func(p []byte) []byte { p[57] = 255; return p }},
+		{"option_crosses_extension_within_payload", func(p []byte) []byte { p[57] = 7; return p }},
+		{"padn_crosses_extension_within_payload", func(p []byte) []byte { p[61] = 5; return p }},
+		{"valid_destination_chain_unsupported", func(p []byte) []byte { return destination(p, 4) }},
+		{"destination_option_crosses_extension_within_payload", func(p []byte) []byte { return destination(p, 7) }},
+		{"truncated_udp_after_extension", func(p []byte) []byte {
+			p[54] = byte(layers.IPProtocolUDP)
+			p = p[:62+7]
+			binary.BigEndian.PutUint16(p[18:20], 15)
+			return p
+		}},
+		{"truncated_tcp_after_extension", func(p []byte) []byte {
+			p[54] = byte(layers.IPProtocolTCP)
+			p = p[:62+19]
+			binary.BigEndian.PutUint16(p[18:20], 27)
+			return p
+		}},
+		{"truncated_fragment_after_extension", func(p []byte) []byte {
+			p[54] = byte(layers.IPProtocolIPv6Fragment)
+			p = p[:62+7]
+			binary.BigEndian.PutUint16(p[18:20], 15)
+			return p
+		}},
+		{"fragment_after_extension", func(p []byte) []byte {
+			p[54] = byte(layers.IPProtocolIPv6Fragment)
+			fragment := []byte{byte(layers.IPProtocolICMPv6), 0, 0, 1, 0, 0, 0, 1}
+			p = append(append(append([]byte(nil), p[:62]...), fragment...), p[62:]...)
+			binary.BigEndian.PutUint16(p[18:20], 44)
+			return p
+		}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			r := analyze(bytes.NewReader(capture(t, test.mutate(append([]byte(nil), valid...)))), config)
+			if r.Status != "INDETERMINATE" {
+				t.Fatal("incomplete or fragmented Hop-by-Hop frame was accepted")
+			}
+			if test.name == "fragment_after_extension" && r.Reason != "fragmented_ip_requires_reassembly" {
+				t.Fatalf("fragment detection was bypassed: %s", r.Reason)
+			}
+		})
+	}
+	clipped := capture(t, valid)
+	binary.LittleEndian.PutUint32(clipped[36:40], uint32(len(valid)+1))
+	if r := analyze(bytes.NewReader(clipped), config); r.Reason != "truncated_packet" {
+		t.Fatal("Hop-by-Hop must not bypass PCAP capture/original length validation")
+	}
+}
+
 func TestDNSCaptureIPv4IPv6UDPTCPAndRedaction(t *testing.T) {
 	config := fixtureConfig()
 	name := queryName(config.Phases[0].Nonce)

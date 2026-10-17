@@ -136,7 +136,7 @@ func analyze(reader io.Reader, config configuration) report {
 		// Check network truncation before unrelated application decoders (such
 		// as a TLS record split across TCP segments) can set the same flag.
 		_ = packet.NetworkLayer()
-		if packet.Metadata().Truncated {
+		if packet.Metadata().Truncated && !completeIPv6HopByHop(packet) {
 			return fail("truncated_network_packet")
 		}
 		if packet.Layer(layers.LayerTypeIPv6Fragment) != nil {
@@ -241,6 +241,70 @@ func analyze(reader io.Reader, config configuration) report {
 	// query/egress controls, actual VPN state and phase-specific expectations.
 	r.Status = "PARSED"
 	return r
+}
+
+// Pinned gopacket v1.1.19 subtracts HopByHop.ActualLength from IPv6.Payload
+// before comparing it with the original IPv6.Length, falsely setting Truncated.
+// Accept that one bookkeeping case only when every original byte and decoded
+// boundary agrees. The metadata flag is not cleared; other truncation, jumbo
+// packets, malformed extensions and capture/original length failures remain
+// failures. Additional extension chains are unsupported by this narrow QA
+// exception. Fragment and raw transport validation still run afterwards.
+func completeIPv6HopByHop(packet gopacket.Packet) bool {
+	ip, ok := packet.NetworkLayer().(*layers.IPv6)
+	if !ok || ip.Version != 6 || ip.Length == 0 || ip.NextHeader != layers.IPProtocolIPv6HopByHop || ip.HopByHop == nil {
+		return false
+	}
+	ethernet, ok := packet.LinkLayer().(*layers.Ethernet)
+	if !ok || ethernet.EthernetType != layers.EthernetTypeIPv6 {
+		return false
+	}
+	raw := ethernet.LayerPayload()
+	if len(raw) != 40+int(ip.Length) || len(ip.LayerContents()) != 40 || !bytes.Equal(ip.LayerContents(), raw[:40]) {
+		return false
+	}
+	hop := ip.HopByHop
+	if hop.ActualLength < 8 || hop.ActualLength > int(ip.Length) {
+		return false
+	}
+	switch hop.NextHeader {
+	case layers.IPProtocolTCP, layers.IPProtocolUDP, layers.IPProtocolICMPv6, layers.IPProtocolIPv6Fragment:
+		// A fragment is allowed only as far as the explicit rejection in analyze.
+	default:
+		return false
+	}
+	end := 40 + hop.ActualLength
+	if !completeIPv6HopByHopOptions(raw[42:end]) {
+		return false
+	}
+	return len(hop.LayerContents()) == hop.ActualLength &&
+		bytes.Equal(hop.LayerContents(), raw[40:end]) &&
+		bytes.Equal(hop.LayerPayload(), raw[end:]) &&
+		bytes.Equal(ip.LayerPayload(), raw[end:])
+}
+
+// gopacket v1.1.19 bounds an option against the remaining IPv6 payload, so a
+// malformed TLV can cross the extension boundary into the transport header.
+// Inspect only the extension's own option bytes, including single-byte Pad1.
+func completeIPv6HopByHopOptions(options []byte) bool {
+	if len(options) == 0 {
+		return false
+	}
+	for offset := 0; offset < len(options); {
+		if options[offset] == 0 {
+			offset++
+			continue
+		}
+		if len(options)-offset < 2 {
+			return false
+		}
+		length := 2 + int(options[offset+1])
+		if length > len(options)-offset {
+			return false
+		}
+		offset += length
+	}
+	return true
 }
 
 // The preceding IP/extension decoder owns the original transport bytes. Re-
