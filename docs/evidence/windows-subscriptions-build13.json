@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "version": "0.1.0+13",
+  "scope": "Windows Sandbox E3-008 through actual Flutter UI and Windows current-user DPAPI; QA storage directory only",
+  "installerSha256": "fea39fdfa7e228dec3c9906f27e560912361ffaccd09f9111028a91450c68215",
+  "serviceSha256": "3582d238cf50419fc43c596b539c99a374effe19c99d3382e9aac68ef3626e72",
+  "ordinaryUiSha256": "e7299a563e2b81d41f334ec6d8f612971c18a58f8fd826323036503d1ba66299",
+  "qaUiSha256": "6aea14e34a6852d70ce259a82865f5e19229b342bd693e135b3a1c3e2eab9381",
+  "qaLauncherSha256": "d448f2a4bf19d1944b6e22752a639d62e33a8ab3e0e70088d28c0057eaef2ec8",
+  "bundleManifestSha256": "a0491c838d231d4ff02f20065ef785d7ad72c73be52e730da60080a013c7e4bb",
+  "productSourceFingerprint": "504c05aad982c8e2db1a898fda8cdc835aecd0bc6004039c2670b88fd7d5b2bc",
+  "binaryReuseProofSha256": "98c029c3d0ffecf6d09c2f186cab7494ff6e4a816c4d1152a277a4ba383f7952",
+  "binaryConsumedSourcesUnchanged": true,
+  "repackSeconds": 17.416,
+  "attempts": [
+    {
+      "runId": "0ed8ee72-a5d0-4767-8f1b-0ecc2e3c6760",
+      "passed": false,
+      "stage": "guest setup before UI, owned backup or data creation",
+      "failure": "Exact manifest rejected stale guest-transport-observe.ps1 from a previous RO mapping",
+      "line": "package-common.ps1:114",
+      "cleanupDriverPassed": false,
+      "cleanupLimitation": "Owned cleanup refused because no ownership record existed; this was not evidence of network damage",
+      "readOnlyPostcheckPassed": true,
+      "scmProcessBindingOwnerUnchanged": true,
+      "networkUnchanged": true,
+      "noOwnedDataMutation": true,
+      "inputBundleUnchanged": true
+    },
+    {
+      "runId": "b68df81d-1d3d-4898-b04e-3b6754f63e25",
+      "passed": true,
+      "frameworkPassedBothProcesses": true,
+      "cleanupPassed": true,
+      "startedUtc": "2026-10-17T03:05:48.17954Z",
+      "finishedUtc": "2026-10-17T03:07:20.0126306Z",
+      "coordinatorIntervalSeconds": 91.833,
+      "hostDriverElapsedSeconds": 98.984,
+      "hostDriverTimingScope": "Includes mapping/reservation, guest setup, two processes and cleanup; coordinator interval starts after mapping"
+    }
+  ],
+  "behavior": {
+    "initialConnections": 3,
+    "selectedThirdConnection": true,
+    "partialCandidateConnections": 1,
+    "rejectedEntryIndices": [
+      2,
+      3
+    ],
+    "rejectedCodes": [
+      "unsupportedProtocol",
+      "invalidProfile"
+    ],
+    "declinePreservedListAndSelection": true,
+    "declinePreservedPersistedList": true,
+    "explicitReplacementApplied": true,
+    "twoDistinctProcesses": true,
+    "sameQaExecutable": true,
+    "coldRestoreMatched": true,
+    "ciphertextAndSnapshotUnchangedAcrossRestart": true,
+    "plaintextCanariesAbsent": true,
+    "pendingJournalAbsent": true,
+    "ownedGroupRemovedThroughUi": true,
+    "emptyStatePersisted": true,
+    "safeReviewScreenshot": true
+  },
+  "cleanup": {
+    "passed": true,
+    "qaDataRemoved": true,
+    "previousQaRestored": true,
+    "serviceProcessUnchanged": true,
+    "serviceBindingUnchanged": true,
+    "networkUnchanged": true,
+    "tunnelAbsent": true,
+    "guardArmed": false
+  },
+  "boundaries": [
+    "No VPN object, HTTP or OTA backend in this UI entry point",
+    "Actual DPAPI and journal use a protected per-run QA directory; default AppData path is not tested",
+    "Native IME and physical device behavior are not covered",
+    "Ordinary UI binary is independently packaged; this workflow uses a separate integration-test executable"
+  ],
+  "computerUse": false,
+  "hostNetworkChanged": false,
+  "screenshots": [
+    {
+      "file": "windows-subscriptions-build13-review.png",
+      "sha256": "dcf7b96633fb016abf2c203519f23b333bd8b8d2744b82fc2f62126a6f748ddb",
+      "syntheticDataOnly": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "windows-subscriptions-build13-reopened.png",
+      "sha256": "55c319cc1fb910f41feeb5b203d260cceceb64cbdb9943efebe6ccc2f89ec71e",
+      "syntheticDataOnly": true,
+      "visuallyInspected": true
+    },
+    {
+      "file": "windows-subscriptions-build13-cleaned.png",
+      "sha256": "2da40fe365a2aece56b6132378361a4d277e7e1ae49f00c60a6acfa18f1a6347",
+      "syntheticDataOnly": true,
+      "visuallyInspected": true
+    }
+  ],
+  "rawCoordinatorSha256": "b1afef84cfffa17f4e1626b06f2062938989e80cd7a480430ab82a38781ef7ba",
+  "productSourceCommit": "b2cc272",
+  "qaSourceCommit": "1bdba08",
+  "stagingSourceCommit": "dce29422129d2e6081cf5f759d6d791d6b1f03a4",
+  "candidateSha256": "9c85e14b491a1af3f0d5e194474402cefeebd4c6aae4106459bc003797bd11ff"
+}

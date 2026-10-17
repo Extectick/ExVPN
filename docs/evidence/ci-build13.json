@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.0+13",
+  "runId": 38996842672,
+  "headSha": "36c6094603ee92ae3724db8c7784a4e819d70347",
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/38996842672",
+  "status": "completed",
+  "conclusion": "success",
+  "startedAt": "2026-10-17T02:56:11Z",
+  "updatedAt": "2026-10-17T03:11:13Z",
+  "scope": "Hosted Windows and Android verification and native development builds; excludes runtime VPN/security, production signing and release acceptance",
+  "jobs": [
+    {
+      "name": "Windows",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T02:56:14Z",
+      "completedAt": "2026-10-17T03:07:59Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check out source",
+          "conclusion": "success"
+        },
+        {
+          "name": "Select native build impact (full build on unknown/error)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache pinned SDK archives",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install repository-pinned Flutter and Go",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache verified Go dependencies and compiler outputs",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache locked Pub packages",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare Android SDK packages on the disposable runner",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Analyze, test, and build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload Android development APK",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Upload Windows development bundle",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Cache locked Pub packages",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Cache verified Go dependencies and compiler outputs",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Cache pinned SDK archives",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Check out source",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "Android",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T02:56:14Z",
+      "completedAt": "2026-10-17T03:11:12Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check out source",
+          "conclusion": "success"
+        },
+        {
+          "name": "Select native build impact (full build on unknown/error)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache pinned SDK archives",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install repository-pinned Flutter and Go",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache verified Go dependencies and compiler outputs",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache locked Pub packages",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare Android SDK packages on the disposable runner",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze, test, and build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload Android development APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload Windows development bundle",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Cache locked Pub packages",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Cache verified Go dependencies and compiler outputs",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Cache pinned SDK archives",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Check out source",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "exvpn-windows-debug-36c6094603ee92ae3724db8c7784a4e819d70347",
+      "sizeBytes": 72142631,
+      "digest": "sha256:7ddb0ce2ceb8140952ff437d1ea31fcdb013974db155c40c4ad17478fba600cf",
+      "expired": false
+    },
+    {
+      "name": "exvpn-android-debug-36c6094603ee92ae3724db8c7784a4e819d70347",
+      "sizeBytes": 99839842,
+      "digest": "sha256:95142893cef1520b5e08b00d6fffe0931a0e0787b10fc1cf64d455f66186fc61",
+      "expired": false
+    }
+  ]
+}

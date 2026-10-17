@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.0+13",
+  "scope": "Final APK composition, not device or VPN acceptance",
+  "artifact": {
+    "file": "ExVPN-0.1.0-13-android-development.apk",
+    "bytes": 220450592,
+    "sha256": "7a85645227f045c3a8c5cb875ceb53e2ed3cfbd4d291658c368254868753fccd"
+  },
+  "core": "26.10.10-exvpn.4",
+  "source": {
+    "headBefore": "03b5d6c1a128c4c0a52631c3e2ae768cf59880c1",
+    "headAfter": "36c6094603ee92ae3724db8c7784a4e819d70347",
+    "vcsModifiedBefore": true,
+    "vcsModifiedAfter": false,
+    "apkInputsUnchanged": true,
+    "fingerprintBefore": "46c2150e4d20989733f68ca3c0056ab6e0336cf769cba5b270f3cf99f3238e03",
+    "fingerprintAfter": "46c2150e4d20989733f68ca3c0056ab6e0336cf769cba5b270f3cf99f3238e03",
+    "fileCount": 134,
+    "excludedPaths": [
+      "apps/exvpn/integration_test/**",
+      "apps/exvpn/test/**",
+      "native/windows/**",
+      "native/android/cmd/**",
+      "native/core/cmd/**",
+      "native/**/*_test.go",
+      "scripts/qa/**",
+      "scripts/ci/**",
+      "docs/**",
+      "scripts/release/android-runtime-inventory*",
+      "generated local.properties/.dart_tool/build caches"
+    ],
+    "reason": "Fingerprint covers production APK inputs and the invoked build/notice/JVM validation inputs. Integration tests, Windows implementation, unrelated QA/CI/docs, and the independent runtime inventory collector are excluded because this Android build does not consume them. Generated wrappers are included explicitly; local.properties/build caches are generated from pinned configuration."
+  },
+  "durationMs": 86016,
+  "jvm": {
+    "suites": 1,
+    "tests": 8,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "reportFiles": [
+      {
+        "name": "TEST-ru.exvpn.exvpn.BoundedQrReaderTest.xml",
+        "sha256": "8346fc5aa2a429c27baa67e6623d7d18f0b3664e5c88f5fac0453b6efd7390af",
+        "lastWriteUtc": "2026-10-17T02:56:37.5417952Z"
+      }
+    ],
+    "taskUpToDate": false
+  },
+  "signature": {
+    "verified": true,
+    "debug": true,
+    "certificateSha256": "5d2aaeb2fb744b9d92666f0c926ceb42076610ab41e006a6b0569169d52cc740",
+    "matchesBuild12": true
+  },
+  "abi": [
+    {
+      "abi": "arm64-v8a",
+      "libraries": [
+        "libdartjni.so",
+        "libexvpn.so",
+        "libflutter.so",
+        "libVkLayer_khronos_validation.so"
+      ]
+    },
+    {
+      "abi": "x86_64",
+      "libraries": [
+        "libdartjni.so",
+        "libexvpn.so",
+        "libflutter.so"
+      ]
+    }
+  ],
+  "unexpectedAbisAbsent": true,
+  "nativeAndNoticeZipBindingVerified": true,
+  "packageInputsSha256": "23c5e42f151bd3146d5cc5826789b97b3b9ca23241c076e4782f3daf050cbe79",
+  "byteIdenticalToPrePinCandidate": true,
+  "runtimeInputGraphVerified": false,
+  "releaseReady": false
+}

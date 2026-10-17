@@ -100,7 +100,13 @@
   11 новых state tests и 35 focused Flutter tests PASS, analyze без замечаний;
   проверены отмена/подтверждение, persistence round-trip, HTTP race и 40 причин
   на узком экране с увеличенным шрифтом. Контракт: [ARCHITECTURE.md](ARCHITECTURE.md).
-  Новый native UI runtime ещё не выполнен; пункт открыт.
+  Windows runtime +13 PASS: два процесса реального Flutter UI, current-user
+  DPAPI, отмена сохраняет три записи/выбор, явная замена оставляет одну запись
+  с безопасными причинами 2/3, cold restore и удаление через UI. QA entry point
+  использует отдельный каталог хранения; default AppData/native IME не проверены.
+  [Отчёт](evidence/windows-subscriptions-build13.json),
+  [снимок](evidence/windows-subscriptions-build13-review.png).
+  Android runtime ещё выполняется; пункт открыт.
   Исходники: [b2cc272](https://github.com/Extectick/ExVPN/commit/b2cc272).
 
 ## E4 — Android-клиент
@@ -170,6 +176,13 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   Предварительная локальная проверка 2026-10-17: 92 selector/graph/JUnit fixtures PASS; точный Android helper в чистом source archive прошёл 8/8 за 43,13 с, SDK/dependency caches общие. Независимый review не оставил замечаний. [Доказательство](evidence/ci-build-impact-build11.json), [правила и docs-only граница](CI.md). Исходники [9d035ae](https://github.com/Extectick/ExVPN/commit/9d035aee717604dafa31e0b2818b3767bfac0efe). Этот локальный результат сам по себе не закрывал фактический GitHub QA-only gate.
 
 - [x] **EXVPN-E7-005** — Ускорить локальную проверку и разделить разработку между агентами. Зависимость: E1 toolchain, E7-001. Критерий: одна команда выбирает тесты с учётом зависимостей, параллельно запускает готовые Dart/Flutter/Go runners, сохраняет результаты и не скрывает ошибки/изменения исходников; итоговый полный быстрый прогон проходит после завершения записи агентами. Системная приёмка остаётся отдельной.
+  Повтор +13 после исправления Sandbox staging, 2026-10-17: **127,43 с,
+  10/10 PASS**, source fingerprint совпал, Go result cache отключён. 147 CI
+  selector fixtures, 54 Windows subscription fixtures под PS7/PS5.1; реальные
+  Android/Windows стенды выполнялись отдельными владельцами. Оба Windows QA
+  bundle переупакованы за 17,416 с с проверкой неизменности бинарников.
+  [Отчёт](evidence/fast-validation-build13-qa.json),
+  [исходники](https://github.com/Extectick/ExVPN/commit/dce2942).
   Итог +13, 2026-10-17: **111,93 с, 10/10 PASS**, source fingerprint совпал,
   Go result cache отключён. 448 Dart/Flutter tests, Go/Xray, installer и
   инструментальные проверки прошли; 144 CI selector cases сохраняют полный
@@ -195,6 +208,12 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   Дополнение +10: итоговый `-Full` на [924493a](https://github.com/Extectick/ExVPN/commit/924493a511547bb2b4c93262ab93df82fe127479) — **37,77 с**, девять наборов PASS, fresh Go tests, fingerprint совпал; добавлены 23+41+29 release-tooling fixtures и Windows lifetime/reconnect tests. [Отчёт](evidence/fast-validation-build10.json). Native Windows/Android QA и сборки выполнялись независимыми владельцами; docs-only push больше не отменяет native CI ([84489a2](https://github.com/Extectick/ExVPN/commit/84489a2)). Полная системная приёмка не сокращена.
 
 - [x] **EXVPN-E7-001** — Настроить CI для анализа, тестов и Android/Windows сборок. Зависимость: E0 GitHub, E1 toolchain. Критерий: clean checkout проходит pipeline; secrets не включены в job output; версии и lock-файлы воспроизводимы.
+  CI +13, 2026-10-17: [run 38996842672](https://github.com/Extectick/ExVPN/actions/runs/38996842672)
+  на `36c6094` — **SUCCESS**: Windows 11:45, Android 14:58, tests/build/upload.
+  [Отчёт](evidence/ci-build13.json) сохраняет точный commit и digest двух
+  development artifacts. Локальные пакеты проверены отдельно:
+  [Android](evidence/android-packaging-build13.json),
+  [Windows](evidence/windows-packaging-build13.json). Signing/release gate открыт.
   Прогресс: `.github/workflows/verify.yml`, `scripts/ci/verify.ps1`, `docs/CI.md`; workflow YAML и PowerShell синтаксис проверены, локальный общий прогон подтвердил 113 domain + 25 state + 86 app тестов и чистый анализ. Core tests/vet после новых protocol fixtures пройдены отдельно. Первый run 38878852742 выявил ошибку cold-start Flutter CLI, исправленную в f6cd4c4. Повторный [run 38880672529](https://github.com/Extectick/ExVPN/actions/runs/38880672529) на [f6cd4c4](https://github.com/Extectick/ExVPN/commit/f6cd4c4ed9f42f8ede0f1df772843f3724b6441e) полностью success: Android/Windows checks, builds и выгрузка development artifacts. Последующие изменения требуют собственного run; beta и системные испытания остаются открытыми.
   CI дополнение 2026-10-16: текущие QR/OTA/installer исправления прошли полный Android/Windows [run 38885825613](https://github.com/Extectick/ExVPN/actions/runs/38885825613) на [6fe2d3a](https://github.com/Extectick/ExVPN/commit/6fe2d3a288493b57ce9a7aa698a9df087f2fc50e). Это доказательство E7-001, не подпись или готовность beta.
   CI дополнение 2026-10-17: Android/Windows [run 38961456222](https://github.com/Extectick/ExVPN/actions/runs/38961456222) на [f2c5c5e](https://github.com/Extectick/ExVPN/commit/f2c5c5e795782adbded8b6e30817d58bf3b88a45) завершился success для +9. Последующие изменения release tooling и восстановления сети требуют собственного run.
@@ -218,6 +237,15 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
 - [ ] **EXVPN-E9-003** — Проверить OTA, UI и ограничения iOS; подготовить TestFlight. Зависимость: E9-002. Критерий: устройство, смена сети/фон/ошибки, требования магазина и подписанный TestFlight build; факт отправки не равен одобрению.
 
 ## Журнал доказательств
+
+2026-10-17, частично **E1/E3/E5**, сборка **0.1.0+13/exvpn.4**: Windows upgrade
++12 → +13, E3 UI/DPAPI cold restore и девять transport циклов PASS.
+После каждого Disconnect отсутствуют активные peer/client sockets, TUN/guard;
+маршруты/DNS восстановлены. Финальная проверка installed files/binding/owner PASS.
+[Отчёт](evidence/windows-lifecycle-build13.json),
+[UI](evidence/windows-subscriptions-build13.json). E1, полная ресурсная матрица
+и release signing остаются открытыми; [исходники ядра](https://github.com/Extectick/ExVPN/commit/0493c89),
+[стенд](https://github.com/Extectick/ExVPN/commit/dce2942).
 
 2026-10-17, частично **E1/E3/E4/E5**, сборка **0.1.0+9**: 30/32 профиля,
 Android API30 upgrade/cold restart и настоящий XHTTP HTTPS с отдельным UID

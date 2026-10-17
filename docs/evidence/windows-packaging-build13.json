@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.0+13",
+  "scope": "Final installer SHA/signature and separate staged payload; EXE contents are not independently extracted.",
+  "artifact": {
+    "file": "ExVPN-0.1.0-13-windows-x64-development.exe",
+    "sha256": "fea39fdfa7e228dec3c9906f27e560912361ffaccd09f9111028a91450c68215",
+    "bytes": 34386052
+  },
+  "sourceHead": "48abfe205e4f5dbff3a7be995b9271e544738604",
+  "sourceFingerprint": "504c05aad982c8e2db1a898fda8cdc835aecd0bc6004039c2670b88fd7d5b2bc",
+  "sourceInputFiles": 152,
+  "consumedInputsUnchanged": true,
+  "fullTreeFreezeClaimed": false,
+  "serviceSha256": "3582d238cf50419fc43c596b539c99a374effe19c99d3382e9aac68ef3626e72",
+  "uiSha256": "e7299a563e2b81d41f334ec6d8f612971c18a58f8fd826323036503d1ba66299",
+  "noticeEvidence": {
+    "source": "staged-payload",
+    "fileCount": 222,
+    "inventorySha256": "a70895f51b6649d9473e33e3d180a3cdcf811232374889c2cdc80897aae2f5de",
+    "fileSetSha256": "1feafbab5e44db3b4fb324b0e4df72ffe2ce8883da26cb20f8d15a0044ae07cd",
+    "xraySource": {
+      "present": true,
+      "zipSha256": "60ac841f499df7923b3cacdf39a5836650f8bfd4a94fc995459091fdf99828ae",
+      "linkedModuleSum": "h1:GVK3CNV0df7huIKSKGgF1VCiXIzEdZWv0W7JjeBWeq0=",
+      "actualGoSum": "h1:GVK3CNV0df7huIKSKGgF1VCiXIzEdZWv0W7JjeBWeq0=",
+      "matched": true,
+      "patch": {
+        "upstreamCommit": "701af60772cda123492f86e383e1fdba066614a9",
+        "sha256": "28eb0aa8382da104bacbf133f450eec74be3bd34fe4568d218c253cdce28afc1",
+        "included": true
+      }
+    }
+  },
+  "signature": {
+    "verified": false,
+    "trustedSignerMatched": false,
+    "debug": false,
+    "certificateSha256": []
+  },
+  "findings": [
+    {
+      "code": "dart_flutter_runtime_link_inventory_incomplete",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "development_package",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "license_expressions_and_distribution_obligations_not_fully_reviewed",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "nsis_embedded_payload_not_independently_verified",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "release_signer_not_pinned",
+      "subject": "",
+      "severity": "blocker"
+    },
+    {
+      "code": "windows_signature_not_valid",
+      "subject": "",
+      "severity": "blocker"
+    }
+  ],
+  "releaseReady": false,
+  "originalAuditSha256": "40948f636de31c5be036fb42ced02f396473268a88180cce647374ac6a9224dc"
+}

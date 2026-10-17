@@ -5,6 +5,12 @@ Workflow `.github/workflows/verify.yml` подготовлен для push, pull
 из одного checkout и при необходимости собирают native-пакеты. Первый успешный run и границы его проверки приведены ниже;
 успех сборки не является системной приёмкой VPN.
 
+Полный +13 run [38996842672](https://github.com/Extectick/ExVPN/actions/runs/38996842672)
+для `36c6094` прошёл 2026-10-17: Windows 11:45, Android 14:58. Оба job выполнили
+проверки и native-сборку, выгрузили development artifacts; их digest и статусы
+сохранены в [отчёте](evidence/ci-build13.json). Эти времена относятся к данному
+набору и состоянию кешей, не являются контролируемым benchmark ускорения.
+
 Push, изменяющий только `docs/**`, `design/**`, `README.md`, `AGENTS.md` или
 `CONTRIBUTING.md`, не запускает заново долгие native-сборки и не отменяет уже
 идущий прогон кода. Остальные push запускают оба job. Для pull request фильтра нет:

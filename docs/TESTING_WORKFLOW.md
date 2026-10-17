@@ -17,7 +17,16 @@ Go unit/loopback tests и файловые сценарии установщик
 запускают установленный VPN, службу, TUN, WFP или смену маршрутов/DNS хоста.
 Приватные подписки и действующие VPN-серверы в них не участвуют.
 
-Последний общий прогон +13, 2026-10-17: **10/10 наборов за 111,93 с**, без
+Последний общий прогон +13 после исправления Sandbox-стенда, 2026-10-17:
+**10/10 наборов за 127,43 с**, без Go result cache и изменения исходников.
+Проверены 448 Dart/Flutter tests, Go verify/test/vet, Xray lifecycle и installer;
+147 CI selector cases и 54 Windows subscription fixtures под PS7/PS5.1.
+[Отчёт](evidence/fast-validation-build13-qa.json),
+[исходники](https://github.com/Extectick/ExVPN/commit/dce2942).
+Это полный прогон параллельно с изолированными системными стендами; его время
+не является измеренным коэффициентом ускорения относительно предыдущего.
+
+Предыдущий общий прогон +13, 2026-10-17: **10/10 наборов за 111,93 с**, без
 Go result cache и изменения исходников. Прошли 192 domain, 57 state, 31 updates
 и 168 Flutter tests, Go verify/test/vet, Xray lifecycle, installer и QA fixtures.
 В том числе проверены 144 CI selector cases, 54 быстрых Android inventory cases
@@ -29,6 +38,14 @@ Go result cache и изменения исходников. Прошли 192 dom
 их отдельное изменение не требует native rebuild, все тесты сохраняются.
 Android APK и Windows installer/QA bundles собирались независимыми владельцами;
 общий app build-каталог передавался между ними последовательно.
+
+Windows QA bundles теперь всегда содержат одинаковый набор вспомогательных
+файлов. Это устраняет отказ при смене transport/subscriptions на одном read-only
+Sandbox mapping; точный manifest по-прежнему отклоняет лишние файлы и подмену.
+Оба immutable bundles переупакованы за 17,416 с без Flutter/Go rebuild с проверкой
+исходников и SHA-256 переиспользованных бинарников. Реальный E3-сценарий прошёл
+через два процесса и DPAPI за 98,984 с, включая setup/cleanup; первый отказ
+сохранён в [отчёте](evidence/windows-subscriptions-build13.json).
 
 Предыдущий общий прогон, 2026-10-17: **10/10 наборов за 106,66 с**, все Go tests
 выполнены заново, fingerprint исходников совпал. В общий runner и CI добавлены

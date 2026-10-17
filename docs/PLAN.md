@@ -43,6 +43,15 @@ Encryption и TCP Sudoku; новая подписка импортируется
 отключения восстановилась сеть. [Отчёт](evidence/android-upgrade-build12.json).
 Физическое устройство, активный VPN при upgrade и полная матрица не проверены.
 
+В **+13** добавлено явное подтверждение частичного обновления подписки и
+исправлен воспроизведённый DNS/UDP lifecycle в `exvpn.4`. Windows прошёл upgrade
+с +12 и девять HTTPS/connect/disconnect циклов; отдельный UI-тест подтвердил
+отмену/принятие списка и DPAPI cold restore. Android APK содержит только две
+поддерживаемые ABI с точными JNI/Flutter libraries. Полный CI обеих платформ
+успешен; [Windows runtime](evidence/windows-lifecycle-build13.json),
+[APK](evidence/android-packaging-build13.json), [CI](evidence/ci-build13.json).
+Android runtime +13 и полная E1/release-приёмка ещё не закрыты.
+
 ## 1. Цель и первый выпуск
 
 Создать собственный открытый VPN-клиент ExVPN с общей кодовой базой для Android, Windows, Linux и iOS. Flutter отвечает за интерфейс и общую логику, Xray-core через собственный Go-адаптер — за протоколы; системная VPN-интеграция реализуется отдельно для каждой ОС. libXray изучен как исходный вариант, но не включён в текущую Android/Windows линковку.

@@ -5,6 +5,27 @@ Windows Sandbox и отдельные HTTPS-процессы. Мышь, клав
 не используются. Приложение создаёт настоящее Windows-окно; `tester.tap`
 доставляет события непосредственно в работающий Flutter widget tree.
 
+## +13: повторяемые UI и transport сценарии
+
+Upgrade +12 → +13, отдельный сценарий подписок через два процесса/DPAPI и
+девять gRPC/XHTTP/XHTTP+REALITY connect/disconnect циклов прошли. После последнего
+теста независимо сверены 264 установленных файла, production SCM binding/owner,
+маршруты/DNS, отсутствие TUN/guard и собственных вспомогательных процессов.
+[Transport и upgrade](evidence/windows-lifecycle-build13.json),
+[подписки](evidence/windows-subscriptions-build13.json).
+
+Первый subscription setup выявил оставшийся helper от предыдущего read-only
+mapping. Общий набор файлов для всех режимов исправляет смену сценариев;
+точный manifest по-прежнему отклоняет посторонние файлы. 54 fixtures прошли под
+PS7/PS5.1. Две новые immutable упаковки заняли 17,416 с, бинарники проверены и
+не пересобирались. [Исходники](https://github.com/Extectick/ExVPN/commit/dce2942).
+
+Transport driver выполнил cleanup и остановил свой server fixture. Внешняя
+приватная обвязка после этого повторно проверяла уже остановленный PID и выдала
+ошибку; она сохранена отдельно от успешного coordinator и независимого postcheck.
+Рост памяти/handles измерен, но ограниченность ресурсов на долгом прогоне не
+доказана. Полная IPv6/DNS/fault матрица и подпись остаются отдельными gates.
+
 ## Дополнение 2026-10-17: UI без административных прав
 
 На **+6** тот же протокольный/SCM fault suite успешно выполнен с проверенным

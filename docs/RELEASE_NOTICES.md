@@ -93,6 +93,14 @@ release blockers. Проверены SHA/signature установщика и о�
 
 ## Незакрытая часть release gate
 
+Локальный **+13/exvpn.4** прошёл проверку native/notice binding. В готовом APK
+теперь ровно `arm64-v8a` и `x86_64`, обе с точными `libexvpn.so` и
+`libflutter.so`; лишняя dependency-only ABI исключена. В Windows staged payload
+222 notice/source файла, закреплённый source ZIP совпадает с Go checksum службы.
+[Android](evidence/android-packaging-build13.json),
+[Windows](evidence/windows-packaging-build13.json). Android debug-signed,
+Windows unsigned; это development packages с открытыми release blockers.
+
 Для Gradle/Maven добавлен отдельный offline [runtime inventory](../scripts/release/ANDROID_RUNTIME_INVENTORY.md).
 Он собирает разрешённый граф и хеши входов без APK/JNI, явно оставляя открытыми
 проверки готового APK и лицензий. Фиксированный Flutter SDK сам по себе не
