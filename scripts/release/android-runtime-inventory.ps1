@@ -3,6 +3,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('debug','release')][string]$Variant='debug',
+    [ValidateSet('ordinary','shorebird')][string]$FlutterRuntime='ordinary',
     [string]$Repository=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..')),
     [string]$OutputDirectory='',
     [string]$PrepareMetadataFrom='',
@@ -15,6 +16,7 @@ $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'android-runtime-inventory-preparation.ps1')
 . (Join-Path $PSScriptRoot 'notice-inputs.ps1')
 $Repository=[IO.Path]::GetFullPath($Repository)
+Assert-AndroidInventoryRuntimeRequest $FlutterRuntime $Variant -PrepareMetadata:([bool]$PrepareMetadataFrom)
 $qaRoot=Join-Path $Repository 'artifacts/qa'
 if (!$OutputDirectory) { $OutputDirectory=Join-Path $qaRoot ('android-runtime-inventory-'+[guid]::NewGuid().ToString('N')) }
 $OutputDirectory=[IO.Path]::GetFullPath($OutputDirectory)
@@ -67,22 +69,18 @@ function Assert-InputsUnchanged($Records) {
 try {
     $AndroidSdkPath=Get-ReleaseAndroidSdkPath $AndroidSdkPath
     $app=Join-Path $Repository 'apps/exvpn'
-    $flutter=Join-Path $Repository '.tools/flutter'
-    $pinsPath=Join-Path $Repository 'scripts/bootstrap/toolchain.lock.json'
-    $pins=Get-Content -LiteralPath $pinsPath -Raw | ConvertFrom-Json -AsHashtable
-    [void](Add-SourceInput 'toolchain.lock.json' $pinsPath)
-    $flutterCommit=(& git -C $flutter rev-parse HEAD) -join ''
-    if ($LASTEXITCODE -ne 0 -or $flutterCommit -cne $pins.flutter.revision) { throw 'android_inventory_flutter_revision_mismatch' }
-    $enginePath=Join-Path $flutter 'bin/cache/engine.stamp'
-    $engine=[IO.File]::ReadAllText($enginePath).Trim()
-    if ($engine -cnotmatch '^[a-f0-9]{40}$' -or
-        [IO.File]::ReadAllText((Join-Path $flutter 'bin/internal/engine.version')).Trim() -cne $engine) { throw 'android_inventory_engine_stamp_mismatch' }
+    $runtime=Get-AndroidInventoryFlutterRuntime $Repository $FlutterRuntime $Variant
+    $flutter=$runtime.SdkRoot
+    $flutterCommit=$runtime.Identity.flutterRevision
+    $engine=$runtime.Identity.engineRevision
+    $pinsPath=Join-Path $Repository $runtime.Identity.pin.path
+    [void](Add-SourceInput ([IO.Path]::GetFileName($pinsPath)) $pinsPath)
     foreach ($relative in @('bin/cache/engine.stamp','bin/internal/engine.version','bin/cache/engine.realm')) {
         [void](Add-SourceInput "flutter/$relative" (Join-Path $flutter $relative))
     }
-    if ([IO.File]::ReadAllText((Join-Path $flutter 'bin/cache/engine.realm')).Trim()) { throw 'android_inventory_custom_engine_realm' }
     foreach ($name in @('android-runtime-inventory.ps1','android-runtime-inventory-lib.ps1','android-runtime-inventory.init.gradle',
-        'android-runtime-inventory-preparation.ps1','android-runtime-inventory-metadata.init.gradle','notice-inputs.ps1')) {
+        'android-runtime-inventory-preparation.ps1','android-runtime-inventory-metadata.init.gradle','notice-inputs.ps1',
+        'flutter-runtime-inputs.ps1','artifact-audit-lib.ps1')) {
         [void](Add-SourceInput "collector/$name" (Join-Path $PSScriptRoot $name))
     }
     $wrapperProperties=Join-Path $app 'android/gradle/wrapper/gradle-wrapper.properties'
@@ -114,7 +112,7 @@ try {
         Copy-SourceFile "app/$relative" (Join-Path $app $relative) (Join-Path $appSnapshot $relative)
     }
     $lock=[IO.File]::ReadAllText((Join-Path $app 'pubspec.lock'))
-    $resolved=@(Get-NoticeDartInputs $Repository $lock (Join-Path $app '.dart_tool/package_config.json'))
+    $resolved=@(Get-NoticeDartInputs $Repository $lock (Join-Path $app '.dart_tool/package_config.json') -FlutterSdkRoot $flutter)
     $plugins=Get-Content -LiteralPath (Join-Path $app '.flutter-plugins-dependencies') -Raw | ConvertFrom-Json -AsHashtable
     $pluginNames=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     foreach ($plugin in $plugins.plugins.android) {
@@ -165,7 +163,7 @@ try {
     # Record the explicit relocation outputs separately from original source.
     foreach ($record in $snapshotInputs) { $record.sha256=Get-AndroidInventoryHash $record.file }
     $snapshotInputs.Add([ordered]@{identity='generated/local.properties';file=(Join-Path $android 'local.properties');sha256=Get-AndroidInventoryHash (Join-Path $android 'local.properties')})
-    $selectionSource=Get-AndroidInventorySelectionSource $sourceInputs
+    $selectionSource=Get-AndroidInventorySelectionSource $sourceInputs $FlutterRuntime
     $readOnlyCache=Join-Path $Repository '.tools/cache/gradle/caches'
     $privateHome=Join-Path $OutputDirectory 'gradle-user-home'
     if (Test-Path -LiteralPath $privateHome) { throw 'android_inventory_private_cache_not_empty' }
@@ -200,10 +198,12 @@ try {
         Assert-InputsUnchanged $sourceInputs
         Assert-InputsUnchanged $snapshotInputs
         foreach ($tree in @($sourceTrees)+@($snapshotTrees)) { Assert-AndroidInventoryTreeUnchanged $tree }
+        $currentRuntime=Get-AndroidInventoryFlutterRuntime $Repository $FlutterRuntime $Variant
+        Assert-ReleaseFlutterRuntimeEvidence $currentRuntime.Evidence $runtime.Evidence
     }
     Assert-AllInputsUnchanged
     $baseProcess=@{GradleDirectory=$gradleDirectory;JavaPath=[IO.Path]::GetFullPath($JavaPath);
-        AndroidSdkPath=[IO.Path]::GetFullPath($AndroidSdkPath);PrivateHome=$privateHome;ReadOnlyCache=$readOnlyCache}
+        AndroidSdkPath=[IO.Path]::GetFullPath($AndroidSdkPath);PrivateHome=$privateHome;ReadOnlyCache=$readOnlyCache;FlutterRuntime=$FlutterRuntime}
     if ($PrepareMetadataFrom) {
         $phase='preparation'
         $preparedPath=Join-Path $OutputDirectory 'prepared-poms.json'
@@ -255,7 +255,8 @@ try {
         privateCacheInitiallyEmpty=$true;preparation=$preparationRun;offline=$offlineRun;
         semanticGraphSha256=Get-AndroidInventorySemanticHash $graph;
         dependencyFingerprint=Get-AndroidInventoryFingerprint $dependencyFiles;
-        flutter=[ordered]@{version=$pins.flutter.version;revision=$flutterCommit;engineRevision=$engine};
+        flutter=[ordered]@{version=$runtime.Identity.flutterVersion;revision=$flutterCommit;engineRevision=$engine};
+        runtime=$runtime.Evidence;flutterStorageBaseUrl=Get-AndroidInventoryStorageOrigin $FlutterRuntime;
         plugins=@($pluginInputs);relocations=@($relocations);counts=$counts;graph=$graph;
         elapsedSeconds=[Math]::Round($watch.Elapsed.TotalSeconds,3);observedAtUtc=[DateTimeOffset]::UtcNow.ToString('o');
         limitations=@('Resolved runtime inputs are not an exact linked-code inventory.',

@@ -7,6 +7,32 @@
 pwsh -NoProfile -File scripts/release/android-runtime-inventory.ps1 -Variant debug
 ```
 
+Обычный Flutter остаётся выбором по умолчанию (`-FlutterRuntime ordinary`).
+Для отдельного закреплённого Shorebird SDK есть явный offline-режим:
+
+```powershell
+pwsh -NoProfile -File scripts/release/android-runtime-inventory.ps1 -FlutterRuntime shorebird -Variant release
+```
+
+Общий `Get-ReleaseFlutterRuntime` проверяет выбранные SDK/CLI pins, engine,
+build mode и cached runtime inputs до snapshot и повторно между фазами.
+Исходники Flutter Gradle tooling и SDK plugins берутся из выбранного SDK;
+SDK-записи `package_config.json` должны указывать на него же, иначе сбор
+отклоняется. В графе сохраняются его identity и storage origin. Произвольный
+`FLUTTER_STORAGE_BASE_URL` родительского процесса не наследуется: для ordinary
+действует штатный Google storage, для Shorebird — только
+`https://download.shorebird.dev`. Окружение родителя не меняется.
+
+Shorebird поддерживается только с `-Variant release` и **без**
+`-PrepareMetadataFrom`. Существующий seed и policy подготовки POM относятся
+к ordinary Flutter; это сочетание отвергается до создания output/cache и
+запуска дочернего процесса с кодом
+`android_inventory_shorebird_prepared_metadata_unsupported`.
+Новый metadata policy требует отдельной проверки; автоматического fallback нет.
+Поддержка selector сама по себе не означает успешный сбор фактического
+Shorebird-графа и не связывает его с APK/AAB. Результат остаётся
+`COLLECTED_INCOMPLETE`; release audit и его blockers не изменяются.
+
 Для уже проверенных входов debug +13 есть явный **prepared-input workflow**:
 
 ```powershell

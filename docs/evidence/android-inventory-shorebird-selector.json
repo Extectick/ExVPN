@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "status": "SELECTOR_TOOLING_VALIDATED_INVENTORY_NOT_RUN",
+  "sources": [
+    {
+      "path": "scripts/release/android-runtime-inventory.ps1",
+      "bytes": 21198,
+      "sha256": "297ba67735a78353f86054f8db2843c0b6e32af1a51b109148a091c9894ea117"
+    },
+    {
+      "path": "scripts/release/android-runtime-inventory-preparation.ps1",
+      "bytes": 28789,
+      "sha256": "eff44e458b144c394695a7097c04bfba6f4db166d7f0fd9afc052524f9c6e87a"
+    },
+    {
+      "path": "scripts/release/android-runtime-inventory-test.ps1",
+      "bytes": 42399,
+      "sha256": "952a7b42614dff7f21aad4dd01ed5d3c3b6fe0557f429ae4c5b7efb4b61f04fc"
+    },
+    {
+      "path": "scripts/release/ANDROID_RUNTIME_INVENTORY.md",
+      "bytes": 12563,
+      "sha256": "37fcfa519e7cd5d0ae7a5c1a4875dfc5dd00c22d7eaf56a2b9dddb01530275fd"
+    }
+  ],
+  "inventoryFixtures": {
+    "checks": 157,
+    "resultPath": "V:\\GitProjects\\ExVPN\\artifacts\\qa\\android-runtime-inventory-fixture-fa22cf664d184059b687a6e1110d4e9d\\result.json",
+    "exitCode": 0,
+    "sha256": "aa9d8bb1af7f14f9e84d6b3037ce386630c8206b92613730d61ff4571a2352a4"
+  },
+  "noticeRuntimeFixtures": {
+    "checks": 106,
+    "exitCode": 0,
+    "command": "scripts/release/test-notice-inputs.ps1"
+  },
+  "actualReadOnlyRuntimeSelection": {
+    "elapsedSeconds": 8.266,
+    "ordinaryDebug": "PASS",
+    "parentEnvironmentUnchanged": true,
+    "shorebirdRelease": "PASS"
+  },
+  "parserFiles": 3,
+  "diffCheck": "PASS",
+  "gradleProcesses": 0,
+  "applicationBuilds": 0,
+  "networkCalls": 0,
+  "guestActions": 0,
+  "collectedGraph": false,
+  "apkAabBinding": false,
+  "auditGateChanged": false,
+  "limitations": [
+    "Shorebird preparation remains explicitly unsupported before output/cache/process creation.",
+    "No actual Shorebird dependency graph was collected.",
+    "Existing APK/AAB binding and release blockers remain unchanged."
+  ],
+  "date": "2026-10-17",
+  "sourceState": "working tree; commit pending",
+  "originalProof": "artifacts/qa/android-inventory-runtime-selector-c2c139e7847a41449908785de1e17b4c/proof.json",
+  "originalProofSha256": "43e249d532e754e7569f4e00411ba8704a847ec0d029ef9d3700def6ac51b46e",
+  "rootReview": "Four-file scope inspected; source and fixture hashes verified; no release gate removed."
+}

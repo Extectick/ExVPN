@@ -156,6 +156,17 @@ $selectionA=Get-AndroidInventorySelectionSource $selectionRecords
 $reverse=@($selectionRecords); [Array]::Reverse($reverse)
 Check ($selectionA.sha256 -ceq (Get-AndroidInventorySelectionSource $reverse).sha256)
 RejectCode { Get-AndroidInventorySelectionSource (@($selectionRecords)+@($selectionRecords[0])) } 'android_inventory_selection_source_missing'
+$explicitOrdinary=Get-AndroidInventorySelectionSource $selectionRecords ordinary
+Check ($explicitOrdinary.sha256 -ceq $selectionA.sha256 -and $explicitOrdinary.count -eq $selectionA.count)
+$shorebirdSelection=Clone $selectionRecords
+($shorebirdSelection | Where-Object identity -CEQ 'toolchain.lock.json').identity='shorebird.lock.json'
+$shorebirdFingerprint=Get-AndroidInventorySelectionSource $shorebirdSelection shorebird
+Check ($shorebirdFingerprint.sha256 -cne $selectionA.sha256 -and $shorebirdFingerprint.count -eq $selectionA.count)
+RejectCode { Get-AndroidInventorySelectionSource $selectionRecords shorebird } 'android_inventory_selection_runtime_mismatch'
+RejectCode { Get-AndroidInventorySelectionSource $shorebirdSelection ordinary } 'android_inventory_selection_runtime_mismatch'
+$changedShorebirdPin=Clone $shorebirdSelection
+($changedShorebirdPin | Where-Object identity -CEQ 'shorebird.lock.json').sha256='b'*64
+Check ((Get-AndroidInventorySelectionSource $changedShorebirdPin shorebird).sha256 -cne $shorebirdFingerprint.sha256)
 $seed=@{schema=1;status='PINNED_PREPARED_INPUTS';origin='locally_observed_gradle_inputs';variant='debug';gradleVersion='9.3.1';
     flutterRevision=$flutterRevision;engineRevision=$engine;selectionSource=$source;semanticGraphAlgorithm='exvpn-input-graph-v1';
     semanticGraphSha256=Get-AndroidInventorySemanticHash $preparedGraph;repositoryPolicy='google-mavenCentral-flutter-public-v1';
@@ -246,6 +257,64 @@ RejectCode { New-AndroidInventoryGradleStartInfo @processArgs -Phase preparation
 $networkStart=New-AndroidInventoryGradleStartInfo @processArgs -Phase preparation -AllowMetadataNetwork
 Check (!$networkStart.ArgumentList.Contains('--offline') -and !$networkStart.Environment.ContainsKey('GRADLE_RO_DEP_CACHE'))
 foreach ($key in @('JAVA_OPTS','JDK_JAVA_OPTIONS','GRADLE_OPTS','JAVA_TOOL_OPTIONS','_JAVA_OPTIONS')) { Check (!$offlineStart.Environment.ContainsKey($key)) }
+# Exercise the real selector/helper and collector's refusal path without SDK,
+# Gradle, network or APK operations. Only the existing pinned verifier seam is
+# substituted here; its checkout/engine/CLI checks have their own fixtures.
+Assert-AndroidInventoryRuntimeRequest ordinary debug
+Assert-AndroidInventoryRuntimeRequest ordinary release -PrepareMetadata
+Assert-AndroidInventoryRuntimeRequest shorebird release
+Check $true
+RejectCode { Assert-AndroidInventoryRuntimeRequest shorebird debug } 'android_inventory_shorebird_release_required'
+RejectCode { Assert-AndroidInventoryRuntimeRequest ordinary profile } 'android_inventory_runtime_variant_invalid'
+RejectCode { Assert-AndroidInventoryRuntimeRequest Shorebird release } 'android_inventory_runtime_selector_invalid'
+RejectCode { Assert-AndroidInventoryRuntimeRequest 'https://example.invalid' release } 'android_inventory_runtime_selector_invalid'
+$qaSelectorCalls=[Collections.Generic.List[object]]::new()
+$qaSelectorSdk=Join-Path $root 'synthetic-selected-sdk'
+[IO.Directory]::CreateDirectory((Join-Path $qaSelectorSdk 'bin/cache')) | Out-Null
+[IO.File]::WriteAllText((Join-Path $qaSelectorSdk 'bin/cache/engine.realm'),'')
+& {
+    function Get-ReleaseFlutterRuntime {
+        param($Repository,$Target,$FlutterRuntime,$FlutterBuildMode)
+        $qaSelectorCalls.Add(@{target=$Target;kind=$FlutterRuntime;mode=$FlutterBuildMode})
+        if ($Repository -ceq 'reject-synthetic-pin') { throw 'flutter_runtime_checkout_mismatch' }
+        [pscustomobject]@{SdkRoot=$qaSelectorSdk;Identity=@{kind=$FlutterRuntime;buildMode=$FlutterBuildMode}}
+    }
+    $qaOrdinary=Get-AndroidInventoryFlutterRuntime $root
+    Check ($qaOrdinary.SdkRoot -ceq $qaSelectorSdk -and $qaOrdinary.Identity.kind -ceq 'ordinary' -and $qaSelectorCalls[0].target -ceq 'Android' -and $qaSelectorCalls[0].mode -ceq 'debug')
+    $qaShorebird=Get-AndroidInventoryFlutterRuntime $root shorebird release
+    Check ($qaShorebird.SdkRoot -ceq $qaSelectorSdk -and $qaShorebird.Identity.kind -ceq 'shorebird' -and $qaSelectorCalls[1].target -ceq 'Android' -and $qaSelectorCalls[1].mode -ceq 'release')
+    RejectCode { Get-AndroidInventoryFlutterRuntime $root shorebird debug } 'android_inventory_shorebird_release_required'
+    Check ($qaSelectorCalls.Count -eq 2)
+    RejectCode { Get-AndroidInventoryFlutterRuntime 'reject-synthetic-pin' shorebird release } 'flutter_runtime_checkout_mismatch'
+    Check ($qaSelectorCalls.Count -eq 3) # no fallback to ordinary after pin failure
+    [IO.File]::WriteAllText((Join-Path $qaSelectorSdk 'bin/cache/engine.realm'),'unreviewed-realm')
+    RejectCode { Get-AndroidInventoryFlutterRuntime $root shorebird release } 'android_inventory_custom_engine_realm'
+}
+$qaStoragePresentBefore=[Environment]::GetEnvironmentVariables('Process').Contains('FLUTTER_STORAGE_BASE_URL')
+$qaStorageBefore=[Environment]::GetEnvironmentVariable('FLUTTER_STORAGE_BASE_URL','Process')
+try {
+    [Environment]::SetEnvironmentVariable('FLUTTER_STORAGE_BASE_URL','https://untrusted.invalid','Process')
+    $qaOrdinaryStart=New-AndroidInventoryGradleStartInfo @processArgs -Phase offline
+    Check (!$qaOrdinaryStart.Environment.ContainsKey('FLUTTER_STORAGE_BASE_URL'))
+    $qaShorebirdStart=New-AndroidInventoryGradleStartInfo @processArgs -Phase offline -FlutterRuntime shorebird
+    Check ($qaShorebirdStart.Environment['FLUTTER_STORAGE_BASE_URL'] -ceq 'https://download.shorebird.dev')
+    Check ($qaShorebirdStart.ArgumentList.Contains('--offline') -and $qaShorebirdStart.Environment['GRADLE_RO_DEP_CACHE'] -ceq $processArgs.ReadOnlyCache)
+    Check ([Environment]::GetEnvironmentVariable('FLUTTER_STORAGE_BASE_URL','Process') -ceq 'https://untrusted.invalid')
+    RejectCode { New-AndroidInventoryGradleStartInfo @processArgs -Phase preparation -FlutterRuntime shorebird -AllowMetadataNetwork } 'android_inventory_shorebird_prepared_metadata_unsupported'
+    RejectCode { New-AndroidInventoryGradleStartInfo @processArgs -Phase offline -FlutterRuntime unknown } 'android_inventory_runtime_selector_invalid'
+    Check ([Environment]::GetEnvironmentVariable('FLUTTER_STORAGE_BASE_URL','Process') -ceq 'https://untrusted.invalid')
+    # Invoke the actual collector, not a copied map: rejection must precede even
+    # creation of the requested output leaf or access to the nonexistent seed.
+    $qaRejectedOutput=Join-Path $root 'never-created-output'
+    RejectCode { & (Join-Path $PSScriptRoot 'android-runtime-inventory.ps1') -FlutterRuntime shorebird -Variant release -PrepareMetadataFrom 'missing-seed.json' -OutputDirectory $qaRejectedOutput } 'android_inventory_shorebird_prepared_metadata_unsupported'
+    Check (!(Test-Path -LiteralPath $qaRejectedOutput))
+    Check ([Environment]::GetEnvironmentVariable('FLUTTER_STORAGE_BASE_URL','Process') -ceq 'https://untrusted.invalid')
+} finally {
+    $qaRestoreStorage=if ($qaStoragePresentBefore) { $qaStorageBefore } else { [NullString]::Value }
+    [Environment]::SetEnvironmentVariable('FLUTTER_STORAGE_BASE_URL',$qaRestoreStorage,'Process')
+}
+Check ([Environment]::GetEnvironmentVariables('Process').Contains('FLUTTER_STORAGE_BASE_URL') -eq $qaStoragePresentBefore -and
+    [Environment]::GetEnvironmentVariable('FLUTTER_STORAGE_BASE_URL','Process') -ceq $qaStorageBefore)
 $sleepStart=[Diagnostics.ProcessStartInfo]::new()
 $sleepStart.FileName=(Get-Process -Id $PID).Path
 $sleepStart.UseShellExecute=$false; $sleepStart.CreateNoWindow=$true

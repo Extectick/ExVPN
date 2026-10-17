@@ -2,6 +2,35 @@
 #requires -Version 7.0
 # Prepared inputs are a reviewed local baseline, not publisher authentication.
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot 'flutter-runtime-inputs.ps1')
+
+function Get-AndroidInventoryStorageOrigin([string]$FlutterRuntime='ordinary') {
+    switch -CaseSensitive ($FlutterRuntime) {
+        ordinary { 'https://storage.googleapis.com' }
+        shorebird { 'https://download.shorebird.dev' }
+        default { throw 'android_inventory_runtime_selector_invalid' }
+    }
+}
+
+function Assert-AndroidInventoryRuntimeRequest([string]$FlutterRuntime,[string]$Variant,[switch]$PrepareMetadata) {
+    [void](Get-AndroidInventoryStorageOrigin $FlutterRuntime)
+    if ($Variant -cnotin @('debug','release')) { throw 'android_inventory_runtime_variant_invalid' }
+    if ($FlutterRuntime -ceq 'shorebird') {
+        # The existing prepared-POM policy is ordinary-only. Fail before any
+        # output/cache creation or process; never query the wrong repository.
+        if ($PrepareMetadata) { throw 'android_inventory_shorebird_prepared_metadata_unsupported' }
+        if ($Variant -cne 'release') { throw 'android_inventory_shorebird_release_required' }
+    }
+}
+
+function Get-AndroidInventoryFlutterRuntime([string]$Repository,[string]$FlutterRuntime='ordinary',[string]$Variant='debug') {
+    Assert-AndroidInventoryRuntimeRequest $FlutterRuntime $Variant
+    $runtime=Get-ReleaseFlutterRuntime -Repository $Repository -Target Android -FlutterRuntime $FlutterRuntime -FlutterBuildMode $Variant
+    $realmPath=Join-Path $runtime.SdkRoot 'bin/cache/engine.realm'
+    Assert-AuditNoLinks $realmPath
+    if ([IO.File]::ReadAllText($realmPath).Trim()) { throw 'android_inventory_custom_engine_realm' }
+    $runtime
+}
 
 function ConvertTo-AndroidInventoryCanonicalJson($Value) {
     if ($null -eq $Value) { return 'null' }
@@ -48,14 +77,18 @@ function Get-AndroidInventorySemanticHash($Graph) {
     [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
 }
 
-function Get-AndroidInventorySelectionSource($Records) {
+function Get-AndroidInventorySelectionSource($Records,[string]$FlutterRuntime='ordinary') {
+    [void](Get-AndroidInventoryStorageOrigin $FlutterRuntime)
+    $pinIdentity=if ($FlutterRuntime -ceq 'ordinary') { 'toolchain.lock.json' } else { 'shorebird.lock.json' }
+    $otherPin=if ($FlutterRuntime -ceq 'ordinary') { 'shorebird.lock.json' } else { 'toolchain.lock.json' }
+    if (@($Records | Where-Object identity -CEQ $otherPin).Count) { throw 'android_inventory_selection_runtime_mismatch' }
     # Portable identities from the original source seal; neither relocated
     # absolute paths nor collector implementation bytes are dependency inputs.
     $selected=@($Records | Where-Object {
         $_.identity -cmatch '^(app/android/|plugin/|flutter-gradle/|flutter/)' -or
-        $_.identity -cin @('app/pubspec.yaml','app/pubspec.lock','toolchain.lock.json')
+        $_.identity -cin @('app/pubspec.yaml','app/pubspec.lock',$pinIdentity)
     })
-    foreach ($required in @('app/pubspec.yaml','app/pubspec.lock','toolchain.lock.json',
+    foreach ($required in @('app/pubspec.yaml','app/pubspec.lock',$pinIdentity,
         'flutter/bin/cache/engine.stamp','flutter/bin/internal/engine.version','flutter/bin/cache/engine.realm')) {
         if (@($selected | Where-Object identity -CEQ $required).Count -ne 1) { throw 'android_inventory_selection_source_missing' }
     }
@@ -329,7 +362,9 @@ function Assert-AndroidInventorySeedGraph($Seed,$Graph) {
 function New-AndroidInventoryGradleStartInfo {
     param([ValidateSet('offline','preparation')][string]$Phase,[string]$GradleDirectory,[string]$JavaPath,
         [string]$AndroidSdkPath,[string]$PrivateHome,[string]$ReadOnlyCache,[string]$Project,
-        [string[]]$Arguments,[switch]$AllowMetadataNetwork)
+        [string[]]$Arguments,[switch]$AllowMetadataNetwork,[string]$FlutterRuntime='ordinary')
+    $storageOrigin=Get-AndroidInventoryStorageOrigin $FlutterRuntime
+    if ($Phase -ceq 'preparation' -and $FlutterRuntime -ceq 'shorebird') { throw 'android_inventory_shorebird_prepared_metadata_unsupported' }
     if ($Phase -ceq 'preparation' -and !$AllowMetadataNetwork) { throw 'android_inventory_metadata_network_not_enabled' }
     if ($Arguments -ccontains '--offline' -or $Arguments -ccontains '--refresh-dependencies') { throw 'android_inventory_gradle_arguments_invalid' }
     $info=[Diagnostics.ProcessStartInfo]::new()
@@ -350,6 +385,9 @@ function New-AndroidInventoryGradleStartInfo {
     $info.Environment['ANDROID_HOME']=$AndroidSdkPath
     $info.Environment['ANDROID_SDK_ROOT']=$AndroidSdkPath
     $info.Environment['GRADLE_USER_HOME']=$PrivateHome
+    # Ordinary retains Gradle's standard default after inherited overrides are
+    # removed. Shorebird uses only the reviewed origin, never a caller URL.
+    if ($FlutterRuntime -ceq 'shorebird') { $info.Environment['FLUTTER_STORAGE_BASE_URL']=$storageOrigin }
     if ($Phase -ceq 'offline') { $info.Environment['GRADLE_RO_DEP_CACHE']=$ReadOnlyCache }
     $info
 }
