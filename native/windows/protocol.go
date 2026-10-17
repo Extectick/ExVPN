@@ -20,12 +20,13 @@ func (c Code) Error() string { return string(c) }
 
 // No raw configs, arbitrary commands, paths to a core executable or URLs cross IPC.
 type Request struct {
-	Version    int             `json:"version"`
-	ID         string          `json:"id"`
-	Command    string          `json:"command"`
-	Profile    json.RawMessage `json:"profile,omitempty"`
-	Exclusions []string        `json:"exclusions,omitempty"`
-	Mode       string          `json:"mode,omitempty"`
+	Version            int                       `json:"version"`
+	ID                 string                    `json:"id"`
+	Command            string                    `json:"command"`
+	Profile            json.RawMessage           `json:"profile,omitempty"`
+	Exclusions         []string                  `json:"exclusions,omitempty"`
+	Mode               string                    `json:"mode,omitempty"`
+	ApplicationRouting *ApplicationRoutingPolicy `json:"applicationRouting,omitempty"`
 }
 
 type Capabilities struct {
@@ -47,14 +48,15 @@ type Status struct {
 	ProxyPort       int          `json:"proxyPort"`
 }
 type Response struct {
-	Version    int          `json:"version"`
-	ID         string       `json:"id,omitempty"`
-	OK         bool         `json:"ok"`
-	Code       string       `json:"code"`
-	Status     Status       `json:"status"`
-	Probe      *ProbeResult `json:"probe,omitempty"`
-	Traffic    *Traffic     `json:"traffic,omitempty"`
-	Exclusions []string     `json:"exclusions,omitempty"`
+	Version            int                       `json:"version"`
+	ID                 string                    `json:"id,omitempty"`
+	OK                 bool                      `json:"ok"`
+	Code               string                    `json:"code"`
+	Status             Status                    `json:"status"`
+	Probe              *ProbeResult              `json:"probe,omitempty"`
+	Traffic            *Traffic                  `json:"traffic,omitempty"`
+	Exclusions         []string                  `json:"exclusions,omitempty"`
+	ApplicationRouting *ApplicationRoutingPolicy `json:"applicationRouting,omitempty"`
 }
 type Traffic struct {
 	UploadBytes   int64 `json:"uploadBytes"`
@@ -121,8 +123,11 @@ func DecodeRequest(b []byte) (Request, error) {
 	if hasMode && r.Command != "connect" && r.Command != "reconnect" {
 		return Request{}, Code("ipc_unexpected_payload")
 	}
+	if r.ApplicationRouting != nil && r.Command != "setApplicationRouting" {
+		return Request{}, Code("ipc_unexpected_payload")
+	}
 	switch r.Command {
-	case "status", "stats", "disconnect", "getExclusions":
+	case "status", "stats", "disconnect", "getExclusions", "getApplicationRouting":
 		if len(r.Profile) != 0 || r.Exclusions != nil {
 			return Request{}, Code("ipc_unexpected_payload")
 		}
@@ -132,6 +137,10 @@ func DecodeRequest(b []byte) (Request, error) {
 		}
 		if _, e := (exvpn.RoutingPolicy{WindowsExecutablePaths: r.Exclusions}).Rules("vpn"); e != nil {
 			return Request{}, Code("exclusions_rejected")
+		}
+	case "setApplicationRouting":
+		if len(r.Profile) != 0 || r.Exclusions != nil || r.ApplicationRouting == nil || r.ApplicationRouting.validate() != nil {
+			return Request{}, Code("application_routing_rejected")
 		}
 	case "connect", "reconnect", "validate", "probe":
 		if len(r.Profile) == 0 || len(r.Exclusions) > 128 {

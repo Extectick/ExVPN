@@ -8,6 +8,8 @@
 #include <tlhelp32.h>
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Graphics.Imaging.h>
+#include <winrt/Windows.Storage.Streams.h>
 #include <winrt/base.h>
 
 #include <algorithm>
@@ -16,6 +18,9 @@
 #include <cmath>
 #include <cwchar>
 #include <cwctype>
+#include <cstring>
+#include <map>
+#include <regex>
 #include <set>
 #include <stdexcept>
 #include <vector>
@@ -196,7 +201,8 @@ void Transfer(HANDLE pipe, void* data, DWORD size, bool write,
   }
 }
 JsonObject Request(const std::string& command, const Value* profile,
-                   const List& exclusions, const std::string& mode = "") {
+                   const List& exclusions, const std::string& mode = "",
+                   const Value* application_routing = nullptr) {
   Handle pipe{CreateFileW(
       kPipe, 0x12019b, 0, nullptr, OPEN_EXISTING,
       FILE_FLAG_OVERLAPPED | SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION,
@@ -214,6 +220,8 @@ JsonObject Request(const std::string& command, const Value* profile,
     request.Insert(L"mode", JsonValue::CreateStringValue(winrt::to_hstring(mode)));
   if (command == "setExclusions")
     request.Insert(L"exclusions", Json(Value(exclusions)));
+  if (application_routing)
+    request.Insert(L"applicationRouting", Json(*application_routing));
   std::string body = winrt::to_string(request.Stringify());
   if (body.empty() || body.size() > kMaxFrame) Fail("invalid_native_request");
   uint32_t size = static_cast<uint32_t>(body.size());
@@ -231,7 +239,145 @@ JsonObject Request(const std::string& command, const Value* profile,
     Fail("ipc_invalid_response");
   return parsed;
 }
-Value Applications() {
+std::wstring ApplicationFamilyKey(std::wstring path) {
+  std::replace(path.begin(), path.end(), L'\\', L'/');
+  std::transform(path.begin(), path.end(), path.begin(), ::towlower);
+  const std::wregex discord(
+      LR"(^([a-z]:/users/[^/]+/appdata/local/(discord|discordptb|discordcanary))/app-(0|[1-9][0-9]{0,8})(\.(0|[1-9][0-9]{0,8})){1,3}/(discord|discordptb|discordcanary)\.exe$)");
+  std::wsmatch match;
+  if (std::regex_match(path, match, discord) && match[2].str() == match[6].str())
+    return match[1].str() + L"/" + match[6].str() + L".exe";
+  return path;
+}
+
+std::wstring ApplicationId(const std::wstring& path) {
+  auto normalized = path;
+  std::replace(normalized.begin(), normalized.end(), L'\\', L'/');
+  std::transform(normalized.begin(), normalized.end(), normalized.begin(), ::towlower);
+  const auto family = ApplicationFamilyKey(path);
+  return family == normalized ? path : family;
+}
+
+bool RealApplicationPath(const std::wstring& path);
+
+std::wstring FamilyIconImage(const std::wstring& id) {
+  const auto key = ApplicationFamilyKey(id);
+  const std::wregex anchor(LR"(^([a-z]:/users/[^/]+/appdata/local/(discord|discordptb|discordcanary))/(discord|discordptb|discordcanary)\.exe$)");
+  std::wsmatch match;
+  if (!std::regex_match(key, match, anchor) || match[2].str() != match[3].str()) return id;
+  const std::wregex version(LR"(^app-(0|[1-9][0-9]{0,8})(\.(0|[1-9][0-9]{0,8})){1,3}$)");
+  const auto root = match[1].str();
+  WIN32_FIND_DATAW entry{};
+  HANDLE search = FindFirstFileW((root + L"/app-*").c_str(), &entry);
+  if (search == INVALID_HANDLE_VALUE) return L"";
+  std::wstring found;
+  std::vector<unsigned long> best;
+  size_t count = 0;
+  do {
+    if (++count > 512) { found.clear(); break; }
+    const std::wstring name(entry.cFileName);
+    if (!(entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ||
+        (entry.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) || !std::regex_match(name, version)) continue;
+    const auto image = root + L"/" + name + L"/" + match[3].str() + L".exe";
+    if (!RealApplicationPath(image)) continue;
+    std::vector<unsigned long> numbers(4, 0);
+    size_t start = 4;
+    for (size_t i = 0; i < 4 && start < name.size(); ++i) {
+      const auto end = name.find(L'.', start);
+      numbers[i] = std::stoul(name.substr(start, end - start));
+      if (end == std::wstring::npos) break;
+      start = end + 1;
+    }
+    if (found.empty() || best < numbers) { found = image; best = numbers; }
+  } while (FindNextFileW(search, &entry));
+  FindClose(search);
+  return found;
+}
+
+bool RealApplicationPath(const std::wstring& path) {
+  if (path.size() < 7 || path.size() > 1024 || path[1] != L':' ||
+      path.find(L"/../") != std::wstring::npos || path.find(L"/./") != std::wstring::npos)
+    return false;
+  for (size_t at = 3; at <= path.size(); ++at) {
+    if (at != path.size() && path[at] != L'/' && path[at] != L'\\') continue;
+    const auto attributes = GetFileAttributesW(path.substr(0, at).c_str());
+    if (attributes == INVALID_FILE_ATTRIBUTES || (attributes & FILE_ATTRIBUTE_REPARSE_POINT))
+      return false;
+  }
+  Handle file{CreateFileW(path.c_str(), FILE_READ_ATTRIBUTES,
+                        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                        nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr)};
+  if (file.value == INVALID_HANDLE_VALUE) return false;
+  std::array<wchar_t, 32768> final_path{};
+  const auto size = GetFinalPathNameByHandleW(file.value, final_path.data(),
+                                             static_cast<DWORD>(final_path.size()), 0);
+  if (!size || size >= final_path.size()) return false;
+  std::wstring resolved(final_path.data(), size);
+  if (resolved.rfind(L"\\\\?\\", 0) == 0) resolved.erase(0, 4);
+  std::wstring expected = path;
+  std::replace(expected.begin(), expected.end(), L'/', L'\\');
+  return _wcsicmp(expected.c_str(), resolved.c_str()) == 0;
+}
+
+std::vector<uint8_t> RasterApplicationIcon(HICON icon, bool white) {
+  BITMAPINFO bitmap{};
+  bitmap.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+  bitmap.bmiHeader.biWidth = 64;
+  bitmap.bmiHeader.biHeight = -64;
+  bitmap.bmiHeader.biPlanes = 1;
+  bitmap.bmiHeader.biBitCount = 32;
+  bitmap.bmiHeader.biCompression = BI_RGB;
+  HDC dc = CreateCompatibleDC(nullptr);
+  if (!dc) return {};
+  void* pixels = nullptr;
+  HBITMAP dib = CreateDIBSection(dc, &bitmap, DIB_RGB_COLORS, &pixels, nullptr, 0);
+  if (!dib || !pixels) { if (dib) DeleteObject(dib); DeleteDC(dc); return {}; }
+  auto previous = SelectObject(dc, dib);
+  std::memset(pixels, white ? 255 : 0, 64 * 64 * 4);
+  const bool drawn = DrawIconEx(dc, 0, 0, icon, 64, 64, 0, nullptr, DI_NORMAL) != FALSE;
+  GdiFlush();
+  std::vector<uint8_t> result;
+  if (drawn) result.assign(static_cast<uint8_t*>(pixels), static_cast<uint8_t*>(pixels) + 64 * 64 * 4);
+  SelectObject(dc, previous);
+  DeleteObject(dib);
+  DeleteDC(dc);
+  return result;
+}
+
+Value ApplicationIcon(const std::wstring& path) {
+  if (!RealApplicationPath(path)) return Value();
+  HICON icon = nullptr;
+  if (FAILED(SHDefExtractIconW(path.c_str(), 0, 0, &icon, nullptr, 64)) || !icon)
+    return Value();
+  auto black = RasterApplicationIcon(icon, false);
+  auto white = RasterApplicationIcon(icon, true);
+  DestroyIcon(icon);
+  if (black.size() != 64 * 64 * 4 || white.size() != black.size()) return Value();
+  // Reconstruct alpha from two backgrounds, including legacy icons without an
+  // alpha channel. Pixels remain premultiplied BGRA for the system PNG encoder.
+  for (size_t i = 0; i < black.size(); i += 4) {
+    int delta = 0;
+    for (size_t c = 0; c < 3; ++c)
+      delta = std::max(delta, static_cast<int>(white[i + c]) - static_cast<int>(black[i + c]));
+    black[i + 3] = static_cast<uint8_t>(255 - delta);
+  }
+  using namespace winrt::Windows::Graphics::Imaging;
+  using namespace winrt::Windows::Storage::Streams;
+  InMemoryRandomAccessStream stream;
+  auto encoder = BitmapEncoder::CreateAsync(BitmapEncoder::PngEncoderId(), stream).get();
+  encoder.SetPixelData(BitmapPixelFormat::Bgra8, BitmapAlphaMode::Premultiplied,
+                       64, 64, 96, 96, black);
+  encoder.FlushAsync().get();
+  if (!stream.Size() || stream.Size() > 64 * 1024) return Value();
+  DataReader reader(stream.GetInputStreamAt(0));
+  const auto size = static_cast<uint32_t>(stream.Size());
+  if (reader.LoadAsync(size).get() != size) return Value();
+  std::vector<uint8_t> png(size);
+  reader.ReadBytes(png);
+  return Value(png);
+}
+
+Value Applications(std::map<std::string, std::wstring>& images) {
   Handle snapshot{CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)};
   if (snapshot.value == INVALID_HANDLE_VALUE) Fail("applications_unavailable");
   PROCESSENTRY32W entry{};
@@ -247,11 +393,13 @@ Value Applications() {
     try {
       auto path = ProcessPath(p.value);
       std::replace(path.begin(), path.end(), L'\\', L'/');
-      auto lower = path;
-      std::transform(lower.begin(), lower.end(), lower.begin(), ::towlower);
+      if (!RealApplicationPath(path)) continue;
+      auto lower = ApplicationFamilyKey(path);
       if (!seen.insert(lower).second) continue;
+      const auto id = ApplicationId(path);
+      images[winrt::to_string(id)] = path;
       list.emplace_back(Map{
-          {Value("id"), Value(winrt::to_string(path))},
+          {Value("id"), Value(winrt::to_string(id))},
           {Value("displayName"), Value(winrt::to_string(entry.szExeFile))}});
     } catch (...) {
     }
@@ -327,6 +475,7 @@ void VpnBridge::Enqueue(Job job) {
 void VpnBridge::Work() {
   winrt::init_apartment();
   List exclusions;
+  std::map<std::string, std::wstring> application_images;
   SystemProxy system_proxy(CreateWindowsProxyBackend());
   std::string last_mode = "vpn";
   bool proxy_supported = false;
@@ -354,9 +503,53 @@ void VpnBridge::Work() {
         completion.value = Value(winrt::to_string(
             response.GetNamedObject(L"status").GetNamedString(L"coreVersion")));
       } else if (job.method == "listApplications") {
-        completion.value = Applications();
+        completion.value = Applications(application_images);
+      } else if (job.method == "getApplicationIcon") {
+        const auto* arguments = std::get_if<Map>(&job.arguments);
+        const auto* id = std::get_if<std::string>(&Field(job.arguments, "application"));
+        if (!arguments || arguments->size() != 1 || !id || id->size() > 1024)
+          Fail("application_icon_unavailable");
+        const auto image = application_images.find(*id);
+        if (image == application_images.end()) completion.value = Value();
+        else {
+          try { completion.value = ApplicationIcon(image->second.empty()
+              ? FamilyIconImage(winrt::to_hstring(*id).c_str()) : image->second); }
+          catch (...) { completion.value = Value(); }
+        }
       } else if (job.method == "openSystemProtectionSettings") {
         Fail("system_protection_settings_unsupported");
+      } else if (job.method == "setApplicationRouting") {
+        const auto* arguments = std::get_if<Map>(&job.arguments);
+        const auto* mode = std::get_if<std::string>(&Field(job.arguments, "mode"));
+        const auto* applications = std::get_if<List>(&Field(job.arguments, "applications"));
+        if (!arguments || arguments->size() != 2 || !mode ||
+            (*mode != "disabled" && *mode != "exclude" && *mode != "include") ||
+            !applications || applications->size() > 128)
+          Fail("application_routing_rejected");
+        for (const auto& app : *applications) {
+          const auto* path = std::get_if<std::string>(&app);
+          if (!path || path->size() < 7 || path->size() > 1024)
+            Fail("application_routing_rejected");
+        }
+        auto response = Request("setApplicationRouting", nullptr, {}, "", &job.arguments);
+        if (!response.GetNamedBoolean(L"ok"))
+          throw std::runtime_error(winrt::to_string(response.GetNamedString(L"code")));
+      } else if (job.method == "getApplicationRouting") {
+        auto response = Request("getApplicationRouting", nullptr, {});
+        if (!response.GetNamedBoolean(L"ok"))
+          throw std::runtime_error(winrt::to_string(response.GetNamedString(L"code")));
+        const auto routing = response.GetNamedObject(L"applicationRouting");
+        const auto mode = winrt::to_string(routing.GetNamedString(L"mode"));
+        const auto applications = routing.GetNamedArray(L"applications");
+        if ((mode != "disabled" && mode != "exclude" && mode != "include") || applications.Size() > 128)
+          Fail("ipc_invalid_response");
+        List ids;
+        for (const auto& id : applications) {
+          const auto value = winrt::to_string(id.GetString());
+          ids.emplace_back(value);
+          application_images.try_emplace(value, L"");
+        }
+        completion.value = Value(Map{{Value("mode"), Value(mode)}, {Value("applications"), Value(ids)}});
       } else if (job.method == "setExclusions") {
         const auto& value = Field(job.arguments, "applications");
         const auto* applications = std::get_if<List>(&value);

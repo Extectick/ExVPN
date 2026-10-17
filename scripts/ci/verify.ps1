@@ -103,6 +103,10 @@ foreach ($powershell in @(
         '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
         (Join-Path $repository 'scripts/qa/test-teardown-qa.ps1')
     )
+    Invoke-Checked $powershell @(
+        '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
+        (Join-Path $repository 'scripts/qa/test-routing-modes-evidence.ps1')
+    )
 }
 Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
     '-NoProfile', '-NonInteractive', '-File',

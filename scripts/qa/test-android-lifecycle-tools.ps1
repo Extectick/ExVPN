@@ -71,6 +71,17 @@ $checks++
 $observe=$uiGood.Replace('command=connect','command=observe').Replace('status=completed','status=observed').Replace('beforePhase=disconnected','beforePhase=connected').Replace('actionAttempted=true','actionAttempted=false').Replace('actionAccepted=true','actionAccepted=false')
 $observed=ConvertFrom-AndroidLifecycleVpnUi -Output $observe -RunId $uiRun -Command observe
 if ($observed.actionAttempted) { throw 'qa_ui_observe_clicked' }; $checks++
+$cancel=$uiGood.Replace('command=connect','command=cancel').Replace('beforePhase=disconnected','beforePhase=connecting').Replace('afterPhase=connected','afterPhase=disconnected')
+foreach($phase in @('connecting','requesting_permission')) {
+    $cancelResult=ConvertFrom-AndroidLifecycleVpnUi -Output ($cancel.Replace('beforePhase=connecting',"beforePhase=$phase")) -RunId $uiRun -Command cancel
+    if($cancelResult.afterPhase -cne 'disconnected' -or !$cancelResult.actionAccepted) { throw 'qa_ui_cancel_completion_failed' }; $checks++
+}
+foreach($badPhase in @('connected','disconnected','blocked','reconnecting','error','unknown')) {
+    Assert-QaReject { ConvertFrom-AndroidLifecycleVpnUi -Output ($cancel.Replace('beforePhase=connecting',"beforePhase=$badPhase")) -RunId $uiRun -Command cancel }
+}
+Assert-QaReject { ConvertFrom-AndroidLifecycleVpnUi -Output $cancel.Replace('actionAccepted=true','actionAccepted=false') -RunId $uiRun -Command cancel }
+Assert-QaReject { ConvertFrom-AndroidLifecycleVpnUi -Output $cancel.Replace('afterPhase=disconnected','afterPhase=connected') -RunId $uiRun -Command cancel }
+Assert-QaReject { ConvertFrom-AndroidLifecycleVpnUi -Output $cancel -RunId $uiRun -Command disconnect }
 foreach ($replacement in @(
     @('status=completed','status=observed'), @('status=completed','status=precondition_failed'),
     @('afterPhase=connected','afterPhase=disconnected'), @('beforePhase=disconnected','beforePhase=connected'),

@@ -5,14 +5,16 @@ import android.os.Handler
 import android.os.Looper
 import io.flutter.plugin.common.EventChannel
 
-internal data class ConnectRequest(val profile: String, val profileId: String, val packages: Set<String>)
+internal data class ConnectRequest(val profile: String, val profileId: String, val packages: Set<String>,
+    val routingMode: String = if (packages.isEmpty()) "disabled" else "exclude")
 
 /** Process-local command handoff: credentials never go into intents or logs. */
 internal object VpnRuntime {
     private val main = Handler(Looper.getMainLooper())
     @Volatile var service: ExVpnService? = null
     @Volatile var pending: ConnectRequest? = null
-    @Volatile var exclusions: Set<String> = emptySet()
+    @Volatile var applicationRouting = ApplicationRoutingPolicy.legacy(emptySet())
+    val exclusions: Set<String> get() = if (applicationRouting.mode == "exclude") applicationRouting.applications else emptySet()
     private var policyLoaded = false
     @Volatile var state: Map<String, Any> = mapOf("phase" to "disconnected", "processCrashProtection" to false)
     var stateSink: EventChannel.EventSink? = null
@@ -20,15 +22,18 @@ internal object VpnRuntime {
 
     @Synchronized fun ensurePolicy(context: Context) {
         if (policyLoaded) return
-        exclusions = VpnPersistence.loadPolicy(context)
+        applicationRouting = VpnPersistence.loadApplicationRouting(context)
         policyLoaded = true
     }
     @Synchronized fun savePolicy(context: Context, packages: Set<String>) {
+        saveApplicationRouting(context, ApplicationRoutingPolicy.legacy(packages))
+    }
+    @Synchronized fun saveApplicationRouting(context: Context, policy: ApplicationRoutingPolicy) {
         // Settings may open after process death but before Always-on restarts
         // the service. Never leave a dormant request with an older direct policy.
         VpnPersistence.clearResume(context)
-        VpnPersistence.savePolicy(context, packages)
-        exclusions = packages.toSet()
+        VpnPersistence.saveApplicationRouting(context, policy)
+        applicationRouting = policy.copy(applications = policy.applications.toSet())
         policyLoaded = true
     }
 

@@ -22,11 +22,34 @@ type object = map[string]any
 type RoutingPolicy struct {
 	WindowsExecutablePaths []string
 	AndroidUIDs            []int
+	Mode                   string
+}
+
+const RoutingDisabled = "disabled"
+const RoutingExclude = "exclude"
+const RoutingInclude = "include"
+const ApplicationPolicyTag = "application-policy"
+
+func RoutingMode(mode string, selected bool) (string, error) {
+	if mode == "" {
+		if selected {
+			return RoutingExclude, nil
+		}
+		return RoutingDisabled, nil
+	}
+	if mode != RoutingDisabled && mode != RoutingExclude && mode != RoutingInclude {
+		return "", CodeError("policy_invalid_mode")
+	}
+	return mode, nil
 }
 
 var windowsPath = regexp.MustCompile(`^[A-Za-z]:/[^:*?"<>|]+\.exe$`)
 
 func (p RoutingPolicy) Rules(inbound string) ([]object, error) {
+	mode, err := RoutingMode(p.Mode, len(p.WindowsExecutablePaths)+len(p.AndroidUIDs) != 0)
+	if err != nil {
+		return nil, err
+	}
 	if inbound != "probe" && inbound != "vpn" {
 		return nil, CodeError("policy_invalid_inbound")
 	}
@@ -51,7 +74,11 @@ func (p RoutingPolicy) Rules(inbound string) ([]object, error) {
 		{"type": "field", "inboundTag": []string{"dns-query"}, "outboundTag": "proxy"},
 		{"type": "field", "inboundTag": []string{inbound}, "port": "53", "outboundTag": "dns-out"},
 	}
-	if len(processes) > 0 {
+	if mode == RoutingInclude {
+		// Inversion of an upstream process matcher would also invert unknown
+		// ownership. Only a platform's owned dispatcher may grant direct access.
+		rules = append(rules, object{"type": "field", "inboundTag": []string{inbound}, "network": "tcp,udp", "outboundTag": ApplicationPolicyTag})
+	} else if mode == RoutingExclude && len(processes) > 0 {
 		rules = append(rules, object{"type": "field", "inboundTag": []string{inbound}, "process": processes, "outboundTag": "direct-excluded"})
 	}
 	rules = append(rules, object{"type": "field", "inboundTag": []string{inbound}, "network": "tcp,udp", "outboundTag": "proxy"})

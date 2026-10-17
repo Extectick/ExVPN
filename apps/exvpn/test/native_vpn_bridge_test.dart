@@ -275,4 +275,220 @@ void main() {
       );
     }
   });
+
+  group('application routing and icons', () {
+    test(
+      'typed policy retains disabled selection and sorts only outgoing IDs',
+      () async {
+        final calls = <MethodCall>[];
+        messenger.setMockMethodCallHandler(channel, (call) async {
+          calls.add(call);
+          if (call.method == 'getApplicationRouting') {
+            return {
+              'mode': 'disabled',
+              'applications': ['app.saved'],
+            };
+          }
+          return null;
+        });
+        final bridge = NativeVpnBridge(methods: channel);
+        final current = await bridge.getApplicationRouting();
+        expect(current.mode, ApplicationRoutingMode.disabled);
+        expect(current.applicationIds, {'app.saved'});
+        await bridge.setApplicationRouting(
+          ApplicationRoutingPolicy(
+            mode: ApplicationRoutingMode.include,
+            applicationIds: {'app.z', 'app.a'},
+          ),
+        );
+        expect(calls.last.method, 'setApplicationRouting');
+        expect(calls.last.arguments, {
+          'mode': 'include',
+          'applications': ['app.a', 'app.z'],
+        });
+        expect(calls.where((c) => c.method == 'setExclusions'), isEmpty);
+      },
+    );
+
+    test(
+      'old native fallback rejects include without changing exclusions',
+      () async {
+        final calls = <MethodCall>[];
+        messenger.setMockMethodCallHandler(channel, (call) async {
+          calls.add(call);
+          if (call.method == 'getApplicationRouting' ||
+              call.method == 'setApplicationRouting') {
+            throw PlatformException(
+              code: 'native_method_unsupported',
+              message: 'private path',
+            );
+          }
+          return call.method == 'getExclusions' ? ['app.old'] : null;
+        });
+        final bridge = NativeVpnBridge(methods: channel);
+        expect(
+          (await bridge.getApplicationRouting()).mode,
+          ApplicationRoutingMode.exclude,
+        );
+        await expectLater(
+          bridge.setApplicationRouting(
+            ApplicationRoutingPolicy(
+              mode: ApplicationRoutingMode.include,
+              applicationIds: {'app.new'},
+            ),
+          ),
+          throwsA(
+            isA<VpnFailure>().having(
+              (e) => e.code,
+              'code',
+              'application_routing_unsupported',
+            ),
+          ),
+        );
+        expect(calls.where((c) => c.method == 'setExclusions'), isEmpty);
+        await bridge.setApplicationRouting(
+          ApplicationRoutingPolicy(
+            mode: ApplicationRoutingMode.disabled,
+            applicationIds: {'app.remembered'},
+          ),
+        );
+        expect(calls.last.method, 'setExclusions');
+        expect(calls.last.arguments, {'applications': <String>[]});
+        await bridge.setApplicationRouting(
+          ApplicationRoutingPolicy(
+            mode: ApplicationRoutingMode.exclude,
+            applicationIds: {'app.new'},
+          ),
+        );
+        expect(calls.last.arguments, {
+          'applications': ['app.new'],
+        });
+      },
+    );
+
+    test(
+      'malformed modern policy never silently falls back to exclusions',
+      () async {
+        for (final raw in [
+          null,
+          {'mode': null, 'applications': <String>[]},
+          {'mode': 'all', 'applications': <String>[]},
+          {'mode': 'include', 'applications': null},
+          {
+            'mode': 'include',
+            'applications': [1],
+          },
+          {
+            'mode': 'include',
+            'applications': ['app.same', 'app.same'],
+          },
+          {
+            'mode': 'include',
+            'applications': ['app\nunsafe'],
+          },
+          {'mode': 'include', 'applications': <String>[], 'extra': true},
+        ]) {
+          final calls = <String>[];
+          messenger.setMockMethodCallHandler(channel, (call) async {
+            calls.add(call.method);
+            return raw;
+          });
+          await expectLater(
+            NativeVpnBridge(methods: channel).getApplicationRouting(),
+            throwsA(
+              isA<VpnFailure>().having(
+                (e) => e.code,
+                'code',
+                'invalid_native_response',
+              ),
+            ),
+          );
+          expect(calls, ['getApplicationRouting']);
+        }
+        var calls = 0;
+        messenger.setMockMethodCallHandler(channel, (_) async {
+          calls++;
+          return null;
+        });
+        await expectLater(
+          NativeVpnBridge(methods: channel).setApplicationRouting(
+            ApplicationRoutingPolicy(
+              mode: ApplicationRoutingMode.include,
+              applicationIds: {for (var i = 0; i < 129; i++) 'app.$i'},
+            ),
+          ),
+          throwsA(isA<VpnFailure>()),
+        );
+        expect(calls, 0);
+      },
+    );
+
+    test('icons are optional, bounded PNG64 payloads with no caller paths in errors', () async {
+      final bytes = Uint8List(33);
+      bytes.setRange(0, 16, [
+        137,
+        80,
+        78,
+        71,
+        13,
+        10,
+        26,
+        10,
+        0,
+        0,
+        0,
+        13,
+        73,
+        72,
+        68,
+        82,
+      ]);
+      ByteData.sublistView(bytes)
+        ..setUint32(16, 64)
+        ..setUint32(20, 64);
+      Object? result = bytes;
+      final calls = <MethodCall>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        return result;
+      });
+      final bridge = NativeVpnBridge(methods: channel);
+      final icon = await bridge.getApplicationIcon('app.example');
+      expect(icon, bytes);
+      expect(identical(icon, bytes), isFalse);
+      expect(calls.single.arguments, {'application': 'app.example'});
+      for (final invalid in [
+        Uint8List(64 * 1024 + 1),
+        <int>[1, 2, 3],
+        Uint8List.fromList(bytes)..[0] = 0,
+        Uint8List.fromList(bytes)..[19] = 32,
+      ]) {
+        result = invalid;
+        await expectLater(
+          bridge.getApplicationIcon('app.example'),
+          throwsA(
+            isA<VpnFailure>().having(
+              (e) => e.code,
+              'code',
+              'invalid_native_response',
+            ),
+          ),
+        );
+      }
+      result = null;
+      expect(await bridge.getApplicationIcon('app.example'), isNull);
+      messenger.setMockMethodCallHandler(
+        channel,
+        (_) async => throw PlatformException(
+          code: 'application_icon_unavailable',
+          message: 'private executable path',
+        ),
+      );
+      expect(await bridge.getApplicationIcon('app.example'), isNull);
+      expect(
+        safeVpnCode('application_icon_unavailable private'),
+        'native_failure',
+      );
+    });
+  });
 }

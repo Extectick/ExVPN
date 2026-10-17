@@ -13,6 +13,13 @@ String safeDiagnostics({
   String? coreVersion,
   String? errorCode,
   required bool secureStorageAvailable,
+  int? dataRevision,
+  String? dataChannel,
+  bool? dartUpdatesAvailable,
+  int? currentDartPatch,
+  int? nextDartPatch,
+  bool? dartRestartRequired,
+  String? dartUpdateTrack,
 }) {
   final core =
       coreVersion != null &&
@@ -41,5 +48,20 @@ String safeDiagnostics({
     'processCrashProtection': status?.processCrashProtection ?? false,
     'errorCode': errorCode == null ? null : safeVpnCode(errorCode),
     'secureStorageAvailable': secureStorageAvailable,
+    'updates': {
+      'dataRevision': _safeRevision(dataRevision),
+      'dataChannel': _safeChannel(dataChannel),
+      'dartAvailable': dartUpdatesAvailable,
+      'currentDartPatch': _safeRevision(currentDartPatch),
+      'nextDartPatch': _safeRevision(nextDartPatch),
+      'dartRestartRequired': dartRestartRequired,
+      'dartTrack': _safeChannel(dartUpdateTrack),
+    },
   });
 }
+
+int? _safeRevision(int? value) =>
+    value != null && value > 0 && value <= 0x7fffffff ? value : null;
+
+String? _safeChannel(String? value) =>
+    const {'stable', 'beta', 'staging'}.contains(value) ? value : null;

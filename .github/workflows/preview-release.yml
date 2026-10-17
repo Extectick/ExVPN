@@ -1,0 +1,181 @@
+name: ExVPN preview release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact source version including build (SemVer+build)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exvpn-preview-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/main'
+    name: Preview ${{ matrix.target }}
+    runs-on: windows-2025
+    environment: demo-release
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [Android, Windows]
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      EXVPN_RELEASE_VERSION: ${{ inputs.version }}
+      CI: 'true'
+      GOTOOLCHAIN: local
+      FLUTTER_SUPPRESS_ANALYTICS: 'true'
+      DART_SUPPRESS_ANALYTICS: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Cache pinned SDK archives
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .tools/downloads/go1.27.2.windows-amd64.zip
+            .tools/downloads/flutter_windows_3.47.7-stable.zip
+          key: exvpn-sdk-archives-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/bootstrap/toolchain.lock.json', 'scripts/bootstrap/bootstrap.ps1') }}
+          enableCrossOsArchive: false
+      - name: Prepare pinned SDKs
+        run: ./scripts/bootstrap/bootstrap.ps1
+      - name: Cache Go compilation inputs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .tools/cache/go/pkg/mod
+            .tools/cache/go-build
+          key: exvpn-go-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/toolchain.lock.json', 'native/core/go.mod', 'native/core/go.sum', 'native/android/go.mod', 'native/android/go.sum', 'native/windows/go.mod', 'native/windows/go.sum', 'native/patches/xray-lifecycle.lock.json', 'native/patches/xray-lifecycle.patch') }}
+          enableCrossOsArchive: false
+      - name: Cache locked Pub packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools/cache/pub
+          key: exvpn-pub-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/bootstrap/toolchain.lock.json', 'apps/exvpn/pubspec.lock', 'packages/exvpn_domain/pubspec.lock', 'packages/exvpn_client_state/pubspec.lock', 'packages/exvpn_updates/pubspec.lock') }}
+          enableCrossOsArchive: false
+      - name: Prepare Android packages
+        if: matrix.target == 'Android'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (!$env:JAVA_HOME_21_X64 -or !$env:ANDROID_HOME) { throw 'Prepared runner JDK/Android SDK missing.' }
+          if (!(Test-Path -LiteralPath (Join-Path $env:ANDROID_HOME 'licenses/android-sdk-license'))) { throw 'Prepared runner Android license missing.' }
+          "JAVA_HOME=$env:JAVA_HOME_21_X64" >> $env:GITHUB_ENV
+          $env:JAVA_HOME = $env:JAVA_HOME_21_X64
+          & (Join-Path $env:ANDROID_HOME 'cmdline-tools/latest/bin/sdkmanager.bat') 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358' 'ndk;27.1.12297006'
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned Android packages unavailable.' }
+          & ./.tools/flutter/bin/flutter.bat precache --android
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned Android Flutter cache unavailable.' }
+      - name: Analyze and test
+        run: ./scripts/ci/verify.ps1 -Target Checks
+      - name: Test demo delivery policy
+        run: |
+          ./scripts/release/test-demo-release.ps1
+          ./scripts/release/test-demo-maven-notices.ps1
+          ./scripts/release/test-build-demo-android.ps1
+          ./scripts/windows/test-ci-msvc-runtime.ps1
+          ./scripts/windows/test-prepare-nsis.ps1
+      - name: Prepare archive inspector
+        run: ./scripts/release/prepare-archive-inspector.ps1
+      - name: Build Android native libraries
+        if: matrix.target == 'Android'
+        run: ./native/android/build.ps1
+      - name: Build and verify signed Android demo
+        if: matrix.target == 'Android'
+        env:
+          EXVPN_ANDROID_KEYSTORE_BASE64: ${{ secrets.EXVPN_ANDROID_KEYSTORE_BASE64 }}
+          EXVPN_ANDROID_STORE_PASSWORD: ${{ secrets.EXVPN_ANDROID_STORE_PASSWORD }}
+          EXVPN_ANDROID_KEY_PASSWORD: ${{ secrets.EXVPN_ANDROID_STORE_PASSWORD }}
+          EXVPN_ANDROID_KEY_ALIAS: exvpn
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (!$env:EXVPN_ANDROID_KEYSTORE_BASE64 -or !$env:EXVPN_ANDROID_STORE_PASSWORD) { throw 'Demo Android signing secrets missing.' }
+          $keyPath = Join-Path $env:RUNNER_TEMP 'exvpn-demo-release.p12'
+          if (Test-Path -LiteralPath $keyPath) { throw 'Unexpected existing signing input.' }
+          try {
+            [IO.File]::WriteAllBytes($keyPath, [Convert]::FromBase64String($env:EXVPN_ANDROID_KEYSTORE_BASE64))
+            $env:EXVPN_ANDROID_KEYSTORE_BASE64 = $null
+            $env:EXVPN_ANDROID_KEYSTORE = $keyPath
+            ./scripts/release/build-demo-android.ps1 -Delivery preview -ReleaseVersion $env:EXVPN_RELEASE_VERSION
+          } finally {
+            $env:EXVPN_ANDROID_KEYSTORE = $null
+            $env:EXVPN_ANDROID_STORE_PASSWORD = $null
+            $env:EXVPN_ANDROID_KEY_PASSWORD = $null
+            if (Test-Path -LiteralPath $keyPath) { Remove-Item -LiteralPath $keyPath -Force }
+          }
+      - name: Build Windows native service and Wintun
+        if: matrix.target == 'Windows'
+        run: |
+          ./scripts/qa/test-xray-lifecycle.ps1 -Race
+          ./scripts/windows/build.ps1
+          ./scripts/windows/prepare-wintun.ps1
+      - name: Build and verify Windows demo installer
+        if: matrix.target == 'Windows'
+        run: ./scripts/release/build-demo-windows.ps1 -Delivery preview -ReleaseVersion $env:EXVPN_RELEASE_VERSION
+      - name: Upload demo deliverables only
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: preview-${{ matrix.target }}-${{ github.sha }}
+          path: artifacts/preview/
+          if-no-files-found: error
+          retention-days: 14
+  publish:
+    name: Publish verified preview and update feed
+    environment: demo-release
+    needs: build
+    if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/main'
+    runs-on: windows-2025
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: preview-*-${{ github.sha }}
+          path: artifacts/preview
+          merge-multiple: true
+      - name: Prepare pinned signing Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13.16'
+          architecture: x64
+      - name: Prepare and test exact manifest signing library
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $wheels = Join-Path $env:RUNNER_TEMP 'exvpn-feed-wheels'
+          python -m pip download --disable-pip-version-check --only-binary=:all: --require-hashes --no-deps --dest $wheels -r scripts/release/windows-feed-requirements.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned manifest signing wheels unavailable.' }
+          python -m pip install --disable-pip-version-check --no-index --find-links $wheels --only-binary=:all: --require-hashes --no-deps --force-reinstall -r scripts/release/windows-feed-requirements.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Manifest signing library unavailable.' }
+          python -m pip check
+          if ($LASTEXITCODE -ne 0) { throw 'Manifest signing dependency closure is incomplete.' }
+          python scripts/release/test-sign-windows-update.py
+          if ($LASTEXITCODE -ne 0) { throw 'Manifest signing checks failed.' }
+      - name: Check artifacts and publish immutable prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXVPN_RELEASE_VERSION: ${{ inputs.version }}
+        run: ./scripts/release/publish-preview.ps1 -ReleaseVersion $env:EXVPN_RELEASE_VERSION
+      - name: Publish signed beta feed after immutable assets are available
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXVPN_RELEASE_VERSION: ${{ inputs.version }}
+          EXVPN_WINDOWS_UPDATE_SEED_BASE64: ${{ secrets.EXVPN_WINDOWS_UPDATE_SEED_BASE64 }}
+        run: ./scripts/release/publish-windows-feed.ps1 -ReleaseVersion $env:EXVPN_RELEASE_VERSION

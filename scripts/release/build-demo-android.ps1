@@ -11,7 +11,11 @@ Tool diagnostics and the raw Maven graph remain under .private. Only the seven
 allowlisted deliverables are promoted to artifacts/demo/android after checks.
 #>
 [CmdletBinding()]
-param([string]$AndroidSdkPath = '')
+param(
+    [string]$AndroidSdkPath = '',
+    [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$')][string]$ReleaseVersion = '0.1.0+18',
+    [ValidateSet('demo','preview')][string]$Delivery = 'demo'
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -39,11 +43,14 @@ try {
     if ($LASTEXITCODE -ne 0 -or $sourceCommit -cnotmatch '^[a-f0-9]{40}$') { throw 'demo_android_source_commit_missing' }
     $app = Join-Path $repository 'apps/exvpn'
     $version = Get-NoticeAppVersion ([IO.File]::ReadAllText((Join-Path $app 'pubspec.yaml'))) ([IO.File]::ReadAllText((Join-Path $app 'lib/build_identity.dart')))
-    Assert-DemoAndroidVersion $version
+    if ($Delivery -ceq 'demo' -and $ReleaseVersion -cne '0.1.0+18') { throw 'demo_version_frozen' }
+    Assert-DemoAndroidVersion $version $ReleaseVersion
+    $parts = $version.Split('+')
+    $artifactName = if ($Delivery -ceq 'demo') { 'ExVPN-0.1.0-demo-android.apk' } else { "ExVPN-$($parts[0])-$($parts[1])-android.apk" }
     $signing = Get-DemoAndroidSigningInput
     $certificate = Join-Path $repository 'config/signing/android-release-cert.pem'
     $expectedSigner = Get-DemoAndroidCertificateSha256 $certificate -Pem
-    $output = Join-Path $repository 'artifacts/demo/android'
+    $output = Join-Path $repository "artifacts/$Delivery/android"
     if (Test-Path -LiteralPath $output) { throw 'demo_android_output_exists' }
 
     $privateParent = Join-Path $repository '.private/demo-android-builds'
@@ -114,7 +121,7 @@ try {
         try {
             # --pub regenerates the release plugin registrant; --no-pub can
             # retain the dev integration_test registrant after ordinary pub get.
-            $arguments = Get-DemoAndroidBuildArguments
+            $arguments = Get-DemoAndroidBuildArguments $version
             & $flutter @arguments *> (Join-Path $privateRun 'flutter-build.log')
             if ($LASTEXITCODE -ne 0) { throw 'demo_android_flutter_build_failed' }
         } finally {
@@ -153,9 +160,9 @@ try {
     $signatureText = Invoke-AuditTool $java @('-jar',(Join-Path $sdk 'build-tools/36.0.0/lib/apksigner.jar'), 'verify','--verbose','--print-certs',$builtApk)
     $signature = ConvertFrom-DemoAndroidSignature $signatureText $expectedSigner
     $badging = Invoke-AuditTool (Join-Path $sdk 'build-tools/36.0.0/aapt2.exe') @('dump','badging',$builtApk)
-    $identity = ConvertFrom-DemoAndroidIdentity $badging
+    $identity = ConvertFrom-DemoAndroidIdentity $badging $version
     if ((Get-AuditSha256 $builtApk) -cne $builtHash) { throw 'demo_android_apk_changed' }
-    $destination = Join-Path $stage 'ExVPN-0.1.0-demo-android.apk'
+    $destination = Join-Path $stage $artifactName
     Copy-Item -LiteralPath $builtApk -Destination $destination
     if ((Get-AuditSha256 $destination) -cne $builtHash) { throw 'demo_android_apk_copy_mismatch' }
 
@@ -171,14 +178,14 @@ try {
             $zippedNotices[$name].size -ne $noticeFiles[$name].size) { throw 'demo_android_notice_zip_mismatch' }
     }
     $phase = 'maven_notices'
-    & (Join-Path $PSScriptRoot 'prepare-demo-maven-notices.ps1') -ResolvedGraph $rawGraph -ArtifactPath $destination -OutputDirectory $stage *> (Join-Path $privateRun 'maven-notices.log')
+    & (Join-Path $PSScriptRoot 'prepare-demo-maven-notices.ps1') -ResolvedGraph $rawGraph -ArtifactPath $destination -AppVersion $version -OutputDirectory $stage *> (Join-Path $privateRun 'maven-notices.log')
     if (!$?) { throw 'demo_android_maven_notices_failed' }
     $maven = Get-Content -LiteralPath (Join-Path $stage 'android-maven-notices.json') -Raw | ConvertFrom-Json
     if ($maven.status -cne 'PASS' -or $maven.appVersion -cne $version -or $maven.apkSha256 -cne $builtHash -or
         $maven.archiveSha256 -cne (Get-AuditSha256 (Join-Path $stage 'android-maven-notices.zip'))) { throw 'demo_android_maven_notices_binding_failed' }
 
     $phase = 'audit'
-    Export-DemoAudit -Target Android -ArtifactPath $destination -OutputDirectory $stage -ExpectedSignerSha256 $expectedSigner -AndroidSdkPath $sdk *> (Join-Path $privateRun 'audit.log')
+    Export-DemoAudit -Target Android -ArtifactPath $destination -OutputDirectory $stage -ExpectedSignerSha256 $expectedSigner -AndroidSdkPath $sdk -ExpectedVersion $version *> (Join-Path $privateRun 'audit.log')
     $phase = 'final_inputs'
     $runtimeAfter = Get-ReleaseFlutterRuntime -Repository $repository -Target Android -FlutterRuntime ordinary -FlutterBuildMode release
     Assert-ReleaseFlutterRuntimeEvidence $runtimeAfter.Evidence $runtime.Evidence
@@ -195,13 +202,13 @@ try {
         mavenNotices=(Get-DemoAssetRecord (Join-Path $stage 'android-maven-notices.zip'))
         sbom=(Get-DemoAssetRecord (Join-Path $stage 'android-sbom.cdx.json'));sbomComplete=$false
     } | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $stage 'android-build.json') -Encoding utf8
-    Assert-DemoAndroidPublicFiles $stage
+    Assert-DemoAndroidPublicFiles $stage $artifactName
 
     $phase = 'promote'
     # Both absolute endpoints are fixed children of this workspace. No existing
     # output or unrelated directory is deleted or replaced on a repeated run.
     $allowedPrivate = [IO.Path]::GetFullPath($privateParent) + [IO.Path]::DirectorySeparatorChar
-    $demoRoot = [IO.Path]::GetFullPath((Join-Path $repository 'artifacts/demo'))
+    $demoRoot = [IO.Path]::GetFullPath((Join-Path $repository "artifacts/$Delivery"))
     if (![IO.Path]::GetFullPath($stage).StartsWith($allowedPrivate, [StringComparison]::OrdinalIgnoreCase) -or
         [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($output)) -cne $demoRoot -or (Test-Path -LiteralPath $output)) { throw 'demo_android_promotion_path_invalid' }
     $ancestor = $demoRoot

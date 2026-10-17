@@ -69,7 +69,8 @@ final class VpnUiSemantics {
     }
 
     static boolean validCommand(String command) {
-        return "observe".equals(command) || "connect".equals(command) || "disconnect".equals(command);
+        return "observe".equals(command) || "connect".equals(command) ||
+                "disconnect".equals(command) || "cancel".equals(command);
     }
 
     static boolean validRunId(String value) {
@@ -197,7 +198,9 @@ final class VpnUiSemantics {
             }
             if (("connect".equals(command) && !"disconnected".equals(initialPhase)) ||
                     ("disconnect".equals(command) && !"connected".equals(initialPhase) &&
-                     !"reconnecting".equals(initialPhase) && !"blocked".equals(initialPhase))) {
+                     !"reconnecting".equals(initialPhase) && !"blocked".equals(initialPhase)) ||
+                    ("cancel".equals(command) && !"connecting".equals(initialPhase) &&
+                     !"requesting_permission".equals(initialPhase))) {
                 throw new Rejected("precondition_failed");
             }
 

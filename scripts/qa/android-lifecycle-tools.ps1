@@ -99,7 +99,7 @@ function Invoke-AndroidLifecycleProbe {
 
 function ConvertFrom-AndroidLifecycleVpnUi {
     param([Parameter(Mandatory)][string]$Output, [Parameter(Mandatory)][string]$RunId,
-        [Parameter(Mandatory)][ValidateSet('observe','connect','disconnect')][string]$Command)
+        [Parameter(Mandatory)][ValidateSet('observe','connect','disconnect','cancel')][string]$Command)
     $fields=@('mechanism','runId','command','status','beforePhase','afterPhase','actionAttempted','actionAccepted','targetCount','nodesVisited','durationMs')
     $statuses=@('observed','completed','invalid_command','invalid_run','ownership_error','ownership_cleanup_failed',
         'window_unavailable','wrong_window_package','tree_too_large','stale_target','target_missing','ambiguous_target',
@@ -138,7 +138,8 @@ function ConvertFrom-AndroidLifecycleVpnUi {
         $expected=if ($Command -ceq 'connect') { 'connected' } else { 'disconnected' }
         if ($Command -ceq 'observe' -or !$values.actionAccepted -or $values.afterPhase -cne $expected -or
             $values.targetCount -ne 1 -or ($Command -ceq 'connect' -and $values.beforePhase -cne 'disconnected') -or
-            ($Command -ceq 'disconnect' -and $values.beforePhase -cnotin @('connected','reconnecting','blocked'))) { throw 'qa_invalid_vpn_ui_completion' }
+            ($Command -ceq 'disconnect' -and $values.beforePhase -cnotin @('connected','reconnecting','blocked')) -or
+            ($Command -ceq 'cancel' -and $values.beforePhase -cnotin @('connecting','requesting_permission'))) { throw 'qa_invalid_vpn_ui_completion' }
     }
     if ($values.status -cin @('accepted_unconfirmed','terminal_state') -and !$values.actionAccepted) { throw 'qa_invalid_vpn_ui_acceptance' }
     if ($values.status -ceq 'action_rejected' -and (!$values.actionAttempted -or $values.actionAccepted)) { throw 'qa_invalid_vpn_ui_rejection' }
@@ -194,7 +195,7 @@ function Stop-AndroidLifecycleOwnedVpnUiProbe {
 }
 
 function Invoke-AndroidLifecycleVpnUi {
-    param([Parameter(Mandatory)][ValidateSet('observe','connect','disconnect')][string]$Command,
+    param([Parameter(Mandatory)][ValidateSet('observe','connect','disconnect','cancel')][string]$Command,
         [Parameter(Mandatory)][ValidatePattern('^[a-zA-Z0-9_-]{1,50}$')][string]$Step)
     $serial=$script:AndroidLifecycleContext.Serial
     if ($serial -cnotmatch '^emulator-[0-9]{4,5}$') { throw 'qa_invalid_serial' }

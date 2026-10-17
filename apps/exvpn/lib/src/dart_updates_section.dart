@@ -5,18 +5,6 @@ import '../services/dart_updates.dart';
 import '../services/app_updates.dart';
 import 'app_strings.dart';
 
-String dartPatchVersionText(DartUpdatesController? controller) {
-  if (controller == null) return 'Недоступен в этой сборке';
-  final snapshot = controller.snapshot;
-  if (snapshot == null) {
-    return controller.busy ? 'Определяем версию…' : 'Не удалось определить';
-  }
-  if (!snapshot.available) return 'Недоступен в этой сборке';
-  return snapshot.current == null
-      ? 'Базовый выпуск'
-      : 'Патч ${snapshot.current}';
-}
-
 class DartUpdatesSection extends StatelessWidget {
   const DartUpdatesSection({super.key, required this.controller});
   final DartUpdatesController controller;
@@ -36,28 +24,12 @@ class DartUpdatesSection extends StatelessWidget {
         const SizedBox(height: 12),
         if (c.snapshot?.available == false)
           Text(
-            context.tr(switch (c.disabledReason) {
-              'unsupported_platform' =>
-                'Dart-обновления недоступны на этой платформе.',
-              'invalid_configuration' =>
-                'Канал Dart-обновлений в этой сборке настроен неверно.',
-              _ => 'В этой сборке нет поддержки Dart-обновлений. Для неё нужен полный выпуск ExVPN с Shorebird.',
-            }),
+            context.tr('Обновления интерфейса недоступны в этой сборке.'),
             key: const Key('dart-updates-unavailable'),
           ),
         if (c.available) ...[
           Text(
-            context.tr(
-              'Канал Dart-патчей: {track}',
-              values: {'track': c.track},
-            ),
-            key: const Key('dart-updates-track'),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            context.tr(
-              'Исправления интерфейса загружаются отдельно. Ядро VPN и системные компоненты требуют полного обновления приложения.',
-            ),
+            context.tr('Небольшие исправления без переустановки приложения.'),
           ),
         ],
         if (c.busy) ...[
@@ -66,9 +38,9 @@ class DartUpdatesSection extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             context.tr(switch (c.operation) {
-              DartUpdateOperation.reading => 'Определяем версию Dart-патча…',
-              DartUpdateOperation.checking => 'Проверяем Dart-обновления…',
-              DartUpdateOperation.downloading => 'Загружаем Dart-патч…',
+              DartUpdateOperation.reading => 'Проверяем версию…',
+              DartUpdateOperation.checking => 'Проверяем обновления…',
+              DartUpdateOperation.downloading => 'Загружаем обновление…',
               DartUpdateOperation.idle => '',
             }),
           ),
@@ -76,7 +48,7 @@ class DartUpdatesSection extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               context.tr(
-                'Операция занимает больше времени. Можно вернуться к VPN; проверка продолжится. Новый запрос станет доступен после её завершения.',
+                'Проверка продолжается. Можно вернуться на главный экран.',
               ),
               key: const Key('dart-updates-slow'),
             ),
@@ -85,7 +57,17 @@ class DartUpdatesSection extends StatelessWidget {
         if (c.error != null) ...[
           const SizedBox(height: 16),
           Text(
-            context.tr(dartUpdatesErrorText(c.error!)),
+            context.tr(switch (c.error!) {
+              DartUpdateError.readFailed =>
+                'Не удалось проверить версию. Повторите попытку.',
+              DartUpdateError.checkFailed => 'Не удалось проверить обновления.',
+              DartUpdateError.downloadFailed || DartUpdateError.installFailed =>
+                'Не удалось загрузить обновление.',
+              DartUpdateError.noUpdate =>
+                'Обновление больше недоступно. Проверьте ещё раз.',
+              DartUpdateError.operationFailed =>
+                'Не удалось завершить обновление.',
+            }),
             key: const Key('dart-updates-error'),
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
@@ -96,40 +78,35 @@ class DartUpdatesSection extends StatelessWidget {
             context.tr(
               c.snapshot?.restartRequired == true
                   ? c.snapshot!.next == null
-                        ? 'Подготовлен возврат к базовому выпуску.'
-                        : context.tr(
-                            'Для следующего запуска подготовлен патч {patch}.',
-                            values: {'patch': c.snapshot!.next},
-                          )
-                  : 'Движок сообщает о необходимости перезапуска.',
+                        ? 'Подготовлен возврат к исходной версии интерфейса.'
+                        : 'Обновление готово к перезапуску.'
+                  : 'Обновление готово к перезапуску.',
             ),
             key: const Key('dart-updates-pending'),
           ),
           const SizedBox(height: 8),
           Text(
             context.tr(
-              'Изменения применятся при следующем полном запуске ExVPN. Автоматического перезапуска нет. Закрытие окна в трей не перезапускает приложение.',
+              'Выберите «Выйти» в меню ExVPN, затем откройте приложение.',
             ),
           ),
         ] else if (c.status == DartUpdateStatus.upToDate) ...[
           const SizedBox(height: 16),
           Text(
-            context.tr('Доступных Dart-патчей нет.'),
+            context.tr('Новых исправлений нет.'),
             key: const Key('dart-updates-current'),
           ),
         ] else if (c.status == DartUpdateStatus.outdated) ...[
           const SizedBox(height: 16),
           Text(
-            context.tr('Доступен Dart-патч.'),
+            context.tr('Доступно обновление интерфейса.'),
             key: const Key('dart-updates-available'),
           ),
         ],
         if (c.downloadUnconfirmed) ...[
           const SizedBox(height: 16),
           Text(
-            context.tr(
-              'Новый патч для следующего запуска пока не подтверждён. Повторите проверку.',
-            ),
+            context.tr('Загрузка не подтверждена. Проверьте ещё раз.'),
             key: const Key('dart-updates-unconfirmed'),
           ),
         ],
@@ -143,7 +120,7 @@ class DartUpdatesSection extends StatelessWidget {
                 key: const Key('dart-updates-check'),
                 onPressed: c.canCheck && !appUpdateBusy ? c.check : null,
                 icon: const Icon(Icons.refresh),
-                label: Text(context.tr('Проверить Dart-патчи')),
+                label: Text(context.tr('Проверить')),
               ),
               if (c.status == DartUpdateStatus.outdated && !c.restartRequired)
                 FilledButton(
@@ -154,7 +131,7 @@ class DartUpdatesSection extends StatelessWidget {
                           appUpdates?.kind != AppUpdateKind.full
                       ? c.download
                       : null,
-                  child: Text(context.tr('Загрузить патч')),
+                  child: Text(context.tr('Загрузить')),
                 ),
             ],
           ),
@@ -164,7 +141,7 @@ class DartUpdatesSection extends StatelessWidget {
           TextButton(
             key: const Key('dart-updates-read'),
             onPressed: !appUpdateBusy ? c.refresh : null,
-            child: Text(context.tr('Повторить чтение версии патча')),
+            child: Text(context.tr('Повторить')),
           ),
         ],
       ],

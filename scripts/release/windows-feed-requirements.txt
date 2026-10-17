@@ -1,0 +1,8 @@
+# CPython 3.13 x64 Windows wheels; hashes from the exact PyPI release JSON.
+# cryptography uses its CPython 3.11+ abi3 Windows wheel on Python 3.13.
+cryptography==46.0.5 \
+    --hash=sha256:38946c54b16c885c72c4f59846be9743d699eee2b69b6988e0a00a01f46a61a4
+cffi==2.0.0 \
+    --hash=sha256:19f705ada2530c1167abacb171925dd886168931e0a7b78f5bffcae5c6b5be75
+pycparser==3.0 \
+    --hash=sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992

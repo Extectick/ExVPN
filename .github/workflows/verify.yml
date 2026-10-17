@@ -2,6 +2,10 @@ name: ExVPN checks and development builds
 
 on:
   push:
+    # Source tags are bound and built by the release workflow. Avoid a second
+    # identical Android/Windows build when main and its tag are pushed together.
+    branches: ['**']
+    tags-ignore: ['**']
     # Documentation-only pushes must not cancel an in-flight native build.
     # Pull requests stay unfiltered so required checks are always reported.
     # GitHub applies this filter to the final diff: such excluded pushes have

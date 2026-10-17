@@ -27,59 +27,32 @@ class UpdatesSheet extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
               children: [
                 _version(context, 'Приложение', 'ExVPN $appVersion'),
-                _version(context, 'Сборка', '$appBuild'),
                 _version(
                   context,
                   'Ядро',
                   updates.vpn?.core ?? 'Не удалось определить',
                 ),
-                _version(
-                  context,
-                  'Данные',
-                  updates.snapshot.revision == null
-                      ? 'Встроенные'
-                      : context.tr(
-                          'Ревизия {revision}',
-                          values: {'revision': updates.snapshot.revision},
-                        ),
-                ),
-                _version(
-                  context,
-                  'Dart-патч',
-                  dartPatchVersionText(dartUpdates),
-                ),
-                _version(context, 'Канал данных', updates.channel),
                 if (dartUpdates != null) ...[
                   const SizedBox(height: 24),
                   DartUpdatesSection(controller: dartUpdates!),
                 ],
                 const SizedBox(height: 24),
                 Text(
-                  context.tr('Обновления данных'),
+                  context.tr('Обновления справки'),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  context.tr(
-                    'Подписанный пакет обновляет справку без загрузки всего приложения. '
-                    'Ядро и системные компоненты обновляются вместе с приложением.',
-                  ),
-                ),
+                Text(context.tr('Справка обновляется отдельно от приложения.')),
                 const SizedBox(height: 20),
                 if (!updates.enabled)
                   Text(
-                    context.tr(switch (updates.disabledReason) {
-                      'unsupported_platform' =>
-                        'OTA данных недоступны в браузере и на этой платформе.',
-                      'invalid_configuration' => 'Конфигурация доверенной доставки в этой сборке неверна. Используется встроенная справка.',
-                      _ => 'Доставка данных ещё не настроена. В этой сборке нет доверенного адреса и ключа обновлений.',
-                    }),
+                    context.tr('Обновления справки пока недоступны.'),
                     key: const Key('updates-disabled'),
                   ),
                 if (updates.busy) ...[
                   const LinearProgressIndicator(key: Key('updates-progress')),
                   const SizedBox(height: 12),
-                  Text(context.tr('Проверяем и подготавливаем данные…')),
+                  Text(context.tr('Проверяем обновления…')),
                 ],
                 if (updates.errorCode != null) ...[
                   const SizedBox(height: 16),
@@ -94,37 +67,25 @@ class UpdatesSheet extends StatelessWidget {
                 if (updates.notice != null) ...[
                   const SizedBox(height: 16),
                   Text(
-                    context.tr(updates.notice!),
+                    context.tr(switch (updates.notice) {
+                      'Подготовленное обновление отменено.' =>
+                        'Обновление отменено.',
+                      'Восстановлена предыдущая проверенная ревизия.' =>
+                        'Восстановлены сохранённые данные.',
+                      _ => 'Справка обновлена.',
+                    }),
                     key: const Key('updates-notice'),
                   ),
                 ],
                 if (proposal != null) ...[
                   const SizedBox(height: 24),
                   Text(
-                    context.tr(
-                      'Подготовлена ревизия {revision}',
-                      values: {'revision': proposal.revision},
-                    ),
+                    context.tr('Обновление готово'),
                     style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    context.tr(
-                      'Загружено файлов: {downloaded}. Повторно использовано: {reused}.',
-                      values: {
-                        'downloaded': proposal.downloadedFiles,
-                        'reused': proposal.reusedFiles,
-                      },
-                    ),
                   ),
                   if (!updates.canApply && !updates.busy) ...[
                     const SizedBox(height: 12),
-                    Text(
-                      context.tr(
-                        'Для применения отключите VPN и дождитесь подтверждения от службы. '
-                        'Приложение не отключает соединение автоматически.',
-                      ),
-                    ),
+                    Text(context.tr('Для применения отключите VPN.')),
                   ],
                   const SizedBox(height: 16),
                   Wrap(
@@ -150,7 +111,7 @@ class UpdatesSheet extends StatelessWidget {
                     key: const Key('updates-check'),
                     onPressed: updates.busy ? null : updates.check,
                     icon: const Icon(Icons.refresh),
-                    label: Text(context.tr('Проверить обновления')),
+                    label: Text(context.tr('Проверить')),
                   ),
                 ],
                 if (updates.enabled && proposal == null && !updates.busy) ...[
@@ -158,13 +119,7 @@ class UpdatesSheet extends StatelessWidget {
                   TextButton(
                     key: const Key('updates-recover'),
                     onPressed: updates.recover,
-                    child: Text(
-                      context.tr(
-                        updates.initialized
-                            ? 'Перечитать сохранённые данные'
-                            : 'Повторить чтение сохранённых данных',
-                      ),
-                    ),
+                    child: Text(context.tr('Перечитать данные')),
                   ),
                 ],
                 const SizedBox(height: 28),

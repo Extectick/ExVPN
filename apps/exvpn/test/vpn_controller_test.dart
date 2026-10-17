@@ -34,6 +34,7 @@ class FakeBridge implements VpnBridge {
   VpnStatus current = off;
   Future<VpnStatus>? snapshot;
   Future<void>? connectResult;
+  Future<void>? disconnectResult;
   Future<void>? policyWrite;
   Future<Set<String>>? policyRead;
   int connects = 0;
@@ -59,6 +60,7 @@ class FakeBridge implements VpnBridge {
   @override
   Future<void> disconnect() async {
     disconnects++;
+    await disconnectResult;
     emit(off);
   }
 
@@ -122,6 +124,24 @@ class ModeBridge extends FakeBridge implements ConnectionModeBridge {
       mode: mode,
     ),
   );
+}
+
+class RoutingBridge extends FakeBridge implements ApplicationRoutingBridge {
+  ApplicationRoutingPolicy policy = ApplicationRoutingPolicy(
+    mode: ApplicationRoutingMode.disabled,
+  );
+  Future<ApplicationRoutingPolicy>? routingRead;
+  Future<void>? routingWrite;
+  Object? routingError;
+  @override
+  Future<ApplicationRoutingPolicy> getApplicationRouting() =>
+      routingRead ?? Future.value(policy);
+  @override
+  Future<void> setApplicationRouting(ApplicationRoutingPolicy value) async {
+    await routingWrite;
+    if (routingError case final Object error) throw error;
+    policy = value;
+  }
 }
 
 void main() {
@@ -590,24 +610,34 @@ void main() {
       expect(native.disconnects, 0);
     });
 
-    test(
-      'rapid server and mode requests cannot overlap reconfiguration',
-      () async {
-        native.active(profile);
-        final stopped = Completer<void>();
-        native.reconnectResult = stopped.future;
-        final first = vpn.switchServer(otherProfile);
-        expect(vpn.commandPending, isTrue);
-        expect(await vpn.switchServer(otherProfile), isFalse);
-        expect(await vpn.changeMode(VpnMode.proxy, profile: profile), isFalse);
-        await vpn.connect(otherProfile);
-        expect(native.reconfigurations.length, 1);
-        expect(native.modeConnects, isEmpty);
-        stopped.complete();
-        expect(await first, isTrue);
-        expect(vpn.commandPending, isFalse);
-      },
-    );
+    test('rapid server and mode requests coalesce without overlapping reconfiguration', () async {
+      native.active(profile);
+      final stopped = Completer<void>();
+      native.reconnectResult = stopped.future;
+      final first = vpn.switchServer(otherProfile);
+      expect(vpn.commandPending, isTrue);
+      final duplicate = vpn.switchServer(otherProfile);
+      final superseded = vpn.requestConnection(profile, mode: VpnMode.proxy);
+      final latest = vpn.requestConnection(otherProfile, mode: VpnMode.proxy);
+      expect(await first, isFalse);
+      expect(await duplicate, isFalse);
+      expect(await superseded, isFalse);
+      expect(vpn.canChangeConnection, isTrue);
+      expect(vpn.connectionChangePending, isTrue);
+      expect(vpn.mode, VpnMode.proxy);
+      expect(vpn.desiredProfileId, otherProfile.id);
+      await vpn.connect(otherProfile);
+      expect(native.reconfigurations.length, 1);
+      expect(native.modeConnects, isEmpty);
+      stopped.complete();
+      expect(await latest, isTrue);
+      expect(native.reconfigurations, [
+        (otherProfile.id, VpnMode.vpn),
+        (otherProfile.id, VpnMode.proxy),
+      ]);
+      expect(native.disconnects, 0);
+      expect(vpn.commandPending, isFalse);
+    });
 
     test('active mode change reconfigures the exact active profile', () async {
       native.active(profile);
@@ -725,10 +755,55 @@ void main() {
         finish.complete();
         expect(await changed, isTrue);
         expect(vpn.status.phase, VpnPhase.reconnecting);
-        expect(await vpn.switchServer(profile), isFalse);
-        expect(native.reconfigurations.length, 1);
+        expect(await vpn.switchServer(profile), isTrue);
+        expect(native.reconfigurations.length, 2);
+        expect(native.disconnects, 0);
       },
     );
+
+    test(
+      'latest intent supersedes an unacknowledged initial connect',
+      () async {
+        final finish = Completer<void>();
+        native.connectResult = finish.future;
+        final first = vpn.requestConnection(profile);
+        final latest = vpn.requestConnection(otherProfile, mode: VpnMode.proxy);
+        expect(await first, isFalse);
+        expect(native.modeConnects, [(profile.id, VpnMode.vpn)]);
+        expect(native.reconfigurations, isEmpty);
+        expect(vpn.mode, VpnMode.proxy);
+        finish.complete();
+        expect(await latest, isTrue);
+        expect(native.reconfigurations, [(otherProfile.id, VpnMode.proxy)]);
+        expect(native.disconnects, 0);
+        expect(vpn.commandPending, isFalse);
+      },
+    );
+
+    test('disconnect cancels queued intent and ignores late connection acknowledgement', () async {
+      native.active(profile);
+      final finish = Completer<void>();
+      native.reconnectResult = finish.future;
+      final first = vpn.requestConnection(otherProfile);
+      final queued = vpn.requestConnection(profile, mode: VpnMode.proxy);
+      final stopped = Completer<void>();
+      native.disconnectResult = stopped.future;
+      final disconnect = vpn.disconnect();
+      final duplicateDisconnect = vpn.disconnect();
+      expect(await first, isFalse);
+      expect(await queued, isFalse);
+      expect(vpn.canChangeConnection, isFalse);
+      expect(await vpn.requestConnection(otherProfile), isFalse);
+      expect(native.disconnects, 1);
+      stopped.complete();
+      await disconnect;
+      await duplicateDisconnect;
+      finish.complete();
+      await Future<void>.delayed(Duration.zero);
+      expect(native.reconfigurations, [(otherProfile.id, VpnMode.vpn)]);
+      expect(vpn.status.phase, VpnPhase.disconnected);
+      expect(vpn.commandPending, isFalse);
+    });
 
     test(
       'dispose ignores pending change completion without a follow-up',
@@ -744,6 +819,103 @@ void main() {
         expect(await changed, isFalse);
         expect(native.reconfigurations.length, 1);
         expect(native.modeConnects, isEmpty);
+      },
+    );
+  });
+
+  group('application routing policy', () {
+    test('modern disabled retains selection and include is distinct from exclusions', () async {
+      vpn.dispose();
+      await bridge.close();
+      final native = RoutingBridge();
+      bridge = native;
+      vpn = VpnController(native);
+      await vpn.initialize();
+      final disabled = ApplicationRoutingPolicy(
+        mode: ApplicationRoutingMode.disabled,
+        applicationIds: {'app.selected'},
+      );
+      await vpn.setApplicationRouting(disabled);
+      await vpn.loadApplicationRouting();
+      expect(vpn.applicationRouting, disabled);
+      expect(vpn.exclusions, isEmpty);
+      final include = ApplicationRoutingPolicy(
+        mode: ApplicationRoutingMode.include,
+        applicationIds: {'app.selected'},
+      );
+      await vpn.setApplicationRouting(include);
+      expect(native.policy, include);
+      expect(vpn.applicationRouting, include);
+      expect(vpn.exclusions, isEmpty);
+      native.routingError = const VpnFailure('exclusions_rejected');
+      await expectLater(
+        vpn.setExclusions({'rejected'}),
+        throwsA(isA<VpnFailure>()),
+      );
+      expect(vpn.applicationRouting, include);
+      expect(vpn.commandPending, isFalse);
+    });
+
+    test('legacy fallback supports disabled and exclude but never simulates include', () async {
+      await vpn.initialize();
+      await vpn.setExclusions({'app.old'});
+      expect(vpn.applicationRouting.mode, ApplicationRoutingMode.exclude);
+      await expectLater(
+        vpn.setApplicationRouting(
+          ApplicationRoutingPolicy(
+            mode: ApplicationRoutingMode.include,
+            applicationIds: {'app.new'},
+          ),
+        ),
+        throwsA(
+          isA<VpnFailure>().having(
+            (e) => e.code,
+            'code',
+            'application_routing_unsupported',
+          ),
+        ),
+      );
+      expect(vpn.exclusions, {'app.old'});
+      expect(bridge.excluded, {'app.old'});
+      await vpn.setApplicationRouting(
+        ApplicationRoutingPolicy(mode: ApplicationRoutingMode.disabled),
+      );
+      expect(bridge.excluded, isEmpty);
+    });
+
+    test(
+      'policy persistence holds every connection and update barrier',
+      () async {
+        vpn.dispose();
+        await bridge.close();
+        final native = RoutingBridge();
+        bridge = native;
+        vpn = VpnController(native);
+        await vpn.initialize();
+        final finish = Completer<void>();
+        native.routingWrite = finish.future;
+        final write = vpn.setApplicationRouting(
+          ApplicationRoutingPolicy(
+            mode: ApplicationRoutingMode.include,
+            applicationIds: {'app.selected'},
+          ),
+        );
+        expect(vpn.canChangeConnection, isFalse);
+        expect(await vpn.requestConnection(profile), isFalse);
+        await vpn.disconnect();
+        expect(native.connects, 0);
+        expect(native.disconnects, 0);
+        await expectLater(
+          vpn.runForApplicationRestart((safe) async {}),
+          throwsA(isA<VpnFailure>()),
+        );
+        await expectLater(
+          vpn.runWhileDisconnected((safe) async {}),
+          throwsA(isA<VpnFailure>()),
+        );
+        finish.complete();
+        await write;
+        expect(vpn.commandPending, isFalse);
       },
     );
   });

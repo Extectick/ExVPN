@@ -5,6 +5,7 @@ param(
     [string]$ResolvedGraph,
     [string]$ArtifactPath,
     [string]$OutputDirectory,
+    [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$')][string]$AppVersion = '0.1.0+18',
     [switch]$LibraryOnly
 )
 Set-StrictMode -Version Latest
@@ -150,7 +151,7 @@ try {
     Write-DemoMavenJson $graphPath $safeGraph
     $graphHash = Get-DemoMavenHash $graphPath
     Write-DemoMavenJson (Join-Path $stage 'apk-binding.json') ([ordered]@{
-        appVersion='0.1.0+18';apkSha256=$apkHash;inputGraphSha256=$graphHash;
+        appVersion=$AppVersion;apkSha256=$apkHash;inputGraphSha256=$graphHash;
         licenseInventorySha256=(Get-DemoMavenHash $policyPath);postR8InventoryComplete=$false;stableReleaseReady=$false
     })
     # Validate source inputs again after copy; no successful report can bind a
@@ -160,7 +161,7 @@ try {
     if ((Get-DemoMavenHash $apk.FullName) -cne $apkHash) { throw 'demo_maven_apk_changed' }
     [IO.Compression.ZipFile]::CreateFromDirectory($stage,$zipPath,[IO.Compression.CompressionLevel]::Optimal,$false)
     $report = [ordered]@{
-        schema=1;status='PASS';appVersion='0.1.0+18';apkSha256=$apkHash;archiveSha256=(Get-DemoMavenHash $zipPath);
+        schema=1;status='PASS';appVersion=$AppVersion;apkSha256=$apkHash;archiveSha256=(Get-DemoMavenHash $zipPath);
         archive='android-maven-notices.zip';inputGraphSha256=$graphHash;licenseInventorySha256=(Get-DemoMavenHash $policyPath);
         runtimeMavenComponents=@($safeGraph.components).Count;
         runtimeComponentsCoveredBySupplement=@($safeGraph.components | Where-Object coverage -CEQ 'pinned-full-text-supplements').Count;

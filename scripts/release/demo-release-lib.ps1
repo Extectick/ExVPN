@@ -7,9 +7,9 @@ function Get-DemoSha256([string]$Path) {
     (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
-function Assert-DemoAudit($Report, [ValidateSet('Android','Windows')][string]$Target, [string]$ArtifactHash) {
+function Assert-DemoAudit($Report, [ValidateSet('Android','Windows')][string]$Target, [string]$ArtifactHash, [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$')][string]$ExpectedVersion = '0.1.0+18') {
     if ($Report.schema -ne 1 -or $Report.target -cne $Target -or
-        $Report.appVersion -cne '0.1.0+18' -or $Report.expectedAppVersion -cne '0.1.0+18' -or
+        $Report.appVersion -cne $ExpectedVersion -or $Report.expectedAppVersion -cne $ExpectedVersion -or
         $Report.artifact.sha256 -cne $ArtifactHash -or $ArtifactHash -cnotmatch '^[a-f0-9]{64}$' -or
         !$Report.flutterRuntime.engineBytesBound -or $Report.flutterRuntime.identity.kind -cne 'ordinary' -or
         $Report.flutterRuntime.identity.buildMode -cne 'release' -or
@@ -44,7 +44,8 @@ function Export-DemoAudit {
         [Parameter(Mandatory)][string]$ArtifactPath,
         [Parameter(Mandatory)][string]$OutputDirectory,
         [string]$ExpectedSignerSha256 = '',
-        [string]$AndroidSdkPath = ''
+        [string]$AndroidSdkPath = '',
+        [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$')][string]$ExpectedVersion = '0.1.0+18'
     )
     $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
     $auditDirectory = Join-Path $repository ('artifacts/release-audit/demo-' + $Target.ToLowerInvariant() + '-' + [Guid]::NewGuid().ToString('N'))
@@ -59,7 +60,7 @@ function Export-DemoAudit {
     if ($LASTEXITCODE -ne 2) { throw 'demo_stable_audit_unexpected_exit' }
     $report = Get-Content -LiteralPath (Join-Path $auditDirectory 'audit.json') -Raw | ConvertFrom-Json
     $binary = if ($Target -ceq 'Android') { $ArtifactPath } else { Join-Path $ArtifactPath $report.artifact.file }
-    Assert-DemoAudit $report $Target (Get-DemoSha256 $binary)
+    Assert-DemoAudit $report $Target (Get-DemoSha256 $binary) $ExpectedVersion
     $stem = $Target.ToLowerInvariant()
     Copy-Item -LiteralPath (Join-Path $auditDirectory 'audit.json') -Destination (Join-Path $OutputDirectory "$stem-audit.json")
     Copy-Item -LiteralPath (Join-Path $auditDirectory 'sbom.cdx.json') -Destination (Join-Path $OutputDirectory "$stem-sbom.cdx.json")

@@ -46,8 +46,7 @@ func canonicalExecutable(path string) (string, error) {
 }
 func ValidateExclusions(paths []string) error {
 	for _, p := range paths {
-		canonical, e := canonicalExecutable(p)
-		if e != nil || !strings.EqualFold(filepath.ToSlash(canonical), p) {
+		if !validStoredApplicationPath(p) {
 			return Code("exclusions_rejected")
 		}
 	}

@@ -6,7 +6,11 @@ package service
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
+	exvpn "github.com/Extectick/ExVPN/native/core"
+	"github.com/xtls/xray-core/common/session"
+	"github.com/xtls/xray-core/transport"
 	"io"
 	"net"
 	"net/netip"
@@ -141,6 +145,38 @@ func TestRealTwoProcessTCPReuseMatchesRemoteTuple(t *testing.T) {
 		owner, err := resolveProcessOwner(flow)
 		if err != nil || owner.pid != test.pid || owner.created == 0 || owner.path == "" {
 			t.Fatal("full TCP tuple did not identify the correct real process")
+		}
+	}
+}
+
+func TestRealLoopbackVerifiedImageRespectsAllApplicationRoutingModes(t *testing.T) {
+	listener, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	remote := listener.Addr().(*net.TCPAddr).Port
+	port, _ := startOwnerHelper(t, "tcp", 0, remote)
+	flow := flowTuple{network: "tcp", local: netip.AddrPortFrom(netip.MustParseAddr("127.0.0.1"), uint16(port)), remote: netip.AddrPortFrom(netip.MustParseAddr("127.0.0.1"), uint16(remote))}
+	owner, err := resolveProcessOwner(flow)
+	if err != nil {
+		t.Fatal("real owner unavailable", err)
+	}
+	for _, mode := range []string{exvpn.RoutingDisabled, exvpn.RoutingExclude, exvpn.RoutingInclude} {
+		for _, selected := range []bool{false, true} {
+			direct, proxy := &countingOutbound{tag: "direct-excluded"}, &countingOutbound{tag: "proxy"}
+			allowed := map[string]bool{}
+			if selected {
+				allowed[applicationPathKey(owner.path)] = true
+			}
+			policy := &applicationPolicy{Handler: direct, fallback: proxy, allowed: allowed, mode: mode, resolve: resolveProcessOwner}
+			ctx := session.ContextWithInbound(context.Background(), &session.Inbound{Tag: "vpn", Name: "tun", Source: xnet.TCPDestination(xnet.ParseAddress("127.0.0.1"), xnet.Port(port))})
+			ctx = session.ContextWithOutbounds(ctx, []*session.Outbound{{OriginalTarget: xnet.TCPDestination(xnet.ParseAddress("127.0.0.1"), xnet.Port(remote))}})
+			policy.Dispatch(ctx, &transport.Link{})
+			want := (mode == exvpn.RoutingExclude && selected) || (mode == exvpn.RoutingInclude && !selected)
+			if (direct.calls == 1) != want || direct.calls+proxy.calls != 1 {
+				t.Fatalf("real verified image routed incorrectly mode=%s selected=%v", mode, selected)
+			}
 		}
 	}
 }

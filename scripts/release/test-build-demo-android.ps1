@@ -203,3 +203,13 @@ $proof = [ordered]@{
 Write-AuditJson (Join-Path $fixture 'proof.json') $proof
 Write-Host "Android demo build helpers: $checks checks PASS; no build, signing, device or cloud action."
 Write-Host ('Proof: ' + [IO.Path]::GetRelativePath($repository, (Join-Path $fixture 'proof.json')))
+
+$futureArguments=Get-DemoAndroidBuildArguments '0.1.2+23'
+Assert-True ($futureArguments -ccontains '--build-name=0.1.2' -and $futureArguments -ccontains '--build-number=23')
+$futureBadging=$validBadging.Replace("versionCode='18'","versionCode='23'").Replace("versionName='0.1.0'","versionName='0.1.2'")
+Assert-True ((ConvertFrom-DemoAndroidIdentity $futureBadging '0.1.2+23').version -ceq '0.1.2+23')
+Assert-Refused { ConvertFrom-DemoAndroidIdentity $futureBadging }
+Assert-Refused { ConvertFrom-DemoAndroidIdentity $futureBadging '0.1.2+24' }
+Assert-Refused { Assert-DemoAndroidVersion '0.1.2+23' }
+Assert-DemoAndroidVersion '0.1.2+23' '0.1.2+23'
+Write-Host 'Preview Android version binding and frozen demo default: PASS.'

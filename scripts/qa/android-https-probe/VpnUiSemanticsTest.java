@@ -124,6 +124,22 @@ public final class VpnUiSemanticsTest {
         check(connected.actionAccepted && "disconnected".equals(connected.beforePhase) &&
                 "connected".equals(connected.afterPhase), "connect evidence");
         run("disconnect", "completed", 1, new Reader(on, on, off));
+        for (String phase : Arrays.asList("Подключение…", "Ожидание разрешения")) {
+            Snapshot pendingCancel = state("Отменить VPN", phase);
+            VpnUiSemantics.Result canceled = run("cancel", "completed", 1,
+                    new Reader(pendingCancel, pendingCancel, off));
+            check(canceled.actionAccepted && "disconnected".equals(canceled.afterPhase), "cancel readback");
+            run("cancel", "accepted_unconfirmed", 1,
+                    new Reader(pendingCancel, pendingCancel, pendingCancel));
+            run("cancel", "stale_target", 0, new Reader(pendingCancel, on));
+            Snapshot refusedCancel = state("Отменить VPN", phase);
+            refusedCancel.accepted = false;
+            run("cancel", "action_rejected", 1, new Reader(pendingCancel, refusedCancel));
+        }
+        run("cancel", "precondition_failed", 0, new Reader(off));
+        run("cancel", "precondition_failed", 0, new Reader(on));
+        run("disconnect", "precondition_failed", 0,
+                new Reader(state("Отменить VPN", "Подключение…")));
         for (String phase : Arrays.asList("Восстановление соединения…", "Трафик заблокирован")) {
             Snapshot recovering = state(DISCONNECT, phase);
             run("disconnect", "completed", 1, new Reader(recovering, recovering, off));

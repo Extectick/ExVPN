@@ -38,7 +38,7 @@ void main() {
       await tester.pumpWidget(
         _russianUpdates(UpdatesSheet(updates: data, dartUpdates: dart)),
       );
-      expect(find.text('Недоступен в этой сборке'), findsOneWidget);
+      expect(find.text('Недоступен в этой сборке'), findsNothing);
       expect(find.text('Базовый выпуск'), findsNothing);
       await tester.scrollUntilVisible(
         find.byKey(const Key('dart-updates-unavailable')),
@@ -46,6 +46,7 @@ void main() {
       );
       expect(find.byKey(const Key('dart-updates-check')), findsNothing);
       expect(find.byKey(const Key('dart-updates-download')), findsNothing);
+      expect(find.byType(ExpansionTile), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
@@ -86,7 +87,8 @@ void main() {
       await tapVisible(tester, find.text('Версии и обновления'));
       expect(backend.reads, 1);
       expect(backend.checks, 1);
-      expect(find.text('Патч 7'), findsOneWidget);
+      expect(find.text('Патч 7'), findsNothing);
+      expect(dart.snapshot!.current, 7);
       await tapVisible(tester, find.byKey(const Key('dart-updates-check')));
       backend.saved = const DartPatchSnapshot(
         available: true,
@@ -98,10 +100,7 @@ void main() {
         find.byKey(const Key('dart-updates-pending')),
         -160,
       );
-      expect(
-        find.text('Для следующего запуска подготовлен патч 8.'),
-        findsOneWidget,
-      );
+      expect(find.text('Обновление готово к перезапуску.'), findsOneWidget);
       expect(dart.snapshot!.current, 7);
       expect(backend.downloads, 1);
       expect(bridge.disconnects, 0);
@@ -136,14 +135,14 @@ void main() {
       await tester.pumpWidget(
         _russianUpdates(UpdatesSheet(updates: data, dartUpdates: dart)),
       );
-      await tester.scrollUntilVisible(find.text('Патч 4'), 200);
-      expect(find.text('Патч 4'), findsOneWidget);
+      expect(find.text('Патч 4'), findsNothing);
+      expect(dart.snapshot!.current, 4);
       await tester.scrollUntilVisible(
         find.byKey(const Key('dart-updates-pending')),
         200,
       );
       expect(
-        find.text('Подготовлен возврат к базовому выпуску.'),
+        find.text('Подготовлен возврат к исходной версии интерфейса.'),
         findsOneWidget,
       );
       expect(find.byKey(const Key('dart-updates-download')), findsNothing);
@@ -167,7 +166,9 @@ void main() {
     await tester.pumpWidget(
       _russianUpdates(UpdatesSheet(updates: data, dartUpdates: dart)),
     );
-    expect(find.text('Не удалось определить'), findsNWidgets(2));
+    expect(find.text('Не удалось определить'), findsOneWidget);
+    expect(find.text('Dart-патч'), findsNothing);
+    expect(find.byType(ExpansionTile), findsNothing);
     expect(find.text('Базовый выпуск'), findsNothing);
     await tester.scrollUntilVisible(
       find.byKey(const Key('dart-updates-error')),

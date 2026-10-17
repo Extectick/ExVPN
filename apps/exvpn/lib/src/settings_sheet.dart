@@ -17,6 +17,7 @@ import 'exclusions_sheet.dart';
 import 'sliding_segments.dart';
 import 'theme_editor.dart';
 import 'updates_sheet.dart';
+import 'settings_navigation_row.dart';
 
 class SettingsSheet extends StatefulWidget {
   const SettingsSheet({
@@ -83,12 +84,21 @@ class _SettingsSheetState extends State<SettingsSheet> {
   );
 
   void _diagnostics() {
+    final updates = DataUpdatesScope.maybeOf(context);
+    final dartUpdates = DartUpdatesScope.maybeOf(context);
     final report = safeDiagnostics(
       status: widget.vpn?.status,
       platform: kIsWeb ? 'web' : defaultTargetPlatform.name,
       coreVersion: widget.vpn?.core,
       errorCode: widget.vpn?.lastErrorCode,
       secureStorageAvailable: widget.persistence != null,
+      dataRevision: updates?.snapshot.revision,
+      dataChannel: updates?.channel,
+      dartUpdatesAvailable: dartUpdates?.snapshot?.available,
+      currentDartPatch: dartUpdates?.snapshot?.current,
+      nextDartPatch: dartUpdates?.snapshot?.next,
+      dartRestartRequired: dartUpdates?.restartRequired,
+      dartUpdateTrack: dartUpdates?.track,
     );
     showDialog<void>(
       context: context,
@@ -279,18 +289,10 @@ class _SettingsSheetState extends State<SettingsSheet> {
             const SizedBox(height: 24),
             const Divider(),
             const SizedBox(height: 8),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.apps_outlined),
-              title: Text(context.tr('Исключения приложений')),
-              subtitle: Text(
-                context.tr(
-                  widget.vpn == null
-                      ? 'Требуется системный VPN-модуль'
-                      : 'Прямой доступ для выбранных приложений',
-                ),
-              ),
-              trailing: const Icon(Icons.chevron_right),
+            SettingsNavigationRow(
+              icon: Icons.apps_outlined,
+              title: context.tr('Исключения приложений'),
+              subtitle: context.tr('Где работает VPN'),
               onTap: widget.vpn != null
                   ? () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
@@ -302,18 +304,14 @@ class _SettingsSheetState extends State<SettingsSheet> {
                       'Список приложений и правила обхода VPN будут доступны после подключения и проверки системного модуля.',
                     ),
             ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.shield_outlined),
-              title: Text(context.tr('Защита соединения')),
-              subtitle: Text(
-                context.tr(
-                  widget.vpn?.status.processCrashProtection == true
-                      ? 'Системная защита подтверждена'
-                      : 'Защита при сбое процесса не подтверждена',
-                ),
+            SettingsNavigationRow(
+              icon: Icons.shield_outlined,
+              title: context.tr('Защита соединения'),
+              subtitle: context.tr(
+                widget.vpn?.status.processCrashProtection == true
+                    ? 'Системная защита подтверждена'
+                    : 'Защита соединения ещё не подтверждена.',
               ),
-              trailing: const Icon(Icons.chevron_right),
               onTap: () => showDialog<void>(
                 context: context,
                 builder: (ctx) => AlertDialog(
@@ -325,7 +323,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
                       children: [
                         Text(
                           ctx.tr(
-                            'На Android защита при аварии процесса требует Always-on VPN и «Блокировать соединения без VPN» в настройках системы. Эта блокировка может оставаться включённой после отключения в приложении. На Windows защитой управляет служба ExVPN.',
+                            'На Android включите Always-on VPN и «Блокировать соединения без VPN» в настройках системы. Блокировка может оставаться включённой после отключения VPN. На Windows защитой управляет ExVPN.',
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -365,20 +363,16 @@ class _SettingsSheetState extends State<SettingsSheet> {
                 ),
               ),
             ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.system_update_alt),
-              title: Text(context.tr('Версии и обновления')),
-              subtitle: Text(
-                context.tr(
-                  'ExVPN {version} · сборка {build}',
-                  values: {
-                    'version': widget.previewVersion ?? appVersion,
-                    'build': '${widget.previewBuild ?? appBuild}',
-                  },
-                ),
+            SettingsNavigationRow(
+              icon: Icons.system_update_alt,
+              title: context.tr('Версии и обновления'),
+              subtitle: context.tr(
+                'ExVPN {version} · сборка {build}',
+                values: {
+                  'version': widget.previewVersion ?? appVersion,
+                  'build': '${widget.previewBuild ?? appBuild}',
+                },
               ),
-              trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 final updates = DataUpdatesScope.maybeOf(context);
                 final dartUpdates = DartUpdatesScope.maybeOf(context);
@@ -395,12 +389,10 @@ class _SettingsSheetState extends State<SettingsSheet> {
                 }
               },
             ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.description_outlined),
-              title: Text(context.tr('Обезличенная диагностика')),
-              subtitle: Text(context.tr('Посмотреть и скопировать отчёт')),
-              trailing: const Icon(Icons.chevron_right),
+            SettingsNavigationRow(
+              icon: Icons.description_outlined,
+              title: context.tr('Обезличенная диагностика'),
+              subtitle: context.tr('Посмотреть и скопировать отчёт'),
               onTap: _diagnostics,
             ),
             const SizedBox(height: 20),

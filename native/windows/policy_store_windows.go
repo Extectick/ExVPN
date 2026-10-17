@@ -146,20 +146,35 @@ func (s *windowsPolicyStore) read() ([]byte, error) {
 }
 
 func (s *windowsPolicyStore) Load() ([]string, error) {
-	b, err := s.read()
+	policy, err := s.LoadRouting()
 	if err != nil {
 		return nil, err
 	}
+	if policy.Mode != "exclude" {
+		return []string{}, nil
+	}
+	return policy.Applications, nil
+}
+
+func (s *windowsPolicyStore) LoadRouting() (ApplicationRoutingPolicy, error) {
+	b, err := s.read()
+	if err != nil {
+		return ApplicationRoutingPolicy{}, err
+	}
 	plain, err := policyCrypt(b, s.owner, false)
 	if err != nil {
-		return nil, Code("exclusions_unavailable")
+		return ApplicationRoutingPolicy{}, Code("exclusions_unavailable")
 	}
 	defer clear(plain)
-	return decodePolicy(s.owner, plain)
+	return decodeRoutingPolicy(s.owner, plain)
 }
 
 func (s *windowsPolicyStore) Save(paths []string) error {
-	plain, err := encodePolicy(s.owner, paths)
+	return s.SaveRouting(legacyApplicationRouting(paths))
+}
+
+func (s *windowsPolicyStore) SaveRouting(policy ApplicationRoutingPolicy) error {
+	plain, err := encodeRoutingPolicy(s.owner, policy)
 	if err != nil {
 		return err
 	}

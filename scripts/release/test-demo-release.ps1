@@ -69,3 +69,12 @@ Assert-Refused { Get-DemoAssetRecord $fixture }
 $empty=Join-Path $fixture 'empty.txt';[IO.File]::WriteAllBytes($empty,[byte[]]@())
 Assert-Refused { Get-DemoAssetRecord $empty }
 Write-Host "Demo delivery policy: $checks checks PASS; no account changes or publication."
+
+$future=New-Report 'Windows'
+$future.appVersion='0.1.2+23';$future.expectedAppVersion='0.1.2+23'
+Assert-DemoAudit $future Windows ('a'*64) '0.1.2+23'
+Assert-Refused { Assert-DemoAudit $future Windows ('a'*64) }
+Assert-Refused { Assert-DemoAudit $future Windows ('a'*64) '0.1.2+24' }
+$future.findings=@([pscustomobject]@{code='unsigned_unexpected_component'})
+Assert-Refused { Assert-DemoAudit $future Windows ('a'*64) '0.1.2+23' }
+Write-Host 'Preview version and findings binding: PASS.'

@@ -27,6 +27,8 @@ $expectedSuites = @(
     'scripts/qa/test-windows-transport-lifecycle.ps1|7',
     'scripts/qa/test-windows-subscriptions.ps1|7',
     'scripts/qa/test-windows-subscriptions.ps1|5.1',
+    'scripts/qa/test-routing-modes-evidence.ps1|7',
+    'scripts/qa/test-routing-modes-evidence.ps1|5.1',
     'scripts/qa/test-teardown-qa.ps1|7',
     'scripts/qa/test-teardown-qa.ps1|5.1',
     'scripts/ci/test-build-impact.ps1|7',
@@ -45,7 +47,7 @@ $expectedSuites = @(
 $actualSuites = @($dispatchSuites | ForEach-Object { $_.suite + '|' + $_.hostVersion })
 $ciSuites = @($dispatchSuites | Where-Object lane -CEQ 'ci')
 if ((($actualSuites | Sort-Object) -join ',') -cne (($expectedSuites | Sort-Object) -join ',') -or
-    $actualSuites.Count -ne 23 -or $ciSuites.Count -ne 1 -or $ciSuites[0].suite -cne 'scripts/ci/test-build-impact.ps1') {
+    $actualSuites.Count -ne 25 -or $ciSuites.Count -ne 1 -or $ciSuites[0].suite -cne 'scripts/ci/test-build-impact.ps1') {
     throw 'Scripts/CI partition lost, duplicated or substituted a required suite or PowerShell host.'
 }
 $fixture = Join-Path $repository ('artifacts/qa/runner-fixture-' + [Guid]::NewGuid().ToString('N'))

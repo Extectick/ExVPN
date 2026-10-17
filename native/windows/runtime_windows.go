@@ -123,7 +123,8 @@ func startTunnelResolved(ctx context.Context, p exvpn.Profile, exclusions []stri
 		return nil, Code("entropy_failed")
 	}
 	password := hex.EncodeToString(secret)
-	b, e := buildTunnelConfig(p, exclusions, exvpn.ProbeOptions{Port: port, Username: "exvpn", Password: password}, resolution)
+	policy := routingFromContext(ctx, exclusions)
+	b, e := buildTunnelConfigWithRouting(p, policy, exvpn.ProbeOptions{Port: port, Username: "exvpn", Password: password}, resolution)
 	if e != nil {
 		return nil, e
 	}
@@ -148,7 +149,7 @@ func startTunnelResolved(ctx context.Context, p exvpn.Profile, exclusions []stri
 		}
 		return nil, Code("core_start_failed")
 	}
-	if e = installApplicationPolicy(i, exclusions); e != nil {
+	if e = installApplicationRouting(i, policy); e != nil {
 		return &xrayTunnel{instance: i, lease: lease}, e
 	}
 	if e = i.Start(); e != nil {

@@ -44,6 +44,8 @@ type Controller struct {
 	stopping           int
 	exclusions         []string
 	exclusionsKnown    bool
+	applicationRouting ApplicationRoutingPolicy
+	guardRecovered     bool
 	policy             PolicyStore
 	monitorInterval    time.Duration
 	reconnectDelays    []time.Duration
@@ -68,12 +70,27 @@ func NewControllerWithPolicy(g Guard, f TunnelFactory, validate func([]string) e
 		c.status.Code = "guard_recovered"
 	}
 	c.exclusionsKnown = !armed
+	c.guardRecovered = armed
+	c.applicationRouting = legacyApplicationRouting(nil)
 	c.policy = policy
 	if policy != nil {
-		paths, loadErr := policy.Load()
+		var paths []string
+		var loadErr error
+		var routing ApplicationRoutingPolicy
+		if store, ok := policy.(ApplicationRoutingStore); ok {
+			routing, loadErr = store.LoadRouting()
+			paths = routing.effective()
+			if loadErr == nil && routing.validate() != nil {
+				loadErr = Code("exclusions_unavailable")
+			}
+		} else {
+			paths, loadErr = policy.Load()
+			routing = legacyApplicationRouting(paths)
+		}
 		switch {
 		case loadErr == nil && validatePolicyPaths(paths) == nil:
 			c.exclusions = append([]string{}, paths...)
+			c.applicationRouting = routing.clone()
 			c.exclusionsKnown = true
 		case loadErr == policyMissing && !armed:
 			// Seed a genuinely new owner's key once. A later missing value is
@@ -128,6 +145,9 @@ func (c *Controller) Handle(r Request) Response {
 		c.mu.Lock()
 		known := c.exclusionsKnown
 		paths := append([]string{}, c.exclusions...)
+		if c.applicationRouting.Mode != exvpn.RoutingExclude {
+			paths = []string{}
+		}
 		c.mu.Unlock()
 		if !known {
 			return Response{Version: ProtocolVersion, ID: r.ID, Code: "exclusions_unavailable", Status: c.Status()}
@@ -135,6 +155,22 @@ func (c *Controller) Handle(r Request) Response {
 		return Response{Version: ProtocolVersion, ID: r.ID, OK: true, Code: "ok", Status: c.Status(), Exclusions: paths}
 	case "setExclusions":
 		if err := c.setExclusions(r.Exclusions); err != nil {
+			return Response{Version: ProtocolVersion, ID: r.ID, Code: safeCode(err, "native_storage_unavailable"), Status: c.Status()}
+		}
+	case "getApplicationRouting":
+		c.mu.Lock()
+		known := c.exclusionsKnown
+		policy := c.applicationRouting.clone()
+		c.mu.Unlock()
+		if !known {
+			return Response{Version: ProtocolVersion, ID: r.ID, Code: "exclusions_unavailable", Status: c.Status()}
+		}
+		return Response{Version: ProtocolVersion, ID: r.ID, OK: true, Code: "ok", Status: c.Status(), ApplicationRouting: &policy}
+	case "setApplicationRouting":
+		if r.ApplicationRouting == nil {
+			return Response{Version: ProtocolVersion, ID: r.ID, Code: "application_routing_rejected", Status: c.Status()}
+		}
+		if err := c.setApplicationRouting(*r.ApplicationRouting); err != nil {
 			return Response{Version: ProtocolVersion, ID: r.ID, Code: safeCode(err, "native_storage_unavailable"), Status: c.Status()}
 		}
 	case "probe":
@@ -199,13 +235,62 @@ func (c *Controller) resolvePolicyLocked(p exvpn.Profile, paths []string, stored
 }
 
 func (c *Controller) savePolicyLocked(paths []string) error {
-	if c.policy != nil && c.policy.Save(paths) != nil {
+	return c.saveApplicationRoutingLocked(legacyApplicationRouting(paths))
+}
+
+func (c *Controller) saveApplicationRoutingLocked(policy ApplicationRoutingPolicy) error {
+	var err error
+	if c.policy != nil {
+		if store, ok := c.policy.(ApplicationRoutingStore); ok {
+			err = store.SaveRouting(policy.clone())
+		} else if policy.Mode == exvpn.RoutingInclude || (policy.Mode == exvpn.RoutingDisabled && len(policy.Applications) > 0) {
+			return Code("application_routing_unsupported")
+		} else {
+			err = c.policy.Save(policy.Applications)
+		}
+	}
+	if err != nil {
 		// A failed write/flush can have an unknown outcome. Do not publish a
 		// remembered list as confirmed or silently replace it with an empty one.
 		c.exclusionsKnown = false
 		return Code("native_storage_unavailable")
 	}
-	c.exclusions, c.exclusionsKnown = append([]string{}, paths...), true
+	c.applicationRouting = policy.clone()
+	c.exclusions, c.exclusionsKnown = policy.effective(), true
+	return nil
+}
+
+func (c *Controller) setApplicationRouting(policy ApplicationRoutingPolicy) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.closed || c.cancel != nil || c.tunnel != nil || c.stopping != 0 {
+		return Code("reconnect_required")
+	}
+	if policy.validate() != nil {
+		return Code("application_routing_rejected")
+	}
+	checked := policy.Applications
+	if policy.Mode == exvpn.RoutingDisabled {
+		remembered := map[string]bool{}
+		for _, id := range c.applicationRouting.Applications {
+			remembered[applicationPathKey(id)] = true
+		}
+		checked = []string{}
+		for _, id := range policy.Applications {
+			if !remembered[applicationPathKey(id)] {
+				checked = append(checked, id)
+			}
+		}
+	}
+	if c.validateExclusions != nil && c.validateExclusions(checked) != nil {
+		return Code("application_routing_rejected")
+	}
+	if err := c.saveApplicationRoutingLocked(policy); err != nil {
+		return err
+	}
+	if !c.status.GuardActive && c.status.State == "error" && c.status.Code == "exclusions_unavailable" {
+		c.status.State, c.status.Code = "disconnected", "policy_restored"
+	}
 	return nil
 }
 
@@ -260,10 +345,11 @@ func (c *Controller) connectInMode(p exvpn.Profile, paths []string, stored bool,
 	if c.stopping != 0 || (!replace && (c.cancel != nil || c.tunnel != nil)) {
 		return Code("connection_busy")
 	}
-	// Only an explicitly selected transition from an owned, healthy VPN may
-	// remove its guard. Recovery/unknown cleanup is never a proxy bypass.
-	allowGuardRelease := replace && c.tunnel != nil && c.tunnelMode == ModeVPN &&
-		c.status.GuardActive && (c.status.State == "connected" || c.status.State == "reconnecting")
+	// Explicit replacement can cancel an owned pending VPN as well as a verified
+	// VPN. A recovered/unknown latch is never permission for a proxy bypass.
+	ownedPendingVPN := c.cancel != nil && c.status.Mode == ModeVPN && c.status.State == "connecting" && !c.guardRecovered
+	verifiedVPN := c.tunnel != nil && c.tunnelMode == ModeVPN && c.status.GuardActive && (c.status.State == "connected" || c.status.State == "reconnecting")
+	allowGuardRelease := replace && (verifiedVPN || ownedPendingVPN)
 	var exclusions []string
 	var err error
 	if mode == ModeProxy {
@@ -288,7 +374,11 @@ func (c *Controller) connectInMode(p exvpn.Profile, paths []string, stored bool,
 		return err
 	}
 	if mode == ModeVPN {
-		err = c.savePolicyLocked(exclusions)
+		if stored {
+			err = c.saveApplicationRoutingLocked(c.applicationRouting.clone())
+		} else {
+			err = c.savePolicyLocked(exclusions)
+		}
 	}
 	if err != nil {
 		return err
@@ -297,6 +387,9 @@ func (c *Controller) connectInMode(p exvpn.Profile, paths []string, stored bool,
 		c.cancel()
 	}
 	ctx, cancel := context.WithCancel(context.Background())
+	if mode == ModeVPN {
+		ctx = context.WithValue(ctx, applicationRoutingContextKey{}, c.applicationRouting.clone())
+	}
 	c.cancel = cancel
 	c.context = ctx
 	c.generation++
@@ -395,6 +488,7 @@ func (c *Controller) connect(ctx context.Context, generation uint64, p exvpn.Pro
 		return
 	}
 	c.tunnel = t
+	c.guardRecovered = false
 	if recovering {
 		c.status.State, c.status.Code = "reconnecting", "transport_unreachable"
 		c.status.ConnectedAt = 0
@@ -538,6 +632,7 @@ func (c *Controller) Disconnect() error {
 		}
 	}
 	c.status.State, c.status.Code, c.status.GuardActive = "disconnected", "explicit_disconnect", false
+	c.guardRecovered = false
 	c.status.ConnectedAt = 0
 	c.status.ActiveProfileID = ""
 	c.status.ProxyPort = 0

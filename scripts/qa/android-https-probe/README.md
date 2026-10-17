@@ -126,7 +126,10 @@ earlier helper APK and its evidence:
 ./scripts/qa/android-https-probe/vpn-ui.ps1 -Serial emulator-5576 -Command observe -OutputDirectory "$PWD/.private/vpn-ui-run"
 ```
 
-Commands are `observe`, `connect`, and `disconnect`; there is no toggle or retry.
+Commands are `observe`, `connect`, `disconnect`, and `cancel`; there is no toggle or retry.
+`cancel` clicks the ordinary Cancel VPN button only while connecting or waiting
+for permission, then requires a fresh disconnected UI state. A system permission
+dialog or a transition to connected before the fresh click snapshot is refused.
 The active package must be exactly `ru.exvpn.exvpn`. The helper requires one
 visible, enabled, clickable Button with the expected exact Russian accessibility
 label, plus a consistent visible connection status. It rejects dialogs, editable

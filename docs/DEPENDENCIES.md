@@ -4,6 +4,15 @@
 
 ## Основные компоненты
 
+Отдельные инструменты публикации Windows feed, 2026-10-18: CPython **3.13.16**
+(PSF), `cryptography` **46.0.5** (Apache-2.0 OR BSD-3-Clause), `cffi` **2.0.0**
+(MIT) и `pycparser` **3.0** (BSD-3-Clause). Только CI signing job, в приложение
+не включаются. Все три Windows x64 wheels закреплены SHA-256 в
+`scripts/release/windows-feed-requirements.txt`, установка с `--require-hashes
+--no-deps`; setup-python также закреплён commit. WinRT PNG encoder и Android
+PackageManager/Bitmap используют системные API, новых runtime-зависимостей
+для иконок нет.
+
 | Компонент | Версия / фиксация | Лицензия | Состояние и проверка |
 |---|---|---|---|
 | Windows WinINET / Crypt32 | Системные API Windows 10/11; SDK 10.0.26100.0 текущего закреплённого toolchain | Компоненты ОС Microsoft; DLL не переупаковываются | Собственный adapter +19 управляет пользовательским системным proxy и шифрует backup через DPAPI. Новых Dart/Go зависимостей нет. [Контракт](SYSTEM_PROXY.md) |

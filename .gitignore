@@ -77,3 +77,9 @@ credentials.json
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Local browser verification and Python helper caches
+/output/playwright/
+/.playwright-cli/
+__pycache__/
+*.pyc

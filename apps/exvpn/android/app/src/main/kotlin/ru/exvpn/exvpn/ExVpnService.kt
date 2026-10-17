@@ -31,6 +31,7 @@ class ExVpnService : VpnService() {
     private lateinit var connectivity: ConnectivityManager
     private var tunnel: ParcelFileDescriptor? = null
     @Volatile private var request: ConnectRequest? = null
+    private val latestRequests = LatestConnectRequest<ConnectRequest>()
     private var requestNeedsSave = false
     private val generation = AtomicLong()
     @Volatile private var activeRequestGeneration = 0L
@@ -78,6 +79,7 @@ class ExVpnService : VpnService() {
         // An unsolicited system start must not supersede an explicit stop that
         // is still clearing the durable resume record on the worker.
         if (stopping && next == null) return START_NOT_STICKY
+        latestRequests.accept(next)
         val notification = notification("Подключение VPN…")
         if (Build.VERSION.SDK_INT >= 34) startForeground(NOTIFICATION, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SYSTEM_EXEMPTED)
         else startForeground(NOTIFICATION, notification)
@@ -87,8 +89,9 @@ class ExVpnService : VpnService() {
             if (stopping || command != generation.get()) return@execute
             try {
                 ensureTunnel()
-                if (next != null) {
-                    request = next
+                val accepted = latestRequests.current
+                if (accepted != null && request !== accepted) {
+                    request = accepted
                     requestNeedsSave = true
                 } else if (request == null) {
                     request = VpnPersistence.loadResume(this)
@@ -122,6 +125,17 @@ class ExVpnService : VpnService() {
             .addDnsServer("10.89.0.2").addDnsServer("fd42:6578:7670::2")
             .setMetered(false).setBlocking(false).establish()
             ?: throw IllegalStateException("vpn_permission_revoked")
+    }
+
+    /** Main-thread replacement cancels bounded work immediately. The existing
+     * all-app TUN remains open until the queued latest request restarts its core. */
+    fun prepareReplacement() {
+        if (stopping) return
+        generation.incrementAndGet()
+        endpointLookup?.cancel()
+        healthTask?.cancel(false)
+        statsTask?.cancel(false)
+        if (NativeCore.available) NativeCore.cancel()
     }
 
     private fun selectUnderlying(): Network? = (listOfNotNull(underlying) + connectivity.allNetworks.toList()).firstOrNull {
@@ -181,7 +195,7 @@ class ExVpnService : VpnService() {
             if (!NativeCore.available) { blocked("native_core_unavailable"); return }
             val validation = NativeCore.validate(current.profile.toByteArray(Charsets.UTF_8))
             if (validation.isNotEmpty()) { blocked(validation); return }
-            resolvedUIDs = resolveExclusions(current.packages)
+            resolvedUIDs = if (current.routingMode == "disabled") emptySet() else resolveExclusions(current.packages)
             if (requestNeedsSave) {
                 VpnPersistence.saveResume(this, current)
                 requestNeedsSave = false
@@ -196,7 +210,7 @@ class ExVpnService : VpnService() {
             if (stopping || command != generation.get()) return
             if (endpoint == null) { blocked("endpoint_resolution_failed"); return }
             ensureTunnel()
-            val code = NativeCore.start(this, tunnel!!.fd, current.profile.toByteArray(Charsets.UTF_8), endpoint, resolvedUIDs.toIntArray())
+            val code = NativeCore.start(this, tunnel!!.fd, current.profile.toByteArray(Charsets.UTF_8), endpoint, resolvedUIDs.toIntArray(), current.routingMode)
             if (stopping || command != generation.get()) { NativeCore.stop(); return }
             if (code.isNotEmpty()) { blocked(code); return }
             checkHealth()
@@ -297,6 +311,7 @@ class ExVpnService : VpnService() {
 
     private fun stopExplicitly(revoked: Boolean = false) {
         stopping = true
+        latestRequests.clear()
         val command = generation.incrementAndGet()
         endpointLookup?.cancel()
         healthTask?.cancel(true); statsTask?.cancel(true)
@@ -326,6 +341,7 @@ class ExVpnService : VpnService() {
     override fun onRevoke() { stopExplicitly(revoked = true) }
     override fun onDestroy() {
         stopping = true
+        latestRequests.clear()
         generation.incrementAndGet()
         endpointLookup?.cancel()
         healthTask?.cancel(true); statsTask?.cancel(true)

@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #requires -Version 7.0
 [CmdletBinding()]
-param()
+param(
+    [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$')][string]$ReleaseVersion = '0.1.0+18',
+    [ValidateSet('demo','preview')][string]$Delivery = 'demo'
+)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
@@ -10,8 +13,9 @@ $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'notice-inputs.ps1')
 $app = Join-Path $repository 'apps/exvpn'
 $version = Get-NoticeAppVersion ([IO.File]::ReadAllText((Join-Path $app 'pubspec.yaml'))) ([IO.File]::ReadAllText((Join-Path $app 'lib/build_identity.dart')))
-if ($version -cne '0.1.0+18') { throw 'demo_version_mismatch' }
-$output = Join-Path $repository 'artifacts/demo/windows'
+if ($version -cne $ReleaseVersion -or ($Delivery -ceq 'demo' -and $ReleaseVersion -cne '0.1.0+18')) { throw 'demo_version_mismatch' }
+$parts = $version.Split('+')
+$output = Join-Path $repository "artifacts/$Delivery/windows"
 if (Test-Path -LiteralPath $output) { throw 'demo_output_exists' }
 New-Item -ItemType Directory -Path $output | Out-Null
 $flutter = Join-Path $repository '.tools/flutter/bin/flutter.bat'
@@ -34,11 +38,11 @@ $new = @(Get-ChildItem -LiteralPath $packageRoot -Directory -Filter 'package-*' 
 if ($new.Count -ne 1) { throw 'demo_package_ambiguous' }
 $package = $new[0].FullName
 $artifact = Get-Content -LiteralPath (Join-Path $package 'artifact.json') -Raw | ConvertFrom-Json
-if ($artifact.version -cne '0.1.0' -or $artifact.build -ne 18 -or $artifact.signed) { throw 'demo_installer_metadata_invalid' }
+if ($artifact.version -cne $parts[0] -or $artifact.build -ne [int]$parts[1] -or $artifact.signed) { throw 'demo_installer_metadata_invalid' }
 $installer = Join-Path $package $artifact.file
 if ((Get-DemoSha256 $installer) -cne $artifact.sha256) { throw 'demo_installer_hash_mismatch' }
-Export-DemoAudit -Target Windows -ArtifactPath $package -OutputDirectory $output
-$destination = Join-Path $output 'ExVPN-0.1.0-demo-windows-x64.exe'
+Export-DemoAudit -Target Windows -ArtifactPath $package -OutputDirectory $output -ExpectedVersion $version
+$destination = Join-Path $output $(if ($Delivery -ceq 'demo') { 'ExVPN-0.1.0-demo-windows-x64.exe' } else { $artifact.file })
 Copy-Item -LiteralPath $installer -Destination $destination
 [IO.Compression.ZipFile]::CreateFromDirectory((Join-Path $package 'payload/control'), (Join-Path $output 'windows-notices.zip'))
 $source = (& git -C $repository rev-parse HEAD).Trim()

@@ -49,3 +49,36 @@ func BuildConfig(p exvpn.Profile, endpointIP string, uids []int) ([]byte, error)
 	config["policy"] = map[string]any{"system": map[string]any{"statsInboundUplink": true, "statsInboundDownlink": true}}
 	return json.Marshal(config)
 }
+
+// Modern policies use an owned dispatcher. Include never means an inverted
+// process matcher: failure to identify an owner continues through the VPN.
+func BuildConfigWithRouting(p exvpn.Profile, endpointIP, mode string, uids []int) ([]byte, error) {
+	if mode != exvpn.RoutingDisabled && mode != exvpn.RoutingExclude && mode != exvpn.RoutingInclude {
+		return nil, exvpn.CodeError("application_routing_rejected")
+	}
+	if len(uids) > 500 {
+		return nil, exvpn.CodeError("application_routing_rejected")
+	}
+	rules, err := (exvpn.RoutingPolicy{AndroidUIDs: uids, Mode: mode}).Rules("vpn")
+	if err != nil {
+		return nil, err
+	}
+	active := mode == exvpn.RoutingInclude || (mode == exvpn.RoutingExclude && len(uids) > 0)
+	if active {
+		rules[2] = map[string]any{"type": "field", "inboundTag": []string{"vpn"}, "network": "tcp,udp", "outboundTag": exvpn.ApplicationPolicyTag}
+	}
+	data, err := BuildConfig(p, endpointIP, nil)
+	if err != nil {
+		return nil, err
+	}
+	var config map[string]any
+	if json.Unmarshal(data, &config) != nil {
+		return nil, exvpn.CodeError("config_invalid")
+	}
+	rules = append([]map[string]any{{"type": "field", "inboundTag": []string{"healthcheck"}, "outboundTag": "proxy"}}, rules...)
+	config["routing"] = map[string]any{"domainStrategy": "AsIs", "rules": rules}
+	if active {
+		config["outbounds"] = append(config["outbounds"].([]any), map[string]any{"tag": "direct-excluded", "protocol": "freedom", "settings": map[string]any{"domainStrategy": "AsIs"}})
+	}
+	return json.Marshal(config)
+}

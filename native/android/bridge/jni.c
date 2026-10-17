@@ -5,7 +5,7 @@
 #include <string.h>
 
 extern char* ExVPNValidate(char*);
-extern char* ExVPNStart(char*, char*, int, int*, int);
+extern char* ExVPNStart(char*, char*, int, int*, int, char*);
 extern void ExVPNStop(void);
 extern void ExVPNCancel(void);
 extern char* ExVPNHealth(void);
@@ -57,7 +57,7 @@ JNIEXPORT jstring JNICALL Java_ru_exvpn_exvpn_NativeCore_validate(JNIEnv* env,jo
  char* raw=profile_bytes(env,profile);if(!raw)return (*env)->NewStringUTF(env,"profile_invalid_bytes");
  char* result=ExVPNValidate(raw);free(raw);return result_string(env,result);
 }
-JNIEXPORT jstring JNICALL Java_ru_exvpn_exvpn_NativeCore_start(JNIEnv* env,jobject self,jobject owner,jint fd,jbyteArray profile,jstring endpoint,jintArray exclusions){
+JNIEXPORT jstring JNICALL Java_ru_exvpn_exvpn_NativeCore_start(JNIEnv* env,jobject self,jobject owner,jint fd,jbyteArray profile,jstring endpoint,jintArray exclusions,jstring routingMode){
  char* raw=profile_bytes(env,profile);if(!raw)return (*env)->NewStringUTF(env,"profile_invalid_bytes");
  pthread_mutex_lock(&refs);
  if(service){pthread_mutex_unlock(&refs);free(raw);return (*env)->NewStringUTF(env,"core_already_running");}
@@ -67,7 +67,9 @@ JNIEXPORT jstring JNICALL Java_ru_exvpn_exvpn_NativeCore_start(JNIEnv* env,jobje
  service=(*env)->NewGlobalRef(env,owner);(*env)->DeleteLocalRef(env,type);pthread_mutex_unlock(&refs);
  const char* ip=(*env)->GetStringUTFChars(env,endpoint,NULL);
  jint* uids=(*env)->GetIntArrayElements(env,exclusions,NULL);jsize count=(*env)->GetArrayLength(env,exclusions);
- char* result=ExVPNStart((char*)raw,(char*)ip,fd,(int*)uids,count);
+ const char* mode=(*env)->GetStringUTFChars(env,routingMode,NULL);
+ char* result=ExVPNStart((char*)raw,(char*)ip,fd,(int*)uids,count,(char*)mode);
+ (*env)->ReleaseStringUTFChars(env,routingMode,mode);
  (*env)->ReleaseIntArrayElements(env,exclusions,uids,JNI_ABORT);free(raw);(*env)->ReleaseStringUTFChars(env,endpoint,ip);
  if(result[0]){pthread_mutex_lock(&refs);(*env)->DeleteGlobalRef(env,service);service=NULL;pthread_mutex_unlock(&refs);}
  return result_string(env,result);

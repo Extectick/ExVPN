@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
@@ -236,5 +237,61 @@ func TestSystemProxyConfigHasOnlyLoopbackHTTPAndSelectedOutbound(t *testing.T) {
 		if rule.OutboundTag != "proxy" {
 			t.Fatal("HTTP path can escape selected outbound")
 		}
+	}
+}
+
+func TestLatestProxyRequestSafelyCancelsOwnedPendingVPNButNotRecoveredGuard(t *testing.T) {
+	for _, recovered := range []bool{false, true} {
+		t.Run(fmt.Sprint(recovered), func(t *testing.T) {
+			g := &fakeGuard{armed: recovered}
+			entered := make(chan struct{})
+			c, err := NewController(g, func(ctx context.Context, _ exvpn.Profile, _ []string) (Tunnel, error) {
+				close(entered)
+				<-ctx.Done()
+				return nil, Code("cancelled")
+			}, nil, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer c.Shutdown()
+			c.SetProxyFactory(func(context.Context, exvpn.Profile, []string) (Tunnel, error) {
+				if armed, _ := g.Armed(); armed {
+					t.Error("proxy started before owned guard cleanup")
+				}
+				_ = g.event("proxy-start")
+				return &fakeSystemProxy{port: 42509}, nil
+			})
+			if err := c.Connect(syntheticProfile(), nil); err != nil {
+				t.Fatal(err)
+			}
+			<-entered
+			err = c.Reconnect(syntheticProfile(), ModeProxy)
+			if recovered {
+				if err != Code("proxy_requires_guard_recovery") {
+					t.Fatal("recovered pending guard was released", err)
+				}
+				assertGuardNeverDisarmed(t, g)
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			waitState(t, c, "connected")
+			g.mu.Lock()
+			events := slices.Clone(g.events)
+			g.mu.Unlock()
+			disarm, proxy := -1, -1
+			for i, event := range events {
+				if event == "disarm" {
+					disarm = i
+				}
+				if event == "proxy-start" {
+					proxy = i
+				}
+			}
+			if disarm < 0 || proxy <= disarm || c.Status().Mode != ModeProxy {
+				t.Fatal("pending replacement cleanup order failed", events)
+			}
+		})
 	}
 }

@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
+import 'dart:convert';
+
 import 'package:exvpn/main.dart';
 import 'package:exvpn/build_identity.dart';
 import 'package:exvpn/services/app_updates.dart';
@@ -63,10 +65,10 @@ void main() {
         scrollable: find.byType(Scrollable).last,
       );
       await tester.pumpAndSettle();
-      expect(
-        find.textContaining('нет доверенного адреса и ключа'),
-        findsOneWidget,
-      );
+      expect(find.text('Обновления справки пока недоступны.'), findsOneWidget);
+      expect(find.textContaining('доверенного адреса'), findsNothing);
+      expect(find.byType(ExpansionTile), findsNothing);
+      expect(find.byKey(const Key('updates-diagnostics')), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
@@ -109,12 +111,8 @@ void main() {
     await tapVisible(tester, find.byKey(const Key('updates-apply')));
     expect(backend.applied, 1);
     await tapVisible(tester, find.byKey(const Key('updates-recover')));
-    await tester.scrollUntilVisible(
-      find.text('Ревизия 2'),
-      -250,
-      scrollable: find.byType(Scrollable).last,
-    );
-    expect(find.text('Ревизия 2'), findsOneWidget);
+    expect(controller.snapshot.revision, 2);
+    expect(find.text('Ревизия 2'), findsNothing);
     await tester.scrollUntilVisible(
       find.byKey(const Key('updates-help')),
       250,
@@ -154,7 +152,9 @@ void main() {
       await tester.pumpAndSettle();
       await tapVisible(tester, find.byKey(const Key('settings-button')));
       await tapVisible(tester, find.text('Версии и обновления'));
-      expect(find.text('Ревизия 4'), findsOneWidget);
+      expect(find.text('Ревизия 4'), findsNothing);
+      expect(find.byType(ExpansionTile), findsNothing);
+      expect(find.text('Dart-патч'), findsNothing);
       await tester.scrollUntilVisible(
         find.byKey(const Key('updates-help')),
         250,
@@ -166,6 +166,13 @@ void main() {
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);
+      await tapVisible(tester, find.byType(BackButton));
+      await tapVisible(tester, find.text('Обезличенная диагностика'));
+      final report = jsonDecode(
+        tester.widget<SelectableText>(find.byType(SelectableText)).data!,
+      ) as Map<String, dynamic>;
+      expect((report['updates'] as Map)['dataRevision'], 4);
+      expect((report['updates'] as Map)['dartAvailable'], false);
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );

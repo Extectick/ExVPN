@@ -17,6 +17,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"strconv"
 	"strings"
@@ -75,7 +76,7 @@ func ExVPNValidate(raw *C.char) *C.char {
 }
 
 //export ExVPNStart
-func ExVPNStart(raw *C.char, endpoint *C.char, fd C.int, uidValues *C.int, uidCount C.int) *C.char {
+func ExVPNStart(raw *C.char, endpoint *C.char, fd C.int, uidValues *C.int, uidCount C.int, routingMode *C.char) *C.char {
 	state.Lock()
 	defer state.Unlock()
 	if state.instance != nil {
@@ -92,7 +93,8 @@ func ExVPNStart(raw *C.char, endpoint *C.char, fd C.int, uidValues *C.int, uidCo
 	for i, v := range unsafe.Slice(uidValues, int(uidCount)) {
 		uids[i] = int(v)
 	}
-	config, err := androidcore.BuildConfig(p, C.GoString(endpoint), uids)
+	mode := C.GoString(routingMode)
+	config, err := androidcore.BuildConfigWithRouting(p, C.GoString(endpoint), mode, uids)
 	if err != nil {
 		return C.CString(err.Error())
 	}
@@ -114,6 +116,11 @@ func ExVPNStart(raw *C.char, endpoint *C.char, fd C.int, uidValues *C.int, uidCo
 		_ = unix.Close(duplicate)
 		return C.CString("core_start_failed")
 	}
+	if err = androidcore.InstallApplicationRouting(instance, mode, uids, resolveApplicationUID); err != nil {
+		_ = instance.Close()
+		_ = unix.Close(duplicate)
+		return C.CString("owner_policy_unavailable")
+	}
 	if err = instance.Start(); err != nil {
 		_ = instance.Close()
 		_ = unix.Close(duplicate)
@@ -123,6 +130,23 @@ func ExVPNStart(raw *C.char, endpoint *C.char, fd C.int, uidValues *C.int, uidCo
 	state.fd = duplicate
 	state.ctx, state.cancel = context.WithCancel(context.Background())
 	return C.CString("")
+}
+
+func resolveApplicationUID(network string, local, remote netip.AddrPort) (int, error) {
+	protocol := 6
+	if network == "udp" {
+		protocol = 17
+	} else if network != "tcp" {
+		return 0, exvpn.CodeError("owner_unknown")
+	}
+	left, right := C.CString(local.Addr().String()), C.CString(remote.Addr().String())
+	defer C.free(unsafe.Pointer(left))
+	defer C.free(unsafe.Pointer(right))
+	uid := int(C.exvpn_owner(C.int(protocol), left, C.int(local.Port()), right, C.int(remote.Port())))
+	if uid < 10000 {
+		return 0, exvpn.CodeError("owner_unknown")
+	}
+	return uid, nil
 }
 
 //export ExVPNStop

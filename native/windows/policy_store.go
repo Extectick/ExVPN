@@ -15,6 +15,57 @@ type PolicyStore interface {
 	Save([]string) error
 }
 
+type ApplicationRoutingStore interface {
+	LoadRouting() (ApplicationRoutingPolicy, error)
+	SaveRouting(ApplicationRoutingPolicy) error
+}
+
+type routingPolicyDocument struct {
+	Version      int      `json:"version"`
+	Owner        string   `json:"owner"`
+	Mode         string   `json:"mode"`
+	Applications []string `json:"applications"`
+}
+
+func encodeRoutingPolicy(owner string, policy ApplicationRoutingPolicy) ([]byte, error) {
+	if policy.validate() != nil {
+		return nil, Code("application_routing_rejected")
+	}
+	policy = policy.clone()
+	b, err := json.Marshal(routingPolicyDocument{Version: 2, Owner: owner, Mode: policy.Mode, Applications: policy.Applications})
+	if err != nil || len(b) > maxPolicyBytes {
+		return nil, Code("native_storage_unavailable")
+	}
+	return b, nil
+}
+
+func decodeRoutingPolicy(owner string, b []byte) (ApplicationRoutingPolicy, error) {
+	if len(b) == 0 || len(b) > maxPolicyBytes || checkJSON(b) != nil {
+		return ApplicationRoutingPolicy{}, Code("exclusions_unavailable")
+	}
+	var version struct {
+		Version int `json:"version"`
+	}
+	if json.Unmarshal(b, &version) != nil {
+		return ApplicationRoutingPolicy{}, Code("exclusions_unavailable")
+	}
+	if version.Version == 1 {
+		paths, err := decodePolicy(owner, b)
+		return legacyApplicationRouting(paths).clone(), err
+	}
+	var doc routingPolicyDocument
+	d := json.NewDecoder(bytes.NewReader(b))
+	d.DisallowUnknownFields()
+	p := ApplicationRoutingPolicy{}
+	if d.Decode(&doc) == nil {
+		p = ApplicationRoutingPolicy{Mode: doc.Mode, Applications: doc.Applications}
+	}
+	if doc.Version != 2 || doc.Owner != owner || p.validate() != nil {
+		return ApplicationRoutingPolicy{}, Code("exclusions_unavailable")
+	}
+	return p.clone(), nil
+}
+
 const policyMissing = Code("policy_missing")
 const maxPolicyBytes = 256 << 10
 

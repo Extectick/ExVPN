@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'profile.dart';
 
 enum VpnPhase {
@@ -11,6 +13,30 @@ enum VpnPhase {
 }
 
 enum VpnMode { proxy, vpn }
+
+enum ApplicationRoutingMode { disabled, exclude, include }
+
+/// Local application policy. Disabled retains the selection without applying it.
+final class ApplicationRoutingPolicy {
+  ApplicationRoutingPolicy({
+    required this.mode,
+    Set<String> applicationIds = const {},
+  }) : applicationIds = Set<String>.unmodifiable(applicationIds);
+
+  final ApplicationRoutingMode mode;
+  final Set<String> applicationIds;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ApplicationRoutingPolicy &&
+      mode == other.mode &&
+      applicationIds.length == other.applicationIds.length &&
+      applicationIds.containsAll(other.applicationIds);
+
+  @override
+  int get hashCode =>
+      Object.hash(mode, Object.hashAllUnordered(applicationIds));
+}
 
 final class VpnStatus {
   const VpnStatus({
@@ -34,6 +60,7 @@ final class VpnStatus {
   final String? errorCode;
   final VpnMode mode;
   final bool systemProxySupported;
+
   /// Local native recovery is pending even when the service cannot be reached.
   final bool cleanupRequired;
 }
@@ -45,7 +72,9 @@ final class ApplicationIdentity {
     this.sharedIdentityGroup,
   });
 
-  /// Android package name; Windows canonical absolute executable path.
+  /// Android package name; Windows canonical executable path or a native
+  /// recognized application-family anchor (for example, Discord). Treat this
+  /// identity as opaque: a family anchor need not itself be an installed file.
   final String id;
   final String displayName;
   final String? sharedIdentityGroup;
@@ -85,4 +114,22 @@ abstract interface class ConnectionModeBridge {
   bool get supportsConnectionModes;
   Future<void> connectInMode(ConnectionProfile profile, VpnMode mode);
   Future<void> reconnect(ConnectionProfile profile, VpnMode mode);
+}
+
+/// A platform may replace its VPN server while retaining the TUN even when it
+/// has no system-proxy mode (Android). Never emulate this with UI disconnect.
+abstract interface class ServerReconnectBridge {
+  bool get supportsServerReconnect;
+  Future<void> reconnectServer(ConnectionProfile profile);
+}
+
+/// Optional native policy support. Legacy bridges can express exclusions only.
+abstract interface class ApplicationRoutingBridge {
+  Future<ApplicationRoutingPolicy> getApplicationRouting();
+  Future<void> setApplicationRouting(ApplicationRoutingPolicy policy);
+}
+
+/// Optional, cosmetic native icons. Unsupported or missing icons return null.
+abstract interface class ApplicationIconBridge {
+  Future<Uint8List?> getApplicationIcon(String applicationId);
 }

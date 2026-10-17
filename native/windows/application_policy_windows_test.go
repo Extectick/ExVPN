@@ -75,6 +75,35 @@ func TestApplicationPolicyUnknownOrWrongPathUsesProxy(t *testing.T) {
 	}
 }
 
+func TestApplicationIncludeOnlyKnownUnselectedOwnerUsesDirect(t *testing.T) {
+	for _, test := range []struct {
+		name, path      string
+		pid             uint32
+		created         uint64
+		failure, direct bool
+	}{
+		{"selected", "C:/Apps/Selected.exe", 101, 123, false, false},
+		{"unselected", "C:/Apps/Other.exe", 102, 124, false, true},
+		{"unknown", "", 0, 0, true, false},
+		{"invalid pid", "C:/Apps/Other.exe", 0, 124, false, false},
+		{"missing creation", "C:/Apps/Other.exe", 102, 0, false, false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			direct, proxy := &countingOutbound{tag: "direct-excluded"}, &countingOutbound{tag: "proxy"}
+			p := &applicationPolicy{Handler: direct, fallback: proxy, mode: exvpn.RoutingInclude, allowed: map[string]bool{"c:/apps/selected.exe": true}, resolve: func(flowTuple) (processOwner, error) {
+				if test.failure {
+					return processOwner{}, Code("owner_unavailable")
+				}
+				return processOwner{pid: test.pid, created: test.created, path: test.path}, nil
+			}}
+			p.Dispatch(policyContext(xnet.Network_TCP), &transport.Link{})
+			if (direct.calls == 1) != test.direct || direct.calls+proxy.calls != 1 {
+				t.Fatal("include granted unsafe direct routing")
+			}
+		})
+	}
+}
+
 type packetReader struct{ next buf.MultiBuffer }
 
 func (r *packetReader) ReadMultiBuffer() (buf.MultiBuffer, error) {

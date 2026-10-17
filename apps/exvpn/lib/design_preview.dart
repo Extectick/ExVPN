@@ -317,7 +317,8 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
 /// Explicit visual simulation, isolated from the product entry point.
 /// Contains no native bridge, HTTP client, subscription URL or subscription
 /// persistence. Visual preferences use their own isolated preview storage.
-class _DesignOnlyBridge implements VpnBridge, ConnectionModeBridge {
+class _DesignOnlyBridge
+    implements VpnBridge, ConnectionModeBridge, ApplicationRoutingBridge {
   _DesignOnlyBridge(this.selectedId, {required bool initiallyConnected}) {
     _mode = Uri.base.queryParameters['mode'] == 'proxy'
         ? VpnMode.proxy
@@ -353,6 +354,10 @@ class _DesignOnlyBridge implements VpnBridge, ConnectionModeBridge {
   );
   Timer? _transition;
   Timer? _sample;
+  ApplicationRoutingPolicy _routing = ApplicationRoutingPolicy(
+    mode: ApplicationRoutingMode.exclude,
+    applicationIds: {'C:/Preview/Discord/Discord.exe'},
+  );
   void _simulateConnect(
     String? targetId,
     VpnMode mode, {
@@ -436,11 +441,45 @@ class _DesignOnlyBridge implements VpnBridge, ConnectionModeBridge {
   @override
   Future<String> coreVersion() async => 'preview';
   @override
-  Future<Set<String>> getExclusions() async => {};
+  Future<Set<String>> getExclusions() async =>
+      _routing.mode == ApplicationRoutingMode.exclude
+      ? _routing.applicationIds
+      : {};
   @override
-  Future<List<ApplicationIdentity>> listApplications() async => [];
+  Future<List<ApplicationIdentity>> listApplications() async => [
+    for (final name in const [
+      'Discord',
+      'Browser',
+      'Telegram',
+      'Music',
+      'Video',
+      'Mail',
+      'Calendar',
+      'Notes',
+      'Games',
+      'Terminal',
+      'Reader',
+      'Cloud',
+    ])
+      ApplicationIdentity(id: 'C:/Preview/$name/$name.exe', displayName: name),
+  ];
   @override
-  Future<void> setExclusions(Set<String> applicationIds) async {}
+  Future<void> setExclusions(Set<String> applicationIds) async {
+    _routing = ApplicationRoutingPolicy(
+      mode: applicationIds.isEmpty
+          ? ApplicationRoutingMode.disabled
+          : ApplicationRoutingMode.exclude,
+      applicationIds: applicationIds,
+    );
+  }
+
+  @override
+  Future<ApplicationRoutingPolicy> getApplicationRouting() async => _routing;
+  @override
+  Future<void> setApplicationRouting(ApplicationRoutingPolicy policy) async {
+    _routing = policy;
+  }
+
   @override
   Future<ProbeResult> probe(ConnectionProfile profile) async =>
       const ProbeResult(reachable: false);

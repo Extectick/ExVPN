@@ -4,7 +4,7 @@ package ru.exvpn.exvpn
 object NativeCore {
     val available: Boolean = try { System.loadLibrary("exvpn"); true } catch (_: UnsatisfiedLinkError) { false }
     external fun validate(profile: ByteArray): String
-    external fun start(service: ExVpnService, fd: Int, profile: ByteArray, endpoint: String, exclusions: IntArray): String
+    external fun start(service: ExVpnService, fd: Int, profile: ByteArray, endpoint: String, exclusions: IntArray, routingMode: String): String
     external fun stop()
     external fun cancel()
     external fun health(): String

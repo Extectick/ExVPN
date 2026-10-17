@@ -5,6 +5,7 @@ package service
 
 import (
 	"context"
+	exvpn "github.com/Extectick/ExVPN/native/core"
 	"net/netip"
 	"sync/atomic"
 
@@ -25,10 +26,18 @@ type applicationPolicy struct {
 	fallback outbound.Handler
 	allowed  map[string]bool
 	resolve  ownerResolver
+	mode     string
 }
 
 func installApplicationPolicy(instance *core.Instance, exclusions []string) error {
-	if len(exclusions) == 0 {
+	return installApplicationRouting(instance, legacyApplicationRouting(exclusions))
+}
+
+func installApplicationRouting(instance *core.Instance, routing ApplicationRoutingPolicy) error {
+	if routing.validate() != nil {
+		return Code("application_routing_rejected")
+	}
+	if routing.Mode == exvpn.RoutingDisabled || (routing.Mode == exvpn.RoutingExclude && len(routing.Applications) == 0) {
 		return nil
 	}
 	manager, ok := instance.GetFeature(outbound.ManagerType()).(outbound.Manager)
@@ -39,14 +48,14 @@ func installApplicationPolicy(instance *core.Instance, exclusions []string) erro
 	if direct == nil || proxy == nil || manager.GetDefaultHandler() == direct || manager.GetHandler(applicationPolicyTag) != nil {
 		return Code("owner_policy_unavailable")
 	}
-	allowed := make(map[string]bool, len(exclusions))
-	for _, path := range exclusions {
-		allowed[processPathKey(path)] = true
+	allowed := make(map[string]bool, len(routing.Applications))
+	for _, path := range routing.Applications {
+		allowed[applicationPathKey(path)] = true
 	}
 	if manager.RemoveHandler(context.Background(), direct.Tag()) != nil {
 		return Code("owner_policy_unavailable")
 	}
-	policy := &applicationPolicy{Handler: direct, fallback: proxy, allowed: allowed, resolve: resolveProcessOwner}
+	policy := &applicationPolicy{Handler: direct, fallback: proxy, allowed: allowed, resolve: resolveProcessOwner, mode: routing.Mode}
 	if manager.AddHandler(context.Background(), policy) != nil {
 		_ = direct.Close()
 		return Code("owner_policy_unavailable")
@@ -108,7 +117,15 @@ func (p *applicationPolicy) Dispatch(ctx context.Context, link *transport.Link) 
 	flow, valid := contextFlow(ctx)
 	if valid {
 		owner, err := p.resolve(flow)
-		if err == nil && owner.pid > 4 && owner.created != 0 && p.allowed[processPathKey(owner.path)] {
+		selected := p.allowed[applicationOwnerKey(owner.path)]
+		direct := selected
+		if p.mode == exvpn.RoutingInclude {
+			direct = !selected
+		}
+		if p.mode == exvpn.RoutingDisabled {
+			direct = false
+		}
+		if err == nil && owner.pid > 4 && owner.created != 0 && flow.remote.Port() != 53 && direct {
 			handler = p.Handler
 			if flow.network == "udp" {
 				check := &datagramOwnerCheck{flow: flow, owner: owner, resolve: p.resolve}

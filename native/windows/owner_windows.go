@@ -106,5 +106,10 @@ func resolveProcessOwner(flow flowTuple) (processOwner, error) {
 	if windows.GetProcessTimes(handle, &afterCreation, &exited, &kernel, &user) != nil || afterCreation != created || filetimeValue(exited) != 0 {
 		return processOwner{}, Code("owner_unavailable")
 	}
-	return processOwner{pid: pid, created: filetimeValue(created), path: processPathKey(windows.UTF16ToString(path[:size]))}, nil
+	image := windows.UTF16ToString(path[:size])
+	canonical, err := canonicalApplicationExecutable(image)
+	if err != nil {
+		return processOwner{}, Code("owner_unavailable")
+	}
+	return processOwner{pid: pid, created: filetimeValue(created), path: processPathKey(canonical)}, nil
 }

@@ -3,10 +3,11 @@
 # Small validation helpers; dot-sourcing never builds, signs or invokes a tool.
 Set-StrictMode -Version Latest
 
-function Get-DemoAndroidBuildArguments {
+function Get-DemoAndroidBuildArguments([ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$')][string]$Version = '0.1.0+18') {
+    $parts = $Version.Split('+')
     @('build', 'apk', '--release', '--pub', '--target=lib/main.dart',
-        '--target-platform=android-arm64,android-x64', '--build-name=0.1.0',
-        '--build-number=18', '--dart-define=EXVPN_DEMO=false')
+        '--target-platform=android-arm64,android-x64', "--build-name=$($parts[0])",
+        "--build-number=$($parts[1])", '--dart-define=EXVPN_DEMO=false')
 }
 
 function Get-DemoAndroidJvmArguments {
@@ -31,8 +32,8 @@ function Get-DemoAndroidGradleFailureCode([string]$Log) {
     return 'demo_android_jvm_failed'
 }
 
-function Assert-DemoAndroidVersion([string]$Version) {
-    if ($Version -cne '0.1.0+18') { throw 'demo_android_source_version_mismatch' }
+function Assert-DemoAndroidVersion([string]$Version, [string]$ExpectedVersion = '0.1.0+18') {
+    if ($Version -cne $ExpectedVersion -or $Version -cnotmatch '^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$') { throw 'demo_android_source_version_mismatch' }
 }
 
 function Get-DemoAndroidSigningInput {
@@ -73,7 +74,8 @@ function Get-DemoAndroidCertificateSha256([string]$Path, [switch]$Pem) {
     finally { if ($certificate) { $certificate.Dispose() } }
 }
 
-function ConvertFrom-DemoAndroidIdentity([string]$Badging) {
+function ConvertFrom-DemoAndroidIdentity([string]$Badging, [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$')][string]$Version = '0.1.0+18') {
+    $parts = $Version.Split('+')
     $packages = [regex]::Matches($Badging, "(?m)^package: name='([^']+)' versionCode='([0-9]+)' versionName='([^']+)'")
     # Pinned build-tools 36 emits minSdkVersion; older aapt uses sdkVersion.
     # Count both forms together so duplicate or conflicting values still fail.
@@ -81,10 +83,10 @@ function ConvertFrom-DemoAndroidIdentity([string]$Badging) {
     $target = [regex]::Matches($Badging, "(?m)^targetSdkVersion:'([0-9]+)'\r?$")
     if ($packages.Count -ne 1 -or $minimum.Count -ne 1 -or $target.Count -ne 1 -or
         $packages[0].Groups[1].Value -cne 'ru.exvpn.exvpn' -or
-        $packages[0].Groups[2].Value -cne '18' -or $packages[0].Groups[3].Value -cne '0.1.0' -or
+        $packages[0].Groups[2].Value -cne $parts[1] -or $packages[0].Groups[3].Value -cne $parts[0] -or
         $minimum[0].Groups[1].Value -cne '30' -or $target[0].Groups[1].Value -cne '36' -or
         $Badging -match '(?m)^application-debuggable(?:\s|$)') { throw 'demo_android_packaged_identity_invalid' }
-    [ordered]@{package='ru.exvpn.exvpn';version='0.1.0+18';minimumSdk=30;targetSdk=36;debuggable=$false}
+    [ordered]@{package='ru.exvpn.exvpn';version=$Version;minimumSdk=30;targetSdk=36;debuggable=$false}
 }
 
 function ConvertFrom-DemoAndroidSignature([string]$Output, [string]$ExpectedSha256) {
@@ -163,8 +165,9 @@ function Remove-DemoAndroidOwnedHook([string]$Path, [string]$ExpectedSha256) {
     Remove-Item -LiteralPath $Path -ErrorAction Stop
 }
 
-function Assert-DemoAndroidPublicFiles([string]$Directory) {
-    $expected = @('ExVPN-0.1.0-demo-android.apk', 'android-build.json', 'android-audit.json',
+function Assert-DemoAndroidPublicFiles([string]$Directory, [string]$ArtifactName = 'ExVPN-0.1.0-demo-android.apk') {
+    if ($ArtifactName -cnotmatch '^ExVPN-[0-9]+\.[0-9]+\.[0-9]+(?:-demo|-[1-9][0-9]*)-android\.apk$') { throw 'preview_artifact_name_invalid' }
+    $expected = @($ArtifactName, 'android-build.json', 'android-audit.json',
         'android-sbom.cdx.json', 'android-notices.zip', 'android-maven-notices.zip', 'android-maven-notices.json')
     $files = Get-AuditTreeFiles $Directory
     if (@(Get-ChildItem -LiteralPath $Directory -Directory -Force).Count) { throw 'demo_android_public_files_invalid' }

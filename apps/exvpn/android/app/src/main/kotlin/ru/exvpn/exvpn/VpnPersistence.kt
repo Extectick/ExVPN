@@ -29,31 +29,52 @@ internal object VpnPersistence {
     private const val RESUME = "resume"
 
     @Synchronized fun loadPolicy(context: Context): Set<String> = guarded {
-        val record = read(context, POLICY) ?: return@guarded emptySet()
-        require(record.length() == 2 && record.getInt("schema") == 1)
-        packages(record.getJSONArray("packages"))
+        val policy = loadApplicationRouting(context)
+        if (policy.mode == "exclude") policy.applications else emptySet()
     }
 
     @Synchronized fun savePolicy(context: Context, selected: Set<String>) = guarded {
-        val checked = packages(JSONArray(selected.sorted()))
-        write(context, POLICY, JSONObject().put("schema", 1).put("packages", JSONArray(checked.sorted())))
+        saveApplicationRouting(context, ApplicationRoutingPolicy.legacy(selected))
+    }
+
+    @Synchronized fun loadApplicationRouting(context: Context): ApplicationRoutingPolicy = guarded {
+        val record = read(context, POLICY) ?: return@guarded ApplicationRoutingPolicy.legacy(emptySet())
+        val selected = packages(record.getJSONArray("packages"))
+        if (record.getInt("schema") == 1) {
+            require(record.length() == 2)
+            ApplicationRoutingPolicy.legacy(selected)
+        } else {
+            require(record.getInt("schema") == 2 && record.length() == 3)
+            ApplicationRoutingPolicy(record.getString("mode"), selected)
+        }
+    }
+
+    @Synchronized fun saveApplicationRouting(context: Context, policy: ApplicationRoutingPolicy) = guarded {
+        val checked = packages(JSONArray(policy.applications.sorted()))
+        write(context, POLICY, JSONObject().put("schema", 2).put("mode", policy.mode)
+            .put("packages", JSONArray(checked.sorted())))
     }
 
     @Synchronized fun loadResume(context: Context): ConnectRequest? = guarded {
         val record = read(context, RESUME) ?: return@guarded null
-        require(record.length() == 3 && record.getInt("schema") == 1)
+        val schema = record.getInt("schema")
+        require((schema == 1 && record.length() == 3) || (schema == 2 && record.length() == 4))
         val profile = record.getString("profile")
         require(profile.toByteArray(Charsets.UTF_8).size <= 1_048_576)
         val id = JSONObject(profile).getString("id")
         require(id.isNotEmpty() && id.length <= 4096)
-        ConnectRequest(profile, id, packages(record.getJSONArray("packages")))
+        val selected = packages(record.getJSONArray("packages"))
+        val policy = if (schema == 1) ApplicationRoutingPolicy.legacy(selected)
+            else ApplicationRoutingPolicy(record.getString("mode"), selected)
+        ConnectRequest(profile, id, policy.applications, policy.mode)
     }
 
     @Synchronized fun saveResume(context: Context, request: ConnectRequest) = guarded {
         require(request.profile.toByteArray(Charsets.UTF_8).size <= 1_048_576)
         require(JSONObject(request.profile).getString("id") == request.profileId)
         val selected = packages(JSONArray(request.packages.sorted()))
-        write(context, RESUME, JSONObject().put("schema", 1)
+        val policy = ApplicationRoutingPolicy(request.routingMode, selected)
+        write(context, RESUME, JSONObject().put("schema", 2).put("mode", policy.mode)
             .put("profile", request.profile).put("packages", JSONArray(selected.sorted())))
     }
 

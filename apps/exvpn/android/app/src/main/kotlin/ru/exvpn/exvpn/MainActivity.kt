@@ -9,12 +9,16 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONObject
+import java.util.concurrent.Executors
 
 class MainActivity : FlutterActivity() {
     private var qrPicker: QrImagePicker? = null
     private var qrChannel: MethodChannel? = null
     private var permissionResult: MethodChannel.Result? = null
     private var permissionRequest: ConnectRequest? = null
+    private val iconWorker = Executors.newSingleThreadExecutor()
+    private val knownApplicationIcons = mutableSetOf<String>()
+    private val pendingIcons = mutableSetOf<MethodChannel.Result>()
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
@@ -38,23 +42,39 @@ class MainActivity : FlutterActivity() {
             try { when (call.method) {
                 "getStatus" -> result.success(VpnRuntime.status())
                 "getExclusions" -> { VpnRuntime.ensurePolicy(this); result.success(VpnRuntime.exclusions.sorted()) }
+                "getApplicationRouting" -> {
+                    VpnRuntime.ensurePolicy(this)
+                    knownApplicationIcons.addAll(VpnRuntime.applicationRouting.applications)
+                    result.success(VpnRuntime.applicationRouting.wire())
+                }
                 "coreVersion" -> result.success("26.10.10-exvpn.4")
-                "connect" -> {
+                "connect", "reconnect" -> {
                     if (permissionResult != null) { result.error("operation_in_progress", "VPN permission request pending", null); return@setMethodCallHandler }
                     if (!NativeCore.available) { result.error("native_core_unavailable", "Native core is not installed", null); return@setMethodCallHandler }
+                    val requestedMode = call.argument<String>("mode")
+                    if (requestedMode != null && requestedMode != "vpn") {
+                        result.error("mode_unsupported", "Only VPN mode is supported", null); return@setMethodCallHandler
+                    }
                     val profile = call.argument<Map<String, Any>>("profile") ?: throw IllegalArgumentException()
                     val raw = JSONObject(profile).toString()
                     if (raw.toByteArray(Charsets.UTF_8).size > 1048576) throw IllegalArgumentException()
                     val code = NativeCore.validate(raw.toByteArray(Charsets.UTF_8))
                     if (code.isNotEmpty()) { result.error(code, "Profile rejected", null); return@setMethodCallHandler }
                     VpnRuntime.ensurePolicy(this)
-                    val request = ConnectRequest(raw, profile["id"] as? String ?: "", VpnRuntime.exclusions.toSet())
+                    val routing = VpnRuntime.applicationRouting
+                    val request = ConnectRequest(raw, profile["id"] as? String ?: "", routing.applications.toSet(), routing.mode)
                     val prepare = VpnService.prepare(this)
                     if (prepare != null) {
+                        if (call.method == "reconnect") {
+                            result.error("vpn_permission_revoked", "VPN permission is required", null); return@setMethodCallHandler
+                        }
                         permissionResult = result; permissionRequest = request
                         VpnRuntime.publish("requestingPermission", request.profileId)
                         startActivityForResult(prepare, VPN_PERMISSION)
-                    } else startVpn(request, result)
+                    } else {
+                        VpnRuntime.service?.prepareReplacement()
+                        startVpn(request, result)
+                    }
                 }
                 "disconnect" -> {
                     permissionRequest = null
@@ -65,10 +85,18 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                 }
                 "setExclusions" -> {
-                    if (VpnRuntime.service != null || permissionResult != null) { result.error("reconnect_required", "Disconnect before changing exclusions", null); return@setMethodCallHandler }
+                    if (VpnRuntime.service != null || permissionResult != null || VpnRuntime.pending != null) { result.error("reconnect_required", "Disconnect before changing exclusions", null); return@setMethodCallHandler }
                     val applications = call.argument<List<String>>("applications") ?: throw IllegalArgumentException()
                     if (applications.size > 500 || applications.any { !it.matches(Regex("[a-zA-Z0-9_]+(\\.[a-zA-Z0-9_]+)+")) }) throw IllegalArgumentException()
                     VpnRuntime.savePolicy(this, applications.toSet()); result.success(null)
+                }
+                "setApplicationRouting" -> {
+                    if (VpnRuntime.service != null || permissionResult != null || VpnRuntime.pending != null) {
+                        result.error("reconnect_required", "Disconnect before changing application routing", null); return@setMethodCallHandler
+                    }
+                    val routing = try { ApplicationRoutingPolicy.fromWire(call.arguments) }
+                        catch (_: Exception) { result.error("application_routing_rejected", "Application routing rejected", null); return@setMethodCallHandler }
+                    VpnRuntime.saveApplicationRouting(this, routing); result.success(null)
                 }
                 "listApplications" -> {
                     val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
@@ -77,7 +105,25 @@ class MainActivity : FlutterActivity() {
                             buildMap<String, Any> { put("id", info.packageName); put("displayName", packageManager.getApplicationLabel(info).toString())
                                 if ((packageManager.getPackagesForUid(info.uid)?.size ?: 0) > 1) put("sharedIdentityGroup", info.uid.toString()) }
                         }.sortedBy { it["displayName"] as String }
+                    knownApplicationIcons.addAll(apps.map { it["id"] as String })
                     result.success(apps)
+                }
+                "getApplicationIcon" -> {
+                    val arguments = call.arguments as? Map<*, *>
+                    val id = arguments?.get("application") as? String
+                    if (arguments?.keys != setOf("application") || id == null || id.length > 255 ||
+                        id !in knownApplicationIcons || id == packageName) {
+                        result.success(null); return@setMethodCallHandler
+                    }
+                    if (pendingIcons.size >= 8) {
+                        result.error("application_icon_unavailable", "Application icon unavailable", null)
+                        return@setMethodCallHandler
+                    }
+                    pendingIcons.add(result)
+                    iconWorker.execute {
+                        val icon = NativeApplicationIcons.png(applicationContext, id)
+                        runOnUiThread { if (pendingIcons.remove(result)) result.success(icon) }
+                    }
                 }
                 "probe" -> {
                     val profile = call.argument<Map<String, Any>>("profile") ?: throw IllegalArgumentException()
@@ -110,6 +156,9 @@ class MainActivity : FlutterActivity() {
         }
     }
     override fun onDestroy() {
+        pendingIcons.toList().forEach { it.success(null) }
+        pendingIcons.clear()
+        iconWorker.shutdownNow()
         qrPicker?.dispose()
         qrPicker = null
         qrChannel?.setMethodCallHandler(null)

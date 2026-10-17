@@ -70,8 +70,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _toastQueue = <({String message, bool error})>[];
   final _manualRefreshFailures = <String, int>{};
   bool _refreshing = false;
-  bool _switchingServer = false;
   bool _serverPickerOpen = false;
+  int _selectionRevision = 0;
   final _serversScroll = ScrollController();
   final _pickerScroll = ScrollController();
   final _layoutControlKey = GlobalKey(debugLabel: 'desktop-layout-control');
@@ -161,8 +161,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
     final vpn = widget.vpn;
-    if (vpn != null && !vpn.initialized) return;
+    if (vpn != null && !vpn.canChangeConnection) return;
     if (vpn != null && vpn.canDisconnect) {
+      _selectionRevision++;
       await vpn.disconnect();
       if (mounted && vpn.status.processCrashProtection) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -308,10 +309,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   ]);
 
   bool get _connectionBusy =>
-      _switchingServer ||
-      widget.vpn?.commandPending == true ||
-      widget.vpn?.connecting == true ||
-      (widget.vpn != null && !widget.vpn!.initialized);
+      widget.vpn != null && !widget.vpn!.canChangeConnection;
 
   Future<void> _selectServer(
     SubscriptionGroup group,
@@ -319,21 +317,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     VoidCallback? onSelected,
   }) async {
     if (_connectionBusy) return;
+    final revision = ++_selectionRevision;
     final vpn = widget.vpn;
-    if (vpn != null && vpn.canDisconnect) {
-      setState(() => _switchingServer = true);
+    var pickerClosed = false;
+    if (vpn != null && (vpn.canDisconnect || vpn.connectionChangePending)) {
       final bool accepted;
       try {
-        accepted = await vpn.switchServer(server.profile);
+        final request = vpn.requestConnection(server.profile);
+        // The controller serializes/coalesces native requests. Let the user
+        // choose again or cancel while this acknowledgement is outstanding.
+        onSelected?.call();
+        pickerClosed = true;
+        accepted = await request;
       } catch (_) {
         return;
-      } finally {
-        if (mounted) setState(() => _switchingServer = false);
       }
-      if (!mounted || !accepted) return;
+      if (!mounted || !accepted || revision != _selectionRevision) return;
     }
     widget.controller.selectServer(groupId: group.id, serverId: server.id);
-    onSelected?.call();
+    if (!pickerClosed) onSelected?.call();
   }
 
   Future<void> _changeConnectionMode(VpnMode mode) async {
@@ -344,10 +346,32 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         vpn.mode == mode) {
       return;
     }
-    final profile = vpn.canDisconnect
+    final changingConnection = vpn.canDisconnect || vpn.connectionChangePending;
+    final profile = changingConnection
         ? _displayedServer?.profile
         : widget.controller.selectedServer?.profile;
-    await vpn.changeMode(mode, profile: profile);
+    final revision = ++_selectionRevision;
+    final accepted = await vpn.changeMode(mode, profile: profile);
+    if (!mounted ||
+        !accepted ||
+        !changingConnection ||
+        revision != _selectionRevision ||
+        profile == null) {
+      return;
+    }
+    // A mode change can supersede a queued server choice. Persist the same
+    // acknowledged profile so disconnecting does not restore an older choice.
+    for (final group in widget.controller.groups) {
+      for (final server in group.servers) {
+        if (server.profile.id == profile.id) {
+          widget.controller.selectServer(
+            groupId: group.id,
+            serverId: server.id,
+          );
+          return;
+        }
+      }
+    }
   }
 
   Future<void> _reviewSubscription(String groupId) async {
@@ -376,7 +400,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       : defaultTargetPlatform == TargetPlatform.windows;
 
   ServerEntry? get _displayedServer {
-    final activeId = widget.vpn?.status.activeProfileId;
+    final activeId =
+        widget.vpn?.desiredProfileId ?? widget.vpn?.status.activeProfileId;
     if (activeId == null) return widget.controller.selectedServer;
     return [for (final group in widget.controller.groups) ...group.servers]
         .where((server) => server.profile.id == activeId)
@@ -1019,7 +1044,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       key: const Key('connect-button'),
       size: size,
       onPressed: _connect,
-      enabled: !checking && !_switchingServer && vpn?.commandPending != true,
+      enabled: !checking && (vpn == null || vpn.canChangeConnection),
       label: action,
       active: phase == VpnPhase.connected,
       connecting: vpn?.connecting ?? false,
@@ -1492,9 +1517,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     ServerEntry server, {
     VoidCallback? onSelected,
   }) {
-    final selected =
-        widget.controller.selectedGroupId == group.id &&
-        widget.controller.selectedServerId == server.id;
+    final desired = widget.vpn?.desiredProfileId;
+    final selected = desired != null
+        ? desired == server.profile.id
+        : widget.controller.selectedGroupId == group.id &&
+              widget.controller.selectedServerId == server.id;
     final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),

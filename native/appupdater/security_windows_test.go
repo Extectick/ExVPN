@@ -12,13 +12,30 @@ import (
 	"unsafe"
 )
 
+// Hosted Windows runners can give TEMP an 8.3 alias (RUNNER~1). Production
+// deliberately rejects path aliases; fixtures must use the directory's real
+// path instead of loosening that check for a CI environment.
+func physicalTempDir(t *testing.T) string {
+	t.Helper()
+	f, err := openPathObject(t.TempDir(), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	path, err := pathFromHandle(syscall.Handle(f.Fd()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
 func fixtureStore(t *testing.T) *store {
 	t.Helper()
 	sid, err := currentSID()
 	if err != nil {
 		t.Fatal(err)
 	}
-	root := filepath.Join(t.TempDir(), "owned-fixture")
+	root := filepath.Join(physicalTempDir(t), "owned-fixture")
 	f, err := ensureOwnedDirectory(root, sid, true)
 	if err != nil {
 		t.Fatal(err)
@@ -265,7 +282,7 @@ func TestProductBootstrapKeepsExactUnpackagedPathAndPrivateLocks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	local := t.TempDir()
+	local := physicalTempDir(t)
 	ancestors, err := lockAncestors(local)
 	if err != nil {
 		t.Fatal(err)

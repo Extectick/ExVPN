@@ -131,6 +131,8 @@ switch ($Lane) {
         Invoke-ScriptCheck 'scripts/qa/test-windows-transport-lifecycle.ps1'
         Invoke-ScriptCheck 'scripts/qa/test-windows-subscriptions.ps1'
         Invoke-ScriptCheck 'scripts/qa/test-windows-subscriptions.ps1' -LegacyPowerShell
+        Invoke-ScriptCheck 'scripts/qa/test-routing-modes-evidence.ps1'
+        Invoke-ScriptCheck 'scripts/qa/test-routing-modes-evidence.ps1' -LegacyPowerShell
         Invoke-ScriptCheck 'scripts/qa/test-teardown-qa.ps1'
         Invoke-ScriptCheck 'scripts/qa/test-teardown-qa.ps1' -LegacyPowerShell
         Invoke-ScriptCheck 'scripts/release/test-notice-inputs.ps1'

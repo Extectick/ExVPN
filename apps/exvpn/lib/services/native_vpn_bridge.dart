@@ -89,9 +89,19 @@ const _codes = {
   'proxy_unreachable',
   'proxy_endpoint_unavailable',
   'proxy_bind_failed',
+  'application_routing_unsupported',
+  'application_routing_rejected',
+  'application_icon_unavailable',
+  'native_method_unsupported',
 };
 
-final class NativeVpnBridge implements VpnBridge, ConnectionModeBridge {
+final class NativeVpnBridge
+    implements
+        VpnBridge,
+        ConnectionModeBridge,
+        ServerReconnectBridge,
+        ApplicationRoutingBridge,
+        ApplicationIconBridge {
   NativeVpnBridge({
     MethodChannel? methods,
     EventChannel? stateEvents,
@@ -137,6 +147,21 @@ final class NativeVpnBridge implements VpnBridge, ConnectionModeBridge {
   @override
   bool get supportsConnectionModes =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+
+  @override
+  bool get supportsServerReconnect =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.windows);
+
+  @override
+  Future<void> reconnectServer(ConnectionProfile profile) async {
+    if (!supportsServerReconnect) throw const VpnFailure('mode_unsupported');
+    await _invoke('reconnect', {
+      'profile': profile.toNativeJson(),
+      'mode': VpnMode.vpn.name,
+    });
+  }
 
   @override
   Future<void> connect(ConnectionProfile profile) async {
@@ -190,6 +215,102 @@ final class NativeVpnBridge implements VpnBridge, ConnectionModeBridge {
       throw const VpnFailure('invalid_native_response');
     }
     return raw.map(_text).toSet();
+  }
+
+  @override
+  Future<ApplicationRoutingPolicy> getApplicationRouting() async {
+    try {
+      final map = _map(await _invoke('getApplicationRouting'));
+      final mode = ApplicationRoutingMode.values
+          .where((value) => value.name == map['mode'])
+          .firstOrNull;
+      final raw = map['applications'];
+      if (map.length != 2 || mode == null || raw is! List || raw.length > 500) {
+        throw const VpnFailure('invalid_native_response');
+      }
+      final ids = raw.map(_applicationId).toSet();
+      if (ids.length != raw.length) {
+        throw const VpnFailure('invalid_native_response');
+      }
+      return ApplicationRoutingPolicy(mode: mode, applicationIds: ids);
+    } on VpnFailure catch (error) {
+      if (!_optionalUnavailable(error)) rethrow;
+      final ids = await getExclusions();
+      return ApplicationRoutingPolicy(
+        mode: ids.isEmpty
+            ? ApplicationRoutingMode.disabled
+            : ApplicationRoutingMode.exclude,
+        applicationIds: ids,
+      );
+    }
+  }
+
+  @override
+  Future<void> setApplicationRouting(ApplicationRoutingPolicy policy) async {
+    final ids = _routingIds(policy.applicationIds);
+    try {
+      await _invoke('setApplicationRouting', {
+        'mode': policy.mode.name,
+        'applications': ids,
+      });
+    } on VpnFailure catch (error) {
+      if (!_optionalUnavailable(error)) rethrow;
+      if (policy.mode == ApplicationRoutingMode.include) {
+        throw const VpnFailure('application_routing_unsupported');
+      }
+      await setExclusions(
+        policy.mode == ApplicationRoutingMode.exclude
+            ? policy.applicationIds
+            : const {},
+      );
+    }
+  }
+
+  @override
+  Future<Uint8List?> getApplicationIcon(String applicationId) async {
+    _applicationId(applicationId);
+    Object? raw;
+    try {
+      raw = await _invoke('getApplicationIcon', {'application': applicationId});
+    } on VpnFailure catch (error) {
+      if (_optionalUnavailable(error) ||
+          error.code == 'application_icon_unavailable') {
+        return null;
+      }
+      rethrow;
+    }
+    if (raw == null) return null;
+    if (raw is! Uint8List || raw.length < 33 || raw.length > 64 * 1024) {
+      throw const VpnFailure('invalid_native_response');
+    }
+    const header = [
+      137,
+      80,
+      78,
+      71,
+      13,
+      10,
+      26,
+      10,
+      0,
+      0,
+      0,
+      13,
+      73,
+      72,
+      68,
+      82,
+    ];
+    for (var i = 0; i < header.length; i++) {
+      if (raw[i] != header[i]) {
+        throw const VpnFailure('invalid_native_response');
+      }
+    }
+    final data = ByteData.sublistView(raw);
+    if (data.getUint32(16) != 64 || data.getUint32(20) != 64) {
+      throw const VpnFailure('invalid_native_response');
+    }
+    return Uint8List.fromList(raw);
   }
 
   @override
@@ -296,4 +417,26 @@ String? _optionalText(Object? raw) => raw == null ? null : _text(raw);
 int _counter(Object? raw) {
   if (raw is! int || raw < 0) throw const VpnFailure('invalid_native_response');
   return raw;
+}
+
+bool _optionalUnavailable(VpnFailure error) =>
+    error.code == 'native_unavailable' ||
+    error.code == 'native_method_unsupported' ||
+    error.code == 'unsupported';
+
+String _applicationId(Object? raw) {
+  final id = _text(raw);
+  if (RegExp(r'[\x00-\x1f\x7f]').hasMatch(id)) {
+    throw const VpnFailure('invalid_native_response');
+  }
+  return id;
+}
+
+List<String> _routingIds(Set<String> ids) {
+  if (ids.length > 128) throw const VpnFailure('invalid_exclusion');
+  try {
+    return ids.map(_applicationId).toList()..sort();
+  } on VpnFailure {
+    throw const VpnFailure('invalid_exclusion');
+  }
 }

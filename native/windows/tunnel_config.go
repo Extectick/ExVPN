@@ -33,6 +33,14 @@ func validateTunnelProfile(p exvpn.Profile, exclusions []string) error {
 }
 
 func buildTunnelConfig(p exvpn.Profile, exclusions []string, probe exvpn.ProbeOptions, resolution *endpointResolution) ([]byte, error) {
+	return buildTunnelConfigWithRouting(p, legacyApplicationRouting(exclusions), probe, resolution)
+}
+
+func buildTunnelConfigWithRouting(p exvpn.Profile, policy ApplicationRoutingPolicy, probe exvpn.ProbeOptions, resolution *endpointResolution) ([]byte, error) {
+	if policy.validate() != nil {
+		return nil, Code("application_routing_rejected")
+	}
+	exclusions := policy.effective()
 	_, literalErr := netip.ParseAddr(p.Server)
 	if literalErr != nil {
 		name, err := endpointName(p.Server)
@@ -73,11 +81,11 @@ func buildTunnelConfig(p exvpn.Profile, exclusions []string, probe exvpn.ProbeOp
 			}
 		}
 	}
-	rules, err := (exvpn.RoutingPolicy{WindowsExecutablePaths: exclusions}).Rules("vpn")
+	rules, err := (exvpn.RoutingPolicy{WindowsExecutablePaths: exclusions, Mode: policy.Mode}).Rules("vpn")
 	if err != nil {
 		return nil, Code("exclusions_rejected")
 	}
-	if len(exclusions) > 0 {
+	if policy.Mode == exvpn.RoutingInclude || (policy.Mode == exvpn.RoutingExclude && len(exclusions) > 0) {
 		// Keep the shared path validator and DNS precedence, but never use the
 		// pinned Windows process matcher: it ignores the remote TCP endpoint
 		// and chooses the first ambiguous UDP row. The native adapter checks
@@ -105,7 +113,7 @@ func buildTunnelConfig(p exvpn.Profile, exclusions []string, probe exvpn.ProbeOp
 			"autoSystemWfpBlockLeak": []string{},
 		},
 	})
-	if len(exclusions) > 0 {
+	if policy.Mode == exvpn.RoutingInclude || (policy.Mode == exvpn.RoutingExclude && len(exclusions) > 0) {
 		// Ownership checks accept numeric TUN tuples only, including every UDP
 		// datagram. Never invoke upstream's global resolver for a direct flow.
 		c["outbounds"] = append(c["outbounds"].([]any), object{"tag": "direct-excluded", "protocol": "freedom", "settings": object{"domainStrategy": "AsIs"}})
