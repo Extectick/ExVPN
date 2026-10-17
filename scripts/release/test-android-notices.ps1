@@ -195,6 +195,10 @@ function New-FixtureApk($Fixture, [string]$Change = '') {
             if ($Change -eq 'missing-flutter' -and $abi -eq 'arm64-v8a') { continue }
             $stream = $zip.CreateEntry("lib/$abi/libflutter.so").Open()
             try { $stream.WriteByte(42) } finally { $stream.Dispose() }
+            if ($Fixture.Inventory.Contains('runtime')) {
+                $stream = $zip.CreateEntry("lib/$abi/libapp.so").Open()
+                try { $stream.WriteByte(43) } finally { $stream.Dispose() }
+            }
         }
         # Other application assets are permitted, but new notice/native entries
         # must be part of the verified snapshot rather than silently appended.
@@ -219,4 +223,40 @@ foreach ($change in @('changed-native', 'missing-native', 'changed-notice', 'mis
     $apk = New-FixtureApk $f $change
     Assert-Refused { Assert-AndroidPackagedNotices $f.Root $f.Stage $apk } "final APK $change"
 }
+
+# Pin/SDK validation is exercised with actual synthetic Git checkouts by
+# test-notice-inputs. Here substitute only that read-only SDK resolver to test
+# propagation through the real seal and ZIP checks without a real build.
+$savedRuntimeResolver = (Get-Item Function:Get-ReleaseFlutterRuntime).ScriptBlock
+$runtimeFixtureEvidence = [ordered]@{
+    schema=1; identity=[ordered]@{schema=1;kind='shorebird';target='Android';buildMode='release';flutterRevision=('a' * 40);engineRevision=('b' * 40)}
+    notices=@([ordered]@{name='Flutter framework';version='3.47.7';path='LICENSE';sha256=(Get-AuditTextHash 'synthetic runtime notice');size=24})
+    sdkArtifacts=@()
+    engineBinaries=@(@{path='lib/arm64-v8a/libflutter.so';sha256=(Get-AuditTextHash '*');size=1},@{path='lib/x86_64/libflutter.so';sha256=(Get-AuditTextHash '*');size=1})
+}
+try {
+    function Get-ReleaseFlutterRuntime($Repository,$Target,$FlutterRuntime='ordinary',$FlutterBuildMode='') {
+        $evidence=$runtimeFixtureEvidence | ConvertTo-Json -Depth 12 | ConvertFrom-Json -AsHashtable
+        $evidence.identity.kind=$FlutterRuntime
+        $evidence.identity.buildMode=if($FlutterBuildMode){$FlutterBuildMode}elseif($FlutterRuntime -ceq 'ordinary'){'debug'}else{'release'}
+        [pscustomobject]@{Evidence=$evidence;Identity=$evidence.identity}
+    }
+    $f=New-NoticeFixture
+    Assert-Refused { Assert-AndroidNoticeSeal $f.Root $f.Stage -FlutterRuntime shorebird -FlutterBuildMode release } 'legacy cannot become Shorebird' 'flutter_runtime_evidence_missing'
+    $f.Inventory.runtime=$runtimeFixtureEvidence
+    Write-FixtureFile (Join-Path $f.Bundle 'flutter/NOTICE.txt') 'synthetic runtime notice'
+    $f.Inventory.components+=@{name='Flutter framework';version='3.47.7';scope='runtime-or-asset';notices=@(@{path='flutter/NOTICE.txt';sha256=(Get-AuditTextHash 'synthetic runtime notice')})}
+    Save-Inventory $f
+    Write-AuditJson (Join-Path $f.Stage 'seal.json') (Get-AndroidNoticeSnapshotState $f.Root $f.Stage -FlutterRuntime shorebird -FlutterBuildMode release)
+    Assert-AndroidNoticeSeal $f.Root $f.Stage -FlutterRuntime shorebird -FlutterBuildMode release
+    $checks++
+    Assert-Refused { Assert-AndroidNoticeSeal $f.Root $f.Stage } 'ordinary default cannot accept Shorebird' 'flutter_runtime_evidence_mismatch'
+    Assert-Refused { Assert-AndroidNoticeSeal $f.Root $f.Stage -FlutterRuntime shorebird -FlutterBuildMode debug } 'mode mismatch cannot accept seal' 'flutter_runtime_evidence_mismatch'
+    $apk=New-FixtureApk $f
+    $packageRuntime=Assert-AndroidPackagedNotices $f.Root $f.Stage $apk -FlutterRuntime shorebird -FlutterBuildMode release -PassThruRuntime
+    if (!$packageRuntime.engineBytesBound -or $packageRuntime.dartBinaries.Count -ne 2 -or $packageRuntime.completeLinkInventory) { throw 'Packaged runtime identity was lost or overstated.' }
+    $checks++
+    $f.Inventory.runtime=$null; Save-Inventory $f
+    Assert-Refused { Assert-AndroidNoticeSeal $f.Root $f.Stage -FlutterRuntime shorebird -FlutterBuildMode release } 'null runtime evidence' 'flutter_runtime_evidence_mismatch'
+} finally { Set-Item Function:Get-ReleaseFlutterRuntime $savedRuntimeResolver }
 Write-Host "Android notice snapshot fixtures: $checks PASS. No APK build, SDK download, device access or shared build-directory changes."

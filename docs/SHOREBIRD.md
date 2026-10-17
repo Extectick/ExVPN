@@ -47,6 +47,8 @@ Android/Windows. Работа с публичным Shorebird runtime ещё н�
 **11/11 наборов за 121,65 с**, включая **493 Dart/Flutter-теста** и Go-проверки
 без result cache. Отпечаток исходников до/после совпал. Независимый review
 16 файлов клиента не выявил замечаний. [Результаты +15](evidence/fast-validation-shorebird-build15.json).
+GitHub CI для +15 также завершил обе native development сборки успешно:
+[Android и Windows](evidence/ci-build15.json). Они используют обычный Flutter.
 
 ## Установка для пользователя, 2026-10-17
 
@@ -66,7 +68,7 @@ Android/Windows. Работа с публичным Shorebird runtime ещё н�
   SDK не менялся; `doctor` теперь сообщает **Java 21.0.6**. Настройка `jdk-dir`
   относится к пользовательской конфигурации Flutter.
 
-Последний `doctor --json`: **5 из 6 validators PASS**, все пять проверяемых URL
+На этом промежуточном шаге `doctor --json`: **5 из 6 validators PASS**, все пять проверяемых URL
 доступны, Gradle **9.3.1**. Единственный оставшийся validator — отсутствие
 `shorebird.yaml` в assets. У пользователя уже есть аккаунт, но локальный OAuth
 завершился тайм-аутом ожидания подтверждения в браузере. Проект ExVPN, release,
@@ -127,19 +129,87 @@ $env:DART_SUPPRESS_ANALYTICS = 'true'
 Предупреждение о `core.longpaths` не является основанием менять системный Git
 config. Локальный запуск завершился успешно без такой настройки.
 
+## Подготовка подписанной базы +16, 2026-10-17
+
+Добавлен `scripts/release/shorebird-release.ps1 -Target Android|Windows`.
+Он выполняет только официальный online `--dry-run`, без публикации в облако.
+Проверяются точные checkout/lock/engine и готовый кеш CLI: холодный либо
+устаревший кеш отклоняется до сборки, чтобы upstream bootstrap не запускал
+неявные `git fetch` и `dart pub get`. App dependencies разрешаются offline с
+`--enforce-lockfile`; исходный lock и updater policy сверяются после сборки.
+Android затем использует штатный `--pub` при build: в закреплённом Flutter
+именно он запускает release-генерацию plugin registrant. При `--no-pub`
+первая AAB-сборка сохранила dev-only `integration_test` в Java и отказала;
+между AAB и APK Shorebird снова генерирует обычные служебные файлы.
+Поэтому ручное редактирование generated Java не применяется. Flutter может
+повторно проверить зависимости через сеть; изменение lock вызывает отказ
+до принятия артефакта. Windows сохраняет `--no-pub`.
+
+База использует `beta`, `auto_update: false`, `patch_verification: strict` и
+явный public key. Закрытый разбор исходного и упакованного YAML не принимает
+дополнительный endpoint, неизвестные/повторные ключи, aliases и другие policy.
+Упакованный public key должен совпадать с ожидаемым. Канал также входит в
+Dart-код патча: beta-патч нельзя просто продвинуть в stable и объявить каналы
+изолированными. Для будущей stable-базы нужен отдельный полный выпуск.
+
+Однократно выполнен `scripts/release/prepare-signing.ps1`. Созданы отдельные
+Android RSA-3072 PKCS12 и RSA-4096 для подписи Shorebird-патчей. Ключи находятся
+в `.private/signing`, доступ ограничен текущим пользователем и SYSTEM.
+Пароль Android и private key Shorebird защищены Windows DPAPI CurrentUser;
+в Git входят только public PEM/certificate. Проверены расшифровка DPAPI,
+подпись/проверка синтетического сообщения, отказ изменённого сообщения и ACL.
+Повторный запуск не заменяет существующие ключи. DPAPI-файлы не являются
+переносимой резервной копией: до стабильного выпуска требуется отдельное
+защищённое резервирование и проверка восстановления. Windows Authenticode
+certificate пока не подготовлен.
+
+Gradle требует все четыре signing-параметра вместе; частичная конфигурация
+запрещена, скрытого debug-signing для release нет. Новая Android release
+идентичность отличается от прежних debug APK: их обновление поверх без
+переустановки не обещается. Непрерывный upgrade проверяется отдельно между
+пакетами, подписанными одним release-ключом.
+
+Notices/seal/audit явно различают `ordinary` и `shorebird`, фиксируют фактические
+engine/Dart hashes и соответствующие лицензии. Windows engine DLL должна
+побайтно совпадать с закреплённым SDK. Для Android аудитор сам извлекает
+закреплённый engine из SDK JAR, повторяет `llvm-strip --strip-unneeded` из
+точно закреплённого NDK и сверяет результат с APK. Обе ABI +16 подтверждены;
+подмена хеша оставляет engine неподтверждённым. `rawSdkBytesMatched=false`
+сохраняется, итоговый метод — `verified_ndk_strip`. Неизвестное несовпадение
+остаётся release blocker. Исторические build manifest и pre-build seal
+не переписываются после появления нового checker: отдельный финальный аудит
+ссылается на тот же неизменённый APK. Целевые проверки: 84 notices/runtime,
+44 Android seal и 72 audit cases PASS. Рабочее дерево; commit ожидается.
+Полный цикл release → patch →
+restart → rollback этим результатом ещё не подтверждён. Настоящие Android
+APK/AAB и Windows база +16 затем собраны закреплённым Shorebird CLI с
+`--dry-run`; облачный release не создавался. Android APK успешно прошёл
+`apksigner verify`, signer совпал с сохранённым public certificate; manifest
+подтверждает `0.1.0+16`, minSdk 30 и две ABI. Для Windows независимо извлечены
+и сверены 267 файлов NSIS payload, обе maintenance-программы и engine DLL.
+Windows Authenticode отсутствует.
+[Точные хеши и границы проверки](evidence/shorebird-base-build16.json).
+Финальный Full +16 после изменения checker: **11/11 за 111,44 с**,
+**493 Dart/Flutter-теста**, Go без result cache; fingerprint до/после совпал.
+Отдельный review кеша CLI: 23/23 случая.
+[Финальный результат](evidence/fast-validation-shorebird-build16-final.json),
+[предыдущий прогон](evidence/fast-validation-shorebird-build16.json).
+Финальный аудит APK сохраняет три blockers: Maven runtime inventory,
+полный Dart/Flutter linker inventory и проверка лицензионных обязательств.
+Windows дополнительно требует подпись и завершение development release gate.
+
 ## Оставшаяся интеграция
 
-Проект ExVPN привязан, доступ подтверждён. Для реального цикла остаются отдельный
-ключ подписи патчей и первый полный пакет с Shorebird engine. Релизы, патчи и
-ключи ещё не создавались. Обычные development APK/Windows-пакеты ExVPN
+Проект ExVPN привязан, доступ и локальные ключи подготовлены. Облачные релизы
+и патчи ещё не созданы. Обычные development APK/Windows-пакеты ExVPN
 не принимают Dart OTA; наличие updater package этого не меняет.
 
 Дальнейший порядок:
 
-1. Проверить release tooling для отдельного Shorebird engine: полный native
-   payload, notices, build/version и корректный channel должны быть связаны
-   с точным новым пакетом; обычный Flutter binary переиспользовать нельзя.
-2. Подготовить отдельную пару RSA PEM для патчей. При `shorebird release`
+1. Завершить полный native/linker и Maven inventory и проверку лицензионных
+   обязательств. Хеши нового engine, payload, notices и build/version уже
+   связаны с точными пакетами +16; обычный Flutter binary переиспользовать нельзя.
+2. Сохранить и проверить резервную копию отдельной пары RSA для патчей. При `shorebird release`
    обязательно передать `--public-key-path`; при `shorebird patch` —
    соответствующий `--private-key-path`. Это отдельные ключи от Ed25519 данных,
    подписи APK и Windows Authenticode.

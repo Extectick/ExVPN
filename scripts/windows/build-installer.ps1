@@ -1,6 +1,10 @@
 #requires -Version 7.0
 [CmdletBinding()]
-param([string]$NoticesDirectory = '', [switch]$Offline)
+param(
+    [string]$NoticesDirectory = '', [switch]$Offline,
+    [string]$UiDirectory = '',
+    [ValidateSet('ordinary','shorebird')][string]$FlutterRuntime = 'ordinary'
+)
 $ErrorActionPreference = 'Stop'
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'installer/package-common.ps1')
@@ -22,7 +26,7 @@ function Copy-BuildTree([string]$Source,[string]$Destination) {
         Copy-Item -LiteralPath $file.FullName -Destination $target
     }
 }
-$ui = Join-Path $repository 'apps/exvpn/build/windows/x64/runner/Release'
+$ui = if ($UiDirectory) { [IO.Path]::GetFullPath($UiDirectory) } else { Join-Path $repository 'apps/exvpn/build/windows/x64/runner/Release' }
 if (!(Test-Path -LiteralPath (Join-Path $ui 'exvpn.exe'))) { throw 'Build Flutter Windows release first.' }
 Copy-BuildTree $ui (Join-Path $payload 'ui')
 & (Join-Path $PSScriptRoot 'prepare-msvc-runtime.ps1') -UiDirectory (Join-Path $payload 'ui')
@@ -44,6 +48,7 @@ else {
         & (Join-Path $repository 'scripts/release/collect-notices.ps1') -Target Windows `
             -NativeBinaries (Join-Path $payload 'service/exvpn-service.exe') `
             -WintunLicensePath (Join-Path $payload 'service/Wintun-LICENSE.txt') `
+            -FlutterRuntime $FlutterRuntime -FlutterBuildMode release `
             -OutputDirectory (Join-Path $payload 'control/notices')
     } finally { $env:GOPROXY=$previousProxy; $env:GOSUMDB=$previousSum }
 }
@@ -52,7 +57,12 @@ $noticesInventory = Get-Content -LiteralPath (Join-Path $payload 'control/notice
 $nativeHashes = @{ 'service/exvpn-service.exe' = (Get-FileHash -LiteralPath (Join-Path $payload 'service/exvpn-service.exe') -Algorithm SHA256).Hash.ToLowerInvariant() }
 Assert-NoticePackageBinding $noticesInventory "$version+$build" `
     (Get-FileHash -LiteralPath (Join-Path $repository 'apps/exvpn/pubspec.lock') -Algorithm SHA256).Hash.ToLowerInvariant() $nativeHashes
+. (Join-Path $repository 'scripts/release/artifact-audit-lib.ps1')
+. (Join-Path $repository 'scripts/release/flutter-runtime-inputs.ps1')
+$runtime = Get-ReleaseFlutterRuntime -Repository $repository -Target Windows -FlutterRuntime $FlutterRuntime -FlutterBuildMode release
+Assert-ReleaseFlutterNotices $noticesInventory $runtime.Evidence
 $metadata = [ordered]@{ format=1; version=$version; build=$build; installer=$pin; development=$true; trees=[ordered]@{} }
+$metadata.flutterRuntime = Get-ReleasePackagedFlutterEvidence $runtime.Evidence (Get-AuditTreeFiles $payload) -RequireByteMatch
 foreach ($tree in @('ui','service','control')) { $metadata.trees[$tree] = @(Get-TreeManifest (Join-Path $payload $tree)) }
 $metadata | ConvertTo-Json -Depth 9 | Set-Content -LiteralPath (Join-Path $payload 'package.json') -Encoding utf8
 & (Join-Path $PSScriptRoot 'installer/package.ps1') -Action Inspect -PayloadRoot $payload

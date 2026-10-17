@@ -1,0 +1,412 @@
+{
+  "schemaVersion": 1,
+  "kind": "windows-maintenance-runtime",
+  "date": "2026-10-17",
+  "task": "EXVPN-E5-004",
+  "status": "SCOPED_MATRIX_PASS",
+  "runId": "5f06a62e-bc8f-43bb-aea8-7497528adb04",
+  "ownedDisposableSandbox": true,
+  "computerUse": false,
+  "hostNetworkChanged": false,
+  "productionCodeChanged": false,
+  "testedPackages": [
+    {
+      "build": 12,
+      "installerSha256": "9fe1fb1de8f40002d7f4e7c8f7a92379e237c133c21db2409fe514f73974990a",
+      "uiSha256": "2d64a954e8a1d964dc426f688d90fdd0de525e03e92aac2931603084c1161984",
+      "serviceSha256": "5c37eb78c2b0eca734b59983c45d6a72f494ea4bb89c7eec19e4137ee26b621b"
+    },
+    {
+      "build": 13,
+      "installerSha256": "fea39fdfa7e228dec3c9906f27e560912361ffaccd09f9111028a91450c68215",
+      "uiSha256": "e7299a563e2b81d41f334ec6d8f612971c18a58f8fd826323036503d1ba66299",
+      "serviceSha256": "3582d238cf50419fc43c596b539c99a374effe19c99d3382e9aac68ef3626e72"
+    }
+  ],
+  "qa": {
+    "sealSha256": "a0bdde61d0604ffa79598868c87cdb80ba851538221ea791d06d6492fe6293cd",
+    "hostSha256": "8c2ec4226a88458b99a3120350315e9f397fd8df985368683474c1968e810218",
+    "actorSha256": "89acd933ee470a420106f7daf3b17bb05f75e7b0ca0452e3d763b60b17f95eae",
+    "sourceFilesVerified": 21,
+    "sourceMismatches": 0,
+    "reviewedReaderSha256": "db9535c2d1c67ca59fa02339445bcef2466d2b79e48406ffe07864edf251d25e",
+    "fixtureSha256": "cbda18b55905e94a14c72cde74f6f99a7483c8d596dfe4b04c0b3a46c9dd0a3a",
+    "baselinePinProofSha256": "170000c9e6cbd2e602f6e7fda5860d821362afa4e1b09b4055cf785614415eae",
+    "automaticRetries": false,
+    "installerForceStopped": false,
+    "uiInput": "Targeted printable ASCII WM_CHAR; not keyboard or IME acceptance"
+  },
+  "retainedPreflightRefusal": {
+    "runId": "133c3731-ac01-4ace-b251-e4112f3f1eda",
+    "status": "REFUSED",
+    "error": "maintenance_initial_state_changed",
+    "classification": "Stale QA baseline pin after previously verified recovery",
+    "elapsedMs": 18275,
+    "installerOperations": 0,
+    "vpnConnects": 0,
+    "productMutations": 0,
+    "originalCoordinatorCleanupPassed": false,
+    "cleanupScope": "Not started: rejected before owned sentinel/protected root/fixture/UI/installer",
+    "postcheck": "PASS",
+    "expectedStatePinUpdatedOnlyAfterFullReadOnlyProof": true,
+    "hostSummarySha256": "a6cc6196db9bf8373cde8e1e0781c00ad73286582483921b61b6a25cdf3745e9",
+    "postcheckSha256": "d69e5002f4442f5ef7a4598cd54be75bcac1f309edfad6db7343003766aeaef0",
+    "postStorageSha256": "e023fb0e00f443cfe2d2afafce8db925ae0b0a5ff04acaa53f53f049831df31d"
+  },
+  "baseline": {
+    "build": 13,
+    "stateSha256": "0d1f61f3fca27753f246ffefb2bada17d0b90ce54107f662f6ad79464bfcfc80",
+    "fullPayloadOwnerProductionBindingVerified": true,
+    "backupCount": 14,
+    "backupManifestsVerified": true,
+    "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+    "storageFiles": 0,
+    "reportSha256": "f9c258375088276346ac353bdbc6569d254df452f1fad9cd2eee7f125e9ed2af"
+  },
+  "runtime": {
+    "status": "PASS",
+    "completedHostPhases": 63,
+    "uiSteps": 17,
+    "hostCoordinatorElapsedMs": 1222735,
+    "hostCleanupElapsedMs": 65440,
+    "mainActionLimitMs": 1500000,
+    "cleanupLimitMs": 300000,
+    "hostStartedUtc": "2026-10-17T08:07:42.3558794Z",
+    "hostFinishedUtc": "2026-10-17T08:28:05.1480827Z",
+    "timingScope": "Host stopwatch includes WSB orchestration and finally. Guest phase/probe timers are separate measured intervals.",
+    "hostSummarySha256": "91dc348711fe58ef35f36226cc31ed331699c2b757ee7ded8cd832116e721333",
+    "phases": [
+      {
+        "phase": "rollback",
+        "status": "PASS",
+        "operationOutcome": "OPERATION_SUCCESS",
+        "installerExitCode": 0,
+        "installerQuiescent": true,
+        "hostElapsedMs": 120211,
+        "guestElapsedMs": 115868,
+        "reportSha256": "a478a1c48deb320d532a1a08dd002cd4f08c12ef4de5d870a312a9fe0655f1ae"
+      },
+      {
+        "phase": "upgrade-fail",
+        "status": "PASS",
+        "operationOutcome": "EXPECTED_OPERATION_FAILURE",
+        "installerExitCode": 1,
+        "installerQuiescent": true,
+        "hostElapsedMs": 135129,
+        "guestElapsedMs": 131638,
+        "reportSha256": "8b26fff9d5fac414e76b3e5514f8d8b9915638717492c329c18ed867938583c0",
+        "injectedFailure": "Exact owned flutter_windows.dll held Read/shareRead",
+        "fullPreviousPayloadAndStateRestored": true,
+        "lockTargetSha256": "7b03815958c49d72385be497fbd0eb1bb2ae27d24989d6c9aee83eafbd93e9d3",
+        "networkRestored": true,
+        "originalBackupsUnchanged": true,
+        "newVerifiedBackupCount": 1
+      },
+      {
+        "phase": "upgrade-pass",
+        "status": "PASS",
+        "operationOutcome": "OPERATION_SUCCESS",
+        "installerExitCode": 0,
+        "installerQuiescent": true,
+        "hostElapsedMs": 97501,
+        "guestElapsedMs": 93658,
+        "reportSha256": "4641819fa1430c7df6399d9fe06ddb058604e4f7dac0cc367204b207e71c89ae"
+      },
+      {
+        "phase": "uninstall-fail",
+        "status": "PASS",
+        "operationOutcome": "EXPECTED_OPERATION_FAILURE",
+        "installerExitCode": 1,
+        "installerQuiescent": true,
+        "hostElapsedMs": 145123,
+        "guestElapsedMs": 141201,
+        "reportSha256": "80e30a965e7d34486529cc7376674f4137f6f65510c8d656f3746cb14bfbe5ac",
+        "injectedFailure": "Exact owned flutter_windows.dll held Read/shareRead",
+        "fullPreviousPayloadAndStateRestored": true,
+        "lockTargetSha256": "7b03815958c49d72385be497fbd0eb1bb2ae27d24989d6c9aee83eafbd93e9d3",
+        "networkRestored": true,
+        "originalBackupsUnchanged": true,
+        "newVerifiedBackupCount": 1
+      },
+      {
+        "phase": "stop",
+        "status": "PASS",
+        "operationOutcome": "OPERATION_SUCCESS",
+        "installerExitCode": null,
+        "installerQuiescent": true,
+        "hostElapsedMs": 16664,
+        "guestElapsedMs": 13215,
+        "reportSha256": "c366b039f94886831fe87937ed551094c96ca89ce91f4921b689569ca9827d04",
+        "control": "Ordinary SERVICE_CONTROL_STOP",
+        "serviceStopped": true,
+        "persistentGuardArmed": true,
+        "tunnelPresent": false
+      },
+      {
+        "phase": "uninstall-latched",
+        "status": "PASS",
+        "operationOutcome": "OPERATION_SUCCESS",
+        "installerExitCode": 0,
+        "installerQuiescent": true,
+        "hostElapsedMs": 92618,
+        "guestElapsedMs": 89115,
+        "reportSha256": "023bf9fc00390927c2116a8c60c25ea90ce5ba57a949907fba683e8f2a35f293",
+        "ownedProductTreesServiceRegistrationRemoved": true,
+        "networkRestored": true,
+        "originalBackupsUnchanged": true
+      },
+      {
+        "phase": "reinstall",
+        "status": "PASS",
+        "operationOutcome": "OPERATION_SUCCESS",
+        "installerExitCode": 0,
+        "installerQuiescent": true,
+        "hostElapsedMs": 33678,
+        "guestElapsedMs": 29939,
+        "reportSha256": "17971f44632d0b34d5a89d08f0f55fda28f2d5841b70c8eeea69846cf8c675e5",
+        "exactBuild13Restored": true,
+        "rollbackPathNullAsExpected": true
+      },
+      {
+        "phase": "final",
+        "status": "PASS",
+        "operationOutcome": "NOT_STARTED",
+        "installerExitCode": null,
+        "installerQuiescent": false,
+        "hostElapsedMs": 15332,
+        "guestElapsedMs": 11675,
+        "reportSha256": "4a37819e38f97c33cab464eb7a06b4645ec940db7b6fddf215a9deeda8c89da3"
+      },
+      {
+        "phase": "cleanup",
+        "status": "PASS",
+        "operationOutcome": "NOT_STARTED",
+        "installerExitCode": null,
+        "installerQuiescent": false,
+        "hostElapsedMs": 60191,
+        "guestElapsedMs": 56009,
+        "reportSha256": "5dcf0dc615911443096a02542ea84d8d774d986ac193bf580a4760b5388aa1cb"
+      }
+    ]
+  },
+  "vpnTraffic": [
+    {
+      "phase": "seed",
+      "build": 12,
+      "status": "PASS",
+      "httpsStatus": 200,
+      "httpsProbeElapsedMs": 245,
+      "dnsProbeElapsedMs": 81,
+      "dnsAddressCount": 2,
+      "ordinaryOwnerProbe": true,
+      "egressIpSha256": "ad6a86a4507e238e530f921ba9c96a2205e1375c1f0cb1d4a752fce9d8eed913",
+      "serviceEstablishedConnections": 1,
+      "hostEstablishedPeers": 1,
+      "uploadDeltaBytes": 2263,
+      "downloadDeltaBytes": 8570,
+      "uiClosedWithTunnelAndGuard": true,
+      "httpsReportSha256": "b9618880a86712e5d54582b6afa5a4db973518ed4ee66e65da4576b36bb60e4f",
+      "dnsReportSha256": "451c6bc766de144ad81efa227d09231ea9d955a97c87a045266fff583d2da507",
+      "trafficReportSha256": "dc16cdfb35ac4bcf161843da2f747d1fd31e2bb2df970837d608a3e869d89ea1",
+      "nativeClosedReportSha256": "94b285fb0da4a66c1b622d2db808d4cb1f7aec15a02c343e3e95a0071d0153a2"
+    },
+    {
+      "phase": "upgraded",
+      "build": 13,
+      "status": "PASS",
+      "httpsStatus": 200,
+      "httpsProbeElapsedMs": 249,
+      "dnsProbeElapsedMs": 83,
+      "dnsAddressCount": 2,
+      "ordinaryOwnerProbe": true,
+      "egressIpSha256": "ad6a86a4507e238e530f921ba9c96a2205e1375c1f0cb1d4a752fce9d8eed913",
+      "serviceEstablishedConnections": 1,
+      "hostEstablishedPeers": 1,
+      "uploadDeltaBytes": 3820,
+      "downloadDeltaBytes": 8569,
+      "uiClosedWithTunnelAndGuard": true,
+      "httpsReportSha256": "7e8bb6b142121de48fae6a4012bf8331807f6a513526abcf2cb6c407a9c9baf2",
+      "dnsReportSha256": "a7e5a08989bdf0eef1faa03ac1d3fa6a977aa4c0100d9992dda95ff12d13ebce",
+      "trafficReportSha256": "6e727651574f28117fe8c70979f3ff62114d654d46505adec7bc29264f0d9b66",
+      "nativeClosedReportSha256": "2b3af92546e68a820cc560cf993ae31114e3b37e1f310c7f7ab5a557595d0ad2"
+    },
+    {
+      "phase": "restored",
+      "build": 13,
+      "status": "PASS",
+      "httpsStatus": 200,
+      "httpsProbeElapsedMs": 234,
+      "dnsProbeElapsedMs": 88,
+      "dnsAddressCount": 2,
+      "ordinaryOwnerProbe": true,
+      "egressIpSha256": "ad6a86a4507e238e530f921ba9c96a2205e1375c1f0cb1d4a752fce9d8eed913",
+      "serviceEstablishedConnections": 1,
+      "hostEstablishedPeers": 1,
+      "uploadDeltaBytes": 5853,
+      "downloadDeltaBytes": 9709,
+      "uiClosedWithTunnelAndGuard": true,
+      "httpsReportSha256": "7f376d033670df28f4a6a6b2c6be4f3f5c2c0a5f77223e1659a02061aac9d4f8",
+      "dnsReportSha256": "ea3d8634b1318932d40f3402151deff4628f49c2f8c21c57c0b41a62fa3d15a4",
+      "trafficReportSha256": "e8cc4e2b82f5eccabf28de2d5e306654697af1071d169f8713a258b7c5f9c811",
+      "nativeClosedReportSha256": "13263111b84d6cb3867163a85e88a22d9188d7a5f16fcebf222a683106f39673"
+    }
+  ],
+  "peerDrains": [
+    {
+      "phase": "upgrade-fail",
+      "status": "PASS",
+      "elapsedMs": 1825,
+      "deadlineMs": 10000,
+      "finalPeerCount": 0,
+      "reportSha256": "38af922f273b1dbe17c4d43f6896bd43377e5b72577611b31b4fe2d582d3930d"
+    },
+    {
+      "phase": "uninstall-fail",
+      "status": "PASS",
+      "elapsedMs": 1407,
+      "deadlineMs": 10000,
+      "finalPeerCount": 0,
+      "reportSha256": "28eded60dc945052d7780b1c0434ae3265e2c3cd9a713d277c9d582321daa027"
+    },
+    {
+      "phase": "ordinary-stop",
+      "status": "PASS",
+      "elapsedMs": 1226,
+      "deadlineMs": 10000,
+      "finalPeerCount": 0,
+      "reportSha256": "71c190d9fd9a88c5adf6a863be776356416603ff214f1d8f5d833c0003c02c97"
+    }
+  ],
+  "directNetwork": [
+    {
+      "phase": "baseline",
+      "mode": "numeric",
+      "status": "PASS",
+      "probeElapsedMs": 254,
+      "reportSha256": "7eeaefc85fbe829465cff4a317803a1ed243da1d39949b402cbf04a0807725c5"
+    },
+    {
+      "phase": "baseline-dns",
+      "mode": "health",
+      "status": "PASS",
+      "probeElapsedMs": 782,
+      "reportSha256": "9215ef85437955b76df6ab1a9caa3149da0a10268129597244555ca132d0322a"
+    },
+    {
+      "phase": "upgrade-fail",
+      "mode": "numeric",
+      "status": "PASS",
+      "probeElapsedMs": 229,
+      "reportSha256": "623bbc567309544c4e3817b610d241e0a50e7b40b539af58085b20ec39aae056"
+    },
+    {
+      "phase": "upgrade-pass",
+      "mode": "numeric",
+      "status": "PASS",
+      "probeElapsedMs": 264,
+      "reportSha256": "3c880e5afcbcf46009f063d1a26e407a9590b437c1d3e57418e999353e697db5"
+    },
+    {
+      "phase": "uninstall-fail",
+      "mode": "numeric",
+      "status": "PASS",
+      "probeElapsedMs": 217,
+      "reportSha256": "a11ccc2567252c8b162070a533d83d65f1f9660bd67dd8ab8918d44e1ba835e1"
+    },
+    {
+      "phase": "uninstalled",
+      "mode": "numeric",
+      "status": "PASS",
+      "probeElapsedMs": 251,
+      "reportSha256": "b0a67f7c562fc68c6d10147801847fa17892c7b2546f3a68414406cc31ecf5af"
+    },
+    {
+      "phase": "uninstalled-dns",
+      "mode": "health",
+      "status": "PASS",
+      "probeElapsedMs": 338,
+      "reportSha256": "2979f891507b7bb4ae2068abdee40354333a55db45c84ffdc3bc5b388518a7b0"
+    }
+  ],
+  "storagePreservation": [
+    {
+      "phase": "upgrade-fail",
+      "status": "PASS",
+      "hostComparisonPassed": true,
+      "reportSha256": "05f9ceac8880d7f2676cd89e4fc43ed523bca837c555598cf626d907653b522d"
+    },
+    {
+      "phase": "upgrade-pass",
+      "status": "PASS",
+      "hostComparisonPassed": true,
+      "reportSha256": "3e6686dd38da2c93a15e0f60df4bc209dbfa618c3a96acad8212f6e706e35f44"
+    },
+    {
+      "phase": "uninstall-fail",
+      "status": "PASS",
+      "hostComparisonPassed": true,
+      "reportSha256": "5d88a9deeb674588b0796d541a46ff3896a7bf12e6d5ad082358c4ec0d7a2c7b"
+    },
+    {
+      "phase": "uninstall-latched",
+      "status": "PASS",
+      "hostComparisonPassed": true,
+      "reportSha256": "0bcd0f7109e9e52c91560d9961fbc446d324e93e08b6b85eb92892355ffc11b6"
+    },
+    {
+      "phase": "reinstalled",
+      "status": "PASS",
+      "hostComparisonPassed": true,
+      "reportSha256": "1583313e71aa6ed6ddd35021eee6c1736dbc9a1e494c1de152221604a1518b9b"
+    }
+  ],
+  "stoppedLatch": {
+    "status": "PASS",
+    "serviceStopped": true,
+    "guardArmed": true,
+    "tunnelPresent": false,
+    "ordinaryOwnerHttpsBlocked": true,
+    "probeElapsedMs": 2,
+    "reportSha256": "540edf2bb904c6db1319fd2d6bca52f252076047ef6f3a066ce1f4549259bd4d",
+    "crashProtectionClaim": false
+  },
+  "cleanup": {
+    "status": "PASS",
+    "coordinatorCleanupPassed": true,
+    "unknown": false,
+    "finalBuild": 13,
+    "serviceState": "Running",
+    "fullPayloadAndProductionBindingVerified": true,
+    "ownerSame": true,
+    "installedStateSha256": "595cddce2dfd8196d1f603233c8f4d5824e5f0fe79c4c35c735ed3c8cec9f7d8",
+    "newStateAndServicePidExpected": true,
+    "rollbackPathNullAsExpected": true,
+    "guardArmed": false,
+    "tunnelPresent": false,
+    "networkHashUnchanged": true,
+    "oldBackupCount": 14,
+    "oldBackupsUnchanged": true,
+    "foreignDisabledSentinelPreservedThroughOperations": true,
+    "ownedSentinelRemoved": true,
+    "ownedProtectedFilesRemoved": 26,
+    "fixture": "owned_stopped",
+    "ui": "closed_or_not_started",
+    "storageFileCount": 0,
+    "cleanupReportSha256": "5dcf0dc615911443096a02542ea84d8d774d986ac193bf580a4760b5388aa1cb",
+    "storageReportSha256": "2c8843607c1f6cc9dd5cb498eee32e44d144d8aae32ef106b0d9328d4b24b1af"
+  },
+  "scopedNotRun": [],
+  "remainingUnproven": [
+    "Successful uninstall from still-running active VPN: this run tested successful uninstall only after ordinary Stop with persistent latch.",
+    "Hard crash, disk-full or power-loss injection were not exercised.",
+    "Full IPv6/DNS leak matrix, physical Windows acceptance and signed stable release remain separate.",
+    "Synthetic host fixture shares host egress; no changed-public-IP claim is made.",
+    "Builds +14/+15 were not installed or tested by this run."
+  ],
+  "previousAttemptVerdictsPreserved": true,
+  "privateEvidence": {
+    "manifestSha256": "c003d16f41a2bcc8f4ea628100e7705ddce192043b1e9bd9d6a9bd28fd66d455",
+    "fileCount": 329,
+    "privateSummarySha256": "860aefcc43fffc428533976201afb2386789e52c868e1edfa08dedbd09650b01"
+  }
+}

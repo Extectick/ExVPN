@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "appVersion": "0.1.0+15",
+  "sourceCommit": "a3e12f5935a01ad83f8bd523892fd6eccaf053d4",
+  "status": "completed",
+  "conclusion": "success",
+  "runId": 39015806816,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/39015806816",
+  "jobs": [
+    {
+      "name": "Android",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T08:01:30Z",
+      "completedAt": "2026-10-17T08:15:10Z",
+      "durationSeconds": 820.0,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39015806816/job/117347555015"
+    },
+    {
+      "name": "Windows",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T08:01:31Z",
+      "completedAt": "2026-10-17T08:10:09Z",
+      "durationSeconds": 518.0,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39015806816/job/117347555209"
+    }
+  ],
+  "limitations": [
+    "Ordinary Flutter CI builds; not a Shorebird engine or signed-patch test.",
+    "Build success does not establish VPN security acceptance."
+  ]
+}

@@ -1,6 +1,10 @@
 #requires -Version 7.0
 [CmdletBinding()]
-param([string]$OutputDirectory = '')
+param(
+    [string]$OutputDirectory = '',
+    [ValidateSet('ordinary','shorebird')][string]$FlutterRuntime = 'ordinary',
+    [ValidateSet('','debug','release')][string]$FlutterBuildMode = ''
+)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
@@ -30,20 +34,21 @@ try {
     # remain mandatory; a cache miss is an explicit failure, not a download.
     $env:GOPROXY = 'off'
     $env:GOSUMDB = 'off'
-    & (Join-Path $PSScriptRoot 'collect-notices.ps1') -Target Android -NativeBinaries $binaries -OutputDirectory $bundle
+    & (Join-Path $PSScriptRoot 'collect-notices.ps1') -Target Android -NativeBinaries $binaries -OutputDirectory $bundle -FlutterRuntime $FlutterRuntime -FlutterBuildMode $FlutterBuildMode
     if (!$?) { throw 'Android notice collection failed.' }
 } finally {
     $env:GOPROXY = $previousProxy
     $env:GOSUMDB = $previousSumDb
 }
-$state = Get-AndroidNoticeSnapshotState $repository $output
+$state = Get-AndroidNoticeSnapshotState $repository $output -FlutterRuntime $FlutterRuntime -FlutterBuildMode $FlutterBuildMode
 Assert-AndroidNoticeNativeInfo $repository $output
 Write-AuditJson (Join-Path $output 'seal.json') $state
-Assert-AndroidNoticeSeal $repository $output
+Assert-AndroidNoticeSeal $repository $output -FlutterRuntime $FlutterRuntime -FlutterBuildMode $FlutterBuildMode
 [pscustomobject]@{
     InputDirectory = $output
     AppVersion = $state.appVersion
     SealSha256 = Get-AuditSha256 (Join-Path $output 'seal.json')
     AssetFiles = $state.assetFiles.Count
     NativeBinaries = $state.nativeFiles.Count
+    Runtime = $state.runtime
 }

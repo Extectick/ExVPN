@@ -36,7 +36,7 @@
 | Kotlin / Android Gradle plugin / Gradle | **2.4.0 / 9.1.0 / 9.3.1**, Android settings/wrapper | Apache-2.0 и лицензии транзитивных компонентов | Версии закреплены в исходниках, обе Android ABI собраны; runtime Maven notices проверяются отдельно от Go/Dart inventory |
 | AndroidX Test runner / rules / Espresso core | **1.3.0 / 1.2.0 / 3.3.0**, `android/exvpn-integration-test-pins.gradle.kts` | Полные лицензии и транзитивный комплект подлежат отдельной проверке | Уже использовавшиеся входы `integration_test`: вместо трёх upstream dynamic selectors проект задаёт exact strict versions и app constraints. Неизвестное изменение upstream selector и несовместимый app pin вызывают отказ; constraints сами не добавляют зависимости. Это закрепление наблюдённых Maven inputs, не доказательство состава готового APK |
 | JUnit / Hamcrest Core | **4.13.2 / 1.3**, Android `testImplementation`; Hamcrest закреплён в JUnit POM | EPL-1.0 / BSD-3-Clause | Только JVM-тесты ограниченного QR reader, в APK не входят. Полные лицензии upstream тегов сохранены в `apps/exvpn/android/licenses/` |
-| Shorebird CLI | **1.6.129**, commit `9fe1370bdd1d2f117cc08c57ae416b794ed92440`; Flutter fork `5bef02a16146a0effc07da4acccaafe90a2739ce`, engine `4b936a0c03e13389ddfb1ac48823f187964975c2` | CLI: Apache-2.0 или MIT; Flutter/runtime components и облачный сервис имеют отдельные условия | Проверены LICENSE-APACHE/LICENSE-MIT и SHA-256 upstream lock/entry point; [pin](../scripts/bootstrap/shorebird.lock.json), [подготовка и ограничения](SHOREBIRD.md). Только отдельный dev SDK, в текущие APK/Windows-пакеты не входит. Проект создан, updater package принят отдельно; release runtime notices и реальный signed patch ещё не проверены |
+| Shorebird CLI | **1.6.129**, commit `9fe1370bdd1d2f117cc08c57ae416b794ed92440`; Flutter fork `5bef02a16146a0effc07da4acccaafe90a2739ce`, engine `4b936a0c03e13389ddfb1ac48823f187964975c2` | CLI: Apache-2.0 или MIT; Flutter/runtime components и облачный сервис имеют отдельные условия | Проверены LICENSE-APACHE/LICENSE-MIT и SHA-256 upstream lock/entry point; [pin](../scripts/bootstrap/shorebird.lock.json), [подготовка и ограничения](SHOREBIRD.md). CLI — отдельный dev SDK. В +16 подготовлен выбор Shorebird runtime с notices именно его framework/Dart/engine и проверкой фактических engine bytes; обычные пакеты +15 его не содержат. Полный linker SBOM и реальный signed patch остаются отдельными gates |
 | `shorebird_code_push` | **2.0.7**, точный pin и SHA-256 archive `32df9946782c6ca95d7065c7f2156df74675e931b816d0dc391a3d8f8917930f` в app lock | MIT | LICENSE и исходники именно 2.0.7 проверены; LICENSE SHA-256 `1847e0e0698142ed4347c1441a9fa81c8fbddd44b1d8bbcd5e3647f991759d7f`. Existing `ffi`/`meta` pins не изменились. Полный текст входит в стандартный сбор notices из pub cache; новый engine этим пакетом не устанавливается. [Контракт](SHOREBIRD.md) |
 | GitHub Actions cache | **6.1.0**, commit `55cc8345863c7cc4c66a329aec7e433d2d1c52a9` | MIT, GitHub, Inc. and contributors, 2018 | [LICENSE закреплённого commit](https://github.com/actions/cache/blob/55cc8345863c7cc4c66a329aec7e433d2d1c52a9/LICENSE) и соответствие tag проверены. Только CI-инструмент, не runtime APK/EXE; точные кеши и сохраняемые проверки описаны в [CI.md](CI.md) |
 | NSIS | **3.13**, официальный SourceForge ZIP и SHA-256 в `scripts/windows/nsis.lock.json`; проверяются все распакованные файлы SDK | zlib/libpng; bzip2; CPL-1.0 для LZMA с указанным upstream исключением | Лицензия закреплённого ZIP сохранена в `native/windows/licenses/NSIS-3.13.txt` и payload. Только встроенные System/nsDialogs/nsExec; внешних plugins нет. Offline compilation прошла, unsigned development installer; установка/upgrade/rollback на Windows-стенде ещё не приняты |
@@ -44,7 +44,20 @@
 
 Плагины защищённого хранилища, QR, проверки подписей, системные TUN-библиотеки/драйверы и Flutter packages добавляются отдельными строками после выбора конкретных версий. Не считать их автоматически покрытыми Apache-2.0 ExVPN. Итоговый реестр и SBOM должны соответствовать lock-файлам и фактическому комплекту выпуска.
 
-## Инструмент проверки гонок
+## Инструменты проверки
+
+Android release-аудит повторяет штатное удаление debug symbols из
+`libflutter.so` инструментом `llvm-strip --strip-unneeded` из установленного
+**NDK r28c / 28.2.13676358**. Windows `llvm-strip.exe` закреплён SHA-256
+`2d411db64e0b45508775e9e8fd436fb6e0af814a9dfbf8aea8fc37ce436c435c`.
+Это локальный build/audit tool, не дополнительная библиотека APK.
+Проверен поставленный LLVM NOTICE (Apache-2.0 WITH LLVM-exception и notices
+отдельных компонентов), SHA-256
+`f96f763beb66a7ba7a667647fc64c0226ace875e590c831fdd9579ec1c1d91e1`;
+полный NDK `NOTICE.toolchain` имеет SHA-256
+`789714a9076571c580cf531bdcebec776a4d889c12c3c1108adafc6e4338710a`.
+Проверка сравнивает результат преобразования с готовым APK, сохраняя факт
+отличия от исходных SDK bytes; неизвестное несовпадение не принимается.
 
 Для `go test -race` на Windows используется **w64devkit 2.10.1** (GCC 16.2.0),
 официальный release asset и SHA-256 закреплены в

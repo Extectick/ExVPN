@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "status": "ADDITIVE_CONTROL_CONFIRMED",
+  "scope": {
+    "historicalWirePacketsReattributed": false,
+    "rootObserver": "single_su_0_native_additive_listener",
+    "productSourceChanges": false,
+    "ordinaryUidProbe": true,
+    "vpn": false,
+    "newPackageInstall": false,
+    "capture": false,
+    "device": "owned_private_API30_x86_64_emulator",
+    "dnsSecurityGateRaised": false,
+    "settingsChanges": false,
+    "physicalDeviceAcceptance": false
+  },
+  "startedAtUtc": "2026-10-17T08:14:14.0257315Z",
+  "finishedAtUtc": "2026-10-17T08:15:27.5239252Z",
+  "durationMs": 73495,
+  "bootMs": 32523,
+  "artifacts": {
+    "observerSha256": "2c8f16eecdc29d05954fb864ccddf4e25c5a3cc73f8f2de5186d3a8d6db67e6d",
+    "probeApkSha256": "6c6ced3231d41a69e6ad67fb034fdd3e1c9c3910995b82f964ce710418667b66",
+    "productVersion": "0.1.0+13",
+    "productApkSha256": "7a85645227f045c3a8c5cb875ceb53e2ed3cfbd4d291658c368254868753fccd"
+  },
+  "preflight": {
+    "querylogSupported": true,
+    "serviceAbsentBefore": true,
+    "serviceAbsentAfter": true
+  },
+  "ordinaryUidControl": {
+    "status": "CONTROL_CONFIRMED",
+    "dnsOutcome": "no_answer",
+    "wireNonceLinked": false,
+    "hostnameMasked": true,
+    "controlledApiCalls": 1,
+    "newRequesterRecords": 1,
+    "physicalNetIdMatched": true,
+    "knownUidMatched": true,
+    "livePidMatched": true,
+    "completionWindowMatched": true,
+    "independentProcessObservations": 69,
+    "durationMs": 14055,
+    "nonceHashMatched": true
+  },
+  "additiveControl": {
+    "status": "ADDITIVE_CONTROL_CONFIRMED",
+    "matchedCallbacks": 1,
+    "querylogPidMatchedBySeparateLiveControl": true,
+    "controlledApiCalls": 1,
+    "callbackDelayFromQuerylogMs": 1,
+    "physicalNetIdMatched": true,
+    "knownUidMatched": true,
+    "wirePacketOwnerProven": false,
+    "callbackIncludesOriginalRequestTime": false,
+    "totalCallbacks": 25,
+    "callbackTimeBoundMatched": true,
+    "listenerRemovalDirectlyObserved": false,
+    "exactFullNonceMatched": true,
+    "callbackIncludesPid": false
+  },
+  "listener": {
+    "selfDeadlineSeconds": 60,
+    "registered": true,
+    "stageRemoved": true,
+    "systemListenerReplaced": false,
+    "normalExit": true,
+    "removalDirectlyObserved": false,
+    "removalMechanism": "binder_death_after_exact_observer_exit"
+  },
+  "restoration": {
+    "originalIdentitiesPreserved": true,
+    "observedProcessStates": [
+      "absent",
+      "absent",
+      "absent"
+    ],
+    "forcedOwnedGuestShutdown": true,
+    "protectedStoreUnchanged": true,
+    "watchdogCompleted": true,
+    "cleanupWithin30Seconds": true,
+    "guestShutdown": true,
+    "cleanupDurationMs": 12816.444,
+    "settingsUnchanged": true
+  },
+  "bounds": {
+    "oneControlledApiCall": true,
+    "withinTotal": true,
+    "maximumTotalSeconds": 270
+  },
+  "limits": [
+    "Callback confirms full synthetic hostname, requester UID, netId and receipt time for the one controlled API call.",
+    "Callback does not contain PID or original request time; PID is separately correlated with querylog and live process snapshots.",
+    "No PCAP was collected; wire packet ownership and historical ambiguous queries are not proven.",
+    "Binder-death removal follows pinned platform source and exact process exit; listener registry removal was not directly measured.",
+    "Emulator capability only; no VPN leak gate or physical-device acceptance is closed."
+  ],
+  "proof": {
+    "sha256": "25400c3a0f231851f9b5050a72ccc2d57a82aa702feda7f290155a9f13fb21da",
+    "fileCount": 439
+  },
+  "freeze": {
+    "sha256": "8a27ce0f03d47dc60828ddd9ed687aa03a59aba0be0e538a7ebba077ad2ddb85",
+    "mismatches": 0,
+    "inputCount": 52
+  },
+  "priorAttemptsPreserved": true,
+  "date": "2026-10-17",
+  "task": "EXVPN-E1-009",
+  "coordinatorVerification": {
+    "mismatches": 0,
+    "privateFilesVerified": 439
+  }
+}

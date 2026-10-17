@@ -1,5 +1,6 @@
 #requires -Version 7.0
-# Shared read-only Android packaging checks; no build/cache/network mutation.
+# Android packaging checks; no build/cache/network mutation. Engine binding
+# may recalculate a pinned transform in a new artifacts staging directory.
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'notice-inputs.ps1')
 . (Join-Path $PSScriptRoot 'artifact-audit-lib.ps1')
@@ -7,6 +8,8 @@ Set-StrictMode -Version Latest
 function Get-AndroidNoticePinPaths {
     @('apps/exvpn/pubspec.yaml', 'apps/exvpn/pubspec.lock', 'apps/exvpn/lib/build_identity.dart',
       'apps/exvpn/android/app/build.gradle.kts', 'scripts/bootstrap/toolchain.lock.json',
+      'scripts/bootstrap/shorebird.lock.json', 'scripts/release/flutter-runtime-inputs.ps1',
+      'scripts/release/android-engine-transform.lock.json',
       'native/core/go.mod', 'native/core/go.sum', 'native/android/go.mod', 'native/android/go.sum',
       'native/patches/xray-lifecycle.lock.json', 'native/patches/xray-lifecycle.patch',
       'scripts/release/collect-notices.ps1', 'scripts/release/notice-inputs.ps1',
@@ -25,7 +28,11 @@ function Assert-AndroidNoticeDirectory([string]$Repository, [string]$InputDirect
     }
 }
 
-function Get-AndroidNoticeSnapshotState([string]$Repository, [string]$InputDirectory, [string]$ExpectedVersion = '') {
+function Get-AndroidNoticeSnapshotState(
+    [string]$Repository, [string]$InputDirectory, [string]$ExpectedVersion = '',
+    [ValidateSet('ordinary','shorebird')][string]$FlutterRuntime = 'ordinary',
+    [ValidateSet('','debug','release')][string]$FlutterBuildMode = ''
+) {
     Assert-AndroidNoticeDirectory $Repository $InputDirectory
     $version = Get-NoticeAppVersion ([IO.File]::ReadAllText((Join-Path $Repository 'apps/exvpn/pubspec.yaml'))) ([IO.File]::ReadAllText((Join-Path $Repository 'apps/exvpn/lib/build_identity.dart')))
     if ($ExpectedVersion -and $version -cne $ExpectedVersion) { throw 'android_notice_gradle_version_mismatch' }
@@ -55,7 +62,16 @@ function Get-AndroidNoticeSnapshotState([string]$Repository, [string]$InputDirec
     $bundleFiles = Get-AuditTreeFiles $bundle
     $inventory = Get-Content -LiteralPath (Join-Path $bundle 'inventory.json') -Raw | ConvertFrom-Json -AsHashtable
     if ($inventory.target -cne 'Android') { throw 'android_notice_wrong_target' }
-    Assert-NoticePackageBinding $inventory $version $dartLockHash $nativeHashes
+    $runtime = $null
+    if ($inventory.Contains('runtime')) {
+        $resolvedRuntime = Get-ReleaseFlutterRuntime -Repository $Repository -Target Android -FlutterRuntime $FlutterRuntime -FlutterBuildMode $FlutterBuildMode
+        $runtime = $resolvedRuntime.Evidence
+    } elseif ($FlutterRuntime -cne 'ordinary' -or $FlutterBuildMode -cnotin @('','debug')) {
+        throw 'flutter_runtime_evidence_missing'
+    }
+    # Legacy ordinary snapshots retain their existing checks. Every newly
+    # collected snapshot carries runtime evidence; Shorebird never accepts legacy.
+    Assert-NoticePackageBinding $inventory $version $dartLockHash $nativeHashes $runtime
     $allowedFiles = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     foreach ($path in @('inventory.json', 'README.txt', 'ASSET_SOURCES.md', 'sources/xray-core.zip')) {
         [void]$allowedFiles.Add($path)
@@ -99,6 +115,7 @@ function Get-AndroidNoticeSnapshotState([string]$Repository, [string]$InputDirec
     }
     [ordered]@{
         schema = 1; appVersion = $version; dartLockSha256 = $dartLockHash; pins = $pins
+        runtime = $runtime
         nativeFiles = @($jni.Values | Sort-Object { $_.path } -CaseSensitive -Culture en-US)
         assetFiles = @($assets.Values | Sort-Object { $_.path } -CaseSensitive -Culture en-US)
     }
@@ -122,8 +139,12 @@ function Assert-AndroidNoticeNativeInfo([string]$Repository, [string]$InputDirec
     if ($findings.Count) { throw 'android_notice_embedded_native_binding_failed' }
 }
 
-function Assert-AndroidNoticeSeal([string]$Repository, [string]$InputDirectory, [string]$ExpectedVersion = '') {
-    $state = Get-AndroidNoticeSnapshotState $Repository $InputDirectory $ExpectedVersion
+function Assert-AndroidNoticeSeal(
+    [string]$Repository, [string]$InputDirectory, [string]$ExpectedVersion = '',
+    [ValidateSet('ordinary','shorebird')][string]$FlutterRuntime = 'ordinary',
+    [ValidateSet('','debug','release')][string]$FlutterBuildMode = ''
+) {
+    $state = Get-AndroidNoticeSnapshotState $Repository $InputDirectory $ExpectedVersion -FlutterRuntime $FlutterRuntime -FlutterBuildMode $FlutterBuildMode
     $sealPath = Join-Path $InputDirectory 'seal.json'
     if (!(Test-Path -LiteralPath $sealPath -PathType Leaf)) { throw 'android_notice_seal_missing' }
     Assert-AuditNoLinks $sealPath
@@ -133,10 +154,16 @@ function Assert-AndroidNoticeSeal([string]$Repository, [string]$InputDirectory, 
     if (($state | ConvertTo-Json -Depth 12 -Compress) -cne ($seal | ConvertTo-Json -Depth 12 -Compress)) { throw 'android_notice_seal_stale_or_tampered' }
 }
 
-function Assert-AndroidPackagedNotices([string]$Repository, [string]$InputDirectory, [string]$ApkPath) {
+function Assert-AndroidPackagedNotices(
+    [string]$Repository, [string]$InputDirectory, [string]$ApkPath,
+    [ValidateSet('ordinary','shorebird')][string]$FlutterRuntime = 'ordinary',
+    [ValidateSet('','debug','release')][string]$FlutterBuildMode = '',
+    [switch]$PassThruRuntime,
+    [string]$AndroidSdkPath = (Join-Path $env:LOCALAPPDATA 'Android/Sdk')
+) {
     # Inspect final ZIP bytes: preBuild verification alone cannot detect AGP
     # transformations (such as a second native strip) or omitted assets.
-    Assert-AndroidNoticeSeal $Repository $InputDirectory
+    Assert-AndroidNoticeSeal $Repository $InputDirectory -FlutterRuntime $FlutterRuntime -FlutterBuildMode $FlutterBuildMode
     $seal = Get-Content -LiteralPath (Join-Path $InputDirectory 'seal.json') -Raw | ConvertFrom-Json -AsHashtable
     $expected = [Collections.Generic.Dictionary[string,object]]::new([StringComparer]::Ordinal)
     foreach ($file in $seal.nativeFiles) { $expected.Add("lib/$($file.path)", $file) }
@@ -153,4 +180,10 @@ function Assert-AndroidPackagedNotices([string]$Repository, [string]$InputDirect
             throw 'android_packaged_unexpected_native_or_notice'
         }
     }
+    if ($seal.runtime) {
+        $resolvedRuntime = Get-ReleaseFlutterRuntime -Repository $Repository -Target Android -FlutterRuntime $FlutterRuntime -FlutterBuildMode $FlutterBuildMode
+        Assert-ReleaseFlutterRuntimeEvidence $resolvedRuntime.Evidence $seal.runtime
+        $runtimeEvidence = Get-ReleaseAndroidPackagedFlutterEvidence $resolvedRuntime $actual $Repository -AndroidSdkPath $AndroidSdkPath
+        if ($PassThruRuntime) { $runtimeEvidence }
+    } elseif ($PassThruRuntime) { throw 'flutter_runtime_evidence_missing' }
 }

@@ -2,6 +2,7 @@
 #requires -Version 7.0
 # Read-only validation shared by the notice collector and its regression tests.
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot 'flutter-runtime-inputs.ps1')
 
 function Get-NoticeAppVersion([string]$Pubspec, [string]$BuildIdentity) {
     $versions = [regex]::Matches($Pubspec, '(?m)^version: *(\d+\.\d+\.\d+)\+(\d+)\s*$')
@@ -58,7 +59,7 @@ function Get-NoticeLockedPackages([string]$LockText) {
     return ,$result
 }
 
-function Get-NoticeDartInputs([string]$Repository, [string]$LockText, [string]$PackageConfigPath) {
+function Get-NoticeDartInputs([string]$Repository, [string]$LockText, [string]$PackageConfigPath, [string]$FlutterSdkRoot = '') {
     $locked = Get-NoticeLockedPackages $LockText
     $config = Get-Content -LiteralPath $PackageConfigPath -Raw | ConvertFrom-Json
     if ($config.configVersion -ne 2) { throw 'Unsupported package_config schema.' }
@@ -76,6 +77,12 @@ function Get-NoticeDartInputs([string]$Repository, [string]$LockText, [string]$P
         }
         if (!$locked.ContainsKey($package.name)) { throw 'Resolved Dart package is missing from pubspec.lock.' }
         $pin = $locked[$package.name]
+        if ($pin.source -ceq 'sdk' -and $FlutterSdkRoot) {
+            $relative = if ($package.name -ceq 'sky_engine') { 'bin/cache/pkg/sky_engine' } else { "packages/$($package.name)" }
+            $expectedSdkPackage = [IO.Path]::GetFullPath((Join-Path $FlutterSdkRoot $relative))
+            if ($root -ine $expectedSdkPackage) { throw 'flutter_runtime_dart_sdk_root_mismatch' }
+            Assert-AuditNoLinks $root
+        }
         if ($pin.source -ne 'hosted') { continue }
         $expected = [IO.Path]::GetFullPath((Join-Path $Repository ".tools/cache/pub/hosted/pub.dev/$($pin.name)-$($pin.version)"))
         if ($root -ine $expected) { throw 'Resolved package root does not match its locked name and version.' }
@@ -111,7 +118,7 @@ function Get-NoticeBinaryName([string]$Target, $Info, [string]$GoVersion) {
     throw 'Native binary does not match the requested platform, ABI or build mode.'
 }
 
-function Assert-NoticePackageBinding($Inventory, [string]$AppVersion, [string]$DartLockSha256, [System.Collections.IDictionary]$NativeHashes) {
+function Assert-NoticePackageBinding($Inventory, [string]$AppVersion, [string]$DartLockSha256, [System.Collections.IDictionary]$NativeHashes, $Runtime = $null) {
     if ($Inventory.schema -ne 1 -or $Inventory.app.version -cne $AppVersion -or $Inventory.dartLockSha256 -cne $DartLockSha256) {
         throw 'Notices do not match this application version and Dart lockfile.'
     }
@@ -126,6 +133,7 @@ function Assert-NoticePackageBinding($Inventory, [string]$AppVersion, [string]$D
         $entries = @($Inventory.components | Where-Object { $_.name -ceq $name })
         if ($entries.Count -ne 1 -or $entries[0].version -cne $AppVersion) { throw 'Application notices have an incorrect version.' }
     }
+    if ($null -ne $Runtime) { Assert-ReleaseFlutterNotices $Inventory $Runtime }
 }
 
 function Get-NoticeXrayPatch([string]$Repository, [string]$Version, [string]$ModuleSum) {

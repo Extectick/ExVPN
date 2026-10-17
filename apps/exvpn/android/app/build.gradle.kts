@@ -11,6 +11,20 @@ plugins {
 // JNI or an old notice directory is allowed when the environment is absent.
 val exVpnPackageInputs = providers.environmentVariable("EXVPN_ANDROID_PACKAGE_INPUTS")
     .orNull?.takeIf { it.isNotBlank() }?.let { file(it) }
+val exVpnFlutterRuntime = providers.environmentVariable("EXVPN_FLUTTER_RUNTIME")
+    .orElse("ordinary").get()
+val exVpnFlutterBuildMode = providers.environmentVariable("EXVPN_FLUTTER_BUILD_MODE")
+    .orElse("debug").get()
+// Credentials are supplied only to the signing process, never stored in Gradle
+// properties or substituted with the debug identity for a release.
+val exVpnSigningValues = listOf(
+    "EXVPN_ANDROID_KEYSTORE", "EXVPN_ANDROID_KEY_ALIAS",
+    "EXVPN_ANDROID_STORE_PASSWORD", "EXVPN_ANDROID_KEY_PASSWORD"
+).map { providers.environmentVariable(it).orNull?.takeIf(String::isNotBlank) }
+check(exVpnSigningValues.all { it == null } || exVpnSigningValues.all { it != null }) {
+    "Incomplete ExVPN Android signing configuration."
+}
+val exVpnReleaseSigning = exVpnSigningValues.all { it != null }
 
 android {
     namespace = "ru.exvpn.exvpn"
@@ -37,12 +51,22 @@ android {
         versionName = flutter.versionName
     }
 
+    if (exVpnReleaseSigning) {
+        signingConfigs.create("exvpnRelease") {
+            storeFile = file(checkNotNull(exVpnSigningValues[0]))
+            check(checkNotNull(storeFile).isFile) { "ExVPN signing keystore is missing." }
+            keyAlias = exVpnSigningValues[1]
+            storePassword = exVpnSigningValues[2]
+            keyPassword = exVpnSigningValues[3]
+        }
+    }
+
     buildTypes {
         release {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // Release signing is configured separately before distribution.
             // Never turn a release into a debug-signed package implicitly.
-            signingConfig = null
+            signingConfig = if (exVpnReleaseSigning) signingConfigs.getByName("exvpnRelease") else null
         }
     }
     sourceSets.getByName("main").jniLibs.setSrcDirs(
@@ -66,7 +90,9 @@ val verifyExVpnPackageInputs by tasks.registering(Exec::class) {
             "pwsh", "-NoProfile", "-File",
             rootProject.file("../../../scripts/release/verify-android-notices.ps1").absolutePath,
             "-InputDirectory", inputs.absolutePath,
-            "-ExpectedVersion", "${flutter.versionName}+${flutter.versionCode}"
+            "-ExpectedVersion", "${flutter.versionName}+${flutter.versionCode}",
+            "-FlutterRuntime", exVpnFlutterRuntime,
+            "-FlutterBuildMode", exVpnFlutterBuildMode
         )
     }
 }

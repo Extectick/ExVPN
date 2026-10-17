@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "version": "0.1.0+16",
+  "scope": "Pinned Shorebird dry-run bases; no cloud release or patch",
+  "windows": {
+    "noticeComponents": 141,
+    "baseBuildManifest": "artifacts/shorebird/0.1.0+16-windows-ab9cb29c1a4b4b99baead02b2bdeec03/build.json",
+    "baseBuildManifestSha256": "9105e201acc2874c1dafe80c578004a89d28e7a311b17f46a19596040aef3ad8",
+    "authenticodeVerified": false,
+    "installerSha256": "6fdeb9899dc0878e88ea9c1d88ab2588658e4b3b4ecea2a0e140efad5adcc87e",
+    "engineRawByteMatch": true,
+    "nsisPayloadFiles": 267,
+    "audit": {
+      "path": "artifacts/release-audit/windows-shorebird16-package-20261017/audit.json",
+      "sha256": "7acba435e59cc7a0416a0977ea8df8c99d6491c803f03378fe65ce51c3545688",
+      "engineBytesBound": true,
+      "counts": {
+        "files": 267,
+        "nativeBinaries": 1,
+        "noticeComponents": 141
+      },
+      "nsisExtractionVerified": true,
+      "releaseBlockers": [
+        "dart_flutter_runtime_link_inventory_incomplete",
+        "development_package",
+        "license_expressions_and_distribution_obligations_not_fully_reviewed",
+        "release_signer_not_pinned",
+        "windows_signature_not_valid"
+      ]
+    }
+  },
+  "android": {
+    "apkSha256": "9401f733a242a7258f69345e40bd4ca66a7300d8160d2416ce82f5b9438018da",
+    "debuggable": false,
+    "signerSha256": "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093",
+    "independentStripProof": {
+      "schemaVersion": 1,
+      "date": "2026-10-17",
+      "ndk": "28.2.13676358",
+      "tool": "llvm-strip.exe",
+      "toolSha256": "2d411db64e0b45508775e9e8fd436fb6e0af814a9dfbf8aea8fc37ce436c435c",
+      "arguments": [
+        "--strip-unneeded",
+        "-o",
+        "output",
+        "input"
+      ],
+      "agp": "9.1.0",
+      "agpJarSha256": "74b47a2a57349371273fb0893f61977a68dc40d5fb5e012a71d9e00c76ad728d",
+      "rows": [
+        {
+          "abi": "arm64-v8a",
+          "sdkSha256": "14dd84d6024359e1193eb345347a6cb3950bcee26f0276d64163178cb781b4ba",
+          "inputBytes": 175752656,
+          "outputSha256": "9b47a0b39a5c61b11d7a6ba9cbde1638b98a3254fe58a2e42d6feb1c3b158b90",
+          "outputBytes": 14016232,
+          "packagedSha256": "9b47a0b39a5c61b11d7a6ba9cbde1638b98a3254fe58a2e42d6feb1c3b158b90",
+          "matches": true
+        },
+        {
+          "abi": "x86_64",
+          "sdkSha256": "d80f49a2bd1c2883214d4430b440e361023149b13942e9c96875292148a39bca",
+          "inputBytes": 176203872,
+          "outputSha256": "2a54e52ae68ba29e2ea3208f5aaf45199f1ded25b688e6e7bccdf3148dfa70db",
+          "outputBytes": 15729664,
+          "packagedSha256": "2a54e52ae68ba29e2ea3208f5aaf45199f1ded25b688e6e7bccdf3148dfa70db",
+          "matches": true
+        }
+      ],
+      "apkSha256": "9401f733a242a7258f69345e40bd4ca66a7300d8160d2416ce82f5b9438018da"
+    },
+    "abis": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "baseBuildManifest": "artifacts/shorebird/0.1.0+16-android-b70e8a8f1a0b4cadad0808d70f208665/build.json",
+    "noticeComponents": 140,
+    "automatedTransformAudit": "verified_ndk_strip",
+    "targetSdk": 36,
+    "minSdk": 30,
+    "rawSdkBytesMatched": false,
+    "baseBuildManifestSha256": "b3d2efa184c22e6c8c584fcf6909006985e791a2c3deac16704a2e09a8fd1966",
+    "signatureVerified": true,
+    "engineBytesBound": true,
+    "historicalBuildManifestEngineBytesBound": false,
+    "audit": {
+      "path": "artifacts/release-audit/android-shorebird16-transform-20261017/audit.json",
+      "sha256": "2d51fb577a7bfdebe84a41129b82e2ef82d8e3c36ea58e91ce4f79737fcc08bb",
+      "engineBytesBound": true,
+      "bindingMethod": "verified_ndk_strip",
+      "signature": {
+        "verified": true,
+        "trustedSignerMatched": true,
+        "debug": false,
+        "certificateSha256": [
+          "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093"
+        ]
+      },
+      "counts": {
+        "files": 305,
+        "nativeBinaries": 2,
+        "noticeComponents": 140
+      },
+      "releaseBlockers": [
+        "android_gradle_maven_runtime_inventory_missing",
+        "dart_flutter_runtime_link_inventory_incomplete",
+        "license_expressions_and_distribution_obligations_not_fully_reviewed"
+      ]
+    }
+  },
+  "updater": {
+    "publicKeySha256": "a9f5f027b7cbb0be337778d3950044bf780d21d6f4db5ec3056c2846fea15c87",
+    "packagedConfigurationVerified": true,
+    "autoUpdate": false,
+    "cloudPublication": false,
+    "patchVerification": "strict",
+    "track": "beta"
+  },
+  "limitations": [
+    "Runtime updater availability still awaiting ordinary app tests.",
+    "Signed Dart patch/restart/rollback/channel isolation not tested.",
+    "Full linker/license inventory remains incomplete.",
+    "Android signer differs from historical debug APKs."
+  ],
+  "sourceCommit": "working tree; commit pending"
+}

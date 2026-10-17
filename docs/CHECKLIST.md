@@ -30,6 +30,14 @@
 
 ## E1 — Технический прототип и обязательный gate
 
+Дополнение EXVPN-E1-009, 2026-10-17: отдельный additive DNS listener control
+прошёл за 73,495 с; один synthetic DNS API call сопоставлен с точным full nonce,
+UID/netId и callback time. PID подтверждён отдельно querylog/live observations,
+в callback его нет. Очистка PASS, исходное устройство/настройки/store сохранены.
+PCAP/VPN в этом control не запускались; девять прежних неоднозначных wire
+запросов не переатрибутированы, DNS gate остаётся открытым.
+[Доказательство](evidence/android-dns-additive-control.json). Рабочее дерево; commit ожидается.
+
 Диагностика EXVPN-E1-009, 2026-10-17: два ограниченных запуска отдельного
 Android API30 AVD не дождались завершения загрузки ОС. DNS observer не
 запускался, разрешение и UID callback не проверены. Обе очистки PASS;
@@ -209,6 +217,18 @@ PID, netId и временем в querylog. VPN не запускался; пр�
 - [ ] **EXVPN-E6-002** — Реализовать signed manifest Ed25519 и SHA-256 файлов данных. Зависимость: E6-001. Критерий: неверная подпись/хеш, несовместимость, выход пути, обрыв и нехватка места отклоняются до активации.
 - [ ] **EXVPN-E6-003** — Добавить staging, атомарную активацию и последний рабочий набор. Зависимость: E6-002. Критерий: обновление не прерывает активный VPN; сбой на каждом шаге сохраняет работоспособность; rollback новой подписанной ревизией проверен.
 - [ ] **EXVPN-E6-004** — Подключить Shorebird и включить обязательную подпись патчей. Зависимость: доступ к сервису/ключам и E6-001. Критерий: реальный release → signed patch → update → rollback Android/Windows, каналы изолированы; native change требует полного выпуска.
+  Подготовка +16, 2026-10-17: локальные раздельные Android/patch signing keys,
+  строгая updater policy, pinned dry-run wrapper без cloud publication и
+  runtime-specific notices/seal/audit. Настоящие Shorebird базы собраны с
+  dry-run без облачной публикации: Android APK/AAB и unsigned Windows NSIS.
+  Подпись APK и обе ABI движка проверены, Android strip
+  воспроизводится аудитором; Windows payload сверяется извлечением из EXE.
+  84 + 44 + 72 целевых проверки PASS; финальный Full **11/11 за 111,44 с**,
+  493 Dart/Flutter-теста и Go без result cache, fingerprint совпал.
+  [Базы и release blockers](evidence/shorebird-base-build16.json),
+  [Full](evidence/fast-validation-shorebird-build16-final.json),
+  [контракт и ограничения](SHOREBIRD.md). Рабочее дерево; commit ожидается.
+  Реальные подписанные patch/rollback и изоляция каналов пока не подтверждены.
   Дополнение +15, 2026-10-17: пользователь завершил CLI login, проект ExVPN
   создан на free account; doctor 6/6 PASS. В клиент добавлены ручные SDK
   check/download, реальные current/next patch, обработка rollback/ошибок и
@@ -227,6 +247,17 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   Доказательства: [1fd0bd5](https://github.com/Extectick/ExVPN/commit/1fd0bd55b876a0251e803fc1123390546442568b).
   Подготовка 2026-10-17: отдельный CLI 1.6.129 закреплён commit/lock/entry-point hashes и успешно запущен; `doctor --json` выявил ожидаемые ограничения detached pin и отсутствие app config, несмотря на exit 0. Cloud app/release/patch/ключи не создавались. [Контракт](SHOREBIRD.md), [доказательство](evidence/shorebird-cli-preflight.json), исходники [aaaf6f4](https://github.com/Extectick/ExVPN/commit/aaaf6f43826508cea252c1fd0018c98b087bbde2). Это не проверка Dart OTA.
 - [ ] **EXVPN-E6-005** — Проверить полное обновление APK/Windows. Зависимости: E4–E5, ключи подписи. Критерий: сохранены подписки/настройки, идентичность подписи, непрерывность защиты и явный безопасный перезапуск ядра.
+  Дополнение 2026-10-17: Windows Sandbox maintenance matrix +12/+13 PASS,
+  63 этапа/17 UI-шагов за 1222,735 с, включая 65,440 с cleanup. Проверены
+  rollback, locked-file upgrade/uninstall с восстановлением, успешный upgrade,
+  обычный Stop с persistent guard и заблокированным HTTPS, удаление в таком
+  состоянии и чистая переустановка. HTTPS/DNS и encrypted storage проверены
+  до/после; 14 прежних backups сохранены, сеть гостя восстановлена. Root
+  повторно сверил 329 private files: 0 расхождений. Это отдельные immutable
+  +12/+13; +16 и changed public IP этим стендом не подтверждены. Успешное
+  удаление при ещё работающем VPN, power loss/disk-full/IPv6 и release signing
+  остаются открытыми. [Отчёт](evidence/windows-maintenance-build13.json).
+  Рабочее дерево; commit ожидается.
 
 Прогресс E6 от 2026-10-16: библиотека подписанных данных реализована и прошла
 24 runtime-теста и 7 тестов офлайн-подготовки пакета, анализ чистый. Проверены

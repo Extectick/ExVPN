@@ -4,20 +4,27 @@ param(
     [ValidateSet('Windows', 'Android')][string]$Target = 'Windows',
     [Parameter(Mandatory)][string[]]$NativeBinaries,
     [string]$WintunLicensePath = '',
-    [string]$OutputDirectory = ''
+    [string]$OutputDirectory = '',
+    [ValidateSet('ordinary','shorebird')][string]$FlutterRuntime = 'ordinary',
+    [ValidateSet('','debug','release')][string]$FlutterBuildMode = ''
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+$collectorEnvironmentNames = @('PATH','GOTOOLCHAIN','GOPATH','GOCACHE','PUB_CACHE','GRADLE_USER_HOME','CI','FLUTTER_SUPPRESS_ANALYTICS','DART_SUPPRESS_ANALYTICS','GOPROXY','GONOSUMDB','GOWORK','ANDROID_HOME','ANDROID_SDK_ROOT','JAVA_HOME')
+$collectorEnvironment = @{}
+foreach ($name in $collectorEnvironmentNames) { $collectorEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process') }
+try {
 . (Join-Path $repository 'scripts/bootstrap/enter-environment.ps1')
 . (Join-Path $PSScriptRoot 'notice-inputs.ps1')
 $go = Join-Path $repository '.tools/go/bin/go.exe'
 $lock = Get-Content -LiteralPath (Join-Path $repository 'scripts/bootstrap/toolchain.lock.json') -Raw | ConvertFrom-Json
+$runtime = Get-ReleaseFlutterRuntime -Repository $repository -Target $Target -FlutterRuntime $FlutterRuntime -FlutterBuildMode $FlutterBuildMode
 $appVersion = Get-NoticeAppVersion (Get-Content -LiteralPath (Join-Path $repository 'apps/exvpn/pubspec.yaml') -Raw) (Get-Content -LiteralPath (Join-Path $repository 'apps/exvpn/lib/build_identity.dart') -Raw)
 $pubLockPath = Join-Path $repository 'apps/exvpn/pubspec.lock'
 $packageConfigPath = Join-Path $repository 'apps/exvpn/.dart_tool/package_config.json'
-$dartInputs = @(Get-NoticeDartInputs $repository (Get-Content -LiteralPath $pubLockPath -Raw) $packageConfigPath)
+$dartInputs = @(Get-NoticeDartInputs $repository (Get-Content -LiteralPath $pubLockPath -Raw) $packageConfigPath -FlutterSdkRoot $runtime.SdkRoot)
 if ($NativeBinaries.Count -ne $(if ($Target -eq 'Windows') { 1 } else { 2 })) { throw 'Supply the exact staged Windows service or both Android ABI libraries.' }
 if ($Target -eq 'Windows' -and !(Test-Path -LiteralPath $WintunLicensePath -PathType Leaf)) { throw 'Supply the Wintun license staged with the Windows native payload.' }
 if (!$OutputDirectory) { $OutputDirectory = Join-Path $repository "artifacts/notices/$($Target.ToLowerInvariant())" }
@@ -120,16 +127,15 @@ Reconstruction and review instructions: $($xrayPatch.sourceUrl)
 Add-SingleNotice 'ExVPN' $appVersion (Join-Path $repository 'LICENSE') 'https://github.com/Extectick/ExVPN'
 Add-SingleNotice 'ExVPN copyright' $appVersion (Join-Path $repository 'NOTICE')
 Add-SingleNotice 'Go runtime' $lock.go.version (Join-Path $repository '.tools/go/LICENSE') 'https://go.dev/LICENSE'
-Add-SingleNotice 'Flutter framework' $lock.flutter.version (Join-Path $repository '.tools/flutter/LICENSE') 'https://github.com/flutter/flutter'
-Add-SingleNotice 'Dart runtime' $lock.flutter.dartVersion (Join-Path $repository '.tools/flutter/bin/cache/dart-sdk/LICENSE') 'https://github.com/dart-lang/sdk'
+foreach ($notice in $runtime.Evidence.notices) {
+    $sourceUrl = if ($notice.name -ceq 'Dart runtime') { 'https://github.com/dart-lang/sdk' }
+        elseif ($FlutterRuntime -ceq 'shorebird') { 'https://github.com/shorebirdtech/flutter' }
+        else { 'https://github.com/flutter/flutter' }
+    Add-SingleNotice $notice.name $notice.version (Join-Path $runtime.SdkRoot $notice.path) $sourceUrl
+}
 if ($Target -eq 'Windows') {
-    Add-SingleNotice 'Flutter Windows engine' $lock.flutter.revision (Join-Path $repository '.tools/flutter/bin/cache/artifacts/engine/windows-x64/license.windows_flutter.md')
     $wintun = Get-Content -LiteralPath (Join-Path $repository 'scripts/windows/wintun.lock.json') -Raw | ConvertFrom-Json
     Add-SingleNotice 'Wintun prebuilt DLL' $wintun.version $WintunLicensePath $wintun.source
-} else {
-    foreach ($abi in @('android-arm64', 'android-x64')) {
-        Add-SingleNotice "Flutter engine $abi" $lock.flutter.revision (Join-Path $repository ".tools/flutter/bin/cache/artifacts/engine/$abi/license.flutter_jar_zip.md")
-    }
 }
 Add-SingleNotice 'Inter font' 'SHA256:29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031' (Join-Path $repository 'apps/exvpn/assets/fonts/OFL.txt')
 Add-SingleNotice 'Material Icons' $lock.flutter.version (Join-Path $repository 'apps/exvpn/assets/licenses/MaterialIcons.txt')
@@ -144,12 +150,16 @@ foreach ($package in $dartInputs) {
 Copy-Item -LiteralPath (Join-Path $repository 'apps/exvpn/assets/SOURCES.md') -Destination (Join-Path $output 'ASSET_SOURCES.md')
 $manifest = [ordered]@{
     schema = 1; target = $Target; app = [ordered]@{ version=$appVersion }
+    runtime = $runtime.Evidence
     dartLockSha256 = (Get-FileHash -LiteralPath $pubLockPath -Algorithm SHA256).Hash.ToLowerInvariant()
     dartPackageConfigSha256 = (Get-FileHash -LiteralPath $packageConfigPath -Algorithm SHA256).Hash.ToLowerInvariant()
     dartPackages = @($dartInputs | ForEach-Object { [ordered]@{ name=$_.name; version=$_.version; source='hosted'; sha256=$_.archiveSha256 } })
     nativeBinaries = $binaryEvidence.ToArray(); components = $components.ToArray()
     limitations = @('Dart list conservatively includes resolved development packages; it is not a linker inventory.', 'Pub archive checksums are compared with local cache metadata, not a fresh archive/content verification.', 'Android Gradle/Maven and installer components require their own release inventory.', 'This inventory does not assert release acceptance or code signing.')
 }
+$runtimeAfter = Get-ReleaseFlutterRuntime -Repository $repository -Target $Target -FlutterRuntime $FlutterRuntime -FlutterBuildMode $FlutterBuildMode
+Assert-ReleaseFlutterRuntimeEvidence $runtimeAfter.Evidence $runtime.Evidence
+Assert-ReleaseFlutterNotices $manifest $runtime.Evidence
 $manifest | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $output 'inventory.json') -Encoding utf8NoBOM
 @'
 ExVPN third-party notices
@@ -169,3 +179,9 @@ the MIT Go binding. Full upstream license texts are preserved here.
 ExVPN source and build instructions: https://github.com/Extectick/ExVPN
 '@ | Set-Content -LiteralPath (Join-Path $output 'README.txt') -Encoding utf8NoBOM
 Write-Host "Collected $($components.Count) component notices for $Target at $output."
+} finally {
+    foreach ($name in $collectorEnvironmentNames) {
+        if ($null -eq $collectorEnvironment[$name]) { Remove-Item -LiteralPath "Env:\$name" -ErrorAction SilentlyContinue }
+        else { [Environment]::SetEnvironmentVariable($name, $collectorEnvironment[$name], 'Process') }
+    }
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "method": "ndk_llvm_strip",
+  "host": "windows-x86_64",
+  "ndkVersion": "28.2.13676358",
+  "sourceProperties": {
+    "sha256": "c00aa236fdb205e9be9edd9e2169763e48aca52735efff4e16f34205d49783b5",
+    "size": 108
+  },
+  "tool": {
+    "path": "toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-strip.exe",
+    "sha256": "2d411db64e0b45508775e9e8fd436fb6e0af814a9dfbf8aea8fc37ce436c435c",
+    "size": 5914720
+  },
+  "arguments": ["--strip-unneeded", "-o", "output", "input"],
+  "provenance": {
+    "kind": "locally_observed_pinned_tool_and_recalculated_bytes",
+    "agpVersion": "9.1.0",
+    "agpJarSha256": "74b47a2a57349371273fb0893f61977a68dc40d5fb5e012a71d9e00c76ad728d",
+    "agpClass": "com.android.build.gradle.internal.tasks.StripDebugSymbolsRunnable",
+    "publisherSignatureVerified": false,
+    "completeLinkInventory": false
+  }
+}

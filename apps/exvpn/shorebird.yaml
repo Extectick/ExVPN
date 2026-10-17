@@ -13,3 +13,5 @@ app_id: ea97a683-02e5-4d86-9aa1-779d6b4bc81e
 # ExVPN checks and downloads through its versions screen. Never restart VPN
 # or apply code while a user is working; activation requires a full app launch.
 auto_update: false
+# Verify signed patches again when loading them from the local cache.
+patch_verification: strict

@@ -9,7 +9,9 @@ param(
     [string]$NoticesDirectory = '',
     [ValidatePattern('^$|^[a-fA-F0-9]{64}$')][string]$ExpectedSignerSha256 = '',
     [string]$AndroidSdkPath = (Join-Path $env:LOCALAPPDATA 'Android/Sdk'),
-    [string]$JavaPath = 'C:/Program Files/Android/Android Studio/jbr/bin/java.exe'
+    [string]$JavaPath = 'C:/Program Files/Android/Android Studio/jbr/bin/java.exe',
+    [ValidateSet('ordinary','shorebird')][string]$FlutterRuntime = 'ordinary',
+    [ValidateSet('','debug','release')][string]$FlutterBuildMode = ''
 )
 
 Set-StrictMode -Version Latest
@@ -40,13 +42,17 @@ $sourceZip = ''
 $sourceCorrespondence = [ordered]@{ present = $false; zipSha256 = ''; linkedModuleSum = ''; actualGoSum = ''; matched = $false; patch = $null }
 $signature = [ordered]@{ verified = $false; trustedSignerMatched = $false; debug = $false; certificateSha256 = @() }
 $nsisEvidence = [ordered]@{ verified=$false }
+$flutterRuntimeEvidence = $null
+$flutterRuntimeInputs = $null
 $pinPaths = @('apps/exvpn/pubspec.yaml', 'apps/exvpn/pubspec.lock', 'scripts/bootstrap/toolchain.lock.json',
     'scripts/windows/wintun.lock.json', 'scripts/windows/msvc-runtime.lock.json', 'scripts/windows/nsis.lock.json',
     'native/windows/go.mod', 'native/windows/go.sum', 'native/android/go.mod', 'native/android/go.sum',
     'native/core/go.mod', 'native/core/go.sum', 'LICENSE', 'NOTICE',
     'native/patches/xray-lifecycle.lock.json', 'native/patches/xray-lifecycle.patch',
     'scripts/release/audit-artifact.ps1', 'scripts/release/artifact-audit-lib.ps1', 'scripts/release/notice-inputs.ps1',
-    'scripts/release/nsis-audit-lib.ps1', 'scripts/release/archive-inspector.lock.json')
+    'scripts/release/nsis-audit-lib.ps1', 'scripts/release/archive-inspector.lock.json',
+    'scripts/bootstrap/shorebird.lock.json', 'scripts/release/flutter-runtime-inputs.ps1',
+    'scripts/release/android-engine-transform.lock.json')
 $pinEvidence = @($pinPaths | Sort-Object -CaseSensitive -Culture en-US | ForEach-Object {
     [ordered]@{ path = $_; sha256 = Get-AuditSha256 (Join-Path $repository $_) }
 })
@@ -184,6 +190,25 @@ try {
         if ($noticeFiles.ContainsKey('sources/xray-core.zip')) { $sourceZip = Join-Path $noticeRoot 'sources/xray-core.zip' }
     }
 
+    try {
+        $flutterRuntimeInputs = Get-ReleaseFlutterRuntime -Repository $repository -Target $target -FlutterRuntime $FlutterRuntime -FlutterBuildMode $FlutterBuildMode
+        Assert-ReleaseFlutterNotices $inventory $flutterRuntimeInputs.Evidence
+        $flutterRuntimeEvidence = if ($target -ceq 'Android') {
+            Get-ReleaseAndroidPackagedFlutterEvidence $flutterRuntimeInputs $files $repository -AndroidSdkPath $AndroidSdkPath
+        } else { Get-ReleasePackagedFlutterEvidence $flutterRuntimeInputs.Evidence $files -RequireByteMatch }
+        if ($target -ceq 'Android' -and !$flutterRuntimeEvidence.engineBytesBound) {
+            Add-AuditFinding $findings 'android_flutter_engine_bytes_not_bound'
+        }
+        if ($target -ceq 'Windows' -and $manifest.Contains('flutterRuntime')) {
+            Assert-ReleaseFlutterRuntimeEvidence $manifest.flutterRuntime $flutterRuntimeEvidence
+        } elseif ($target -ceq 'Windows' -and $FlutterRuntime -ceq 'shorebird') {
+            Add-AuditFinding $findings 'windows_flutter_runtime_metadata_missing'
+        }
+    } catch {
+        $code = if ($_.Exception.Message -cmatch '^flutter_runtime_[a-z0-9_]+$') { $_.Exception.Message } else { 'flutter_runtime_inputs_unavailable' }
+        Add-AuditFinding $findings $code
+    }
+
     $go = Join-Path $repository '.tools/go/bin/go.exe'
     Assert-AuditNoLinks $go
     $toolsUsed.Add([ordered]@{ name = 'go.exe'; sha256 = Get-AuditSha256 $go })
@@ -219,7 +244,11 @@ try {
                 Add-AuditFinding $findings 'notice_dart_component_version_mismatch' $component.name
             }
         }
-        $expectedRuntime = @{ 'Go runtime' = $toolchain.go.version; 'Flutter framework' = $toolchain.flutter.version; 'Dart runtime' = $toolchain.flutter.dartVersion }
+        $expectedRuntime = @{ 'Go runtime' = $toolchain.go.version }
+        if ($flutterRuntimeInputs) {
+            $expectedRuntime['Flutter framework'] = $flutterRuntimeInputs.Identity.flutterVersion
+            $expectedRuntime['Dart runtime'] = $flutterRuntimeInputs.Identity.dartVersion
+        }
         foreach ($name in $expectedRuntime.Keys) {
             $matches = @($inventory.components | Where-Object name -CEQ $name)
             if ($matches.Count -ne 1 -or $matches[0].version -cne $expectedRuntime[$name]) { Add-AuditFinding $findings 'runtime_notice_version_mismatch' $name }
@@ -265,6 +294,10 @@ try {
     foreach ($pin in $pinEvidence) {
         if ((Get-AuditSha256 (Join-Path $repository $pin.path)) -cne $pin.sha256) { throw 'source_pins_changed_during_audit' }
     }
+    if ($flutterRuntimeInputs) {
+        $runtimeAfter = Get-ReleaseFlutterRuntime -Repository $repository -Target $target -FlutterRuntime $FlutterRuntime -FlutterBuildMode $FlutterBuildMode
+        Assert-ReleaseFlutterRuntimeEvidence $runtimeAfter.Evidence $flutterRuntimeInputs.Evidence
+    }
     if ((Get-AuditSha256 $artifactFile) -cne $artifactHash) { throw 'artifact_changed_during_audit' }
     if ($target -eq 'Windows') {
         $after = Get-AuditTreeFiles $payload
@@ -296,6 +329,7 @@ try {
         signature = $signature; pins = $pinEvidence; tools = @($toolsUsed | Sort-Object { $_.name } -CaseSensitive -Culture en-US)
         counts = [ordered]@{ files = $files.Count; nativeBinaries = $native.Count; noticeComponents = $(if ($inventory) { $inventory.components.Count } else { 0 }) }
         nativeBinaries = $native.ToArray()
+        flutterRuntime = $flutterRuntimeEvidence
         nsisExtraction = $nsisEvidence
         findings = @($findings | Sort-Object { $_.code }, { $_.subject } -CaseSensitive -Culture en-US -Unique)
     }
