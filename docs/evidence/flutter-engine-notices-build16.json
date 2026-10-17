@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "status": "FULL_ENGINE_LICENSE_DISTRIBUTION_VERIFIED",
+  "sourceCommit": "7c5357baa9da66a1438d54b80f35d693dc1af7f4",
+  "proof": {
+    "schemaVersion": 1,
+    "scope": "Full pinned Flutter engine license distribution, not complete Dart or Rust updater coverage",
+    "date": "2026-10-17",
+    "sources": [
+      {
+        "path": "scripts/release/flutter-runtime-inputs.ps1",
+        "sha256": "a57a15179f8d35a0691a67156ef470af21c49a8d0f9d17f30e4259033ef3d542"
+      },
+      {
+        "path": "scripts/release/collect-notices.ps1",
+        "sha256": "f13834e0f3879cf9e9c3f2e8b23b972d589c6b9cd23450c9b8bfcfbb67b3d53e"
+      },
+      {
+        "path": "scripts/release/test-notice-inputs.ps1",
+        "sha256": "e02a98aca83d35782e08b2719643cf0d80dc777ad5dfb0e7aa0b53be37985225"
+      }
+    ],
+    "regression": {
+      "red": "Old resolver accepted tampered ignored engine LICENSE",
+      "redExitCode": 1,
+      "greenChecks": 133,
+      "greenExitCode": 0,
+      "initialGreenFixtureFailure": "Existing Move-Item partially moved hidden Git fixture metadata; exact already-bounded Directory.Move now performs a same-volume directory rename. First log preserved."
+    },
+    "focusedSuites": [
+      {
+        "name": "test-notice-inputs.ps1",
+        "checks": 133,
+        "result": "PASS"
+      },
+      {
+        "name": "test-artifact-audit.ps1",
+        "checks": 72,
+        "result": "PASS"
+      },
+      {
+        "name": "test-android-notices.ps1",
+        "checks": 44,
+        "result": "PASS"
+      }
+    ],
+    "evidence": [
+      {
+        "file": "red.log",
+        "sha256": "5781185885fc6fe8c9e2374270b56a6a7ac57bd7df3c3aa44516739b486de6cc",
+        "bytes": 325
+      },
+      {
+        "file": "green.log",
+        "sha256": "e4e9bff26498f5df1e0a3c8d185c041a01132e58d7470d1c4238108d6a2a265a",
+        "bytes": 492
+      },
+      {
+        "file": "green-2.log",
+        "sha256": "b19e265cca949c791db7751142cf886a6891f5f911e4688831871f5457e0e8f7",
+        "bytes": 45
+      },
+      {
+        "file": "artifact-audit.log",
+        "sha256": "8b28f86e741c13bf264859f1e8a27def3a58c2e54fbe5f80dd3326e40f473f8d",
+        "bytes": 103
+      },
+      {
+        "file": "android-notices.log",
+        "sha256": "623e665623d2736dbd124ddd16bea14551914125cd722689780e0f117dad0a2c",
+        "bytes": 121
+      },
+      {
+        "file": "verify-immutable.ps1",
+        "sha256": "e72aa01860bcb78d8532c0f5bb5ed4e2831204aa3ed1a300d1b10585fc1bed1d",
+        "bytes": 7054
+      },
+      {
+        "file": "immutable-packages.json",
+        "sha256": "b94cc4bdb0838c4032cf1fb615eb25edc250d68e05d18ca46a475a0ad050bbfd",
+        "bytes": 7043
+      }
+    ],
+    "actualReadOnly": "4 SDK/target resolutions; immutable +16 APK/AAB/Windows NOTICES.Z cover all 1588 unique texts and 1694 text/name pairs from pinned sky_engine LICENSE",
+    "remaining": [
+      "dart_flutter_runtime_link_inventory_incomplete",
+      "license_expressions_and_distribution_obligations_not_fully_reviewed",
+      "Rust updater crate and source notice closure unverified"
+    ],
+    "sourceFreeze": true,
+    "fullOrBuildOrGuestOrCloudActions": 0,
+    "historicalEvidenceChanged": false
+  },
+  "proofSha256": "e012b58ddff88837d5ba5740da4908b7d6db6faf0478951a2185daa288b35275",
+  "rootRecheck": {
+    "mismatches": 0,
+    "evidenceFiles": 7,
+    "sources": 3
+  }
+}

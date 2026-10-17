@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "scope": "Behavioral tests, not native builds/VPN/OTA acceptance",
+  "sourceCommit": "7c5357baa9da66a1438d54b80f35d693dc1af7f4",
+  "full": {
+    "schemaVersion": 1,
+    "mode": "Full",
+    "scope": "behavioral checks only; excludes builds and real VPN/security/release acceptance",
+    "startedAt": "2026-10-17T18:10:01.9170507+07:00",
+    "endedAt": "2026-10-17T18:12:26.2892903+07:00",
+    "durationSeconds": 144.37,
+    "status": "passed",
+    "sourceFingerprintBefore": "bd679afbc963dc93b7725bf6d9842e83d2b0075c76d744eeb12285501a3832a6",
+    "sourceFingerprintAfter": "bd679afbc963dc93b7725bf6d9842e83d2b0075c76d744eeb12285501a3832a6",
+    "sourceUnchanged": true,
+    "toolchain": {
+      "go": "1.27.2",
+      "flutter": "abaf9c523780a608bd46686fd5e53740a07077f8",
+      "dart": "3.13.5"
+    },
+    "changedFileCount": 0,
+    "selectedLanes": [
+      "domain",
+      "state",
+      "updates",
+      "app",
+      "core",
+      "android",
+      "windows",
+      "xray",
+      "installer",
+      "scripts",
+      "ci"
+    ],
+    "executionOrder": [
+      "scripts",
+      "ci",
+      "app",
+      "core",
+      "xray",
+      "android",
+      "windows",
+      "updates",
+      "domain",
+      "state",
+      "installer"
+    ],
+    "selectionReasons": [
+      "full behavioral suite requested"
+    ],
+    "goResultCacheAllowed": false,
+    "maxParallel": 2,
+    "testConcurrency": 2,
+    "lanes": [
+      {
+        "lane": "android",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 9.6,
+        "cachedGoPackages": 0,
+        "log": "android.log"
+      },
+      {
+        "lane": "app",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 41.46,
+        "cachedGoPackages": 0,
+        "log": "app.log"
+      },
+      {
+        "lane": "ci",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 52.1,
+        "cachedGoPackages": 0,
+        "log": "ci.log"
+      },
+      {
+        "lane": "core",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 22.83,
+        "cachedGoPackages": 0,
+        "log": "core.log"
+      },
+      {
+        "lane": "domain",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 7.32,
+        "cachedGoPackages": 0,
+        "log": "domain.log"
+      },
+      {
+        "lane": "installer",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 9.8,
+        "cachedGoPackages": 0,
+        "log": "installer.log"
+      },
+      {
+        "lane": "scripts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 81.31,
+        "cachedGoPackages": 0,
+        "log": "scripts.log"
+      },
+      {
+        "lane": "state",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 7.15,
+        "cachedGoPackages": 0,
+        "log": "state.log"
+      },
+      {
+        "lane": "updates",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 10.57,
+        "cachedGoPackages": 0,
+        "log": "updates.log"
+      },
+      {
+        "lane": "windows",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 11.05,
+        "cachedGoPackages": 0,
+        "log": "windows.log"
+      },
+      {
+        "lane": "xray",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 12.41,
+        "cachedGoPackages": 0,
+        "log": "xray.log"
+      }
+    ],
+    "failure": null,
+    "requiredNextGates": [
+      "Android JNI/APK and JVM tests",
+      "Windows native/UI build",
+      "isolated VPN/IPv4/IPv6/DNS/fault acceptance",
+      "signed release and upgrade acceptance"
+    ]
+  },
+  "fullSummarySha256": "ccf002bd2095ef9438f250d86aa065412068cea71452d497a2b1f16f942aa97b",
+  "logs": [
+    {
+      "lane": "android",
+      "sha256": "705c68a003e4685f4bdee2346fa7a8f2748a7cb35d1c7625791dd9aa3a222f77",
+      "result": "passed",
+      "seconds": 9.6
+    },
+    {
+      "lane": "app",
+      "sha256": "b391eb0f6e6d06eb353214ab6a4a413e1c64dcc0682df2e823dece8b5777bb51",
+      "result": "passed",
+      "seconds": 41.46
+    },
+    {
+      "lane": "ci",
+      "sha256": "0516ed7f72b2f211b9ce2405966b378bd2d002a3f9560b0f0c7adf94e12802d1",
+      "result": "passed",
+      "seconds": 52.1
+    },
+    {
+      "lane": "core",
+      "sha256": "05dedeb249cae01a149b80a6c4090a8bfa030701afef9d31a1d3bae7e96ab900",
+      "result": "passed",
+      "seconds": 22.83
+    },
+    {
+      "lane": "domain",
+      "sha256": "59e8fe5b588103fe2de516164de94d4cee50ec74194d7ca0c3896963cf9d3be8",
+      "result": "passed",
+      "seconds": 7.32
+    },
+    {
+      "lane": "installer",
+      "sha256": "ed94e9bf97955910464f67dbb2e3cf79e80cffc151ff57e7159999245191cc6a",
+      "result": "passed",
+      "seconds": 9.8
+    },
+    {
+      "lane": "scripts",
+      "sha256": "5a9e7e3e006af38a7a318400ac0b9d02e8212ca51540f1db1afd40cb247ede1c",
+      "result": "passed",
+      "seconds": 81.31
+    },
+    {
+      "lane": "state",
+      "sha256": "4866817e004bfe9083e21bc2fb68d317fe34fe167e5c2a8c5644d88401b7047b",
+      "result": "passed",
+      "seconds": 7.15
+    },
+    {
+      "lane": "updates",
+      "sha256": "e4b86a629c5b37e3a29207260bb4b66f638209719d93636b9a04c29c15dc70e8",
+      "result": "passed",
+      "seconds": 10.57
+    },
+    {
+      "lane": "windows",
+      "sha256": "be023bef598eaab4fd4395dfe37ceefc641129a03b25e5cdbb6e94961a273625",
+      "result": "passed",
+      "seconds": 11.05
+    },
+    {
+      "lane": "xray",
+      "sha256": "062b07a726c86cb16202bfe7f6a16f14bf4bef0f9747c67d9bcb8b59fb733bb8",
+      "result": "passed",
+      "seconds": 12.41
+    }
+  ],
+  "priorAttempt": {
+    "status": "failed",
+    "durationSeconds": 112.89,
+    "summarySha256": "c195710a7f87531c6e2c69259e01e51c495ee22802edcca1c28685eb14c62628",
+    "failedLane": "scripts",
+    "expectedRejection": "archive_inspector_output_limit",
+    "observedErrorCode": "not captured by old test diagnostic",
+    "subsequentFocusedAudit": "72 PASS with unchanged extractor",
+    "resolution": "Fixture now reports actual unexpected error; full repeated with maxParallel2 passed. Production limits unchanged."
+  }
+}

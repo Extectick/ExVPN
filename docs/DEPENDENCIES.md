@@ -69,6 +69,24 @@ Apache-2.0 проекта. [Исходники и состав закреплё�
 
 ## Условия подготовки бинарного выпуска
 
+Для offline-чтения Maven metadata AAB повторно используются локальные build
+dependencies: **AGP 9.1.0**, **protobuf-java 3.25.5**, **Gson 2.13.2**.
+Три JAR и protobuf schema закреплены в
+[`android-aab-dependencies.lock.json`](../scripts/release/android-aab-dependencies.lock.json).
+Это инструменты инспекции; новый код не добавляет их в runtime ExVPN и не
+распространяет JAR. Локальные POM AGP/Gson декларируют Apache-2.0; отсутствие
+`licenses` в child POM protobuf не трактуется как отсутствие обязательств.
+Полная проверка runtime Maven notices остаётся отдельной.
+[Методика](../scripts/release/ANDROID_AAB_DEPENDENCIES.md).
+
+2026-10-17: notices дополнены полным `sky_engine/LICENSE`, сверенным с Git blob
+выбранного закреплённого Flutter commit. Ссылочный platform markdown сохранён,
+но больше не является единственным engine notice. Тесты отвергают удалённый,
+подменённый и взятый из другого SDK текст. В неизменных пакетах Shorebird +16
+отдельно проверен `NOTICES.Z`: все 1588 текстов / 1694 пары «имя–текст» из
+этого aggregate уже присутствуют. Это не доказывает полноту Rust updater
+или всех runtime dependencies. [Проверка](evidence/flutter-engine-notices-build16.json).
+
 Для независимого offline-аудита готового NSIS installer закреплён **7-Zip 26.04**
 ([официальный релиз](https://github.com/ip7z/7zip/releases/tag/26.04)). Bootstrap
 `7zr.exe` используется только для извлечения 7z.exe/7z.dll/License.txt из
