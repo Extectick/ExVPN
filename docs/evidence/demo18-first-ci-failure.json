@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "run": "https://github.com/Extectick/ExVPN/actions/runs/39044659742",
+  "commit": "937fe96ab66b34714d659d0ccfafc5274de2ee01",
+  "status": "failure",
+  "published": false,
+  "windows": {
+    "uiBuilt": true,
+    "nativeServiceBuilt": true,
+    "pinnedMsvcVerified": true,
+    "failedGate": "NSIS archive checksum mismatch",
+    "downloadBodyKnown": false
+  },
+  "android": {
+    "jniBuilt": true,
+    "apkAssembled": true,
+    "failedGate": "release JVM task",
+    "diagnostic": "demo_android_jvm_failed",
+    "artifactAccepted": false
+  },
+  "stableAcceptanceChanged": false
+}

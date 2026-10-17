@@ -78,6 +78,7 @@ jobs:
           ./scripts/release/test-demo-maven-notices.ps1
           ./scripts/release/test-build-demo-android.ps1
           ./scripts/windows/test-ci-msvc-runtime.ps1
+          ./scripts/windows/test-prepare-nsis.ps1
       - name: Prepare archive inspector
         run: ./scripts/release/prepare-archive-inspector.ps1
       - name: Build Android native libraries

@@ -11,11 +11,14 @@
   получены одним workflow, APK подписан прежним release-ключом, Windows явно
   unsigned/prerelease, версии/хеши/notices/source проверены; опубликованные
   файлы скачаны и сверены. Не заменяет стабильные E7-002–004.
-  Подготовлены отдельный workflow, инструкции и проверки демо; рабочее дерево;
-  commit ожидается. Full 11/11 PASS за 164,91 с, исходники неизменны;
+  Подготовлены отдельный workflow, инструкции и проверки демо:
+  [код ed040da](https://github.com/Extectick/ExVPN/commit/ed040da61e5265634eb5f63f5ab5f100ac77fda8).
+  Full 11/11 PASS за 164,91 с, исходники неизменны;
   [отчёт](evidence/demo18-fast-validation.json). Demo policy 33, Maven 29,
   Android builder 68, MSVC pure 41 checks PASS. Независимый review завершён.
-  CI-сборка и публикация пока не подтверждены.
+  Первый CI остановлен до публикации на NSIS checksum и отсутствии release
+  JVM task в AGP9. [Отчёт](evidence/demo18-first-ci-failure.json).
+  Исправления и повтор проверяются отдельно; публикация пока не подтверждена.
 
 | Этап | Состояние | Что требуется для закрытия |
 |---|---|---|

@@ -18,7 +18,10 @@ Android Maven observer снимает `releaseRuntimeClasspath` в той же �
 точные POM/AAR/JAR сверяются с отдельным pin и полными текстами уведомлений.
 Windows получает прежние три CRT DLL из неизменяемого Microsoft VSIX с проверкой
 хешей и Authenticode, без установки SDK на пользовательский компьютер.
-Фактический результат первого demo workflow фиксируется в CHECKLIST после запуска.
+Первый [demo run](https://github.com/Extectick/ExVPN/actions/runs/39044659742)
+остановлен до публикации: Windows UI/служба собраны, но NSIS download не
+прошёл SHA-256; Android APK собран, но release JVM task завершился отказом.
+[Обезличенный результат](evidence/demo18-first-ci-failure.json). Повтор проверяется отдельно.
 
 ## Общие проверки
 

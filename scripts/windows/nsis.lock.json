@@ -1,6 +1,10 @@
 {
   "version": "3.13",
   "url": "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.13/nsis-3.13.zip",
+  "mirrors": [
+    "https://pilotfiber.dl.sourceforge.net/project/nsis/NSIS%203/3.13/nsis-3.13.zip",
+    "https://netix.dl.sourceforge.net/project/nsis/NSIS%203/3.13/nsis-3.13.zip"
+  ],
   "sha256": "ba63dffc4410ee89193e1cb5a41989991bd77c61068da17e3156d136b7b0b3d8",
   "compilerSha256": "4ec390d0f96f9728507fbc2f4e91311dd90bfc6c8ddfe2159357b3651ae151c0",
   "sourceUrl": "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.13/nsis-3.13-src.tar.bz2",

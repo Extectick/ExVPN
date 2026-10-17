@@ -129,8 +129,15 @@ try {
         try {
             $jvmStarted = [datetime]::UtcNow
             # Gradle's task-specific --rerun refreshes tests, not all prerequisites.
-            & './gradlew.bat' ':app:testReleaseUnitTest' '--rerun' '--no-daemon' *> (Join-Path $privateRun 'jvm.log')
-            if ($LASTEXITCODE -ne 0) { throw 'demo_android_jvm_failed' }
+            $jvmArguments = Get-DemoAndroidJvmArguments
+            $jvmLog = Join-Path $privateRun 'jvm.log'
+            & './gradlew.bat' @jvmArguments *> $jvmLog
+            if ($LASTEXITCODE -ne 0) {
+                $jvmCode = if ((Get-Item -LiteralPath $jvmLog).Length -le 4MB) {
+                    Get-DemoAndroidGradleFailureCode ([IO.File]::ReadAllText($jvmLog))
+                } else { 'demo_android_jvm_failed' }
+                throw $jvmCode
+            }
         } finally { Pop-Location }
         $jvm = Get-DemoAndroidJvmSummary (Join-Path $app 'build/app/test-results/testReleaseUnitTest') $jvmStarted
     } finally { Pop-Location }

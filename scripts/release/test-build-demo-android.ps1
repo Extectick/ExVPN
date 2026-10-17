@@ -33,6 +33,19 @@ $arguments = @(Get-DemoAndroidBuildArguments)
 Assert-True ($arguments -ccontains '--dart-define=EXVPN_DEMO=false' -and $arguments -cnotcontains '--dart-define=EXVPN_DEMO=true')
 Assert-True ($arguments -ccontains '--release' -and $arguments -ccontains '--pub' -and $arguments -ccontains '--target=lib/main.dart')
 Assert-True ($arguments -ccontains '--target-platform=android-arm64,android-x64' -and $arguments -ccontains '--build-number=18')
+$jvmArguments = @(Get-DemoAndroidJvmArguments)
+Assert-True ($jvmArguments[0] -ceq ':app:testReleaseUnitTest' -and $jvmArguments -cnotcontains ':app:testDebugUnitTest')
+Assert-True ($jvmArguments -ccontains '-Pandroid.onlyEnableUnitTestForTheTestedBuildType=false' -and $jvmArguments -ccontains '--rerun')
+Assert-True ($jvmArguments -cnotcontains '-x' -and $jvmArguments -cnotcontains '--rerun-tasks')
+$missingTask = "Cannot locate tasks that match ':app:testReleaseUnitTest' as task 'testReleaseUnitTest' not found in project ':app'."
+Assert-True ((Get-DemoAndroidGradleFailureCode $missingTask) -ceq 'demo_android_jvm_task_missing')
+Assert-True ((Get-DemoAndroidGradleFailureCode ($missingTask + "`r`n")) -ceq 'demo_android_jvm_task_missing')
+Assert-True ((Get-DemoAndroidGradleFailureCode ($missingTask + "`r`r`n")) -ceq 'demo_android_jvm_task_missing')
+Assert-True ((Get-DemoAndroidGradleFailureCode ($missingTask.Replace('testReleaseUnitTest','testDebugUnitTest'))) -ceq 'demo_android_jvm_failed')
+Assert-True ((Get-DemoAndroidGradleFailureCode "Execution failed for task ':app:testReleaseUnitTest'.`n> There were failing tests. See report") -ceq 'demo_android_jvm_test_failures')
+Assert-True ((Get-DemoAndroidGradleFailureCode '> Task :app:verifyExVpnPackageInputs FAILED') -ceq 'demo_android_jvm_snapshot_failed')
+Assert-True ((Get-DemoAndroidGradleFailureCode "Execution failed for task ':app:compileReleaseJavaWithJavac'.") -ceq 'demo_android_jvm_java_compile_failed')
+Assert-True ((Get-DemoAndroidGradleFailureCode 'unknown error with synthetic SECRET credentials') -ceq 'demo_android_jvm_failed')
 
 $fingerprint = 'a' * 64
 $validSignature = "Verifies`nVerified using v1 scheme (JAR signing): false`nVerified using v2 scheme (APK Signature Scheme v2): true`nNumber of signers: 1`nSigner #1 certificate DN: CN=ExVPN`nSigner #1 certificate SHA-256 digest: $fingerprint`n"

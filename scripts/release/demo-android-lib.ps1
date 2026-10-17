@@ -9,6 +9,28 @@ function Get-DemoAndroidBuildArguments {
         '--build-number=18', '--dart-define=EXVPN_DEMO=false')
 }
 
+function Get-DemoAndroidJvmArguments {
+    # AGP 9 enables unit tests only for testBuildType (debug by default).
+    # Opt into the release unit-test component for this one test invocation;
+    # this does not change the APK's build configuration or test expectations.
+    @(':app:testReleaseUnitTest', '--rerun', '--no-daemon',
+        '-Pandroid.onlyEnableUnitTestForTheTestedBuildType=false')
+}
+
+function Get-DemoAndroidGradleFailureCode([string]$Log) {
+    # Return fixed classifications only. Gradle text can contain signing paths
+    # or credentials and must never be echoed into CI logs or public reports.
+    $Log = $Log.Replace("`r`r`n", "`n").Replace("`r`n", "`n")
+    if ($Log -match "(?m)^Cannot locate tasks that match ':app:testReleaseUnitTest' as task 'testReleaseUnitTest' not found in project ':app'\.\r?$") {
+        return 'demo_android_jvm_task_missing'
+    }
+    if ($Log -match "(?m)^Execution failed for task ':app:testReleaseUnitTest'\.\r?$" -and
+        $Log -match '(?m)^> There were failing tests\.') { return 'demo_android_jvm_test_failures' }
+    if ($Log -match '(?m)^> Task :app:verifyExVpnPackageInputs FAILED\r?$') { return 'demo_android_jvm_snapshot_failed' }
+    if ($Log -match "(?m)^Execution failed for task ':app:compileReleaseJavaWithJavac'\.\r?$") { return 'demo_android_jvm_java_compile_failed' }
+    return 'demo_android_jvm_failed'
+}
+
 function Assert-DemoAndroidVersion([string]$Version) {
     if ($Version -cne '0.1.0+18') { throw 'demo_android_source_version_mismatch' }
 }
