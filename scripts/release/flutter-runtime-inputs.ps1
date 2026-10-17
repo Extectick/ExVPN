@@ -169,6 +169,40 @@ function Assert-ReleaseFlutterNotices($Inventory, $Runtime) {
     }
 }
 
+function Get-ReleaseAndroidSdkPath([string]$AndroidSdkPath = '') {
+    # ANDROID_HOME is the Android-supported SDK location. SDK_ROOT is retained
+    # for older callers, but conflicting environment roots must not silently
+    # select a different installation. An explicit path overrides both.
+    $canonical = {
+        param([string]$Path)
+        if ([string]::IsNullOrWhiteSpace($Path) -or ![IO.Path]::IsPathFullyQualified($Path)) { throw 'android_sdk_path_invalid' }
+        try { [IO.Path]::TrimEndingDirectorySeparator([IO.Path]::GetFullPath($Path)) }
+        catch { throw 'android_sdk_path_invalid' }
+    }
+    if ($AndroidSdkPath.Length) { $selected = & $canonical $AndroidSdkPath }
+    else {
+        $androidHome = [Environment]::GetEnvironmentVariable('ANDROID_HOME', 'Process')
+        $sdkRoot = [Environment]::GetEnvironmentVariable('ANDROID_SDK_ROOT', 'Process')
+        if ($androidHome) {
+            $selected = & $canonical $androidHome
+            if ($sdkRoot) {
+                $legacy = & $canonical $sdkRoot
+                $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+                if (!$selected.Equals($legacy, $comparison)) { throw 'android_sdk_environment_conflict' }
+            }
+        } elseif ($sdkRoot) { $selected = & $canonical $sdkRoot }
+        else {
+            $localAppData = [Environment]::GetEnvironmentVariable('LOCALAPPDATA', 'Process')
+            if (!$localAppData) { throw 'android_sdk_path_unavailable' }
+            $selected = Join-Path (& $canonical $localAppData) 'Android/Sdk'
+        }
+    }
+    # Do not fall back after a selected path is missing, invalid or linked.
+    if (!(Test-Path -LiteralPath $selected -PathType Container)) { throw 'android_sdk_directory_missing' }
+    Assert-AuditNoLinks $selected
+    [IO.Path]::GetFullPath($selected)
+}
+
 function Get-ReleasePackagedFlutterEvidence($Runtime, $Files, [switch]$RequireByteMatch) {
     $engines = [Collections.Generic.List[object]]::new()
     $dart = [Collections.Generic.List[object]]::new()
@@ -211,6 +245,7 @@ function Get-ReleaseAndroidStripTool([string]$Repository, [string]$AndroidSdkPat
         throw 'flutter_runtime_strip_pin_invalid'
     }
     if (!$IsWindows -or [Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne [Runtime.InteropServices.Architecture]::X64) { throw 'flutter_runtime_strip_host_unsupported' }
+    $AndroidSdkPath = Get-ReleaseAndroidSdkPath $AndroidSdkPath
     $ndkRoot = Join-Path $AndroidSdkPath "ndk/$($pin.ndkVersion)"
     $source = Get-ReleaseRuntimeFile $ndkRoot 'source.properties'
     $tool = Get-ReleaseRuntimeFile $ndkRoot $pin.tool.path
@@ -219,6 +254,7 @@ function Get-ReleaseAndroidStripTool([string]$Repository, [string]$AndroidSdkPat
     $revisions = [regex]::Matches([IO.File]::ReadAllText((Join-Path $ndkRoot 'source.properties')), '(?m)^Pkg\.Revision\s*=\s*([^\r\n]+)\s*$')
     if ($revisions.Count -ne 1 -or $revisions[0].Groups[1].Value.Trim() -cne $pin.ndkVersion) { throw 'flutter_runtime_strip_ndk_mismatch' }
     [pscustomobject]@{
+        SdkRoot=$AndroidSdkPath
         Executable=(Join-Path $ndkRoot $tool.path)
         Evidence=[ordered]@{method=$pin.method;pin=[ordered]@{path=$pinPath;sha256=$pinFile.sha256};ndkVersion=$pin.ndkVersion;host=$pin.host;tool=$tool;sourceProperties=$source;arguments=$pin.arguments}
     }
@@ -237,7 +273,7 @@ function Get-ReleaseAndroidPackagedFlutterEvidence {
         [Parameter(Mandatory)]$ResolvedRuntime,
         [Parameter(Mandatory)]$Files,
         [Parameter(Mandatory)][string]$Repository,
-        [string]$AndroidSdkPath = (Join-Path $env:LOCALAPPDATA 'Android/Sdk')
+        [string]$AndroidSdkPath = ''
     )
     $runtime = $ResolvedRuntime.Evidence
     if ($runtime.identity.target -cne 'Android' -or $runtime.identity.buildMode -cnotin @('debug','release')) { throw 'flutter_runtime_strip_target_invalid' }
@@ -248,6 +284,8 @@ function Get-ReleaseAndroidPackagedFlutterEvidence {
     if ($result.engineBytesBound) { return $result }
 
     $tool = Get-ReleaseAndroidStripTool $Repository $AndroidSdkPath
+    # Keep the same resolved installation for the before/after tool checks.
+    $AndroidSdkPath = $tool.SdkRoot
     # Restrict source selection to the two engine JARs produced by the resolver.
     # The APK hash/size map is read by callers from actual ZIP entries.
     if (@($runtime.engineBinaries).Count -ne 2 -or @($runtime.sdkArtifacts).Count -ne 2) { throw 'flutter_runtime_strip_source_set_invalid' }

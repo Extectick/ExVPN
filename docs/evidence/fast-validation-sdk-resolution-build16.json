@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "mode": "Changed",
+  "scope": "behavioral checks only; excludes builds and real VPN/security/release acceptance",
+  "startedAt": "2026-10-17T16:51:57.0581804+07:00",
+  "endedAt": "2026-10-17T16:53:23.3717077+07:00",
+  "durationSeconds": 86.31,
+  "status": "passed",
+  "sourceFingerprintBefore": "3ba2e0a4224b1933572cca3b9c514ccf8bd896b0c6d8e140af42f41e4b854160",
+  "sourceFingerprintAfter": "3ba2e0a4224b1933572cca3b9c514ccf8bd896b0c6d8e140af42f41e4b854160",
+  "sourceUnchanged": true,
+  "toolchain": {
+    "go": "1.27.2",
+    "dart": "3.13.5",
+    "flutter": "abaf9c523780a608bd46686fd5e53740a07077f8"
+  },
+  "changedFileCount": 16,
+  "selectedLanes": [
+    "domain",
+    "state",
+    "updates",
+    "app",
+    "core",
+    "android",
+    "windows",
+    "xray",
+    "installer",
+    "scripts",
+    "ci"
+  ],
+  "executionOrder": [
+    "scripts",
+    "ci",
+    "app",
+    "core",
+    "xray",
+    "android",
+    "windows",
+    "updates",
+    "domain",
+    "state",
+    "installer"
+  ],
+  "selectionReasons": [
+    "unclassified/shared tooling change: full behavioral suite"
+  ],
+  "goResultCacheAllowed": true,
+  "maxParallel": 3,
+  "testConcurrency": 2,
+  "lanes": [
+    {
+      "lane": "android",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 8.18,
+      "cachedGoPackages": 2,
+      "log": "android.log"
+    },
+    {
+      "lane": "app",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 36.3,
+      "cachedGoPackages": 0,
+      "log": "app.log"
+    },
+    {
+      "lane": "ci",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 50.86,
+      "cachedGoPackages": 0,
+      "log": "ci.log"
+    },
+    {
+      "lane": "core",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 8.2,
+      "cachedGoPackages": 1,
+      "log": "core.log"
+    },
+    {
+      "lane": "domain",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 7.18,
+      "cachedGoPackages": 0,
+      "log": "domain.log"
+    },
+    {
+      "lane": "installer",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 8.99,
+      "cachedGoPackages": 0,
+      "log": "installer.log"
+    },
+    {
+      "lane": "scripts",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 70.33,
+      "cachedGoPackages": 0,
+      "log": "scripts.log"
+    },
+    {
+      "lane": "state",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 6.96,
+      "cachedGoPackages": 0,
+      "log": "state.log"
+    },
+    {
+      "lane": "updates",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 10.44,
+      "cachedGoPackages": 0,
+      "log": "updates.log"
+    },
+    {
+      "lane": "windows",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 8.58,
+      "cachedGoPackages": 3,
+      "log": "windows.log"
+    },
+    {
+      "lane": "xray",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 13.07,
+      "cachedGoPackages": 0,
+      "log": "xray.log"
+    }
+  ],
+  "failure": null,
+  "requiredNextGates": [
+    "Android JNI/APK and JVM tests",
+    "Windows native/UI build",
+    "isolated VPN/IPv4/IPv6/DNS/fault acceptance",
+    "signed release and upgrade acceptance"
+  ],
+  "originalReport": "artifacts/qa/fast-20261017-095157-f0d3ba97/summary.json",
+  "originalReportSha256": "025c117c8cf41954a6e6377d78e783f6f1c6bd12f46af0bf46dd6c1bd512a9fd",
+  "sourceCommit": "working tree; commit pending",
+  "priorAttempt": {
+    "path": "artifacts/qa/fast-20261017-094954-55863c82/summary.json",
+    "sha256": "a476604d4883eef42c955bca48e20c4ce37f15190b36697c82889e87e81119af",
+    "status": "source-changed-during-run",
+    "reason": "Coordinator edited public documentation while the fingerprint-guarded runner was active; all lanes passed but aggregate proof was rejected."
+  }
+}

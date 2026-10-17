@@ -5,6 +5,23 @@ Workflow `.github/workflows/verify.yml` подготовлен для push, pull
 из одного checkout и при необходимости собирают native-пакеты. Первый успешный run и границы его проверки приведены ниже;
 успех сборки не является системной приёмкой VPN.
 
+2026-10-17, +16: [первый run 39020527988](https://github.com/Extectick/ExVPN/actions/runs/39020527988)
+прошёл Windows, но Android отказал после успешной сборки и JVM-тестов:
+новая проверка engine искала NDK в LOCALAPPDATA вместо SDK из ANDROID_HOME.
+[Исходный отказ](evidence/ci-build16-sdk-path-failure.json) сохранён отдельно.
+Release-проверки теперь используют единый выбор SDK: явный абсолютный путь,
+затем ANDROID_HOME, совместимый ANDROID_SDK_ROOT или прежний локальный default.
+Конфликт переменных, отсутствующий SDK или несовпадение закреплённых NDK/tool
+вызывают отказ. Shorebird build/checker используют один выбранный путь;
+после сборки восстанавливается исходное окружение, включая отсутствующие переменные.
+106 + 44 + 72 + 129 focused checks PASS, отдельный CI-перезапуск ожидается.
+[Доказательство исправления](evidence/release-sdk-resolution-build16.json).
+Общий `Changed` прогон после завершения записи исходников: **11/11 за 86,31 с**,
+fingerprint совпал; Go result cache разрешён. Предыдущая попытка отклонена
+общим guard из-за одновременного редактирования документации координатором.
+[Оба результата](evidence/fast-validation-sdk-resolution-build16.json).
+Рабочее дерево; commit ожидается.
+
 Полный +13 run [38996842672](https://github.com/Extectick/ExVPN/actions/runs/38996842672)
 для `36c6094` прошёл 2026-10-17: Windows 11:45, Android 14:58. Оба job выполнили
 проверки и native-сборку, выгрузили development artifacts; их digest и статусы

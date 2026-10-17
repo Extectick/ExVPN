@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "scope": "Release Android SDK resolution and pinned transform input selection",
+  "selection": [
+    "explicit absolute AndroidSdkPath",
+    "ANDROID_HOME with consistent ANDROID_SDK_ROOT",
+    "ANDROID_SDK_ROOT only",
+    "LOCALAPPDATA/Android/Sdk"
+  ],
+  "conflictingEnvironment": "refused unless explicit path supplied",
+  "invalidSelectedPath": "refused without fallback",
+  "tests": [
+    {
+      "log": "test-notice-inputs-final.log",
+      "name": "test-notice-inputs",
+      "elapsedSeconds": 6.9579214,
+      "checks": 106
+    },
+    {
+      "log": "test-android-notices.log",
+      "name": "test-android-notices",
+      "elapsedSeconds": 9.6650442,
+      "checks": 44
+    },
+    {
+      "log": "test-artifact-audit.log",
+      "name": "test-artifact-audit",
+      "elapsedSeconds": 4.9366285,
+      "checks": 72
+    },
+    {
+      "log": "inventory-fixtures.log",
+      "name": "android-runtime-inventory-test",
+      "elapsedSeconds": 3.0529288,
+      "checks": 129
+    }
+  ],
+  "firstFixtureFailurePreserved": "test-notice-inputs.log",
+  "firstFixtureFailure": "Absent SDK env became empty during fixture restoration; actual wrapper and fixture now preserve absence",
+  "parserFiles": 6,
+  "diffCheckPassed": true,
+  "localSdkReadOnlyProof": "local-sdk-readonly.json",
+  "ndkVersion": "28.2.13676358",
+  "stripToolSha256": "2d411db64e0b45508775e9e8fd436fb6e0af814a9dfbf8aea8fc37ce436c435c",
+  "sourcePropertiesSha256": "c00aa236fdb205e9be9edd9e2169763e48aca52735efff4e16f34205d49783b5",
+  "sourceFiles": [
+    {
+      "path": "scripts/release/flutter-runtime-inputs.ps1",
+      "sha256": "d050c85d341b8b3d4fa9f3dd9936f045a2eb16aa80b35d77402c81e8517c7a02"
+    },
+    {
+      "path": "scripts/release/android-notice-inputs.ps1",
+      "sha256": "67a9bd30c2abb43989c49e28ed7cd1c1d80653260a39ae821b0b063a140503e0"
+    },
+    {
+      "path": "scripts/release/audit-artifact.ps1",
+      "sha256": "00038b46c0922d3a634be230445b95c1c5982f6c97cde697bc205ad8f86d4491"
+    },
+    {
+      "path": "scripts/release/shorebird-release.ps1",
+      "sha256": "1c43b28eac667d4006e613dfc9bf188fc16bd7baf5f9e8b741bdac4113ad9d5c"
+    },
+    {
+      "path": "scripts/release/android-runtime-inventory.ps1",
+      "sha256": "ce33a59ebee6975db28804659ad4f7bee558f172be80a2149671466e112c9dd1"
+    },
+    {
+      "path": "scripts/release/test-notice-inputs.ps1",
+      "sha256": "465f5268ac5fd3cc87ec5b8c10796615e8ff6dc0700bb5c038eb78fe2e8e1118"
+    }
+  ],
+  "proofFiles": [
+    {
+      "path": "inventory-fixtures.log",
+      "sha256": "41c05a0b3210b76f1ab404e27a019ce8d16ce9b0fdb011b154df407913a4d159"
+    },
+    {
+      "path": "local-sdk-readonly.json",
+      "sha256": "6fd6d834bf65326550e6c6f270b83c9e9d2e7c9420b12c26b37a45bdc5d23cdd"
+    },
+    {
+      "path": "test-android-notices.log",
+      "sha256": "623e665623d2736dbd124ddd16bea14551914125cd722689780e0f117dad0a2c"
+    },
+    {
+      "path": "test-artifact-audit.log",
+      "sha256": "8b28f86e741c13bf264859f1e8a27def3a58c2e54fbe5f80dd3326e40f473f8d"
+    },
+    {
+      "path": "test-notice-inputs-final.log",
+      "sha256": "12ce7caf02da18f986d4364578355414af194547335e61eadc3800fa017bf3a6"
+    },
+    {
+      "path": "test-notice-inputs.log",
+      "sha256": "3cb68b7aa0dcd4db3b1776b3377dac33331e48563dc726e8743535c6c7e966fa"
+    }
+  ],
+  "boundaries": {
+    "existingArtifactsModified": false,
+    "nativeBuild": false,
+    "windowsRuntimeShapeChanged": false,
+    "guestActions": false,
+    "cloudOrAccountRequests": false,
+    "ciRerun": false,
+    "actualStripExecution": false,
+    "apkBuild": false
+  },
+  "officialSdkPolicy": "https://developer.android.com/tools/variables#android_home",
+  "date": "2026-10-17",
+  "recordingState": "working tree; commit pending",
+  "originalProofDirectory": "artifacts/qa/release-sdk-resolution-03d5b569305943d9b2641bc7cc701a33"
+}

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "appVersion": "0.1.0+16",
+  "sourceCommit": "9b0c4d3c299e7d0304afbac894bbd0e901372b36",
+  "status": "completed",
+  "conclusion": "failure",
+  "runId": 39020527988,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/39020527988",
+  "jobs": [
+    {
+      "name": "Android",
+      "status": "completed",
+      "conclusion": "failure",
+      "startedAt": "2026-10-17T09:17:01Z",
+      "completedAt": "2026-10-17T09:33:59Z",
+      "durationSeconds": 1018.0,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39020527988/job/117361247667"
+    },
+    {
+      "name": "Windows",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T09:17:01Z",
+      "completedAt": "2026-10-17T09:26:19Z",
+      "durationSeconds": 558.0,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39020527988/job/117361247816"
+    }
+  ],
+  "androidFailure": {
+    "stage": "Post-build APK runtime provenance verification",
+    "reason": "Release helper defaulted to LOCALAPPDATA Android/Sdk instead of the SDK installed under runner ANDROID_HOME",
+    "gradleTestsAndBuild": "PASS",
+    "ndkVersion": "28.2.13676358",
+    "missingFile": "ndk/28.2.13676358/source.properties",
+    "logSha256": "f54feacfb69323e4cded6af231bb8cff3371f9d4b00cd31d9080c310a2490ffc",
+    "fixedRun": "pending"
+  },
+  "limitations": [
+    "Ordinary Flutter CI builds, not Shorebird native OTA acceptance.",
+    "Android job is failed until a separate corrected run passes."
+  ],
+  "recordingState": "working tree; commit pending"
+}

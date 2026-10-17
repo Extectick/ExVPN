@@ -159,7 +159,7 @@ function Assert-AndroidPackagedNotices(
     [ValidateSet('ordinary','shorebird')][string]$FlutterRuntime = 'ordinary',
     [ValidateSet('','debug','release')][string]$FlutterBuildMode = '',
     [switch]$PassThruRuntime,
-    [string]$AndroidSdkPath = (Join-Path $env:LOCALAPPDATA 'Android/Sdk')
+    [string]$AndroidSdkPath = ''
 ) {
     # Inspect final ZIP bytes: preBuild verification alone cannot detect AGP
     # transformations (such as a second native strip) or omitted assets.

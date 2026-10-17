@@ -170,6 +170,59 @@ function Assert-RuntimeRefused([scriptblock]$Action, [string]$Code) {
     if ($actual -cne $Code) { throw "Runtime fixture expected $Code, got $actual" }
     $script:checks++
 }
+
+# Resolve actual process configuration, never a fixture-specific runner path.
+# Every failure must preserve the environment and must not try another SDK.
+$sdkHome = Join-Path $fixture 'SDK resolution/home with spaces'
+$sdkLegacy = Join-Path $fixture 'SDK resolution/legacy'
+$sdkLocalAppData = Join-Path $fixture 'SDK resolution/local'
+$sdkDefault = Join-Path $sdkLocalAppData 'Android/Sdk'
+$sdkMissing = Join-Path $fixture 'SDK resolution/missing'
+New-Item -ItemType Directory -Path $sdkHome,$sdkLegacy,$sdkDefault -Force | Out-Null
+$sdkNotDirectory = Join-Path $fixture 'SDK resolution/file'
+[IO.File]::WriteAllText($sdkNotDirectory, 'not an SDK directory')
+$sdkEnvironmentBefore = @{}
+foreach ($name in @('ANDROID_HOME','ANDROID_SDK_ROOT','LOCALAPPDATA')) { $sdkEnvironmentBefore[$name] = [Environment]::GetEnvironmentVariable($name, 'Process') }
+try {
+    $env:ANDROID_HOME=$sdkHome; $env:ANDROID_SDK_ROOT=$sdkLegacy; $env:LOCALAPPDATA=$sdkLocalAppData
+    if ((Get-ReleaseAndroidSdkPath $sdkDefault) -cne $sdkDefault) { throw 'Explicit SDK did not override conflicting environment roots.' }; $checks++
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath } 'android_sdk_environment_conflict'
+    if ($env:ANDROID_HOME -cne $sdkHome -or $env:ANDROID_SDK_ROOT -cne $sdkLegacy -or $env:LOCALAPPDATA -cne $sdkLocalAppData) { throw 'SDK resolver mutated process configuration.' }; $checks++
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath $sdkMissing } 'android_sdk_directory_missing'
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath $sdkNotDirectory } 'android_sdk_directory_missing'
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath 'relative-sdk' } 'android_sdk_path_invalid'
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath ($sdkHome + [char]0) } 'android_sdk_path_invalid'
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath ' ' } 'android_sdk_path_invalid'
+    $env:ANDROID_SDK_ROOT=Join-Path $sdkHome './'
+    if ((Get-ReleaseAndroidSdkPath) -cne $sdkHome) { throw 'Equivalent environment SDK paths conflicted.' }; $checks++
+    [Environment]::SetEnvironmentVariable('ANDROID_SDK_ROOT', $null, 'Process')
+    if ((Get-ReleaseAndroidSdkPath) -cne $sdkHome) { throw 'ANDROID_HOME did not override the local default.' }; $checks++
+    $env:ANDROID_HOME=$sdkMissing
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath } 'android_sdk_directory_missing'
+    $env:ANDROID_HOME=' '
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath } 'android_sdk_path_invalid'
+    [Environment]::SetEnvironmentVariable('ANDROID_HOME', $null, 'Process')
+    $env:ANDROID_SDK_ROOT=$sdkLegacy
+    if ((Get-ReleaseAndroidSdkPath) -cne $sdkLegacy) { throw 'Legacy-only SDK configuration was lost.' }; $checks++
+    $env:ANDROID_SDK_ROOT=$sdkMissing
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath } 'android_sdk_directory_missing'
+    [Environment]::SetEnvironmentVariable('ANDROID_SDK_ROOT', $null, 'Process')
+    if ((Get-ReleaseAndroidSdkPath) -cne $sdkDefault) { throw 'Existing local SDK default changed.' }; $checks++
+    $env:LOCALAPPDATA=$sdkMissing
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath } 'android_sdk_directory_missing'
+    [Environment]::SetEnvironmentVariable('LOCALAPPDATA', $null, 'Process')
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath } 'android_sdk_path_unavailable'
+} finally {
+    foreach ($name in $sdkEnvironmentBefore.Keys) {
+        if ($null -eq $sdkEnvironmentBefore[$name]) { Remove-Item -LiteralPath "Env:\$name" -ErrorAction SilentlyContinue }
+        else { [Environment]::SetEnvironmentVariable($name, $sdkEnvironmentBefore[$name], 'Process') }
+    }
+}
+foreach ($name in $sdkEnvironmentBefore.Keys) {
+    if ([Environment]::GetEnvironmentVariable($name, 'Process') -cne $sdkEnvironmentBefore[$name]) { throw 'SDK fixture did not restore its environment.' }
+}
+$checks++
+
 $runtimeFixture = Join-Path $fixture 'runtimes'
 $ordinarySdk = Join-Path $runtimeFixture '.tools/flutter'
 $ordinaryRevision = New-RuntimeSdk $ordinarySdk ('a' * 40) 'ordinary'
@@ -304,6 +357,26 @@ try {
         $script:stripInvocations -ne 2 -or @($transformed.engineBinaries | Where-Object { $_.sdkBytesMatched -or !$_.transformation.outputBytesMatched -or !$_.transformation.recalculated }).Count -ne 0 -or
         ($transformed | ConvertTo-Json -Depth 20) -match [regex]::Escape($runtimeFixture)) { throw 'Actual transform evidence was missing, overstated, or leaked paths.' }
     $checks++
+    # Regression for the actual CI caller: its SDK is supplied by ANDROID_HOME,
+    # while LOCALAPPDATA has no SDK. No explicit path or native binary is used.
+    $sdkEnvironmentBefore=@{}
+    foreach ($name in @('ANDROID_HOME','ANDROID_SDK_ROOT','LOCALAPPDATA')) { $sdkEnvironmentBefore[$name]=[Environment]::GetEnvironmentVariable($name,'Process') }
+    try {
+        $env:ANDROID_HOME=$stripSdk; $env:LOCALAPPDATA=$sdkMissing
+        [Environment]::SetEnvironmentVariable('ANDROID_SDK_ROOT',$null,'Process')
+        $fromEnvironment=Get-ReleaseAndroidPackagedFlutterEvidence $shorebird $stripFiles $runtimeFixture
+        if (!$fromEnvironment.engineBytesBound -or $fromEnvironment.bindingMethod -cne 'verified_ndk_strip' -or
+            ($fromEnvironment | ConvertTo-Json -Depth 20 -Compress) -cne ($transformed | ConvertTo-Json -Depth 20 -Compress)) { throw 'CI environment SDK did not produce the same pinned evidence.' }; $checks++
+        $env:ANDROID_HOME=$sdkLegacy # Existing directory without the pinned NDK.
+        $callsBefore=$script:stripInvocations
+        Assert-Rejected { Get-ReleaseAndroidPackagedFlutterEvidence $shorebird $stripFiles $runtimeFixture }
+        if ($script:stripInvocations -ne $callsBefore -or $env:ANDROID_HOME -cne $sdkLegacy) { throw 'Missing pinned NDK fell back or mutated the environment.' }; $checks++
+    } finally {
+        foreach ($name in $sdkEnvironmentBefore.Keys) {
+            if ($null -eq $sdkEnvironmentBefore[$name]) { Remove-Item -LiteralPath "Env:\$name" -ErrorAction SilentlyContinue }
+            else { [Environment]::SetEnvironmentVariable($name,$sdkEnvironmentBefore[$name],'Process') }
+        }
+    }
     $originalHash=$stripFiles['lib/arm64-v8a/libflutter.so'].sha256
     $stripFiles['lib/arm64-v8a/libflutter.so'].sha256='d' * 64
     $unbound=Get-ReleaseAndroidPackagedFlutterEvidence $shorebird $stripFiles $runtimeFixture -AndroidSdkPath $stripSdk
@@ -365,15 +438,19 @@ $env:PATH='fixture path'
 $env:GOPROXY='fixture proxy'
 $env:PUB_CACHE='fixture pub'
 $env:GOWORK='fixture work'
+$env:ANDROID_HOME='fixture SDK'
+$env:ANDROID_SDK_ROOT='fixture legacy SDK'
 '@
 Write-RuntimeFixture (Join-Path $environmentFixture 'scripts/release/notice-inputs.ps1') "function Get-ReleaseFlutterRuntime { throw 'fixture_runtime_refused' }"
 $environmentBefore=@{}
-foreach($name in @('PATH','GOPROXY','PUB_CACHE','GOWORK')) { $environmentBefore[$name]=[Environment]::GetEnvironmentVariable($name,'Process') }
+foreach($name in @('PATH','GOPROXY','PUB_CACHE','GOWORK','ANDROID_HOME','ANDROID_SDK_ROOT')) { $environmentBefore[$name]=[Environment]::GetEnvironmentVariable($name,'Process') }
 try {
     $env:GOPROXY='caller proxy'; $env:PUB_CACHE='caller pub'; Remove-Item -LiteralPath Env:\GOWORK -ErrorAction SilentlyContinue
+    $env:ANDROID_HOME='caller SDK'; Remove-Item -LiteralPath Env:\ANDROID_SDK_ROOT -ErrorAction SilentlyContinue
     Assert-RuntimeRefused { & $copiedCollector -Target Windows -NativeBinaries 'unused' } 'fixture_runtime_refused'
     if ($env:PATH -cne $environmentBefore.PATH -or $env:GOPROXY -cne 'caller proxy' -or $env:PUB_CACHE -cne 'caller pub' -or
-        $null -ne [Environment]::GetEnvironmentVariable('GOWORK','Process')) { throw 'Collector leaked its process environment after failure.' }
+        $null -ne [Environment]::GetEnvironmentVariable('GOWORK','Process') -or $env:ANDROID_HOME -cne 'caller SDK' -or
+        $null -ne [Environment]::GetEnvironmentVariable('ANDROID_SDK_ROOT','Process')) { throw 'Collector leaked its process environment after failure.' }
     $checks++
 } finally {
     foreach($name in $environmentBefore.Keys) {
@@ -387,6 +464,28 @@ try {
 $updaterTokens=$null; $updaterErrors=$null
 $updaterAst=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'shorebird-release.ps1'),[ref]$updaterTokens,[ref]$updaterErrors)
 if ($updaterErrors.Count) { throw 'Updater wrapper parse failed.' }
+# Exercise the real wrapper cleanup without running a build, reading keys, or
+# contacting Shorebird. Preserve unset SDK variables as unset, not empty strings.
+$wrapperFinally=@($updaterAst.FindAll({param($node) $node -is [Management.Automation.Language.TryStatementAst] -and
+    $null -ne $node.Finally -and $node.Finally.Extent.Text.Contains('$savedEnvironment.Keys')},$false))
+if ($wrapperFinally.Count -ne 1) { throw 'Expected exactly one actual wrapper environment cleanup.' }
+$sdkEnvironmentBefore=@{}
+foreach ($name in @('ANDROID_HOME','ANDROID_SDK_ROOT')) { $sdkEnvironmentBefore[$name]=[Environment]::GetEnvironmentVariable($name,'Process') }
+try {
+    $savedEnvironment=@{ANDROID_HOME='preserved caller SDK';ANDROID_SDK_ROOT=$null}; $passwordBytes=$null
+    $env:ANDROID_HOME='temporary SDK'; $env:ANDROID_SDK_ROOT='temporary SDK'
+    $beforeLocation=Get-Location
+    Push-Location $fixture
+    & ([scriptblock]::Create(($wrapperFinally[0].Finally.Statements.Extent.Text -join "`n")))
+    if ($env:ANDROID_HOME -cne 'preserved caller SDK' -or $null -ne [Environment]::GetEnvironmentVariable('ANDROID_SDK_ROOT','Process') -or
+        (Get-Location).Path -cne $beforeLocation.Path) { throw 'Wrapper did not restore its SDK environment/location.' }
+    $checks++
+} finally {
+    foreach ($name in $sdkEnvironmentBefore.Keys) {
+        if ($null -eq $sdkEnvironmentBefore[$name]) { Remove-Item -LiteralPath "Env:\$name" -ErrorAction SilentlyContinue }
+        else { [Environment]::SetEnvironmentVariable($name,$sdkEnvironmentBefore[$name],'Process') }
+    }
+}
 $updaterFunctions=@($updaterAst.FindAll({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Read-ExVpnUpdaterConfig'},$false))
 if ($updaterFunctions.Count -ne 1) { throw 'Expected exactly one actual updater config parser.' }
 . ([scriptblock]::Create($updaterFunctions[0].Extent.Text))

@@ -9,13 +9,15 @@ Native JNI/service builds are separate and are not rebuilt by this wrapper.
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)][ValidateSet('Android', 'Windows')][string]$Target
+    [Parameter(Mandatory)][ValidateSet('Android', 'Windows')][string]$Target,
+    [string]$AndroidSdkPath = ''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'flutter-runtime-inputs.ps1')
 . (Join-Path $PSScriptRoot 'notice-inputs.ps1')
+if ($Target -eq 'Android') { $AndroidSdkPath = Get-ReleaseAndroidSdkPath $AndroidSdkPath }
 function Read-ExVpnUpdaterConfig([string]$Text, [switch]$Compiled) {
     # Deliberately accept only this project's flat config, not arbitrary YAML.
     # Quoted/indented keys, aliases, extra endpoints and multiline values fail.
@@ -123,8 +125,10 @@ try {
     $env:DART_SUPPRESS_ANALYTICS = 'true'
     $env:FLUTTER_STORAGE_BASE_URL = 'https://download.shorebird.dev'
     $env:JAVA_HOME = 'C:\PROGRA~1\Android\ANDROI~1\jbr'
-    $env:ANDROID_HOME = Join-Path $env:LOCALAPPDATA 'Android/Sdk'
-    $env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
+    if ($Target -eq 'Android') {
+        $env:ANDROID_HOME = $AndroidSdkPath
+        $env:ANDROID_SDK_ROOT = $AndroidSdkPath
+    }
     $env:PATH = (Join-Path $runtime.SdkRoot 'bin') + [IO.Path]::PathSeparator + $savedEnvironment.PATH
     & $flutter pub get --offline --enforce-lockfile *> (Join-Path $privateRun 'pub-private.log')
     if ($LASTEXITCODE -ne 0) { throw 'Pinned Flutter dependency resolution failed; inspect private build log.' }
@@ -170,7 +174,7 @@ try {
         $apk = Join-Path $app 'build/app/outputs/flutter-apk/app-release.apk'
         $aab = Join-Path $app 'build/app/outputs/bundle/release/app-release.aab'
         $packagedRuntime = Assert-AndroidPackagedNotices $repository $packageInputs.InputDirectory $apk `
-            -FlutterRuntime shorebird -FlutterBuildMode release -PassThruRuntime
+            -FlutterRuntime shorebird -FlutterBuildMode release -PassThruRuntime -AndroidSdkPath $AndroidSdkPath
         Assert-ZipUpdater $apk 'assets/flutter_assets/shorebird.yaml'
         Assert-ZipUpdater $aab 'base/assets/flutter_assets/shorebird.yaml'
         Copy-Item -LiteralPath $apk -Destination (Join-Path $output "ExVPN-$version-shorebird-beta.apk")
@@ -198,6 +202,9 @@ try {
 } finally {
     Pop-Location
     if ($passwordBytes) { [Security.Cryptography.CryptographicOperations]::ZeroMemory($passwordBytes) }
-    foreach ($name in $savedEnvironment.Keys) { [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name], 'Process') }
+    foreach ($name in $savedEnvironment.Keys) {
+        if ($null -eq $savedEnvironment[$name]) { Remove-Item -LiteralPath "Env:\$name" -ErrorAction SilentlyContinue }
+        else { [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name], 'Process') }
+    }
 }
 [pscustomobject]@{OutputDirectory=$output; PrivateLogDirectory=$privateRun; Published=$false; Version=$version; Target=$Target}

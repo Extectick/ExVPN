@@ -6,7 +6,7 @@ param(
     [string]$Repository=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..')),
     [string]$OutputDirectory='',
     [string]$PrepareMetadataFrom='',
-    [string]$AndroidSdkPath=$(if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { Join-Path $env:LOCALAPPDATA 'Android/Sdk' }),
+    [string]$AndroidSdkPath='',
     [string]$JavaPath=$(if ($env:JAVA_HOME) { $env:JAVA_HOME } else { 'C:/Program Files/Android/Android Studio/jbr' })
 )
 Set-StrictMode -Version Latest
@@ -65,6 +65,7 @@ function Assert-InputsUnchanged($Records) {
 }
 
 try {
+    $AndroidSdkPath=Get-ReleaseAndroidSdkPath $AndroidSdkPath
     $app=Join-Path $Repository 'apps/exvpn'
     $flutter=Join-Path $Repository '.tools/flutter'
     $pinsPath=Join-Path $Repository 'scripts/bootstrap/toolchain.lock.json'

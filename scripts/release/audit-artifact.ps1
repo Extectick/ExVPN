@@ -8,7 +8,7 @@ param(
     [Parameter(Mandatory)][string]$OutputDirectory,
     [string]$NoticesDirectory = '',
     [ValidatePattern('^$|^[a-fA-F0-9]{64}$')][string]$ExpectedSignerSha256 = '',
-    [string]$AndroidSdkPath = (Join-Path $env:LOCALAPPDATA 'Android/Sdk'),
+    [string]$AndroidSdkPath = '',
     [string]$JavaPath = 'C:/Program Files/Android/Android Studio/jbr/bin/java.exe',
     [ValidateSet('ordinary','shorebird')][string]$FlutterRuntime = 'ordinary',
     [ValidateSet('','debug','release')][string]$FlutterBuildMode = ''
@@ -133,6 +133,7 @@ try {
         $artifactName = [IO.Path]::GetFileName($artifactFile)
         $artifactHash = Get-AuditSha256 $artifactFile
         $files = Get-AuditZipFiles $artifactFile
+        $AndroidSdkPath = Get-ReleaseAndroidSdkPath $AndroidSdkPath
         $buildTools = Join-Path $AndroidSdkPath 'build-tools/36.0.0'
         $aapt = Join-Path $buildTools 'aapt2.exe'
         $signerJar = Join-Path $buildTools 'lib/apksigner.jar'
