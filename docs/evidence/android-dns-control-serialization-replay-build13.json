@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "status": "OFFLINE_SERIALIZATION_REPLAY_PASS",
+  "guestActions": 0,
+  "runtimeAuthorized": false,
+  "runtimeExecuted": false,
+  "change": "two_json_projections_only_string_netId_keys",
+  "inputSavedDumpSha256": "ea94917a6fcdbd660153cf2f66f45a449ef061686035c573732785dc170d7b23",
+  "beforeSourceSha256": "f5e62507d326f1b6b990e9b7855caf03f2f8bb7dea898b7b29b7c85192d0c1cf",
+  "fixedSourceSha256": "42626b9beb00995b8524ea8115c1549af9f2999c2402da8afa3c34a0f94f4638",
+  "originalStatusUnchanged": "INDETERMINATE_CAPABILITY",
+  "phaseChecks": [
+    {
+      "entries": 2,
+      "outputSha256": "a0e4ac808cfc6be74a84536fb97ca1c2388a3a28a435971a8f358ad8cfab0b5f",
+      "serialized": true,
+      "phase": "before",
+      "roundtripExact": true
+    },
+    {
+      "entries": 2,
+      "outputSha256": "a0e4ac808cfc6be74a84536fb97ca1c2388a3a28a435971a8f358ad8cfab0b5f",
+      "serialized": true,
+      "phase": "after",
+      "roundtripExact": true
+    }
+  ],
+  "internalIntegerKeyLookupPreserved": true,
+  "fixedEntryParses": true,
+  "prior42FixturesNotRepeated": true
+}

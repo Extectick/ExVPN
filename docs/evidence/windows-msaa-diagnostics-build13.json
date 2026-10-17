@@ -1,0 +1,213 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "scope": "Ordinary Windows build13 MSAA diagnostic; no VPN or installer acceptance",
+  "status": "HARNESS_DEFECTS_LOCALIZED",
+  "allOriginalRuntimeGatesRetainedAsRefused": true,
+  "installedBuild": 13,
+  "installedUiSha256": "e7299a563e2b81d41f334ec6d8f612971c18a58f8fd826323036503d1ba66299",
+  "installedServiceSha256": "3582d238cf50419fc43c596b539c99a374effe19c99d3382e9aac68ef3626e72",
+  "attempts": [
+    {
+      "runId": "cc039a2c-d894-4c58-8718-1a1fb5bc3c11",
+      "hostStatus": "REFUSED",
+      "hostFailureCode": "host_guest_outcome_unknown",
+      "runtimeStarted": false,
+      "hostCoordinatorElapsedMs": 22855,
+      "hostSummarySha256": "48d037972e963a7e40295a9ad581b9457c4c7bff368aa5a9c6a1fba237685b58",
+      "qaSourceSealSha256": "356929a67b9ac045c4886c46389cbd4814caebc7d050be10f4ae05a141051e19",
+      "automaticActionRetry": false,
+      "actualUiLaunched": false,
+      "cleanupScope": "No UI action; late native-before snapshot passed after coordinator timeout, not a completed pre/post scenario."
+    },
+    {
+      "runId": "316a1c9b-11d6-4274-94bc-1178ce2a902f",
+      "hostStatus": "REFUSED",
+      "hostFailureCode": "guest_stage_refused",
+      "runtimeStarted": true,
+      "hostCoordinatorElapsedMs": 49994,
+      "hostSummarySha256": "227697e64b6951fb5a4e29ca349f4465d917d72b4fcd2c4f6bcb320a10a623ee",
+      "qaSourceSealSha256": "0257e8e54577be44b99fd854678bd7e124b992bd04fa083ca9a1200e38618274",
+      "automaticActionRetry": false,
+      "step": "settings",
+      "stepStatus": "REFUSED",
+      "stepFailureCode": "semantic_readback_deadline",
+      "actionIssued": true,
+      "completed": false,
+      "charactersSent": 0,
+      "receiptSha256": "ad21e8d9bf57a78047e55b3aaa1c04e909c0b93043d7f7151689b65a876c1cd6",
+      "ownedUiClosed": true,
+      "storageRestored": true,
+      "nativePostchecked": true
+    },
+    {
+      "runId": "1df220dc-e2cb-4d75-9469-2f489ac6b956",
+      "hostStatus": "REFUSED",
+      "hostFailureCode": "guest_stage_refused",
+      "runtimeStarted": true,
+      "hostCoordinatorElapsedMs": 46667,
+      "hostSummarySha256": "2494ac515b99f67238c92d3ead4e0ccfdb48a01a01ff130de56ed4263edcc9a2",
+      "qaSourceSealSha256": "8086478c4c3bfa13a233d5bfb9fef7bb08682ac25fed836b5d9c2a604fcd7b35",
+      "automaticActionRetry": false,
+      "step": "settings",
+      "stepStatus": "REFUSED",
+      "stepFailureCode": "unclassified_semantic_failure",
+      "actionIssued": true,
+      "completed": false,
+      "charactersSent": 0,
+      "receiptSha256": "34ac758abb2ac548881be1c86b21dcad29c42455710aa7ee447d5938929349b8",
+      "ownedUiClosed": true,
+      "storageRestored": true,
+      "nativePostchecked": true
+    },
+    {
+      "runId": "d7f36d52-9776-4ad3-a035-ff19abf28160",
+      "hostStatus": "REFUSED",
+      "hostFailureCode": "guest_stage_refused",
+      "runtimeStarted": true,
+      "hostCoordinatorElapsedMs": 47998,
+      "hostSummarySha256": "cce277811dc975907a3973ad3efa2b40f2c35f8ea620e176f65bee3bbe3bdf1e",
+      "qaSourceSealSha256": "19e05c9956a2b50598d7fd8f239a6828be12ace431c7e090f9cf71f7ae65206d",
+      "automaticActionRetry": false,
+      "step": "settings",
+      "stepStatus": "REFUSED",
+      "stepFailureCode": "unclassified_semantic_failure",
+      "actionIssued": true,
+      "completed": false,
+      "charactersSent": 0,
+      "receiptSha256": "ed1750d5a2f88d80ffa23aff7e2eaf22d6820cc0d678efeaf0d35c64598d5446",
+      "ownedUiClosed": true,
+      "storageRestored": true,
+      "nativePostchecked": true,
+      "confirmedException": {
+        "type": "System.Runtime.InteropServices.COMException",
+        "hresult": "0x80004005",
+        "phase": "wait_capture",
+        "operation": "get_acc_name",
+        "nodeIndex": 3,
+        "childId": 0,
+        "elapsedMs": 220,
+        "cleanupExceptionPresent": false
+      }
+    },
+    {
+      "runId": "ce595242-b14a-4a5f-a08c-406b79f1d830",
+      "hostStatus": "REFUSED",
+      "hostFailureCode": "guest_stage_refused",
+      "runtimeStarted": true,
+      "hostCoordinatorElapsedMs": 53122,
+      "hostSummarySha256": "7e89c5a4caf8a812265997de638cbbbd6ab1678ea24a3ab3cb4c1d799f50138f",
+      "qaSourceSealSha256": "611a8afd297ce823ceda496ff7f770fa974d939d71c57100142388c76374e416",
+      "automaticActionRetry": false,
+      "step": "settings",
+      "stepStatus": "REFUSED",
+      "stepFailureCode": "semantic_readback_deadline",
+      "actionIssued": true,
+      "completed": false,
+      "charactersSent": 0,
+      "receiptSha256": "fa38fe011f8568c346b71b784a3d53d53c4fd000883158cff579220af3c7744a",
+      "ownedUiClosed": true,
+      "storageRestored": true,
+      "nativePostchecked": true,
+      "observedTransition": "Settings is open in the retained final tree",
+      "postSnapshotCount": 46,
+      "failedReadCount": 0,
+      "predicateReason": "PODPISKI is MSAA GROUP20 with direct Add child; original gate expected STATICTEXT41"
+    }
+  ],
+  "findings": [
+    {
+      "kind": "CIM query overhead",
+      "evidence": "Filtered Win32_Service query8420ms; exact keyed query140ms with matching8 fields. Separate measurements, not an end-to-end speed ratio."
+    },
+    {
+      "kind": "MSAA read failure",
+      "evidence": "COM E_FAIL at get_accName after Settings action; original and cleanup exceptions retained separately. No retry of action."
+    },
+    {
+      "kind": "Settings selector mismatch",
+      "evidence": "Captured final tree23nodes proves Settings controls; header is GROUP20 and Add is its direct child. Original runtime gate remains REFUSED."
+    }
+  ],
+  "offlineFix": {
+    "changedScope": "Settings heading/predicate only; require unique visible/enabled GROUP20 and direct child Add",
+    "legacyExpectedRejectionChecks": 1,
+    "fixedSavedTreeChecks": 15,
+    "policyChecks": 56,
+    "runtimeRerunAfterFix": false,
+    "sourceProofSha256": "905c1ee5e1f38e36eedc38c89b0ad8645599b889fbe24ad285ca480210a666e9",
+    "fixedPolicySha256": "06e0c58d74521ba455fac7c59002236bf9fba57c1c5e4ea69cc7055f1fffd2c3",
+    "fixedNativeAdapterSha256": "e914fb146a8d3e54bb016656e747dbea2bc5439fe5c706b4c84fe2a136ec14c0",
+    "capturedResultSha256": "fa38fe011f8568c346b71b784a3d53d53c4fd000883158cff579220af3c7744a"
+  },
+  "finalCleanup": {
+    "ownedUiClosed": true,
+    "productionBindingPrePost": true,
+    "nativeComparisons": [
+      {
+        "field": "productionBindingVerified",
+        "equal": true
+      },
+      {
+        "field": "context",
+        "equal": true
+      },
+      {
+        "field": "guardArmed",
+        "equal": true
+      },
+      {
+        "field": "tunnelAbsent",
+        "equal": true
+      },
+      {
+        "field": "uiCount",
+        "equal": true
+      },
+      {
+        "field": "otherQaCount",
+        "equal": true
+      },
+      {
+        "field": "networkSha256",
+        "equal": true
+      },
+      {
+        "field": "policyPresent",
+        "equal": true
+      },
+      {
+        "field": "rollbackStateSha256",
+        "equal": true
+      },
+      {
+        "field": "rollbackServiceSha256",
+        "equal": true
+      },
+      {
+        "field": "rollbackUiSha256",
+        "equal": true
+      }
+    ],
+    "guardArmed": false,
+    "tunnelAbsent": true,
+    "remainingUiProcesses": 0,
+    "remainingQaProcesses": 0,
+    "storageFilesBefore": 0,
+    "storageFilesAfter": 0,
+    "storageMetadataExact": true,
+    "nativeBeforeSha256": "082d4b44bd481f4101a9e06674492026db3acc49744dfdf1ba925511e8dbe913",
+    "nativeAfterSha256": "3f7a1ecbc4b78c80178d2d32b941a8c4976909a33e209a97ae60379b04a8f012",
+    "storageMetadataSha256": "710691f3a2795d817d49acce9d8dd9ff2aa2df3a87c3b6ec5289c0dae061c418"
+  },
+  "privateManifestSha256": "79ed3e2246436f83355ae8a22c02c688317a38e50215c37a484210e112ef047a",
+  "boundaries": [
+    "No import, Connect, VPN, maintenance, rollback or uninstall was executed in these runs.",
+    "The bounded E_FAIL fresh-read retry has fixture coverage; the final runtime had zero such failures, so runtime recovery through that branch was not observed.",
+    "The fixed Settings predicate was verified only by offline replay; no additional UI run was performed.",
+    "The first imported UI attempt had no post-action tree or exact exception; its outcome is not retrospectively upgraded.",
+    "An earlier UIA attempt had no storage pre-hash and its original report was overwritten; those limitations remain in prior discovery evidence.",
+    "One intermediate private manifest-generation failure produced JSON null; that file is preserved and superseded by explicit v2 evidence, not treated as runtime proof."
+  ],
+  "priorDiscoveryCandidateSha256": "ea0142a416d953081c151687688a6b0fa9193e99b2e1e93af380e8bf57622aa9"
+}

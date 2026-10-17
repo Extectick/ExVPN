@@ -639,3 +639,11 @@ PowerShell-переменной остановила обвязку; перво�
 физическую сеть; это не устанавливает отправителя прежних трёх DNS-запросов.
 [Раздельные факты запуска](evidence/android-dns-privileged-observer-build13.json),
 [закреплённые AOSP-источники](evidence/android-dns-observer-source-findings-build13.json).
+
+Положительный контроль UID пока не выполнен: подготовка остановилась до DNS
+probe и querylog на сериализации числовых ключей netId в JSON. Отдельная копия
+private QA исправляет только две внешние JSON-проекции; replay на фактическом
+сохранённом network dump подтвердил запись и точное обратное чтение. Повторного
+runtime нет, исходный INDETERMINATE и прежний DNS gate сохранены.
+[Отказ до сетевого вызова](evidence/android-dns-positive-control-attempt-build13.json),
+[offline replay](evidence/android-dns-control-serialization-replay-build13.json).

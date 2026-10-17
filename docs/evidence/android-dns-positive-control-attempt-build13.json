@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "status": "SETUP_INDETERMINATE_BEFORE_DNS_CONTROL",
+  "originalStatus": "INDETERMINATE_CAPABILITY",
+  "originalResultSha256": "f594a009c81d287b7d29fe603f1c82d87dce3f0569aa6da769fd84ee763570de",
+  "runDurationMs": 43576,
+  "observedApiCalls": 0,
+  "observedQuerylogReads": 0,
+  "configuredNewNetworkProbeDoesNotMeanExecuted": true,
+  "cause": {
+    "guestActionsInOfflineReproducer": 0,
+    "offlineReproducedFromSameSavedMap": true,
+    "allKeysInt32": true,
+    "originalErrorMentionsJson": true,
+    "classification": "private_harness_integer_dictionary_json_serialization",
+    "source": "common.ps1 Write-QaJson called by run.ps1 before baseline querylog",
+    "exceptionType": "System.InvalidOperationException",
+    "errorId": "NonStringKeyInDictionary,Microsoft.PowerShell.Commands.ConvertToJsonCommand",
+    "mapEntries": 2
+  },
+  "positivePreflight": {
+    "suObserverIdentityConfirmed": true,
+    "settingsBeforeRead": true,
+    "installedProbeHashMatched": true,
+    "protectedStoreBeforeRead": true,
+    "serviceAbsent": true,
+    "ordinaryShellIdentityConfirmed": true
+  },
+  "state": {
+    "settingsWritesPerformed": 0,
+    "appLaunched": false,
+    "vpnStarted": false,
+    "postSettingsReadback": "NOT_REACHED",
+    "protectedStoreWritesPerformed": 0,
+    "postStoreReadback": "NOT_REACHED"
+  },
+  "cleanup": {
+    "frozenInputsUnchanged": true,
+    "watchdogCompleted": true,
+    "forcedExactOwnedIdentities": true,
+    "originalIdentitiesPreserved": true,
+    "guestShutdown": true,
+    "ownedPortsFree": true
+  },
+  "oldDnsFaultResultUnchanged": "INDETERMINATE",
+  "nextRuntimeExecuted": false
+}
