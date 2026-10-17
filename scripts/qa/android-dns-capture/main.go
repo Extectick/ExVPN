@@ -32,7 +32,28 @@ type phase struct {
 }
 
 type configuration struct {
-	Phases []phase `json:"phases"`
+	Phases             []phase             `json:"phases"`
+	ProtectedIntervals []protectedInterval `json:"protectedIntervals,omitempty"`
+}
+
+// Protection spans transitions and gaps between named probe phases. These
+// half-open intervals are supplied by the driver's actual VPN-state markers,
+// never inferred from a phase name or from successful DNS parsing.
+type protectedInterval struct {
+	ID                 string `json:"id"`
+	StartUnixMs        int64  `json:"startUnixMs"`
+	EndExclusiveUnixMs int64  `json:"endExclusiveUnixMs"`
+}
+
+type intervalObservation struct {
+	ID                         string `json:"id"`
+	StartUnixMs                int64  `json:"startUnixMs"`
+	EndExclusiveUnixMs         int64  `json:"endExclusiveUnixMs"`
+	PacketsInWindow            int    `json:"packetsInWindow"`
+	UDP53InWindow              int    `json:"udp53InWindow"`
+	TCP53InWindow              int    `json:"tcp53InWindow"`
+	TCP53SYNInWindow           int    `json:"tcp53SynInWindow"`
+	CaptureBoundsCoverInterval bool   `json:"captureBoundsCoverInterval"`
 }
 
 type observation struct {
@@ -49,20 +70,21 @@ type observation struct {
 }
 
 type report struct {
-	Status           string        `json:"status"`
-	Reason           string        `json:"reason,omitempty"`
-	Packets          int           `json:"packets"`
-	IPv4Packets      int           `json:"ipv4Packets"`
-	IPv6Packets      int           `json:"ipv6Packets"`
-	UDP53Packets     int           `json:"udp53Packets"`
-	TCP53Packets     int           `json:"tcp53Packets"`
-	DNSMessages      int           `json:"dnsMessages"`
-	CaptureBytes     int64         `json:"captureBytes"`
-	CaptureSHA256    string        `json:"captureSha256,omitempty"`
-	FirstUnixMs      int64         `json:"firstUnixMs"`
-	LastUnixMs       int64         `json:"lastUnixMs"`
-	PhaseObservation []observation `json:"phases"`
-	DropAccounting   string        `json:"dropAccounting"`
+	Status             string                `json:"status"`
+	Reason             string                `json:"reason,omitempty"`
+	Packets            int                   `json:"packets"`
+	IPv4Packets        int                   `json:"ipv4Packets"`
+	IPv6Packets        int                   `json:"ipv6Packets"`
+	UDP53Packets       int                   `json:"udp53Packets"`
+	TCP53Packets       int                   `json:"tcp53Packets"`
+	DNSMessages        int                   `json:"dnsMessages"`
+	CaptureBytes       int64                 `json:"captureBytes"`
+	CaptureSHA256      string                `json:"captureSha256,omitempty"`
+	FirstUnixMs        int64                 `json:"firstUnixMs"`
+	LastUnixMs         int64                 `json:"lastUnixMs"`
+	PhaseObservation   []observation         `json:"phases"`
+	ProtectedIntervals []intervalObservation `json:"protectedIntervals,omitempty"`
+	DropAccounting     string                `json:"dropAccounting"`
 }
 
 var noncePattern = regexp.MustCompile(`^[a-f0-9]{32}$`)
@@ -83,6 +105,18 @@ func validate(config configuration) error {
 		}
 		ids[p.ID], nonces[p.Nonce], previousEnd = true, true, p.EndUnixMs
 	}
+	if len(config.ProtectedIntervals) > 8 {
+		return errors.New("protected_interval_count")
+	}
+	ids, previousEnd = map[string]bool{}, 0
+	for _, p := range config.ProtectedIntervals {
+		if !idPattern.MatchString(p.ID) || ids[p.ID] || p.StartUnixMs < 1 ||
+			p.EndExclusiveUnixMs <= p.StartUnixMs || p.EndExclusiveUnixMs-p.StartUnixMs > 360000 ||
+			p.StartUnixMs < previousEnd {
+			return errors.New("protected_interval_schema")
+		}
+		ids[p.ID], previousEnd = true, p.EndExclusiveUnixMs
+	}
 	return nil
 }
 
@@ -95,6 +129,11 @@ func analyze(reader io.Reader, config configuration) report {
 	for _, p := range config.Phases {
 		digest := sha256.Sum256([]byte(queryName(p.Nonce)))
 		r.PhaseObservation = append(r.PhaseObservation, observation{ID: p.ID, QuerySHA256: hex.EncodeToString(digest[:])})
+	}
+	for _, p := range config.ProtectedIntervals {
+		r.ProtectedIntervals = append(r.ProtectedIntervals, intervalObservation{
+			ID: p.ID, StartUnixMs: p.StartUnixMs, EndExclusiveUnixMs: p.EndExclusiveUnixMs,
+		})
 	}
 	pcap, err := pcapgo.NewReader(io.LimitReader(reader, maxCaptureBytes+1))
 	if err != nil || pcap.LinkType() != layers.LinkTypeEthernet || pcap.Snaplen() < 65535 || pcap.Snaplen() > 1<<20 {
@@ -130,6 +169,13 @@ func analyze(reader io.Reader, config configuration) report {
 			if at >= p.StartUnixMs && at <= p.EndUnixMs {
 				r.PhaseObservation[i].PacketsInWindow++
 				window = i
+			}
+		}
+		protectedWindow := -1
+		for i, p := range config.ProtectedIntervals {
+			if at >= p.StartUnixMs && at < p.EndExclusiveUnixMs {
+				r.ProtectedIntervals[i].PacketsInWindow++
+				protectedWindow = i
 			}
 		}
 		packet := gopacket.NewPacket(data, layers.LayerTypeEthernet, gopacket.DecodeOptions{Lazy: true})
@@ -169,6 +215,9 @@ func analyze(reader io.Reader, config configuration) report {
 			if window >= 0 {
 				r.PhaseObservation[window].UDP53InWindow++
 			}
+			if protectedWindow >= 0 {
+				r.ProtectedIntervals[protectedWindow].UDP53InWindow++
+			}
 			messages = append(messages, udp.Payload)
 		} else if layer := packet.Layer(layers.LayerTypeTCP); layer != nil {
 			var tcp layers.TCP
@@ -183,6 +232,13 @@ func analyze(reader io.Reader, config configuration) report {
 				r.PhaseObservation[window].TCP53InWindow++
 				if tcp.SYN {
 					r.PhaseObservation[window].TCP53SYNInWindow++
+				}
+			}
+			if protectedWindow >= 0 {
+				observation := &r.ProtectedIntervals[protectedWindow]
+				observation.TCP53InWindow++
+				if tcp.SYN {
+					observation.TCP53SYNInWindow++
 				}
 			}
 			// DNS-over-TCP is length framed. A segmented payload is deliberately
@@ -236,6 +292,12 @@ func analyze(reader io.Reader, config configuration) report {
 		if p.MarkerOutsideWindow != 0 {
 			return fail("marker_outside_phase_clock_window")
 		}
+	}
+	for i := range r.ProtectedIntervals {
+		p := &r.ProtectedIntervals[i]
+		// Bounds coverage is only an observation, not proof of no packet drops,
+		// correct state markers, UID ownership or a complete no-leak result.
+		p.CaptureBoundsCoverInterval = r.FirstUnixMs <= p.StartUnixMs && r.LastUnixMs >= p.EndExclusiveUnixMs
 	}
 	// Parsing is not a leak PASS. The driver must also require independent
 	// query/egress controls, actual VPN state and phase-specific expectations.

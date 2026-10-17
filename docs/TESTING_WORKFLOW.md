@@ -1,5 +1,12 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+После добавления непрерывных DNS-интервалов, 2026-10-17: **10/10 за 86,60 с**,
+source fingerprint неизменен, Go result cache отключён. Четыре новые offline
+регрессии прошли вместе с остальным набором. Повторный разбор сохранённого +13
+PCAP воспроизвёл шесть открытых DNS-пакетов до Disconnect и один в переходе;
+новый VPN-сеанс не запускался. [Full](evidence/fast-validation-continuous-dns-build14.json),
+[reparse](evidence/android-dns-continuous-parser-build13.json).
+
 Прогон **+14 после source freeze**, 2026-10-17: **10/10 наборов за 96,93 с**,
 465 Dart/Flutter tests, Go/installer/QA checks PASS; Go result cache отключён,
 fingerprint исходников совпал. Добавлены 17 поведенческих тестов tray.
@@ -243,6 +250,13 @@ Android QA-probe, 12 проверок DNS nonce и 14 проверок UTF-8/р�
 ввода. Offline PCAP parser использует уже закреплённый Go graph без новой
 зависимости; Windows teardown helpers проверяются под PS7 и PS5.1. Сеть и
 установленный VPN для этих fixtures не используются.
+
+DNS-анализ дополнительно принимает непрерывные `protectedIntervals` между
+фактическими маркерами VPN: UDP/TCP53 считаются также в промежутках между
+фазами. Явный флаг покрытия границ захватом не заменяет проверку packet drops
+или UID. `PARSED` остаётся результатом разбора, не успешной проверкой утечек.
+Регрессии проверяют границы, промежутки, IPv4/IPv6, UDP/TCP и неполный capture.
+[Формат и ограничения](../scripts/qa/android-dns-capture/README.md).
 
 В scripts lane и CI добавлены лёгкие проверки Android runtime inventory:
 точные версии/engine, граф связей, хеши и отрицательные fixtures. Полное Gradle

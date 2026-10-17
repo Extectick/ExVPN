@@ -85,19 +85,135 @@ func framed(payload []byte) []byte {
 }
 
 func capture(t *testing.T, packets ...[]byte) []byte {
+	times := make([]int64, len(packets))
+	for i := range times {
+		times[i] = 1700000000100 + int64(i)
+	}
+	return captureAt(t, times, packets...)
+}
+
+func captureAt(t *testing.T, times []int64, packets ...[]byte) []byte {
 	t.Helper()
+	if len(times) != len(packets) {
+		t.Fatal("one timestamp required per packet")
+	}
 	var output bytes.Buffer
 	writer := pcapgo.NewWriter(&output)
 	if err := writer.WriteFileHeader(65535, layers.LinkTypeEthernet); err != nil {
 		t.Fatal(err)
 	}
 	for i, packet := range packets {
-		info := gopacket.CaptureInfo{Timestamp: time.UnixMilli(1700000000100 + int64(i)), CaptureLength: len(packet), Length: len(packet)}
+		info := gopacket.CaptureInfo{Timestamp: time.UnixMilli(times[i]), CaptureLength: len(packet), Length: len(packet)}
 		if err := writer.WritePacket(info, packet); err != nil {
 			t.Fatal(err)
 		}
 	}
 	return output.Bytes()
+}
+
+func TestDNSCaptureProtectedIntervalIncludesPhaseGaps(t *testing.T) {
+	const start = int64(1700000000100)
+	config := configuration{
+		Phases: []phase{
+			{ID: "connected", Nonce: strings.Repeat("a", 32), StartUnixMs: start, EndUnixMs: start + 5},
+			{ID: "fault", Nonce: strings.Repeat("b", 32), StartUnixMs: start + 15, EndUnixMs: start + 20},
+		},
+		ProtectedIntervals: []protectedInterval{{ID: "vpn", StartUnixMs: start + 5, EndExclusiveUnixMs: start + 15}},
+	}
+	packet := networkPacket(t, false, false, false, false, dnsPayload(t, "connectivity.example.com", false))
+	data := captureAt(t, []int64{start + 4, start + 5, start + 10, start + 14, start + 15}, packet, packet, packet, packet, packet)
+	r := analyze(bytes.NewReader(data), config)
+	if r.Status != "PARSED" || r.UDP53Packets != 5 || len(r.ProtectedIntervals) != 1 {
+		t.Fatalf("protected interval was not parsed: %s/%s", r.Status, r.Reason)
+	}
+	if r.PhaseObservation[0].UDP53InWindow != 2 || r.PhaseObservation[1].UDP53InWindow != 1 {
+		t.Fatal("phase observations changed")
+	}
+	p := r.ProtectedIntervals[0]
+	if p.UDP53InWindow != 3 || p.PacketsInWindow != 3 || p.TCP53InWindow != 0 || !p.CaptureBoundsCoverInterval {
+		t.Fatal("DNS in a phase gap or at the inclusive start was lost, or exclusive end was included")
+	}
+	// Adjacent intervals must not double-count a shared timestamp.
+	config.ProtectedIntervals = []protectedInterval{
+		{ID: "before_fault", StartUnixMs: start + 5, EndExclusiveUnixMs: start + 10},
+		{ID: "after_fault", StartUnixMs: start + 10, EndExclusiveUnixMs: start + 15},
+	}
+	r = analyze(bytes.NewReader(data), config)
+	if r.Status != "PARSED" || r.ProtectedIntervals[0].UDP53InWindow != 1 || r.ProtectedIntervals[1].UDP53InWindow != 2 {
+		t.Fatal("adjacent half-open intervals overlap or omit a boundary packet")
+	}
+	encoded, _ := json.Marshal(r)
+	for _, forbidden := range []string{"connectivity.example.com", "192.0.2.1", config.Phases[0].Nonce} {
+		if strings.Contains(string(encoded), forbidden) {
+			t.Fatal("raw DNS or endpoint escaped the protected-interval report")
+		}
+	}
+}
+
+func TestDNSCaptureProtectedIntervalProtocolsAndCoverage(t *testing.T) {
+	const start = int64(1700000000100)
+	config := fixtureConfig()
+	config.ProtectedIntervals = []protectedInterval{{ID: "vpn", StartUnixMs: start, EndExclusiveUnixMs: start + 10}}
+	for _, v6 := range []bool{false, true} {
+		for _, tcp := range []bool{false, true} {
+			payload := dnsPayload(t, "unrelated.example.com", false)
+			if tcp {
+				payload = framed(payload)
+			}
+			query := networkPacket(t, v6, tcp, false, false, payload)
+			control := networkPacket(t, v6, true, false, true, nil)
+			data := captureAt(t, []int64{start - 1, start, start + 1, start + 10}, control, query, control, control)
+			r := analyze(bytes.NewReader(data), config)
+			if r.Status != "PARSED" || len(r.ProtectedIntervals) != 1 {
+				t.Fatalf("valid protocol capture rejected: %s", r.Reason)
+			}
+			p := r.ProtectedIntervals[0]
+			if p.PacketsInWindow != 2 || p.TCP53SYNInWindow != 1 || !p.CaptureBoundsCoverInterval {
+				t.Fatal("capture bounds or TCP SYN visibility lost")
+			}
+			if tcp && (p.TCP53InWindow != 2 || p.UDP53InWindow != 0) || !tcp && (p.TCP53InWindow != 1 || p.UDP53InWindow != 1) {
+				t.Fatal("IPv4/IPv6 UDP/TCP protected counts differ from the actual packets")
+			}
+			for _, times := range [][]int64{{start + 1, start + 10}, {start - 1, start + 9}} {
+				r = analyze(bytes.NewReader(captureAt(t, times, query, query)), config)
+				if r.Status != "PARSED" || r.ProtectedIntervals[0].CaptureBoundsCoverInterval {
+					t.Fatal("partial interval coverage was promoted to complete")
+				}
+			}
+		}
+	}
+}
+
+func TestDNSCaptureProtectedIntervalRejectsInvalidBounds(t *testing.T) {
+	const start = int64(1700000000100)
+	valid := protectedInterval{ID: "vpn", StartUnixMs: start, EndExclusiveUnixMs: start + 10}
+	for _, intervals := range [][]protectedInterval{
+		{{ID: "invalid/name", StartUnixMs: start, EndExclusiveUnixMs: start + 10}},
+		{{ID: "vpn", StartUnixMs: 0, EndExclusiveUnixMs: 10}},
+		{{ID: "vpn", StartUnixMs: start, EndExclusiveUnixMs: start}},
+		{{ID: "vpn", StartUnixMs: start + 1, EndExclusiveUnixMs: start}},
+		{{ID: "vpn", StartUnixMs: start, EndExclusiveUnixMs: start + 360001}},
+		{valid, {ID: "vpn", StartUnixMs: start + 10, EndExclusiveUnixMs: start + 20}},
+		{valid, {ID: "overlap", StartUnixMs: start + 9, EndExclusiveUnixMs: start + 20}},
+		{valid, {ID: "unsorted", StartUnixMs: start - 20, EndExclusiveUnixMs: start - 10}},
+		make([]protectedInterval, 9),
+	} {
+		config := fixtureConfig()
+		config.ProtectedIntervals = intervals
+		if validate(config) == nil || analyze(bytes.NewReader(nil), config).Status != "INDETERMINATE" {
+			t.Fatal("invalid protected interval accepted")
+		}
+	}
+}
+
+func TestDNSCaptureProtectedIntervalNeverOverridesParseFailure(t *testing.T) {
+	config := fixtureConfig()
+	config.ProtectedIntervals = []protectedInterval{{ID: "vpn", StartUnixMs: 1700000000100, EndExclusiveUnixMs: 1700000000101}}
+	bad := networkPacket(t, false, false, false, false, []byte{1, 2, 3})
+	r := analyze(bytes.NewReader(capture(t, bad, bad)), config)
+	if r.Status != "INDETERMINATE" || r.Reason != "malformed_dns_message" || r.ProtectedIntervals[0].CaptureBoundsCoverInterval {
+		t.Fatal("malformed capture acquired complete interval evidence")
+	}
 }
 
 func withIPv6HopByHop(t *testing.T, packet []byte) []byte {

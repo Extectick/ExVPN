@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-10-17T04:57:13.7065291Z",
+  "scope": "Offline reparse of immutable +13 capture; no new network traffic or product build",
+  "parserStatus": "PARSED",
+  "strictDnsGate": "FAILED",
+  "originalRuntimeOutcome": "INDETERMINATE",
+  "captureSha256": "e402f927ebfb496083c3416a9bab9beb93fdce99736a25e93e41049231067e7b",
+  "packets": 1103,
+  "protectedIntervals": [
+    {
+      "id": "vpn_before_disconnect",
+      "startUnixMs": 1792211763928,
+      "endExclusiveUnixMs": 1792211834569,
+      "packetsInWindow": 459,
+      "udp53InWindow": 6,
+      "tcp53InWindow": 0,
+      "tcp53SynInWindow": 0,
+      "captureBoundsCoverInterval": true
+    },
+    {
+      "id": "disconnect_transition",
+      "startUnixMs": 1792211834569,
+      "endExclusiveUnixMs": 1792211835011,
+      "packetsInWindow": 20,
+      "udp53InWindow": 1,
+      "tcp53InWindow": 0,
+      "tcp53SynInWindow": 0,
+      "captureBoundsCoverInterval": true
+    }
+  ],
+  "parserSource": "scripts/qa/android-dns-capture/main.go",
+  "parserSourceSha256": "928fe37829c26a1504ad601e24e2b0c0e7a3b2a673a98ebc7a8665bc88e88eb5",
+  "parserTestsSha256": "81e9e9cf85d637420cf69eb15dfcb27fe60bbed013e1b1f5ad9bac3ca20f9eea",
+  "privateRun": ".private/android-dns-continuous-parser-2bac3e290e714dd98df64a780e0e3a0e",
+  "configurationSha256": "4b48385ea0ec927e88b3e0e68772e4529653bf6da7d71c676b510b089a7cca64",
+  "reportSha256": "e77b9d357b4874b6b7ce1d2257504ab2e0cdd02c25af08bb59ed0750070e2523",
+  "originalCaptureUnchanged": true,
+  "uidAttribution": "NOT_AVAILABLE_IN_PCAP",
+  "boundsOnlyNotDropAccounting": true
+}
