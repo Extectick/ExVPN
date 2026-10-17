@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "evidenceType": "android-disconnected-upgrade-runtime",
+  "status": "PASS",
+  "startedAtUtc": "2026-10-17T01:58:14.9950615Z",
+  "finishedAtUtc": "2026-10-17T02:00:32.5280163Z",
+  "durationMs": 137532,
+  "platform": {
+    "androidApi": 30,
+    "architecture": "x86_64",
+    "privateDisposableAvd": true,
+    "newAvdCreated": false,
+    "noWipe": true,
+    "noSnapshots": true,
+    "physicalDevice": false,
+    "originalEmulatorUntouched": true
+  },
+  "application": {
+    "packageName": "ru.exvpn.exvpn",
+    "beforeVersionCode": 11,
+    "beforeApkSha256": "fcd8859014745538c645874333c9e3bba881e25279160f1e8ac8bd82af8e95ce",
+    "afterVersionCode": 12,
+    "afterApkSha256": "7adb71bb8eef781cd9893152251c977b767f1cfafd7e1a5e6532bd5d9e141644",
+    "versionName": "0.1.0",
+    "core": "26.10.10-exvpn.3",
+    "developmentDebug": true,
+    "installedWithReplace": true,
+    "uidPreserved": true,
+    "signatureVerifiedOnImmutableArtifacts": true,
+    "debugSignerMatchesBuild11": true,
+    "installedBytesMatchAuditedArtifact": true
+  },
+  "buildProvenance": {
+    "artifactPath": "artifacts/android/build12-local/ExVPN-0.1.0-12-android-development.apk",
+    "artifactBytes": 220455299,
+    "source": {
+      "head": "ea9f2cad3ba5e39108d67497e0397d8ff07b29fe",
+      "vcsModified": true,
+      "unchanged": true,
+      "fingerprintBefore": "967ff52163ca9aacf4eb939aa7041252bf4b5cfd2a63397032f013bdb327d47e",
+      "fingerprintAfter": "967ff52163ca9aacf4eb939aa7041252bf4b5cfd2a63397032f013bdb327d47e",
+      "fileCount": 482,
+      "excludedPaths": [
+        "docs/**"
+      ],
+      "reason": "Documentation may change independently and is not a package input."
+    },
+    "buildEvidenceSha256": "d9b1da10420d08397c1e3d8686ac209c844a894cc8d20f151a3f908a2c7cee46",
+    "note": "This immutable APK predates subsequent Dart/UI work; working-tree changes during QA are not part of the tested package."
+  },
+  "upgrade": {
+    "activeVpnDuringInstall": false,
+    "initialGroups": 0,
+    "seedGroups": 1,
+    "seedProfiles": 2,
+    "selectedSeedPosition": 2,
+    "coldRestoreBefore": {
+      "groupCount": 1,
+      "profileCount": 2,
+      "selectedSecondProfile": true,
+      "observedAtUtc": "2026-10-17T01:59:51.3349498Z"
+    },
+    "coldRestoreAfter": {
+      "groupCount": 1,
+      "profileCount": 2,
+      "selectedSecondProfile": true,
+      "observedAtUtc": "2026-10-17T02:00:03.9533473Z"
+    },
+    "encryptedStorageFilesCompared": 2,
+    "encryptedStorageByteHashesPreserved": true,
+    "settingsModifiedByDriver": false
+  },
+  "network": {
+    "fixture": "local synthetic VLESS TCP",
+    "fixtureViaHostLoopbackAlias": true,
+    "adbReverseUsed": false,
+    "separateProbeUid": true,
+    "baseline": {
+      "success": true,
+      "vpnTransport": false
+    },
+    "trace": {
+      "success": true,
+      "status": 200,
+      "durationMs": 202,
+      "vpnTransport": true
+    },
+    "health": {
+      "success": true,
+      "status": 204,
+      "durationMs": 240,
+      "vpnTransport": true
+    },
+    "serverCounters": {
+      "before": {
+        "upload": 0,
+        "download": 0
+      },
+      "after": {
+        "upload": 35392,
+        "download": 25591
+      },
+      "uplinkIncreased": true,
+      "downlinkIncreased": true
+    },
+    "servicePresentWhileConnected": true,
+    "restored": {
+      "success": true,
+      "vpnTransport": false,
+      "baselinePublicIpHashRestored": true
+    }
+  },
+  "cleanup": {
+    "uiDisconnected": true,
+    "qaGroupRemoved": true,
+    "settingsRestored": true,
+    "serviceAbsent": true,
+    "fixtureStopped": true,
+    "guestShutdown": true,
+    "originalIdentitiesPreserved": true,
+    "inputDeleted": true,
+    "reverseEmpty": true,
+    "shutdownAcknowledged": true,
+    "watchdogStopped": true
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "INDETERMINATE",
+      "durationMs": 84489,
+      "upgradePerformed": false,
+      "reason": "Private QA reader did not accept CRLF output from sha256sum; no product failure established.",
+      "cleanup": {
+        "uiDisconnected": true,
+        "qaGroupRemoved": true,
+        "settingsRestored": true,
+        "serviceAbsent": true,
+        "fixtureStopped": true,
+        "guestShutdown": true,
+        "originalIdentitiesPreserved": true,
+        "inputDeleted": true,
+        "reverseEmpty": true,
+        "shutdownAcknowledged": true,
+        "watchdogStopped": true
+      },
+      "privateResultSha256": "a0367811c6206c9c5dfb337813416e9b548e3df8d1f993b9242cc892b176a947"
+    },
+    {
+      "attempt": 2,
+      "status": "PASS",
+      "durationMs": 137532,
+      "upgradePerformed": true,
+      "reason": "One retry after confirmed CRLF parser correction and offline fixtures.",
+      "privateResultSha256": "faab4484cd7d0de4262fa0edd033c8d1359bff4eb9174307a76378587587cba3"
+    }
+  ],
+  "privateReaderCorrection": {
+    "scope": "ignored private QA parser only",
+    "fixtureChecks": 7,
+    "fixtureStatus": "PASS",
+    "parserSha256": "341915b2862553148749756b7a126efd5a0d653786141b4e2f53d6d0c67fac9b",
+    "fixtureProofSha256": "56b39d63eac847c72d93583f9819675b4d4c99b5f19f8f7e60c94c96a7af1aed",
+    "rejectsExtraInvalidDuplicateOrMissingLines": true
+  },
+  "fullAcceptanceComplete": false,
+  "limitations": [
+    "Emulator API30 x86_64 only; no physical Android or arm64 runtime acceptance.",
+    "One local synthetic VLESS TCP connection; the alternate gRPC seed profile was preserved but not connected in this run.",
+    "The fixture shares host public egress, so this run does not require or demonstrate a different external IP while connected.",
+    "Upgrade occurred while disconnected. Active-tunnel upgrade, continuous protection during replacement and all protocols remain untested here.",
+    "This run does not repeat or extend IPv6/DNS/kill-switch acceptance.",
+    "API30-QR-001 touch selection remains open; no QR actions were performed.",
+    "The APK retains the local debug signature and is not a stable release."
+  ]
+}
