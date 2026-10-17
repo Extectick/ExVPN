@@ -84,8 +84,13 @@ $publishAssets = @($hashAssets) + @(Get-DemoAssetRecord (Join-Path $delivery 'SH
 $null = Invoke-DemoGh @('release','create',$tag,'--repo',$repo,'--target',$commit,'--title','ExVPN 0.1.0 Demo',
     '--notes-file',(Join-Path $delivery 'DEMO.md'),'--draft','--prerelease','--latest=false')
 $null = Invoke-DemoGh (@('release','upload',$tag,'--repo',$repo) + @($publishAssets | ForEach-Object { Join-Path $delivery $_.file }))
-$release = (Invoke-DemoGh @('api',"repos/$repo/releases/tags/$tag")) | ConvertFrom-Json
-if (!$release.draft -or !$release.prerelease -or $release.assets.Count -ne $publishAssets.Count) { throw 'demo_uploaded_release_invalid' }
+# REST lookup by tag only sees published releases. gh resolves the draft's
+# pending tag through GraphQL; inspect that exact numeric release via REST.
+$releaseId = [string](Invoke-DemoGh @('release','view',$tag,'--repo',$repo,'--json','databaseId','--jq','.databaseId'))
+if ($releaseId -cnotmatch '^[1-9][0-9]*$') { throw 'demo_draft_identity_invalid' }
+$release = (Invoke-DemoGh @('api',"repos/$repo/releases/$releaseId")) | ConvertFrom-Json
+if (!$release.draft -or !$release.prerelease -or $release.tag_name -cne $tag -or
+    $release.target_commitish -cne $commit -or $release.assets.Count -ne $publishAssets.Count) { throw 'demo_uploaded_release_invalid' }
 foreach ($asset in $publishAssets) {
     $remote = @($release.assets | Where-Object name -CEQ $asset.file)
     if ($remote.Count -ne 1 -or $remote[0].size -ne $asset.bytes -or $remote[0].digest -cne ('sha256:' + $asset.sha256)) {
