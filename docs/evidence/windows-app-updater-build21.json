@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-18",
+  "version": "0.1.0+21",
+  "source": "working tree; commit pending",
+  "scope": "Production UI/update integration, offline behavioral checks, manual baseline Windows installation; excludes live signed remote update acceptance",
+  "implemented": [
+    "Appearance dark/light/custom icons with custom label and resolved system language",
+    "Subscription refresh failures are scoped to their group",
+    "Fixed-height update strip driven by shared full/patch controller",
+    "Byte-accurate installer progress and indeterminate SDK progress",
+    "Dedicated Ed25519 full package helper with bounded manifest/hash/size/TLS/cache validation",
+    "Storage flush and UI/VPN reservation before restart",
+    "Atomic service idle-maintenance SCM129 gate for automatic package installation",
+    "Signed offline manifest tooling; no publication"
+  ],
+  "validation": {
+    "fullResult": "passed",
+    "fullLanes": 12,
+    "fullSeconds": 86.49,
+    "sourceUnchanged": true,
+    "flutterAppTests": 284,
+    "helperFocusedChecks": 54,
+    "finalReport": "fast-validation-app-updater-build21.json",
+    "firstFull": "artifacts/qa/fast-20261017-204753-6cd0476b/summary.json",
+    "firstFullOutcome": "Failed old UI/locale expectations and PS5 fixture host; adapted tests and reran",
+    "nativeBuild": true,
+    "uiBuildSeconds": [
+      76.5,
+      28.7
+    ],
+    "notices": 145,
+    "artifactAuditBlockers": [
+      "dart_flutter_runtime_link_inventory_incomplete",
+      "development_package",
+      "license_expressions_and_distribution_obligations_not_fully_reviewed",
+      "release_signer_not_pinned",
+      "windows_signature_not_valid"
+    ],
+    "payloadHashes": {
+      "ui/exvpn.exe": "245f157f74ac67c86799063d30dec3706e29df3b2915cb8161861f175c17c34c",
+      "ui/data/app.so": "f798357258b75b2d0f7fd9d05675b8b1cbf351eb869fb03bd380adfc1688c09d",
+      "ui/exvpn-updater.exe": "6dbdae2cfc92f81144bfeb8efccdf600fb2038db2997e35155466827f3e7eb69",
+      "service/exvpn-service.exe": "90c81aa6ac6b511212a371128fc8261ff16ee5e9a3ec15adcfaa50c1ebbbe6ad"
+    }
+  },
+  "installer": {
+    "file": "ExVPN-0.1.0-21-windows-x64-development.exe",
+    "sha256": "f553ec3e550ea20d8d1a87b5d2cb2321a831757910cdfdfd25c4d7cc95eeafca",
+    "bytes": 49071440,
+    "signature": "unsigned development package",
+    "exitCode": 0,
+    "from": "0.1.0+20",
+    "installedBuild": 21,
+    "installedHashMatches": true,
+    "networkTestingPreserved": true,
+    "rollbackPresent": true,
+    "service": "Running",
+    "uiPid": 33492,
+    "windowHandle": 35917450,
+    "uiResponsive": true,
+    "ordinaryUser": true,
+    "installedHelperCheck": {
+      "status": "upToDate",
+      "stderrBytes": 0,
+      "exitCode": 0
+    }
+  },
+  "limitations": [
+    "Feed and newer public release were not published",
+    "Live HTTPS installer download/UAC/cancel/rollback/reopen cycle not accepted",
+    "Ordinary Flutter engine: Dart OTA unavailable until matching Shorebird base and signed release/patch",
+    "No VPN traffic/system routing/DNS/firewall tests in this iteration",
+    "No native UI screenshot/visual acceptance for these final settings changes",
+    "Release remains blocked by signing and existing inventory/license obligations"
+  ],
+  "computerUse": false,
+  "networkSettingsChangedByTests": false
+}

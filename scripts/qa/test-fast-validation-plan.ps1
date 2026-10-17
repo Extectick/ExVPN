@@ -20,8 +20,8 @@ function Assert-Lanes([string[]]$Paths, [string[]]$Expected) {
 }
 
 $all = @(Get-FastValidationLaneNames)
-if (($all -join ',') -cne 'domain,state,updates,app,core,android,windows,xray,installer,scripts,ci') {
-    throw 'The CI split changed the original lane set.'
+if (($all -join ',') -cne 'domain,state,updates,app,core,android,windows,appupdater,xray,installer,scripts,ci') {
+    throw 'The expected validation lane set changed.'
 }
 $checks++
 Assert-Lanes @() @()
@@ -42,6 +42,10 @@ Assert-Lanes @('native\core\go.sum') @('domain', 'state', 'app', 'core', 'androi
 Assert-Lanes @('native/android/bridge/jni.go') @('app', 'android')
 Assert-Lanes @('apps/exvpn/android/app/src/main/MainActivity.kt') @('app', 'android')
 Assert-Lanes @('native/windows/policy.go') @('app', 'windows', 'installer')
+Assert-Lanes @('native/appupdater/protocol.go') @('app', 'appupdater', 'installer')
+Assert-Lanes @('native\appupdater\go.mod') @('app', 'appupdater', 'installer')
+Assert-Lanes @('config/updates/windows-beta.json') @('app', 'appupdater', 'installer')
+Assert-Lanes @('native/appupdater/protocol.go', 'native/windows/policy.go') @('app', 'windows', 'appupdater', 'installer')
 Assert-Lanes @('apps/exvpn/windows/runner/main.cpp') @('app', 'windows', 'installer')
 Assert-Lanes @('scripts/bootstrap/toolchain.lock.json') $all
 Assert-Lanes @('.github/workflows/verify.yml') $all

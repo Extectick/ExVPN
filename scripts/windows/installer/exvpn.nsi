@@ -25,6 +25,7 @@ Var Stage
 Var OwnerSid
 Var NetworkArg
 Var NetworkCheckbox
+Var AppUpdateArg
 Var MaintenanceAction
 Var Parameters
 
@@ -53,6 +54,7 @@ Function .onInit
   SetShellVarContext all
   StrCpy $OwnerSid "AUTO"
   StrCpy $NetworkArg ""
+  StrCpy $AppUpdateArg ""
   ${GetParameters} $Parameters
   ${GetOptions} $Parameters "/OWNER_SID=" $0
   ${IfNot} ${Errors}
@@ -61,6 +63,13 @@ Function .onInit
   ${GetOptions} $Parameters "/NETWORK_TESTING=" $0
   ${If} $0 == "1"
     StrCpy $NetworkArg "-EnableNetworkTesting"
+  ${EndIf}
+  ${GetOptions} $Parameters "/APP_UPDATE=" $0
+  ${IfNot} ${Errors}
+    ${If} $0 != "1"
+      Abort "Invalid application update mode."
+    ${EndIf}
+    StrCpy $AppUpdateArg "-RequireDisconnected"
   ${EndIf}
   ; No untrusted command-line characters may reach the PowerShell argument.
   ${If} $OwnerSid != "AUTO"
@@ -165,7 +174,7 @@ Section "ExVPN" SEC_MAIN
   Call CreateProtectedStage
   !insertmacro ExtractPayload
   WriteUninstaller "$Stage\Uninstall.exe"
-  nsExec::ExecToLog '"$WINDIR\SysNative\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$Stage\control\package.ps1" -Action Install -PayloadRoot "$Stage" -OwnerSid "$OwnerSid" $NetworkArg'
+  nsExec::ExecToLog '"$WINDIR\SysNative\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$Stage\control\package.ps1" -Action Install -PayloadRoot "$Stage" -OwnerSid "$OwnerSid" $NetworkArg $AppUpdateArg'
   Pop $0
   ${If} $0 != 0
     MessageBox MB_ICONSTOP "Installation failed (code $0). Protected staging remains at:$\r$\n$Stage$\r$\nDo not reset global firewall or DNS settings. Use the controlled recovery instructions." /SD IDOK

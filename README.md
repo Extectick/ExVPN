@@ -4,6 +4,9 @@
 
 **Статус: предварительный demo-выпуск, разработка продолжается.** Полная системная приёмка VPN, исключений приложений и защиты от утечек ещё не завершена. Подтверждённые результаты и оставшиеся задачи находятся в [чеклисте](docs/CHECKLIST.md).
 
+Текущая версия исходников — **0.1.1+22**, тег `v0.1.1`.
+[Изменения и проверки](docs/RELEASE_0.1.1.md).
+
 Доступен [ExVPN 0.1.0 Demo, build 18](https://github.com/Extectick/ExVPN/releases/tag/v0.1.0-demo), собранный GitHub Actions:
 
 - [Android 11+ APK](https://github.com/Extectick/ExVPN/releases/download/v0.1.0-demo/ExVPN-0.1.0-demo-android.apk), подписан постоянным release-ключом.

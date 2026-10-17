@@ -269,6 +269,59 @@ void main() {
     expect(bridge.connects, 0);
   });
 
+  test('restart reservation freezes every tray command', () async {
+    await vpn.initialize();
+    bridge.emit(_connected);
+    start();
+    await vpn.runForApplicationRestart((safe) async {
+      expect(safe(), isTrue);
+      await controller!.handleCommand('connect');
+      await controller!.handleCommand('disconnect');
+      await controller!.handleCommand('exit');
+      expect(controller!.state.canConnect, isFalse);
+      expect(controller!.state.canDisconnect, isFalse);
+      vpn.commitApplicationRestart();
+    });
+    await controller!.handleCommand('exit');
+    expect(saves, 0);
+    expect(tray.shows, 0);
+    expect(tray.exits, 0);
+    expect(bridge.connects, 0);
+    expect(bridge.disconnects, 0);
+  });
+
+  test('restart while exit dialog is open cancels the stale exit', () async {
+    await vpn.initialize();
+    start();
+    final dialog = Completer<bool>();
+    confirmation = dialog.future;
+    final exit = controller!.handleCommand('exit');
+    await _settle();
+    await vpn.runForApplicationRestart((safe) async {
+      dialog.complete(true);
+      await exit;
+      expect(safe(), isTrue);
+    });
+    expect(saves, 0);
+    expect(tray.exits, 0);
+  });
+
+  test('restart while exit flush is pending prevents stale shutdown', () async {
+    await vpn.initialize();
+    start();
+    final disk = Completer<bool>();
+    saving = disk.future;
+    final exit = controller!.handleCommand('exit');
+    await _settle();
+    await vpn.runForApplicationRestart((safe) async {
+      disk.complete(true);
+      await exit;
+      expect(safe(), isTrue);
+    });
+    expect(saves, 1);
+    expect(tray.exits, 0);
+  });
+
   test(
     'blocked state allows explicit disconnect through native controller',
     () async {

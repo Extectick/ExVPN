@@ -1,8 +1,10 @@
 import 'package:exvpn/services/native_vpn_bridge.dart';
 import 'package:exvpn/services/vpn_controller.dart';
+import 'package:exvpn/src/app_strings.dart';
 import 'package:exvpn/src/exclusions_sheet.dart';
 import 'package:exvpn_domain/exvpn_domain.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'vpn_controller_test.dart' show FakeBridge;
@@ -26,15 +28,37 @@ class BrokenPolicyBridge extends FakeBridge {
   }
 }
 
+Widget _localizedApp(VpnController vpn) => MaterialApp(
+  supportedLocales: appSupportedLocales,
+  localeListResolutionCallback: resolveAppLocale,
+  localizationsDelegates: GlobalMaterialLocalizations.delegates,
+  home: ExclusionsSheet(vpn: vpn),
+);
+
+Future<VpnController> _openExclusions(
+  WidgetTester tester,
+  BrokenPolicyBridge bridge,
+) async {
+  tester.platformDispatcher.localesTestValue = const [Locale('ru')];
+  addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+  final vpn = VpnController(bridge);
+  addTearDown(() async {
+    await tester.pumpWidget(const SizedBox());
+    vpn.dispose();
+    await bridge.close();
+  });
+  await vpn.initialize();
+  await tester.pumpWidget(_localizedApp(vpn));
+  await tester.pumpAndSettle();
+  return vpn;
+}
+
 void main() {
   testWidgets(
     'failed policy read never saves empty settings; explicit reset recovers',
     (tester) async {
       final bridge = BrokenPolicyBridge()..excluded = {'C:/Apps/example.exe'};
-      final vpn = VpnController(bridge);
-      await vpn.initialize();
-      await tester.pumpWidget(MaterialApp(home: ExclusionsSheet(vpn: vpn)));
-      await tester.pumpAndSettle();
+      final vpn = await _openExclusions(tester, bridge);
       expect(find.text('Список недоступен'), findsOneWidget);
       expect(bridge.writes, 0);
       expect(bridge.excluded, isNotEmpty);
@@ -44,9 +68,6 @@ void main() {
       expect(bridge.excluded, isEmpty);
       expect(vpn.exclusions, isEmpty);
       expect(find.text('Список недоступен'), findsNothing);
-      await tester.pumpWidget(const SizedBox());
-      vpn.dispose();
-      await bridge.close();
     },
   );
 
@@ -58,10 +79,7 @@ void main() {
       phase: VpnPhase.blocked,
       processCrashProtection: false,
     );
-    final vpn = VpnController(bridge);
-    await vpn.initialize();
-    await tester.pumpWidget(MaterialApp(home: ExclusionsSheet(vpn: vpn)));
-    await tester.pumpAndSettle();
+    final vpn = await _openExclusions(tester, bridge);
     expect(
       tester
           .widget<TextButton>(find.byKey(const Key('reset-exclusions')))
@@ -71,7 +89,7 @@ void main() {
     expect(bridge.writes, 0);
     await vpn.disconnect();
     await tester.pumpWidget(const SizedBox());
-    await tester.pumpWidget(MaterialApp(home: ExclusionsSheet(vpn: vpn)));
+    await tester.pumpWidget(_localizedApp(vpn));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('reset-exclusions')));
     await tester.pumpAndSettle();
@@ -82,8 +100,5 @@ void main() {
       findsOneWidget,
     );
     expect(bridge.unreadable, isTrue);
-    await tester.pumpWidget(const SizedBox());
-    vpn.dispose();
-    await bridge.close();
   });
 }

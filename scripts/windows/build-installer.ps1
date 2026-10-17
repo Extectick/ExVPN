@@ -31,6 +31,8 @@ function Copy-BuildTree([string]$Source,[string]$Destination) {
 $ui = if ($UiDirectory) { [IO.Path]::GetFullPath($UiDirectory) } else { Join-Path $repository 'apps/exvpn/build/windows/x64/runner/Release' }
 if (!(Test-Path -LiteralPath (Join-Path $ui 'exvpn.exe'))) { throw 'Build Flutter Windows release first.' }
 Copy-BuildTree $ui (Join-Path $payload 'ui')
+& (Join-Path $PSScriptRoot 'build-app-updater.ps1')
+Copy-Item -LiteralPath (Join-Path $repository 'artifacts/windows/exvpn-updater.exe') -Destination (Join-Path $payload 'ui/exvpn-updater.exe') -Force
 & (Join-Path $PSScriptRoot 'prepare-msvc-runtime.ps1') -UiDirectory (Join-Path $payload 'ui') -RuntimeDirectory $RuntimeDirectory -DumpbinPath $DumpbinPath
 New-Item -ItemType Directory -Path (Join-Path $payload 'service'),(Join-Path $payload 'control') | Out-Null
 foreach ($name in @('exvpn-service.exe','wintun.dll','Wintun-LICENSE.txt')) { Copy-Item -LiteralPath (Join-Path $repository "artifacts/windows/$name") -Destination (Join-Path $payload "service/$name") }
@@ -49,7 +51,7 @@ else {
     try {
         if ($Offline) { $env:GOPROXY='off'; $env:GOSUMDB='off' }
         & (Join-Path $repository 'scripts/release/collect-notices.ps1') -Target Windows `
-            -NativeBinaries (Join-Path $payload 'service/exvpn-service.exe') `
+            -NativeBinaries @((Join-Path $payload 'service/exvpn-service.exe'), (Join-Path $payload 'ui/exvpn-updater.exe')) `
             -WintunLicensePath (Join-Path $payload 'service/Wintun-LICENSE.txt') `
             -FlutterRuntime $FlutterRuntime -FlutterBuildMode release `
             -OutputDirectory (Join-Path $payload 'control/notices')
@@ -57,7 +59,10 @@ else {
 }
 . (Join-Path $repository 'scripts/release/notice-inputs.ps1')
 $noticesInventory = Get-Content -LiteralPath (Join-Path $payload 'control/notices/inventory.json') -Raw | ConvertFrom-Json
-$nativeHashes = @{ 'service/exvpn-service.exe' = (Get-FileHash -LiteralPath (Join-Path $payload 'service/exvpn-service.exe') -Algorithm SHA256).Hash.ToLowerInvariant() }
+$nativeHashes = @{
+    'service/exvpn-service.exe' = (Get-FileHash -LiteralPath (Join-Path $payload 'service/exvpn-service.exe') -Algorithm SHA256).Hash.ToLowerInvariant()
+    'ui/exvpn-updater.exe' = (Get-FileHash -LiteralPath (Join-Path $payload 'ui/exvpn-updater.exe') -Algorithm SHA256).Hash.ToLowerInvariant()
+}
 Assert-NoticePackageBinding $noticesInventory "$version+$build" `
     (Get-FileHash -LiteralPath (Join-Path $repository 'apps/exvpn/pubspec.lock') -Algorithm SHA256).Hash.ToLowerInvariant() $nativeHashes
 . (Join-Path $repository 'scripts/release/artifact-audit-lib.ps1')

@@ -15,3 +15,7 @@ dependencies have their own licenses. This notice does not relicense them.
 
 HAPP and Hiddify are independent products used only as functional references.
 ExVPN is not affiliated with or endorsed by their developers.
+
+Country flag artwork is derived from flag-icons 7.5.0 (MIT).
+Copyright (c) 2013 Panayiotis Lipiridis.
+The full license is included in apps/exvpn/assets/licenses/FlagIcons.txt.

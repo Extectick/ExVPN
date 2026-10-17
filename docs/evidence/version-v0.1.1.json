@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-18",
+  "version": "0.1.1+22",
+  "tag": "v0.1.1",
+  "sourceState": "working tree; commit pending",
+  "validation": {
+    "updaterPinsValidated": true,
+    "result": "PASS",
+    "lanes": 12,
+    "report": "fast-validation-v0.1.1.json",
+    "durationSeconds": 85.46,
+    "appTests": 284,
+    "sourceUnchanged": true,
+    "initialFailure": "One old 0.1.0 UI version assertion was corrected to check the current app identity."
+  },
+  "privacy": {
+    "credentialFindings": 0,
+    "candidateFilesChecked": 438,
+    "binaryAssets": 297,
+    "scope": "Staged Git blobs checked for forbidden output/key paths, supplied subscription URL tokens, credentials and private update seed representations; representative screenshots visually checked.",
+    "forbiddenPaths": 0
+  },
+  "installedWindows": "0.1.0+21",
+  "nativeBuildsThisTask": false,
+  "binaryPublicationThisTask": false,
+  "historicalTagPreserved": "v0.1.0-demo",
+  "limitations": [
+    "Source tag only; no stable VPN acceptance implied.",
+    "Existing binary/runtime evidence retains its historical 0.1.0 build identities."
+  ]
+}

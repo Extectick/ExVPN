@@ -1,10 +1,13 @@
+import 'dart:async';
+
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'src/home_screen.dart';
-import 'src/theme.dart';
+import 'src/appearance.dart';
+import 'src/app_strings.dart';
 import 'services/native_vpn_bridge.dart';
 import 'services/vpn_controller.dart';
 import 'services/subscription_store.dart';
@@ -12,6 +15,8 @@ import 'services/subscription_persistence.dart';
 import 'services/data_updates.dart';
 import 'services/dart_updates.dart';
 import 'services/desktop_tray.dart';
+import 'services/app_updates.dart';
+import 'src/app_update_strip.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,6 +64,7 @@ class ExVpnApp extends StatefulWidget {
     this.storageWarning,
     this.updates,
     this.dartUpdates,
+    this.appUpdates,
   });
   final AppController controller;
   final VpnController? vpn;
@@ -66,21 +72,25 @@ class ExVpnApp extends StatefulWidget {
   final String? storageWarning;
   final DataUpdatesController? updates;
   final DartUpdatesController? dartUpdates;
+  final AppUpdatesController? appUpdates;
   @override
   State<ExVpnApp> createState() => _ExVpnAppState();
 }
 
-class _ExVpnAppState extends State<ExVpnApp> {
-  ThemeMode _themeMode = ThemeMode.dark;
+class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
+  final _appearance = AppearanceController();
   SubscriptionPersistence? _persistence;
   DesktopTrayController? _tray;
   final _navigator = GlobalKey<NavigatorState>();
   final _messenger = GlobalKey<ScaffoldMessengerState>();
   late final DataUpdatesController _updates;
   late final DartUpdatesController _dartUpdates;
+  late final AppUpdatesController _appUpdates;
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _appearance.initialize();
     if (widget.store != null) {
       _persistence = SubscriptionPersistence(widget.controller, widget.store!);
     }
@@ -88,6 +98,13 @@ class _ExVpnAppState extends State<ExVpnApp> {
     _updates = widget.updates ?? DataUpdatesController(vpn: widget.vpn);
     _updates.initialize();
     _dartUpdates = widget.dartUpdates ?? DartUpdatesController();
+    _appUpdates =
+        widget.appUpdates ??
+        AppUpdatesController(
+          dartUpdates: _dartUpdates,
+          beforeRestart: _beforeRestart,
+        );
+    unawaited(_appUpdates.initialize());
     if (!kIsWeb &&
         defaultTargetPlatform == TargetPlatform.windows &&
         widget.vpn != null) {
@@ -98,12 +115,99 @@ class _ExVpnAppState extends State<ExVpnApp> {
         confirmExit: _confirmExit,
         saveBeforeExit: () async {
           await _persistence?.flush().timeout(const Duration(seconds: 10));
-          return _persistence?.pending != true && _persistence?.error == null;
+          await _appearance.flush().timeout(const Duration(seconds: 3));
+          return _persistence?.pending != true &&
+              _persistence?.error == null &&
+              _appearance.storageErrorCode == null;
         },
         showNotice: (message) => _messenger.currentState?.showSnackBar(
-          SnackBar(content: Text(message)),
+          SnackBar(
+            content: Text(_navigator.currentContext?.tr(message) ?? message),
+          ),
         ),
       );
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(_appUpdates.onResume());
+  }
+
+  Future<bool> _beforeRestart(
+    AppUpdateKind kind,
+    Future<void> Function() handoff,
+  ) async {
+    // Native package installation is Windows-only. Android patch activation
+    // waits for the next normal launch; never force-stop an Android VPN/UI.
+    final vpn = widget.vpn;
+    if (!mounted ||
+        kIsWeb ||
+        defaultTargetPlatform != TargetPlatform.windows ||
+        vpn == null ||
+        _navigator.currentState?.canPop() == true) {
+      return false;
+    }
+    return vpn.runForApplicationRestart((stillSafe) async {
+      await _persistence?.flush().timeout(const Duration(seconds: 10));
+      await _appearance.flush().timeout(const Duration(seconds: 3));
+      if (!mounted ||
+          !stillSafe() ||
+          _persistence?.pending == true ||
+          _persistence?.error != null ||
+          _appearance.storageErrorCode != null) {
+        return false;
+      }
+      await handoff();
+      vpn.commitApplicationRestart();
+      await WindowsDesktopTray().exitApplication();
+      return true;
+    }, requireDisconnected: kind == AppUpdateKind.full);
+  }
+
+  AppUpdatePresentation? get _updatePresentation => switch (_appUpdates.phase) {
+    AppUpdateStatePhase.available => const AppUpdatePresentation(),
+    AppUpdateStatePhase.downloading => AppUpdatePresentation(
+      phase: AppUpdatePhase.downloading,
+      progress: _appUpdates.progress,
+    ),
+    AppUpdateStatePhase.restartReady => const AppUpdatePresentation(
+      phase: AppUpdatePhase.ready,
+    ),
+    AppUpdateStatePhase.restarting => const AppUpdatePresentation(
+      phase: AppUpdatePhase.restarting,
+    ),
+    AppUpdateStatePhase.blocked => AppUpdatePresentation(
+      phase: AppUpdatePhase.blocked,
+      label: _updateBlockedLabel,
+    ),
+    AppUpdateStatePhase.failed => const AppUpdatePresentation(
+      phase: AppUpdatePhase.failed,
+    ),
+    _ => null,
+  };
+
+  String get _updateBlockedLabel {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'Обновление применится при следующем запуске';
+    }
+    if (_appUpdates.kind == AppUpdateKind.full &&
+        widget.vpn?.canDisconnect == true) {
+      return 'Для установки отключите VPN';
+    }
+    if (_persistence?.error != null || _appearance.storageErrorCode != null) {
+      return 'Не удалось сохранить настройки — повторить';
+    }
+    return 'Закройте диалоги и повторите установку';
+  }
+
+  void _activateUpdate() {
+    if (_appUpdates.canRestart) {
+      unawaited(_appUpdates.restart());
+    } else if (_appUpdates.canDownload) {
+      unawaited(_appUpdates.download());
+    } else {
+      unawaited(_appUpdates.retry());
     }
   }
 
@@ -113,20 +217,20 @@ class _ExVpnAppState extends State<ExVpnApp> {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Выйти из ExVPN?'),
+            title: Text(context.tr('Выйти из ExVPN?')),
             content: Text(
-              'Работа VPN-службы не изменится. Чтобы отключить VPN, '
-              'используйте «Отключить VPN» в трее или кнопку подключения в окне.'
-              '${widget.storageWarning != null ? '\n\n${widget.storageWarning}' : ''}',
+              '${context.tr('Работа VPN-службы не изменится. Чтобы отключить VPN, '
+              'используйте «Отключить VPN» в трее или кнопку подключения в окне.')}'
+              '${widget.storageWarning != null ? '\n\n${context.tr(widget.storageWarning!)}' : ''}',
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Отмена'),
+                child: Text(context.tr('Отмена')),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Выйти'),
+                child: Text(context.tr('Выйти')),
               ),
             ],
           ),
@@ -135,38 +239,64 @@ class _ExVpnAppState extends State<ExVpnApp> {
   }
 
   @override
-  Widget build(BuildContext context) => DartUpdatesScope(
-    controller: _dartUpdates,
-    child: DataUpdatesScope(
-      controller: _updates,
-      child: MaterialApp(
-        navigatorKey: _navigator,
-        scaffoldMessengerKey: _messenger,
-        title: 'ExVPN',
-        debugShowCheckedModeBanner: false,
-        theme: exVpnTheme(Brightness.light),
-        darkTheme: exVpnTheme(Brightness.dark),
-        themeMode: _themeMode,
-        locale: const Locale('ru'),
-        supportedLocales: const [Locale('ru'), Locale('en')],
-        localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        home: HomeScreen(
-          controller: widget.controller,
-          vpn: widget.vpn,
-          persistence: _persistence,
-          storageWarning: widget.storageWarning,
-          themeMode: _themeMode,
-          onThemeChanged: (mode) => setState(() => _themeMode = mode),
+  Widget build(BuildContext context) => AppUpdatesScope(
+    controller: _appUpdates,
+    child: DartUpdatesScope(
+      controller: _dartUpdates,
+      child: DataUpdatesScope(
+        controller: _updates,
+        child: AppearanceScope(
+          controller: _appearance,
+          child: AnimatedBuilder(
+            animation: Listenable.merge([_appearance, _appUpdates]),
+            builder: (context, _) => MaterialApp(
+              navigatorKey: _navigator,
+              scaffoldMessengerKey: _messenger,
+              title: 'ExVPN',
+              debugShowCheckedModeBanner: false,
+              theme: _appearance.lightTheme,
+              darkTheme: _appearance.darkTheme,
+              themeMode: _appearance.themeMode,
+              locale: _appearance.locale,
+              localeListResolutionCallback: resolveAppLocale,
+              supportedLocales: appSupportedLocales,
+              localizationsDelegates: GlobalMaterialLocalizations.delegates,
+              builder: (context, child) => AnimatedBuilder(
+                animation: widget.vpn ?? _appUpdates,
+                builder: (context, _) => AbsorbPointer(
+                  absorbing: widget.vpn?.applicationRestartPending == true,
+                  child: child,
+                ),
+              ),
+              home: HomeScreen(
+                controller: widget.controller,
+                vpn: widget.vpn,
+                persistence: _persistence,
+                storageWarning: widget.storageWarning,
+                appUpdate: _updatePresentation,
+                onAppUpdate: _activateUpdate,
+                themeMode: _appearance.themeMode,
+                onThemeChanged: (mode) => _appearance.setChoice(switch (mode) {
+                  ThemeMode.system => ThemeChoice.system,
+                  ThemeMode.dark => ThemeChoice.dark,
+                  ThemeMode.light => ThemeChoice.light,
+                }),
+              ),
+            ),
+          ),
         ),
       ),
     ),
   );
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _appUpdates.dispose();
     _tray?.dispose();
     _persistence?.dispose();
     _updates.dispose();
     _dartUpdates.dispose();
+    _appearance.dispose();
     widget.controller.dispose();
     widget.vpn?.dispose();
     super.dispose();

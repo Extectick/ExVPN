@@ -7,6 +7,7 @@ import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:exvpn_domain/exvpn_domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -14,6 +15,8 @@ const oldProfile =
     'vless://00000000-0000-4000-8000-000000000001@sample.invalid:443?security=tls#Old';
 const newProfile =
     'vless://00000000-0000-4000-8000-000000000002@sample.invalid:443?security=tls#PRIVATE-NAME';
+const cleanNewProfile =
+    'vless://00000000-0000-4000-8000-000000000002@sample.invalid:443?security=tls#New';
 const broken = 'unknown://PRIVATE-CREDENTIAL@sample.invalid/PRIVATE-TOKEN';
 
 void main() {
@@ -37,6 +40,9 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('ru'),
+        supportedLocales: const [Locale('ru')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context)
               .copyWith(textScaler: TextScaler.linear(textScale)),
@@ -83,14 +89,34 @@ void main() {
   });
 
   testWidgets(
-    'default cancellation preserves data and hides all provider secrets',
+    'brief issue disclosure preserves data and hides raw provider secrets',
     (tester) async {
       app.updateSubscription(groupId: id, raw: '$newProfile\n$broken');
       SubscriptionReviewOutcome? outcome;
       await open(tester, completed: (value) => outcome = value);
-      expect(find.textContaining('Запись 2: Протокол'), findsOneWidget);
-      expect(find.textContaining('PRIVATE-'), findsNothing);
+      expect(find.text('PRIVATE-GROUP'), findsOneWidget);
+      expect(
+        find.textContaining('Часть подключений пока не поддерживается.'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Последний рабочий список сохранён.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Запись 2:'), findsNothing);
+      for (final secret in [
+        'PRIVATE-NAME',
+        'PRIVATE-CREDENTIAL',
+        'PRIVATE-TOKEN',
+      ]) {
+        expect(find.textContaining(secret), findsNothing);
+      }
       expect(find.textContaining('sample.invalid'), findsNothing);
+      expect(
+        find.byKey(const Key('accept-partial-subscription')),
+        findsNothing,
+      );
+      expect(find.byTooltip('Закрыть').hitTestable(), findsOneWidget);
       expect(app.selectedServer!.name, 'Old');
       await tester.tap(find.byKey(const Key('keep-subscription')));
       await tester.pumpAndSettle();
@@ -99,39 +125,52 @@ void main() {
     },
   );
 
-  testWidgets('explicit confirmation applies only the displayed candidate', (
+  testWidgets(
+    'read-only issue dialog cannot silently accept a partial candidate',
+    (tester) async {
+      app.updateSubscription(groupId: id, raw: '$newProfile\n$broken');
+      SubscriptionReviewOutcome? outcome;
+      await open(tester, completed: (value) => outcome = value);
+      expect(
+        find.byKey(const Key('accept-partial-subscription')),
+        findsNothing,
+      );
+      final candidate = app.pendingUpdate(id);
+      expect(candidate, isNotNull);
+      await tester.tap(find.byKey(const Key('keep-subscription')));
+      await tester.pumpAndSettle();
+      expect(outcome, SubscriptionReviewOutcome.keptCurrent);
+      expect(app.pendingUpdate(id), same(candidate));
+      expect(app.selectedServer!.name, 'Old');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('closing disclosure cannot undo newer accepted content', (
     tester,
   ) async {
     app.updateSubscription(groupId: id, raw: '$newProfile\n$broken');
     SubscriptionReviewOutcome? outcome;
     await open(tester, completed: (value) => outcome = value);
-    await tester.tap(find.byKey(const Key('accept-partial-subscription')));
+    app.updateSubscription(groupId: id, raw: cleanNewProfile);
+    expect(app.pendingUpdate(id), isNull);
+    await tester.tap(find.byKey(const Key('keep-subscription')));
     await tester.pumpAndSettle();
-    expect(outcome, SubscriptionReviewOutcome.applied);
-    expect(app.selectedServer!.name, 'PRIVATE-NAME');
-    expect(tester.takeException(), isNull);
+    expect(outcome, SubscriptionReviewOutcome.keptCurrent);
+    expect(app.selectedServer!.name, 'New');
   });
-
-  testWidgets(
-    'a response arriving while the dialog is open invalidates confirmation',
-    (tester) async {
-      app.updateSubscription(groupId: id, raw: '$newProfile\n$broken');
-      SubscriptionReviewOutcome? outcome;
-      await open(tester, completed: (value) => outcome = value);
-      app.updateSubscription(groupId: id, raw: oldProfile);
-      await tester.tap(find.byKey(const Key('accept-partial-subscription')));
-      await tester.pumpAndSettle();
-      expect(outcome, SubscriptionReviewOutcome.stale);
-      expect(app.selectedServer!.name, 'Old');
-    },
-  );
 
   testWidgets(
     'invalid document has reasons but no empty-list acceptance action',
     (tester) async {
       app.updateSubscription(groupId: id, raw: '');
       await open(tester);
-      expect(find.text('Подписка: Список подключений пуст.'), findsOneWidget);
+      expect(
+        find.textContaining('В подписке нет доступных подключений.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Рабочий список не изменён.'), findsOneWidget);
+      expect(app.selectedServer!.name, 'Old');
       expect(
         find.byKey(const Key('accept-partial-subscription')),
         findsNothing,
@@ -141,7 +180,7 @@ void main() {
   );
 
   testWidgets(
-    'long issue list scrolls and actions remain usable at narrow width',
+    'many issues use a bounded summary with an accessible close action',
     (tester) async {
       app.updateSubscription(
         groupId: id,
@@ -149,15 +188,19 @@ void main() {
       );
       await open(tester, size: const Size(344, 740), textScale: 1.4);
       expect(tester.takeException(), isNull);
-      await tester.scrollUntilVisible(
-        find.textContaining('Запись 41:'),
-        200,
-        scrollable: find.descendant(
-          of: find.byKey(const Key('subscription-issues-list')),
-          matching: find.byType(Scrollable),
-        ),
+      expect(app.groups.single.issues.length, 40);
+      expect(
+        find.textContaining('Часть подключений пока не поддерживается.'),
+        findsOneWidget,
       );
-      expect(find.textContaining('Запись 41:'), findsOneWidget);
+      expect(find.byKey(const Key('subscription-issues-list')), findsNothing);
+      expect(find.textContaining('Запись '), findsNothing);
+      expect(find.byTooltip('Закрыть').hitTestable(), findsOneWidget);
+      expect(
+        find.byKey(const Key('accept-partial-subscription')),
+        findsNothing,
+      );
+      expect(find.textContaining('PRIVATE-CREDENTIAL'), findsNothing);
       await tester.tap(find.byKey(const Key('keep-subscription')));
       await tester.pumpAndSettle();
       expect(app.selectedServer!.name, 'Old');
@@ -166,7 +209,7 @@ void main() {
   );
 
   testWidgets(
-    'manual text replacement offers confirmation and preserves input on cancel',
+    'manual partial replacement keeps input and working data until a clean replacement',
     (tester) async {
       tester.view.physicalSize = const Size(426, 922);
       tester.view.devicePixelRatio = 1;
@@ -174,6 +217,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('ru'),
+          supportedLocales: const [Locale('ru')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
           home: Scaffold(
             body: Builder(
               builder: (context) => TextButton(
@@ -197,11 +243,32 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('import-submit')));
       await tester.pumpAndSettle();
-      expect(find.text('Обновить часть подписки?'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('subscription-issues-dialog')),
+          matching: find.text('PRIVATE-GROUP'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Часть подключений пока не поддерживается.'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('accept-partial-subscription')),
+        findsNothing,
+      );
       await tester.tap(find.byKey(const Key('keep-subscription')));
       await tester.pumpAndSettle();
       expect(app.selectedServer!.name, 'Old');
       expect(find.byType(ImportDialog), findsOneWidget);
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const Key('subscription-input')))
+            .controller!
+            .text,
+        '$newProfile\n$broken',
+      );
       expect(
         find.text(
           'Частичное обновление не применено. Рабочий список сохранён.',
@@ -229,9 +296,21 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('import-submit')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('accept-partial-subscription')));
+      expect(
+        find.byKey(const Key('accept-partial-subscription')),
+        findsNothing,
+      );
+      await tester.tap(find.byKey(const Key('keep-subscription')));
       await tester.pumpAndSettle();
-      expect(app.selectedServer!.name, 'PRIVATE-NAME');
+      expect(app.selectedServer!.name, 'Old');
+      await tester.enterText(
+        find.byKey(const Key('subscription-input')),
+        cleanNewProfile,
+      );
+      await tester.tap(find.byKey(const Key('import-submit')));
+      await tester.pumpAndSettle();
+      expect(app.pendingUpdate(id), isNull);
+      expect(app.selectedServer!.name, 'New');
       expect(find.byType(ImportDialog), findsNothing);
       expect(tester.takeException(), isNull);
     },
@@ -246,6 +325,9 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('ru'),
+        supportedLocales: const [Locale('ru')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -271,10 +353,10 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('import-submit')));
     await tester.pump();
-    app.updateSubscription(groupId: id, raw: newProfile);
+    app.updateSubscription(groupId: id, raw: cleanNewProfile);
     response.complete(http.Response(oldProfile, 200));
     await tester.pumpAndSettle();
-    expect(app.selectedServer!.name, 'PRIVATE-NAME');
+    expect(app.selectedServer!.name, 'New');
     expect(
       find.text('Подписка изменилась. Повторите обновление.'),
       findsOneWidget,

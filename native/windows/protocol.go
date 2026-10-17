@@ -25,10 +25,12 @@ type Request struct {
 	Command    string          `json:"command"`
 	Profile    json.RawMessage `json:"profile,omitempty"`
 	Exclusions []string        `json:"exclusions,omitempty"`
+	Mode       string          `json:"mode,omitempty"`
 }
 
 type Capabilities struct {
 	SystemTunnel          bool `json:"systemTunnel"`
+	SystemProxy           bool `json:"systemProxy"`
 	PersistentGuard       bool `json:"persistentGuard"`
 	ApplicationExclusions bool `json:"applicationExclusions"`
 	Verified              bool `json:"verified"`
@@ -41,6 +43,8 @@ type Status struct {
 	CoreVersion     string       `json:"coreVersion"`
 	ActiveProfileID string       `json:"activeProfileId,omitempty"`
 	Capabilities    Capabilities `json:"capabilities"`
+	Mode            string       `json:"mode"`
+	ProxyPort       int          `json:"proxyPort"`
 }
 type Response struct {
 	Version    int          `json:"version"`
@@ -108,6 +112,15 @@ func DecodeRequest(b []byte) (Request, error) {
 	if d.Decode(&r) != nil || r.Version != ProtocolVersion || !requestID.MatchString(r.ID) {
 		return Request{}, Code("ipc_invalid_request")
 	}
+	var fields map[string]json.RawMessage
+	_ = json.Unmarshal(b, &fields)
+	_, hasMode := fields["mode"]
+	if hasMode && r.Mode != ModeVPN && r.Mode != ModeProxy {
+		return Request{}, Code("connection_mode_rejected")
+	}
+	if hasMode && r.Command != "connect" && r.Command != "reconnect" {
+		return Request{}, Code("ipc_unexpected_payload")
+	}
 	switch r.Command {
 	case "status", "stats", "disconnect", "getExclusions":
 		if len(r.Profile) != 0 || r.Exclusions != nil {
@@ -120,7 +133,7 @@ func DecodeRequest(b []byte) (Request, error) {
 		if _, e := (exvpn.RoutingPolicy{WindowsExecutablePaths: r.Exclusions}).Rules("vpn"); e != nil {
 			return Request{}, Code("exclusions_rejected")
 		}
-	case "connect", "validate", "probe":
+	case "connect", "reconnect", "validate", "probe":
 		if len(r.Profile) == 0 || len(r.Exclusions) > 128 {
 			return Request{}, Code("ipc_invalid_payload")
 		}
@@ -129,6 +142,9 @@ func DecodeRequest(b []byte) (Request, error) {
 		}
 		if _, e := (exvpn.RoutingPolicy{WindowsExecutablePaths: r.Exclusions}).Rules("vpn"); e != nil {
 			return Request{}, Code("exclusions_rejected")
+		}
+		if r.Mode == ModeProxy && r.Exclusions != nil {
+			return Request{}, Code("proxy_exclusions_unsupported")
 		}
 	default:
 		return Request{}, Code("ipc_unknown_command")

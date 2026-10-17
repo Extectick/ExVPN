@@ -109,7 +109,7 @@ try {
                 [IO.File]::WriteAllText((Join-Path $runDirectory "$($item.lane).log"), $stdout + "`n" + $stderr)
                 $status = if ($timedOut) { 'timeout' } elseif ($item.process.ExitCode -eq 0) { 'passed' } else { 'failed' }
                 $seconds = [math]::Round($item.clock.Elapsed.TotalSeconds, 2)
-                $cachedPackages = if ($item.lane -in @('core', 'android', 'windows')) { [regex]::Matches($stdout, '(?m)^ok\s+\S+\s+\(cached\)').Count } else { 0 }
+                $cachedPackages = if ($item.lane -in @('core', 'android', 'windows', 'appupdater')) { [regex]::Matches($stdout, '(?m)^ok\s+\S+\s+\(cached\)').Count } else { 0 }
                 $completed.Add([pscustomobject]@{ lane=$item.lane; status=$status; exitCode=$item.process.ExitCode; durationSeconds=$seconds; cachedGoPackages=$cachedPackages; log="$($item.lane).log" })
                 Write-Host "[$($item.lane)] $status (${seconds}s)"
                 $item.process.Dispose()

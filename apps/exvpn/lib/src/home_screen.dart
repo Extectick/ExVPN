@@ -3,18 +3,25 @@ import 'dart:async';
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:exvpn_domain/exvpn_domain.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 
 import 'import_dialog.dart';
 import 'subscription_issues_dialog.dart';
 import 'settings_sheet.dart';
-import 'theme.dart';
 import 'power_button.dart';
 import '../services/vpn_controller.dart';
 import '../services/subscription_persistence.dart';
 import '../services/subscription_refresh.dart';
-import '../services/subscription_loader.dart';
-import '../build_identity.dart';
+import '../services/server_latency.dart';
+import 'desktop_layout.dart';
+import 'sliding_segments.dart';
+import 'app_strings.dart';
+import 'country_flag.dart';
+import 'desktop_window_controls.dart';
+import 'app_update_strip.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -25,6 +32,15 @@ class HomeScreen extends StatefulWidget {
     this.vpn,
     this.persistence,
     this.storageWarning,
+    this.previewPowerAction,
+    this.onDesktopLayoutChanged,
+    this.previewRefreshAction,
+    this.latencyProbe,
+    this.appUpdate,
+    this.onAppUpdate,
+    this.initialDesktopLayout,
+    this.previewVersion,
+    this.previewBuild,
   });
   final AppController controller;
   final ThemeMode themeMode;
@@ -32,6 +48,17 @@ class HomeScreen extends StatefulWidget {
   final VpnController? vpn;
   final SubscriptionPersistence? persistence;
   final String? storageWarning;
+  final VoidCallback? previewPowerAction;
+  final ValueChanged<DesktopLayout>? onDesktopLayoutChanged;
+  final Future<List<String>> Function()? previewRefreshAction;
+  final LatencyProbe? latencyProbe;
+
+  /// Optional presentation; download/install ownership stays outside this view.
+  final AppUpdatePresentation? appUpdate;
+  final VoidCallback? onAppUpdate;
+  final DesktopLayout? initialDesktopLayout;
+  final String? previewVersion;
+  final int? previewBuild;
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -39,14 +66,41 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late final StreamSubscription<void> _changes;
   Timer? _clock;
+  Timer? _toastTimer;
+  final _toastQueue = <({String message, bool error})>[];
+  final _manualRefreshFailures = <String, int>{};
+  bool _refreshing = false;
+  bool _switchingServer = false;
+  bool _serverPickerOpen = false;
+  final _serversScroll = ScrollController();
+  final _pickerScroll = ScrollController();
+  final _layoutControlKey = GlobalKey(debugLabel: 'desktop-layout-control');
+  final _modeControlKey = GlobalKey(debugLabel: 'connection-mode-control');
+  final _pickerFocus = FocusScopeNode(
+    debugLabel: 'Connection picker',
+    traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
+    directionalTraversalEdgeBehavior: TraversalEdgeBehavior.stop,
+  );
+  late DesktopLayout _layout =
+      widget.initialDesktopLayout ??
+      switch (Uri.base.queryParameters['layout']) {
+        'minimal' => DesktopLayout.minimal,
+        'large' => DesktopLayout.large,
+        _ => DesktopLayout.medium,
+      };
   late final SubscriptionRefresh _refreshes;
+  late final ServerLatencyController _latencies;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.vpn?.addListener(_vpnChanged);
     widget.persistence?.addListener(_storageChanged);
-    _refreshes = SubscriptionRefresh(widget.controller)
+    _refreshes = SubscriptionRefresh(
+      widget.controller,
+      canApply: () => widget.vpn?.applicationRestartPending != true,
+    )..addListener(_storageChanged);
+    _latencies = ServerLatencyController(probe: widget.latencyProbe)
       ..addListener(_storageChanged);
     unawaited(_refreshes.refreshStale());
     _changes = widget.controller.changes.listen((_) {
@@ -80,9 +134,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void dispose() {
     _changes.cancel();
     _clock?.cancel();
+    _toastTimer?.cancel();
     widget.vpn?.removeListener(_vpnChanged);
     widget.persistence?.removeListener(_storageChanged);
     _refreshes.dispose();
+    _latencies.dispose();
+    _serversScroll.dispose();
+    _pickerScroll.dispose();
+    _pickerFocus.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -97,15 +156,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   );
 
   Future<void> _connect() async {
+    if (widget.previewPowerAction case final action?) {
+      action();
+      return;
+    }
     final vpn = widget.vpn;
     if (vpn != null && !vpn.initialized) return;
     if (vpn != null && vpn.canDisconnect) {
       await vpn.disconnect();
       if (mounted && vpn.status.processCrashProtection) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Системная блокировка может оставаться включённой. Проверьте настройки VPN в системе.',
+              context.tr(
+                'Системная блокировка может оставаться включённой. Проверьте настройки VPN в системе.',
+              ),
             ),
           ),
         );
@@ -123,407 +188,980 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('VPN пока недоступен'),
-        content: const Text(
-          'Интерфейс готов к подключению системного VPN-модуля. '
-          'В этой сборке туннель не запускается и защита трафика не включается.',
-        ),
+        title: Text(context.tr('VPN пока недоступен')),
+        content: Text(context.tr('В этой сборке VPN пока недоступен.')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Понятно'),
+            child: Text(context.tr('Понятно')),
           ),
         ],
       ),
     );
   }
 
-  void _refresh() {
-    final groups = widget.controller.groups;
-    if (groups.isEmpty) {
-      _add();
+  bool get _refreshBusy => _refreshing || _refreshes.busy;
+
+  Future<void> _refresh({String? groupId}) async {
+    if (_refreshBusy || widget.vpn?.applicationRestartPending == true) return;
+    final groups = widget.controller.groups
+        .where(
+          (group) =>
+              (widget.previewRefreshAction != null ||
+                  group.sourceUrl != null) &&
+              (groupId == null || group.id == groupId),
+        )
+        .toList();
+    if (widget.previewRefreshAction == null && groups.isEmpty) {
+      _queueToasts(['Нет подписок для обновления'], error: false);
       return;
     }
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: const Text('Обновить подписку'),
-        children: [
-          for (final group in groups)
-            SimpleDialogOption(
-              onPressed: () {
-                Navigator.pop(ctx);
-                if (group.sourceUrl == null) {
-                  _add(group: group);
-                } else {
-                  _refreshGroup(group);
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(group.name, style: const TextStyle(fontSize: 16)),
-              ),
-            ),
-        ],
-      ),
-    );
+    setState(() {
+      _refreshing = true;
+      for (final group in groups) {
+        _manualRefreshFailures.remove(group.id);
+      }
+    });
+    final failed = <String>[];
+    try {
+      if (widget.previewRefreshAction case final refresh?) {
+        failed.addAll(await refresh());
+      } else {
+        var next = 0;
+        Future<void> worker() async {
+          while (mounted && next < groups.length) {
+            final group = groups[next++];
+            if (!await _refreshes.refresh(group.id)) {
+              final current = widget.controller.groups
+                  .where((item) => item.id == group.id)
+                  .firstOrNull;
+              if (current?.sourceUrl == group.sourceUrl &&
+                  current?.contentRevision == group.contentRevision) {
+                failed.add(group.name);
+              }
+            }
+          }
+        }
+
+        await Future.wait([
+          for (var i = 0; i < groups.length && i < 3; i++) worker(),
+        ]);
+        await widget.persistence?.flush();
+      }
+      if (!mounted) return;
+      if (failed.isEmpty) {
+        _queueToasts(['Подписки обновлены'], error: false);
+      } else {
+        if (widget.previewRefreshAction != null) {
+          setState(() {
+            for (final group in groups) {
+              if (failed.contains(group.id) || failed.contains(group.name)) {
+                _manualRefreshFailures[group.id] = group.contentRevision;
+              }
+            }
+          });
+        }
+      }
+      if (widget.persistence?.error != null) {
+        _queueToasts(['Не удалось сохранить обновлённые подписки']);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          for (final group in groups) {
+            _manualRefreshFailures[group.id] = group.contentRevision;
+          }
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
   }
 
-  Future<void> _refreshGroup(SubscriptionGroup group) async {
-    final success = await _refreshes.refresh(group.id);
-    if (!mounted) return;
-    if (!success && widget.controller.pendingUpdate(group.id) != null) {
-      await _reviewSubscription(group.id);
+  void _queueToasts(List<String> messages, {bool error = true}) {
+    if (!mounted || messages.isEmpty) return;
+    final wasEmpty = _toastQueue.isEmpty;
+    setState(() {
+      _toastQueue.addAll([
+        for (final message in messages)
+          (message: context.tr(message), error: error),
+      ]);
+    });
+    if (wasEmpty) _armToastTimer();
+  }
+
+  void _armToastTimer() {
+    _toastTimer?.cancel();
+    _toastTimer = Timer(const Duration(seconds: 6), _dismissToast);
+  }
+
+  void _dismissToast() {
+    _toastTimer?.cancel();
+    if (!mounted || _toastQueue.isEmpty) return;
+    setState(() => _toastQueue.removeAt(0));
+    if (_toastQueue.isNotEmpty) _armToastTimer();
+  }
+
+  Future<void> _pingAll() => _latencies.checkAll([
+    for (final group in widget.controller.groups)
+      for (final server in group.servers) server.profile,
+  ]);
+
+  bool get _connectionBusy =>
+      _switchingServer ||
+      widget.vpn?.commandPending == true ||
+      widget.vpn?.connecting == true ||
+      (widget.vpn != null && !widget.vpn!.initialized);
+
+  Future<void> _selectServer(
+    SubscriptionGroup group,
+    ServerEntry server, {
+    VoidCallback? onSelected,
+  }) async {
+    if (_connectionBusy) return;
+    final vpn = widget.vpn;
+    if (vpn != null && vpn.canDisconnect) {
+      setState(() => _switchingServer = true);
+      final bool accepted;
+      try {
+        accepted = await vpn.switchServer(server.profile);
+      } catch (_) {
+        return;
+      } finally {
+        if (mounted) setState(() => _switchingServer = false);
+      }
+      if (!mounted || !accepted) return;
+    }
+    widget.controller.selectServer(groupId: group.id, serverId: server.id);
+    onSelected?.call();
+  }
+
+  Future<void> _changeConnectionMode(VpnMode mode) async {
+    final vpn = widget.vpn;
+    if (vpn == null ||
+        _connectionBusy ||
+        !vpn.modeSwitchSupported ||
+        vpn.mode == mode) {
       return;
     }
-    await widget.persistence?.flush();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success
-                ? 'Подписка обновлена'
-                : switch (_refreshes.errorCode(group.id)) {
-                    SubscriptionLoadErrorCode.deviceLimitReached => 'Достигнут лимит устройств у провайдера. Последний рабочий список сохранён.',
-                    SubscriptionLoadErrorCode.deviceIdentityUnavailable => 'Не удалось открыть идентификатор устройства. Перезапустите приложение. Рабочий список сохранён.',
-                    SubscriptionLoadErrorCode.deviceIdentityRejected => 'Провайдер не принял идентификатор ExVPN. Рабочий список сохранён.',
-                    _ => 'Обновление не удалось. Последний рабочий список сохранён.',
-                  },
-          ),
-        ),
-      );
-    }
+    final profile = vpn.canDisconnect
+        ? _displayedServer?.profile
+        : widget.controller.selectedServer?.profile;
+    await vpn.changeMode(mode, profile: profile);
   }
 
   Future<void> _reviewSubscription(String groupId) async {
-    final decision = await showSubscriptionIssues(
+    final group = widget.controller.groups
+        .where((g) => g.id == groupId)
+        .firstOrNull;
+    await showSubscriptionIssues(
       context,
       controller: widget.controller,
       groupId: groupId,
+      refreshFailure:
+          group != null &&
+              _manualRefreshFailures[group.id] == group.contentRevision
+          ? widget.previewRefreshAction != null
+                ? 'Нет соединения с сервером подписки. Последний список сохранён.'
+                : 'Не удалось обновить подписку'
+          : _refreshes.errorCode(groupId) != null
+          ? 'Не удалось обновить подписку'
+          : null,
+      onRetry: () => unawaited(_refresh(groupId: groupId)),
     );
-    await widget.persistence?.flush();
-    if (!mounted || decision == SubscriptionReviewOutcome.keptCurrent) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          decision == SubscriptionReviewOutcome.stale
-              ? 'Подписка изменилась. Повторите обновление.'
-              : widget.persistence?.error != null
-              ? 'Список применён в этом сеансе, но не сохранён. Повторите сохранение на главном экране.'
-              : 'Поддерживаемые подключения обновлены',
-        ),
-      ),
-    );
+  }
+
+  bool get _desktop => kIsWeb
+      ? Uri.base.queryParameters['desktop'] == '1'
+      : defaultTargetPlatform == TargetPlatform.windows;
+
+  ServerEntry? get _displayedServer {
+    final activeId = widget.vpn?.status.activeProfileId;
+    if (activeId == null) return widget.controller.selectedServer;
+    return [for (final group in widget.controller.groups) ...group.servers]
+        .where((server) => server.profile.id == activeId)
+        .firstOrNull;
+  }
+
+  void _changeLayout(DesktopLayout value) {
+    if (_layout == value) return;
+    setState(() => _layout = value);
+    widget.onDesktopLayoutChanged?.call(value);
+    unawaited(applyDesktopLayout(value));
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     body: SafeArea(
-      child: LayoutBuilder(
-        builder: (context, box) {
-          final wide = box.maxWidth >= 900;
-          final compact = box.maxHeight < 780 || box.maxWidth < 380;
-          return Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1180),
-              child: SingleChildScrollView(
-                key: const PageStorageKey('home-scroll'),
-                padding: EdgeInsets.fromLTRB(
-                  wide ? 44 : 16,
-                  wide ? 32 : 28,
-                  wide ? 44 : 16,
-                  32,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _header(wide),
-                    if (widget.storageWarning != null ||
-                        widget.persistence?.error != null)
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          children: [
-                            Text(
-                              widget.persistence?.error != null
-                                  ? 'Не удалось сохранить изменения. Последний сохранённый список остаётся доступным.'
-                                  : widget.storageWarning!,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                                fontSize: 13,
-                              ),
-                            ),
-                            if (widget.persistence?.error != null)
-                              TextButton(
-                                onPressed: widget.persistence!.flush,
-                                child: const Text('Повторить сохранение'),
-                              ),
-                          ],
-                        ),
-                      ),
-                    if (wide) ...[
-                      const SizedBox(height: 58),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(flex: 5, child: _connection(false, true)),
-                          const SizedBox(width: 64),
-                          Expanded(flex: 6, child: _servers()),
-                        ],
-                      ),
-                    ] else ...[
-                      SizedBox(height: compact ? 16 : 44),
-                      _connection(compact, false),
-                      SizedBox(height: compact ? 22 : 28),
-                      _servers(),
-                    ],
-                    if (widget.controller.isDemo)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 42),
-                        child: Text(
-                          'Макетные серверы · VPN не подключён',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
+      child: _desktop ? _desktopView() : _withToast(_mobileView()),
     ),
   );
 
-  Widget _header(bool wide) => SizedBox(
-    height: 48,
-    child: Row(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 20),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              ColorFiltered(
-                // A clean luminance mask avoids noisy generated transparency.
-                colorFilter: const ColorFilter.matrix([
-                  0,
-                  0,
-                  0,
-                  0,
-                  255,
-                  0,
-                  0,
-                  0,
-                  0,
-                  189,
-                  0,
-                  0,
-                  0,
-                  0,
-                  81,
-                  1.04,
-                  0,
-                  0,
-                  0,
-                  -5,
-                ]),
-                child: Image.asset(
-                  'assets/images/squirrel-mask.png',
-                  width: 40,
-                  height: 40,
-                  // Mipmapped minification keeps the 26 px contour continuous.
-                  filterQuality: FilterQuality.medium,
-                  cacheWidth: 160,
-                  cacheHeight: 160,
-                  excludeFromSemantics: true,
-                ),
-              ),
-              Transform.translate(
-                offset: const Offset(-3, 0),
-                child: const Padding(
-                  padding: EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    'ExVPN',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: -0.7,
+  Widget _desktopView() => LayoutBuilder(
+    builder: (context, constraints) {
+      final canvas = _layout.canvasSize;
+      final width = constraints.maxWidth;
+      final height = canvas.height * width / canvas.width;
+      return ClipRect(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: OverflowBox(
+            alignment: Alignment.topCenter,
+            minWidth: width,
+            maxWidth: width,
+            minHeight: height,
+            maxHeight: height,
+            child: SizedBox(
+              width: width,
+              height: height,
+              child: FittedBox(
+                fit: BoxFit.fill,
+                alignment: Alignment.topCenter,
+                child: SizedBox.fromSize(
+                  size: canvas,
+                  child: _withToast(
+                    Column(
+                      children: [
+                        if (widget.appUpdate case final update?)
+                          AppUpdateStrip(
+                            state: update,
+                            onPressed: widget.onAppUpdate ?? () {},
+                          ),
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              20,
+                              widget.appUpdate == null ? 12 : 6,
+                              20,
+                              20,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _header(desktop: true),
+                                Expanded(
+                                  child: switch (_layout) {
+                                    DesktopLayout.minimal => _minimalView(),
+                                    DesktopLayout.medium => _mediumView(),
+                                    DesktopLayout.large => _largeView(),
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
-        const Spacer(),
-        if (wide)
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Text(
-              '$appVersion · предварительная версия',
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+      );
+    },
+  );
+  Widget _withToast(Widget child) => Stack(
+    fit: StackFit.expand,
+    children: [
+      ExcludeFocus(
+        excluding: _serverPickerOpen,
+        child: ExcludeSemantics(excluding: _serverPickerOpen, child: child),
+      ),
+      if (_serverPickerOpen) Positioned.fill(child: _serverPickerOverlay()),
+      if (_toastQueue.isNotEmpty)
+        Positioned(
+          left: 16,
+          right: 16,
+          top: widget.appUpdate == null ? 10 : 34,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Semantics(
+                liveRegion: true,
+                child: Material(
+                  key: const Key('subscription-toast'),
+                  elevation: 6,
+                  shadowColor: Colors.black.withValues(alpha: .25),
+                  color: Theme.of(context).colorScheme.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(13),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(13, 11, 6, 11),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _toastQueue.first.error
+                              ? CupertinoIcons.exclamationmark_circle
+                              : CupertinoIcons.check_mark_circled,
+                          size: 21,
+                          color: _toastQueue.first.error
+                              ? Theme.of(context).colorScheme.error
+                              : const Color(0xff59d98e),
+                        ),
+                        const SizedBox(width: 11),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Tooltip(
+                                message: _toastQueue.first.message,
+                                child: Text(
+                                  _toastQueue.first.message,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ),
+                              if (_toastQueue.length > 1)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    context.tr(
+                                      'Ещё {count}',
+                                      values: {'count': _toastQueue.length - 1},
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          key: const Key('dismiss-subscription-toast'),
+                          tooltip: context.tr('Закрыть уведомление'),
+                          onPressed: _dismissToast,
+                          icon: const Icon(CupertinoIcons.xmark, size: 15),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints.tightFor(
+                            width: 30,
+                            height: 34,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        IconButton(
-          tooltip: 'Настройки',
-          key: const Key('settings-button'),
-          onPressed: () => showModalBottomSheet<void>(
-            context: context,
-            isScrollControlled: true,
-            showDragHandle: true,
-            useSafeArea: true,
-            constraints: const BoxConstraints(maxWidth: 600),
-            builder: (_) => SettingsSheet(
-              controller: widget.controller,
-              vpn: widget.vpn,
-              persistence: widget.persistence,
-              themeMode: widget.themeMode,
-              onThemeChanged: widget.onThemeChanged,
-              onAdd: () => _add(),
-            ),
-          ),
-          icon: const Icon(CupertinoIcons.gear_alt, size: 25),
         ),
+    ],
+  );
+
+  Widget _mobileView() => SingleChildScrollView(
+    key: const PageStorageKey('home-scroll'),
+    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _header(desktop: false),
+        const SizedBox(height: 30),
+        Center(child: _connection(230)),
+        const SizedBox(height: 34),
+        _servers(),
       ],
     ),
   );
 
-  Widget _connection(bool compact, bool wide) {
-    final vpn = widget.vpn;
-    final phase = vpn?.status.phase ?? VpnPhase.disconnected;
-    final activeId = vpn?.status.activeProfileId;
-    final active = [
-      for (final group in widget.controller.groups) ...group.servers,
-    ].where((server) => server.profile.id == activeId).firstOrNull;
-    final displayed = activeId == null
-        ? widget.controller.selectedServer
-        : active;
-    final stop = vpn?.canDisconnect ?? false;
-    final checking = vpn != null && !vpn.initialized;
-    final label = checking
-        ? 'Проверка'
-        : stop
-        ? switch (phase) {
-            VpnPhase.connected ||
-            VpnPhase.reconnecting ||
-            VpnPhase.blocked => 'Отключить',
-            _ => 'Отменить',
-          }
-        : 'Подключить';
-    final stateText = checking
-        ? 'Проверка состояния VPN…'
-        : switch (phase) {
-            VpnPhase.disconnected =>
-              vpn?.commandPending == true ? 'Запуск VPN…' : 'Не подключено',
-            VpnPhase.requestingPermission => 'Ожидание разрешения',
-            VpnPhase.connecting => 'Подключение…',
-            VpnPhase.connected =>
-              'Подключено · ${_elapsed(vpn?.status.connectedAt)}',
-            VpnPhase.reconnecting => 'Восстановление соединения…',
-            VpnPhase.blocked => 'Трафик заблокирован',
-            VpnPhase.error => 'Ошибка подключения',
-          };
-    final size = wide
-        ? 252.0
-        : compact
-        ? 176.0
-        : 212.0;
-    return Column(
+  Widget _minimalView() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Expanded(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const topGap = 24.0;
+            const bottomGap = 8.0;
+            const selectorHeight = 36.0;
+            const selectorGap = 8.0;
+            final diameter =
+                (constraints.maxHeight -
+                        topGap -
+                        bottomGap -
+                        selectorHeight -
+                        selectorGap)
+                    .clamp(1.0, 232.0);
+            return Padding(
+              padding: const EdgeInsets.only(top: topGap, bottom: bottomGap),
+              child: Center(child: _powerControls(diameter)),
+            );
+          },
+        ),
+      ),
+      _currentConnection(),
+    ],
+  );
+
+  Widget _mediumView() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      SizedBox(
+        height: 322,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 24),
+          child: Center(child: _powerControls(254)),
+        ),
+      ),
+      Expanded(child: _scrollingServers()),
+    ],
+  );
+
+  Widget _largeView() => Padding(
+    padding: const EdgeInsets.only(top: 22),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        PowerButton(
-          key: const Key('connect-button'),
-          size: size,
-          onPressed: _connect,
-          enabled: !checking,
-          label: '$label VPN',
-          active: phase == VpnPhase.connected,
-          connecting: vpn?.connecting ?? false,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 25,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.6,
-            height: 1.3,
-          ),
-        ),
-        const SizedBox(height: 14),
-        Text(
-          stateText,
-          style: TextStyle(
-            fontSize: 16,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            height: 1.5,
-          ),
-        ),
-        if (vpn?.lastErrorCode != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Text(
-              '${vpnErrorText(vpn!.lastErrorCode)}\nКод: ${vpn.lastErrorCode}',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-                fontSize: 13,
+        Expanded(
+          flex: 4,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Center(child: _powerControls(282)),
+                ),
               ),
+              _connectionDetails(),
+            ],
+          ),
+        ),
+        const SizedBox(width: 28),
+        VerticalDivider(
+          width: 1,
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
+        const SizedBox(width: 28),
+        Expanded(flex: 5, child: _scrollingServers()),
+      ],
+    ),
+  );
+
+  Widget _scrollingServers({
+    ScrollController? scrollController,
+    VoidCallback? onSelected,
+    VoidCallback? onClose,
+  }) {
+    final scroll = scrollController ?? _serversScroll;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _serversHeader(onClose: onClose),
+        const SizedBox(height: 7),
+        Expanded(
+          child: Scrollbar(
+            controller: scroll,
+            child: SingleChildScrollView(
+              key: PageStorageKey(
+                'servers-${onClose == null ? _layout.name : 'picker'}',
+              ),
+              controller: scroll,
+              primary: false,
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _serverGroups(onSelected: onSelected),
             ),
           ),
-        if (phase == VpnPhase.connected) ...[
-          const SizedBox(height: 8),
-          Text(
-            vpn!.statisticsAvailable
-                ? '↑ ${_bytes(vpn.stats.uploadBytes)}   ↓ ${_bytes(vpn.stats.downloadBytes)}'
-                : 'Статистика недоступна',
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            vpn.status.processCrashProtection
-                ? 'Системная защита подтверждена'
-                : 'Защита при сбое процесса не подтверждена',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-        if ((wide || vpn != null) &&
-            (displayed != null || activeId != null)) ...[
-          SizedBox(height: wide ? 36 : 16),
-          Text(
-            displayed?.name ?? 'Активный сервер',
-            style: const TextStyle(fontSize: 16),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            displayed?.protocolLabel ?? 'Сеанс системного VPN',
-            style: TextStyle(
-              fontSize: 13,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
+        ),
       ],
     );
   }
+
+  void _showServerPicker() => setState(() => _serverPickerOpen = true);
+
+  void _closeServerPicker() {
+    if (mounted) setState(() => _serverPickerOpen = false);
+  }
+
+  Widget _serverPickerOverlay() => Stack(
+    children: [
+      ModalBarrier(
+        color: Colors.black.withValues(alpha: .45),
+        dismissible: true,
+        onDismiss: _closeServerPicker,
+        semanticsLabel: context.tr('Закрыть выбор подключения'),
+      ),
+      CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.escape): _closeServerPicker,
+        },
+        child: FocusScope(
+          node: _pickerFocus,
+          autofocus: true,
+          child: LayoutBuilder(
+            builder: (context, constraints) => Dialog(
+              key: const Key('connection-picker-dialog'),
+              insetPadding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: (constraints.maxWidth - 32).clamp(0.0, 520.0),
+                height: (constraints.maxHeight - 32).clamp(0.0, 600.0),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: _scrollingServers(
+                    scrollController: _pickerScroll,
+                    onSelected: _closeServerPicker,
+                    onClose: _closeServerPicker,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+
+  Widget _header({required bool desktop}) => SizedBox(
+    height: 44,
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+        if (desktop)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onPanStart: (_) {
+                startDesktopWindowDrag();
+              },
+              child: const SizedBox.expand(),
+            ),
+          ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: GestureDetector(
+            onPanStart: desktop
+                ? (_) {
+                    startDesktopWindowDrag();
+                  }
+                : null,
+            child: _brand(),
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_hasNotice)
+                HeaderIconButton(
+                  tooltip: context.tr('Сообщения приложения'),
+                  key: const Key('connection-notice'),
+                  onPressed: _showNotice,
+                  icon: CupertinoIcons.exclamationmark_circle,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              HeaderIconButton(
+                tooltip: context.tr('Настройки'),
+                key: const Key('settings-button'),
+                onPressed: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  showDragHandle: true,
+                  useSafeArea: true,
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  builder: (_) => SettingsSheet(
+                    controller: widget.controller,
+                    vpn: widget.vpn,
+                    persistence: widget.persistence,
+                    themeMode: widget.themeMode,
+                    onThemeChanged: widget.onThemeChanged,
+                    onAdd: () => _add(),
+                    previewVersion: widget.previewVersion,
+                    previewBuild: widget.previewBuild,
+                  ),
+                ),
+                icon: CupertinoIcons.gear_alt,
+              ),
+              if (desktop) const DesktopWindowControls(),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+  Widget _brand() => Row(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: [
+      ColorFiltered(
+        colorFilter: ColorFilter.matrix([
+          0,
+          0,
+          0,
+          0,
+          Theme.of(context).colorScheme.primary.r * 255,
+          0,
+          0,
+          0,
+          0,
+          Theme.of(context).colorScheme.primary.g * 255,
+          0,
+          0,
+          0,
+          0,
+          Theme.of(context).colorScheme.primary.b * 255,
+          1.04,
+          0,
+          0,
+          0,
+          -5,
+        ]),
+        child: Image.asset(
+          'assets/images/squirrel-mask.png',
+          width: 34,
+          height: 34,
+          filterQuality: FilterQuality.high,
+          cacheWidth: 204,
+          cacheHeight: 204,
+          excludeFromSemantics: true,
+        ),
+      ),
+      Transform.translate(
+        offset: const Offset(-3, 0),
+        child: const Padding(
+          padding: EdgeInsets.only(bottom: 3),
+          child: Text(
+            'ExVPN',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+              letterSpacing: -.7,
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+
+  bool get _hasNotice =>
+      widget.storageWarning != null ||
+      widget.persistence?.error != null ||
+      widget.vpn?.lastErrorCode != null ||
+      widget.vpn?.status.phase == VpnPhase.blocked;
+
+  Future<void> _showNotice() {
+    final error = widget.vpn?.lastErrorCode;
+    final messages = <String>[
+      if (error != null)
+        switch (error) {
+          'service_not_installed' ||
+          'service_unavailable' ||
+          'ipc_unavailable' => 'Служба ExVPN недоступна.',
+          'system_testing_required' =>
+            'Системное подключение VPN пока недоступно.',
+          'native_storage_unavailable' =>
+            'Не удалось открыть защищённые настройки VPN.',
+          'exclusions_unavailable' =>
+            'Не удалось прочитать исключения приложений.',
+          _ => vpnErrorText(error),
+        },
+      if (widget.vpn?.status.phase == VpnPhase.blocked)
+        'Трафик заблокирован. Восстановите или отключите VPN.',
+      if (widget.persistence?.error != null)
+        'Изменения не сохранены. Повторите сохранение.',
+      if (widget.storageWarning != null && widget.persistence?.error == null)
+        widget.storageWarning!.contains('восстановлены')
+            ? 'Подписки восстановлены после прерванного сохранения.'
+            : 'Не удалось открыть сохранённые подписки.',
+    ];
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        insetPadding: const EdgeInsets.all(16),
+        constraints: const BoxConstraints(maxWidth: 420),
+        titlePadding: const EdgeInsets.fromLTRB(20, 12, 8, 0),
+        contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 22),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                context.tr('Сообщения'),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            IconButton(
+              tooltip: context.tr('Закрыть'),
+              onPressed: () => Navigator.pop(dialogContext),
+              icon: const Icon(CupertinoIcons.xmark, size: 18),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < messages.length; i++)
+                Padding(
+                  padding: EdgeInsets.only(
+                    bottom: i == messages.length - 1 ? 0 : 12,
+                  ),
+                  child: Text(
+                    context.tr(messages[i]),
+                    style: const TextStyle(fontSize: 14, height: 1.45),
+                  ),
+                ),
+              if (widget.persistence?.error != null)
+                TextButton(
+                  onPressed: () async {
+                    await widget.persistence!.flush();
+                    if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  },
+                  child: Text(context.tr('Повторить сохранение')),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _powerControls(double size) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      _connection(size),
+      const SizedBox(height: 8),
+      SizedBox(
+        width: double.infinity,
+        height: 36,
+        child: LayoutBuilder(
+          builder: (context, constraints) => Stack(
+            children: [
+              Positioned(
+                left: (constraints.maxWidth - 170) / 2 - 90,
+                top: 2,
+                child: _layoutSelector(),
+              ),
+              Align(alignment: Alignment.center, child: _modeSelector()),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
+
+  Widget _layoutSelector() => SlidingSegments<DesktopLayout>(
+    key: _layoutControlKey,
+    width: 82,
+    height: 32,
+    showBackground: false,
+    iconSize: 20,
+    items: [
+      for (final mode in DesktopLayout.values)
+        SlidingSegment(
+          value: mode,
+          icon: switch (mode) {
+            DesktopLayout.minimal => CupertinoIcons.square,
+            DesktopLayout.medium => CupertinoIcons.square_list,
+            DesktopLayout.large => CupertinoIcons.sidebar_left,
+          },
+          tooltip: context.tr(mode.label),
+        ),
+    ],
+    value: _layout,
+    onChanged: _changeLayout,
+  );
+
+  Widget _modeSelector() {
+    final vpn = widget.vpn;
+    final supported = vpn?.modeSwitchSupported == true;
+    return SlidingSegments<VpnMode>(
+      key: _modeControlKey,
+      width: 170,
+      height: 36,
+      items: [
+        for (final mode in VpnMode.values)
+          SlidingSegment(
+            value: mode,
+            label: mode.name.toUpperCase(),
+            tooltip: !supported
+                ? context.tr('Смена режима недоступна на этом устройстве')
+                : context.tr(
+                    mode == VpnMode.proxy
+                        ? 'Приложения, использующие прокси Windows'
+                        : 'Весь трафик через VPN',
+                  ),
+          ),
+      ],
+      value: vpn?.mode ?? VpnMode.vpn,
+      onChanged: supported && !_connectionBusy ? _changeConnectionMode : null,
+    );
+  }
+
+  Widget _connection(double size) {
+    final vpn = widget.vpn;
+    final phase = vpn?.status.phase ?? VpnPhase.disconnected;
+    final checking = vpn != null && !vpn.initialized;
+    final modeLabel = vpn?.mode == VpnMode.proxy ? 'PROXY' : 'VPN';
+    final action = checking
+        ? context.tr('Проверка состояния VPN')
+        : vpn?.canDisconnect == true
+        ? context.tr('Отключить {mode}', values: {'mode': modeLabel})
+        : context.tr('Подключить {mode}', values: {'mode': modeLabel});
+    return PowerButton(
+      key: const Key('connect-button'),
+      size: size,
+      onPressed: _connect,
+      enabled: !checking && !_switchingServer && vpn?.commandPending != true,
+      label: action,
+      active: phase == VpnPhase.connected,
+      connecting: vpn?.connecting ?? false,
+      elapsedLabel: phase == VpnPhase.connected
+          ? _elapsed(vpn?.status.connectedAt)
+          : null,
+    );
+  }
+
+  Widget _currentConnection() {
+    final server = _displayedServer;
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.onSurface.withValues(alpha: .035),
+      borderRadius: BorderRadius.circular(13),
+      child: InkWell(
+        key: const Key('current-connection'),
+        borderRadius: BorderRadius.circular(13),
+        onTap: _showServerPicker,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          child: Row(
+            children: [
+              if (server != null) ...[
+                _flag(server, selected: false),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      server?.name ?? context.tr('Выбрать подключение'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (server != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        server.protocolLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                CupertinoIcons.chevron_right,
+                size: 15,
+                color: scheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _connectionDetails() {
+    final server = _displayedServer;
+    final vpn = widget.vpn;
+    final phase = vpn?.status.phase ?? VpnPhase.disconnected;
+    final state = switch (phase) {
+      VpnPhase.disconnected => 'Не подключено',
+      VpnPhase.requestingPermission => 'Ожидание разрешения',
+      VpnPhase.connecting => 'Подключение',
+      VpnPhase.connected => 'Подключено',
+      VpnPhase.reconnecting => 'Восстановление',
+      VpnPhase.blocked => 'Трафик заблокирован',
+      VpnPhase.error => 'Ошибка подключения',
+    };
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(22, 18, 22, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (server != null) ...[
+            Row(
+              children: [
+                _flag(server, selected: false),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Text(
+                    server.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: -.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 22),
+          ],
+          _detailRow('Состояние', context.tr(state)),
+          _detailRow('Протокол', server?.protocolLabel ?? '—'),
+          _detailRow(
+            'Трафик',
+            vpn?.statisticsAvailable == true
+                ? '↑ ${_bytes(vpn!.stats.uploadBytes)}  ↓ ${_bytes(vpn.stats.downloadBytes)}'
+                : '—',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.tr(label),
+          style: TextStyle(
+            fontSize: 13,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: 18),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontSize: 13),
+          ),
+        ),
+      ],
+    ),
+  );
 
   String _elapsed(DateTime? start) {
     final seconds = start == null
@@ -533,64 +1171,97 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   String _bytes(int bytes) => bytes < 1024
-      ? '$bytes Б'
+      ? context.tr('{value} Б', values: {'value': bytes})
       : bytes < 1048576
-      ? '${(bytes / 1024).toStringAsFixed(1)} КБ'
-      : '${(bytes / 1048576).toStringAsFixed(1)} МБ';
+      ? context.tr(
+          '{value} КБ',
+          values: {'value': (bytes / 1024).toStringAsFixed(1)},
+        )
+      : context.tr(
+          '{value} МБ',
+          values: {'value': (bytes / 1048576).toStringAsFixed(1)},
+        );
 
   Widget _servers() => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [_serversHeader(), const SizedBox(height: 7), _serverGroups()],
+  );
+
+  Widget _serverGroups({VoidCallback? onSelected}) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Padding(
-        padding: const EdgeInsets.only(left: 8),
-        child: Row(
-          children: [
-            const Expanded(
-              child: Text(
-                'Серверы',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ),
-            IconButton(
-              tooltip: 'Обновить подписки',
-              key: const Key('refresh-button'),
-              onPressed: _refresh,
-              icon: const Icon(Icons.sync_rounded, size: 25),
-            ),
-            const SizedBox(width: 2),
-            IconButton(
-              tooltip: 'Добавить подписку',
-              key: const Key('add-button'),
-              onPressed: _add,
-              icon: const Icon(Icons.add_rounded, size: 29),
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 3),
-      if (_refreshes.failed.isNotEmpty)
-        const Padding(
-          padding: EdgeInsets.all(12),
+      if (widget.controller.showAddSubscriptionButton) _empty(),
+      for (final group in widget.controller.groups)
+        _group(group, onSelected: onSelected),
+    ],
+  );
+  Widget _serversHeader({VoidCallback? onClose}) => SizedBox(
+    height: 46,
+    child: Row(
+      children: [
+        Expanded(
           child: Text(
-            'Некоторые подписки не обновились. Используется последний рабочий список.',
-            textAlign: TextAlign.center,
+            context.tr('Серверы'),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -.5,
+            ),
           ),
         ),
-      if (widget.controller.showAddSubscriptionButton) _empty(),
-      for (final group in widget.controller.groups) _group(group),
-    ],
+        IconButton(
+          tooltip: context.tr('Проверить пинг всех подключений'),
+          key: const Key('ping-all-button'),
+          onPressed:
+              _latencies.busy ||
+                  widget.controller.groups.every(
+                    (group) => group.servers.isEmpty,
+                  )
+              ? null
+              : _pingAll,
+          icon: _latencies.busy
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 1.8),
+                )
+              : const Icon(CupertinoIcons.speedometer, size: 22),
+        ),
+        IconButton(
+          tooltip: context.tr('Обновить подписки'),
+          key: const Key('refresh-button'),
+          onPressed: _refreshBusy ? null : _refresh,
+          icon: _refreshBusy
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 1.8),
+                )
+              : const Icon(CupertinoIcons.arrow_2_circlepath, size: 22),
+        ),
+        IconButton(
+          tooltip: context.tr('Добавить подписку'),
+          key: const Key('add-button'),
+          onPressed: _add,
+          icon: const Icon(CupertinoIcons.plus, size: 24),
+        ),
+        if (onClose != null)
+          IconButton(
+            key: const Key('close-connection-picker'),
+            tooltip: context.tr('Закрыть'),
+            onPressed: onClose,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 32, height: 40),
+            icon: const Icon(CupertinoIcons.xmark, size: 18),
+          ),
+      ],
+    ),
   );
 
   Widget _empty() => Padding(
-    padding: const EdgeInsets.fromLTRB(8, 24, 8, 8),
+    padding: const EdgeInsets.fromLTRB(8, 28, 8, 8),
     child: Column(
       children: [
         Text(
-          'Ваши серверы появятся здесь',
+          context.tr('Ваши серверы появятся здесь'),
           style: TextStyle(
             fontSize: 17,
             color: Theme.of(context).colorScheme.onSurface,
@@ -598,7 +1269,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
         const SizedBox(height: 10),
         Text(
-          'Добавьте подписку своего VPN-провайдера',
+          context.tr('Добавьте подписку своего VPN-провайдера'),
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 14,
@@ -612,8 +1283,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           child: OutlinedButton.icon(
             key: const Key('empty-add-button'),
             onPressed: _add,
-            icon: const Icon(Icons.add),
-            label: const Text('Добавить подписку'),
+            icon: const Icon(CupertinoIcons.plus, size: 19),
+            label: Text(context.tr('Добавить подписку')),
             style: OutlinedButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.onSurface,
               padding: const EdgeInsets.all(17),
@@ -627,8 +1298,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     ),
   );
 
-  Widget _group(SubscriptionGroup group) => Column(
+  bool _groupRefreshFailed(SubscriptionGroup group) =>
+      _refreshes.failed.contains(group.id) ||
+      _manualRefreshFailures[group.id] == group.contentRevision;
+
+  Widget _group(SubscriptionGroup group, {VoidCallback? onSelected}) => Column(
     children: [
+      const SizedBox(height: 8),
       Semantics(
         expanded: group.expanded,
         child: Material(
@@ -638,14 +1314,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             borderRadius: BorderRadius.circular(8),
             onTap: () => widget.controller.toggleGroup(group.id),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 11),
               child: Row(
                 children: [
                   Icon(
                     group.expanded
-                        ? Icons.expand_more_rounded
-                        : Icons.chevron_right_rounded,
-                    size: 25,
+                        ? CupertinoIcons.chevron_down
+                        : CupertinoIcons.chevron_right,
+                    size: 16,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -654,17 +1330,41 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w500,
-                        letterSpacing: -0.4,
+                        letterSpacing: -.4,
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
+                  if (_groupRefreshFailed(group) ||
+                      group.issues.isNotEmpty ||
+                      widget.controller.pendingUpdate(group.id) != null)
+                    IconButton(
+                      key: ValueKey('subscription-issues-${group.id}'),
+                      tooltip: context.tr(
+                        _groupRefreshFailed(group)
+                            ? 'Не удалось обновить подписку'
+                            : 'Проверить замечания к подписке',
+                      ),
+                      onPressed: () => _reviewSubscription(group.id),
+                      constraints: const BoxConstraints.tightFor(
+                        width: 30,
+                        height: 30,
+                      ),
+                      padding: EdgeInsets.zero,
+                      icon: Icon(
+                        CupertinoIcons.exclamationmark_circle,
+                        size: 17,
+                        color: _groupRefreshFailed(group)
+                            ? Theme.of(context).colorScheme.error
+                            : Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
                   Text(
                     _count(group.servers.length),
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -674,89 +1374,163 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ),
       ),
-      if (group.expanded) ...[
-        if (group.issues.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: TextButton.icon(
-              key: ValueKey('subscription-issues-${group.id}'),
-              onPressed: () => _reviewSubscription(group.id),
-              icon: const Icon(Icons.info_outline, size: 18),
-              label: Text(
-                widget.controller.pendingUpdate(group.id) == null
-                    ? 'Замечания к подписке: ${group.issues.length}'
-                    : 'Рабочий список сохранён. Проверить обновление',
+      if (_groupRefreshFailed(group))
+        Padding(
+          padding: const EdgeInsets.fromLTRB(7, 0, 7, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  context.tr('Не удалось обновить подписку'),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
               ),
-            ),
+              TextButton(
+                key: ValueKey('retry-subscription-${group.id}'),
+                onPressed: _refreshBusy
+                    ? null
+                    : () => unawaited(_refresh(groupId: group.id)),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 28),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  context.tr('Повторить'),
+                  style: const TextStyle(fontSize: 11),
+                ),
+              ),
+            ],
           ),
+        ),
+      if (group.expanded) ...[
         if (group.servers.isEmpty)
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'В подписке пока нет доступных подключений',
+              context.tr('В подписке пока нет доступных подключений'),
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
-        for (final server in group.servers) _server(group, server),
+        for (final server in group.servers)
+          _server(group, server, onSelected: onSelected),
       ],
-      const SizedBox(height: 10),
+      const SizedBox(height: 8),
       const Divider(),
     ],
   );
 
-  Widget _server(SubscriptionGroup group, ServerEntry server) {
+  Widget _flag(ServerEntry server, {required bool selected}) =>
+      CountryFlag(countryCode: server.countryCode, size: 28);
+  Widget _latency(ServerEntry server, {required bool selected}) {
+    final sample = _latencies.results[server.profile.id];
+    final checking = _latencies.checking.contains(server.profile.id);
+    final milliseconds =
+        sample?.milliseconds ??
+        (sample == null && server.isDemo ? server.latencyMs : null);
+    final error = sample?.errorCode;
+    final unsupported =
+        error == 'latency_transport_unsupported' ||
+        error == 'latency_platform_unsupported';
+    final scheme = Theme.of(context).colorScheme;
+    final darkVariant =
+        selected || Theme.of(context).brightness == Brightness.light;
+    final neutral = selected
+        ? scheme.onPrimaryContainer.withValues(alpha: .6)
+        : scheme.onSurfaceVariant;
+    final Color color;
+    if (checking || unsupported || (milliseconds == null && error == null)) {
+      color = neutral;
+    } else if (error != null || milliseconds! > 250) {
+      color = darkVariant ? const Color(0xff9b2323) : const Color(0xffff7178);
+    } else if (milliseconds > 100) {
+      color = darkVariant ? const Color(0xff755100) : const Color(0xffffd166);
+    } else {
+      color = darkVariant ? const Color(0xff175c35) : const Color(0xff59d98e);
+    }
+    final hint = checking
+        ? 'Проверка пинга…'
+        : switch (error) {
+            'latency_transport_unsupported' =>
+              'Пинг для этого протокола недоступен',
+            'latency_platform_unsupported' =>
+              'Пинг недоступен на этой платформе',
+            'latency_timeout' => 'Сервер не ответил вовремя',
+            'latency_unreachable' => 'Нет ответа на TCP-проверку',
+            'latency_invalid_profile' =>
+              'Не удалось проверить параметры сервера',
+            'latency_failed' => 'Не удалось проверить пинг',
+            _ =>
+              milliseconds == null
+                  ? 'Пинг ещё не проверен'
+                  : 'Задержка соединения с сервером (TCP)',
+          };
+    return Tooltip(
+      message: context.tr(hint),
+      child: Text(
+        checking
+            ? '…'
+            : milliseconds == null || error != null
+            ? '—'
+            : context.tr('{value} мс', values: {'value': milliseconds}),
+        style: TextStyle(
+          fontSize: 14,
+          color: color,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+        ),
+      ),
+    );
+  }
+
+  Widget _server(
+    SubscriptionGroup group,
+    ServerEntry server, {
+    VoidCallback? onSelected,
+  }) {
     final selected =
         widget.controller.selectedGroupId == group.id &&
         widget.controller.selectedServerId == server.id;
     final scheme = Theme.of(context).colorScheme;
-    final flag = server.countryCode?.toLowerCase();
-    final known = const ['nl', 'de', 'fi', 'pl', 'se', 'fr'].contains(flag);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 1),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Semantics(
         selected: selected,
         button: true,
+        enabled: !_connectionBusy,
         label: '${server.name}, ${server.protocolLabel}',
         child: Material(
-          color: selected ? amber : Colors.transparent,
-          borderRadius: BorderRadius.circular(13),
+          color: selected ? scheme.primaryContainer : Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(11),
+            side: selected && Theme.of(context).brightness == Brightness.light
+                ? BorderSide(
+                    color: scheme.primary.withValues(alpha: .25),
+                    width: .7,
+                  )
+                : BorderSide.none,
+          ),
           child: InkWell(
             key: ValueKey('server-${group.id}-${server.id}'),
-            borderRadius: BorderRadius.circular(13),
-            onTap: () => widget.controller.selectServer(
-              groupId: group.id,
-              serverId: server.id,
-            ),
+            borderRadius: BorderRadius.circular(11),
+            onTap: _connectionBusy
+                ? null
+                : () => _selectServer(group, server, onSelected: onSelected),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 56),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 9,
+                  horizontal: 12,
+                  vertical: 8,
                 ),
                 child: Row(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: known
-                          ? Image.asset(
-                              'assets/flags/$flag.png',
-                              width: 34,
-                              height: 28,
-                              fit: BoxFit.fill,
-                              excludeFromSemantics: true,
-                            )
-                          : Icon(
-                              Icons.language_rounded,
-                              size: 30,
-                              color: selected
-                                  ? darkInk
-                                  : scheme.onSurfaceVariant,
-                            ),
-                    ),
-                    const SizedBox(width: 26),
+                    _flag(server, selected: selected),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -770,7 +1544,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               height: 1.2,
                               fontWeight: FontWeight.w600,
                               letterSpacing: -0.45,
-                              color: selected ? darkInk : scheme.onSurface,
+                              color: selected
+                                  ? scheme.onPrimaryContainer
+                                  : scheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -782,7 +1558,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               fontSize: 13,
                               height: 1.2,
                               color: selected
-                                  ? const Color(0xff5e4b2c)
+                                  ? scheme.onPrimaryContainer.withValues(
+                                      alpha: .72,
+                                    )
                                   : scheme.onSurfaceVariant,
                             ),
                           ),
@@ -790,24 +1568,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                      server.latencyMs == null ? '—' : '${server.latencyMs} мс',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: selected ? darkInk : scheme.onSurface,
-                        fontWeight: selected
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
-                    ),
+                    _latency(server, selected: selected),
                     SizedBox(
                       width: 38,
                       child: selected
-                          ? const Align(
+                          ? Align(
                               alignment: Alignment.centerRight,
                               child: Icon(
                                 Icons.check_rounded,
-                                color: darkInk,
+                                color: scheme.onPrimaryContainer,
                                 size: 24,
                               ),
                             )
@@ -831,6 +1600,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             2 || 3 || 4 => 'подключения',
             _ => 'подключений',
           };
-    return '$n $form';
+    return context.tr('{count} $form', values: {'count': n});
   }
 }

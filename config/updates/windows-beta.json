@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "channel": "beta",
+  "keyId": "exvpn-full-update-beta-1",
+  "publicKey": "jqfYwATCfBPz1x8MDwBCj7ova7Ju9fdJIWCnLDGWLNk=",
+  "feedUrl": "https://github.com/Extectick/ExVPN/releases/download/windows-beta/windows-x64.json"
+}

@@ -52,5 +52,18 @@ foreach ($script in Get-ChildItem -LiteralPath $PSScriptRoot -Filter '*.ps1' -Re
     if ($parseErrors.Count) { throw "$($script.Name): $parseErrors" }
 }
 Write-Host 'Installer manifest, traversal, duplicate, unknown/changed-file refusal and known-only cleanup passed. No system installation performed.'
+$buildPinTests = Join-Path $PSScriptRoot 'test-app-updater-build.ps1'
+if ($PSVersionTable.PSVersion.Major -ge 7) {
+    & $buildPinTests
+} else {
+    # Keep the real installer's PS5.1 fixtures in this host. The build script is
+    # PS7-only, so validate its pins in the fixed installed PS7 host as well.
+    # An unavailable host or a failing child is a failure, never a skipped gate.
+    $powerShell7 = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles)) 'PowerShell\7\pwsh.exe'
+    if (!(Test-Path -LiteralPath $powerShell7 -PathType Leaf)) { throw 'PowerShell 7 is required for updater build-pin fixtures.' }
+    & $powerShell7 -NoLogo -NoProfile -NonInteractive -File $buildPinTests
+    if ($LASTEXITCODE -ne 0) { throw 'PowerShell 7 updater build-pin fixtures failed.' }
+}
+& (Join-Path $PSScriptRoot 'test-idle-maintenance.ps1')
 & (Join-Path $PSScriptRoot 'test-package-recovery.ps1')
 & (Join-Path $PSScriptRoot 'test-maintenance-lock.ps1')

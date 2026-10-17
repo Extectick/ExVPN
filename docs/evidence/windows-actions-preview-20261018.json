@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "date": "2026-10-18",
+  "scope": "Windows UI preview: bulk actions, latency colors, off button",
+  "status": "VISUAL_PREVIEW_PASS",
+  "sourceState": "working tree; commit pending",
+  "previewCallbacksOnly": true,
+  "nativeNetworkProbesRun": false,
+  "nativeBuildsRun": false,
+  "vpnTestsRun": false,
+  "fullRunnerRun": false,
+  "dartAnalysis": "No issues found: 6 files",
+  "verified": [
+    "refresh starts without chooser",
+    "short top error names subscription",
+    "latency action before refresh",
+    "42 green / 168 yellow / 342 red",
+    "unsupported neutral dash",
+    "black initial off disc",
+    "Space Gray symbols",
+    "disconnect removes glow immediately under pointer"
+  ],
+  "nativeLatencyLimits": [
+    "TCP endpoint DNS+handshake only",
+    "Hysteria2/UDP-only unsupported",
+    "3 second deadline",
+    "4 actual in-flight operations; stalled DNS keeps slot"
+  ],
+  "sourceFiles": [
+    {
+      "file": "apps/exvpn/lib/design_preview.dart",
+      "sha256": "195081c819d5cbe06de6b39a7df2ffbaba7f7c5aee48f158bf2660971cbdef4e"
+    },
+    {
+      "file": "apps/exvpn/lib/src/home_screen.dart",
+      "sha256": "230eef3a7ddf71e73e84d7c480ac3c46e83691259365f55e57ff577cf52afb94"
+    },
+    {
+      "file": "apps/exvpn/lib/src/power_button.dart",
+      "sha256": "fe2931f0c2879d940e57f0a28df05e5f585db0ad661dbc1bdf422123f978c65c"
+    },
+    {
+      "file": "apps/exvpn/lib/services/server_latency.dart",
+      "sha256": "f95ca005ad7c0941e470b61eb286c67b92f288fac74c039cc1c4d8827519ca91"
+    },
+    {
+      "file": "apps/exvpn/lib/services/server_latency_native.dart",
+      "sha256": "5dc9752cd2ee638410c63338af3d6da7c3d7166096bd557c4864787895d6baa0"
+    },
+    {
+      "file": "apps/exvpn/lib/services/server_latency_stub.dart",
+      "sha256": "ba7810ac2fcd3b0767dc2dc5575040a609ad01011f7ffbd5251af0cf75ddd20c"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "immediate-off-hover.jpg",
+      "sha256": "d51e4fbd258e26bea594684256159326a06bbb3313fda7d4dda3933a3ad2263d"
+    },
+    {
+      "file": "off-ping-colors.jpg",
+      "sha256": "d51e4fbd258e26bea594684256159326a06bbb3313fda7d4dda3933a3ad2263d"
+    },
+    {
+      "file": "on-ping-colors.jpg",
+      "sha256": "5129fe888544c49ad865baf558e388e7f5b82dcc3563ecae27e6a5db6791ebbd"
+    },
+    {
+      "file": "overview.jpg",
+      "sha256": "66888542878d9f718fda4520bf2ae3a7b565a3d3f70bc0abade4e731a16f3fd9"
+    },
+    {
+      "file": "refresh-error-toast.jpg",
+      "sha256": "3157070f13447435d608e9b8a3897e7c31b9543e1d4de862e7b9b766e124bcdd"
+    }
+  ]
+}

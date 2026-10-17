@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-18",
+  "version": "0.1.0+20",
+  "source": "working tree; commit pending",
+  "scope": "requested quick Windows design build and installed upgrade",
+  "build": {
+    "flutter": "3.47.7 ordinary release, EXVPN_DEMO=false",
+    "exitCode": 0,
+    "durationSeconds": 50.9,
+    "serviceRebuilt": false,
+    "serviceUnchangedFromBuild19": true,
+    "componentNotices": 145,
+    "installer": "artifacts/windows/package-0.1.0-20-20261017-195543-7919de32/ExVPN-0.1.0-20-windows-x64-development.exe",
+    "installerSha256": "53919453a57879ec0706331350cbcd5eb9e0f8e9625e3318d2b66d2e07ba9545"
+  },
+  "installation": {
+    "fromBuild": 19,
+    "toBuild": 20,
+    "exitCode": 0,
+    "uiPath": "C:\\Program Files\\ExVPN\\exvpn.exe",
+    "ordinaryUserLaunch": true,
+    "uiPid": 47856,
+    "responding": true,
+    "servicePid": 46868,
+    "serviceState": "Running",
+    "networkGatePreserved": true,
+    "installedExeAotServiceMatchPayload": true,
+    "rollbackPath": "C:\\Program Files\\ExVPN Rollback\\8f735d74-c84e-4d23-99cc-3fe83969a3c2"
+  },
+  "readOnlyWindowCheck": {
+    "windowPixels": [440, 760],
+    "clientPixels": [440, 760],
+    "dpi": 96,
+    "fullClientFrame": true,
+    "initialMode": "medium",
+    "ratioMatchesMedium": true
+  },
+  "notRun": ["VPN network tests", "Full runner", "all-edge resize and mixed-DPI acceptance", "visual acceptance of all three modes"],
+  "published": false,
+  "remaining": "EXVPN-E2-013: user visual review, resize smoothness, DPI/monitors and window controls"
+}

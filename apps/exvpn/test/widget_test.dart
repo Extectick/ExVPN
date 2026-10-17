@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:exvpn/main.dart';
 import 'package:exvpn/build_identity.dart';
+import 'package:exvpn/src/power_button.dart';
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,9 +21,11 @@ Future<void> _open(
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = viewport;
   tester.platformDispatcher.textScaleFactorTestValue = textScale;
+  tester.platformDispatcher.localesTestValue = const [Locale('ru')];
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+  addTearDown(tester.platformDispatcher.clearLocalesTestValue);
   await tester.pumpWidget(ExVpnApp(controller: controller));
   await tester.pumpAndSettle();
 }
@@ -46,6 +49,16 @@ Future<void> _importText(
   await _tap(tester, find.byKey(const Key('import-submit')));
 }
 
+void _expectDisconnected(WidgetTester tester) {
+  final power = tester.widget<PowerButton>(
+    find.byKey(const Key('connect-button')),
+  );
+  expect(power.active, isFalse);
+  expect(power.connecting, isFalse);
+  expect(power.label, 'Подключить VPN');
+  expect(find.text('Подключено'), findsNothing);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
@@ -55,7 +68,7 @@ void main() {
     await font.load();
   });
 
-  testWidgets('home exposes partial update reasons and explicit replacement', (
+  testWidgets('home shows brief partial-update reason and keeps working list', (
     tester,
   ) async {
     final controller = AppController();
@@ -68,14 +81,30 @@ void main() {
       raw:
           '${_sampleProfile.replaceFirst('000000000001', '000000000002').replaceFirst('#Sample', '#New')}\nunknown://invalid',
     );
+    final candidate = controller.pendingUpdate(id);
+    expect(candidate, isNotNull);
+    expect(candidate!.previousCount, 1);
+    expect(candidate.issues.single.index, 2);
     await _open(tester, controller);
     expect(controller.selectedServer!.name, 'Sample');
+    expect(find.byKey(const Key('connection-notice')), findsNothing);
     await _tap(tester, find.byKey(ValueKey('subscription-issues-$id')));
-    expect(find.textContaining('Запись 2: Протокол'), findsOneWidget);
-    await _tap(tester, find.byKey(const Key('accept-partial-subscription')));
-    expect(controller.selectedServer!.name, 'New');
-    expect(find.text('Не подключено'), findsOneWidget);
-    expect(find.textContaining('Замечания к подписке: 1'), findsOneWidget);
+    expect(
+      find.textContaining('Часть подключений пока не поддерживается.'),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('accept-partial-subscription')), findsNothing);
+    expect(
+      find.textContaining('Последний рабочий список сохранён.'),
+      findsOneWidget,
+    );
+    await _tap(tester, find.byKey(const Key('keep-subscription')));
+    expect(find.byKey(const Key('subscription-issues-dialog')), findsNothing);
+    expect(controller.selectedServer!.name, 'Sample');
+    expect(controller.pendingUpdate(id), same(candidate));
+    _expectDisconnected(tester);
+    expect(find.byKey(ValueKey('subscription-issues-$id')), findsOneWidget);
+    expect(find.byKey(const Key('connection-notice')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -112,9 +141,19 @@ void main() {
       find.byKey(const ValueKey('server-demo-main-demo-frankfurt')),
     );
     expect(controller.selectedServer!.name, 'Франкфурт');
-    expect(find.text('Не подключено'), findsOneWidget);
-    expect(find.text('Подключено'), findsNothing);
-    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    _expectDisconnected(tester);
+    expect(
+      find.ancestor(
+        of: find.byKey(const ValueKey('server-demo-main-demo-frankfurt')),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              widget.properties.selected == true &&
+              widget.properties.button == true,
+        ),
+      ),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -171,7 +210,20 @@ void main() {
         find.text('В подписке пока нет доступных подключений'),
         findsOneWidget,
       );
-      expect(find.textContaining('Замечания к подписке:'), findsOneWidget);
+      final issues = find.byKey(
+        ValueKey('subscription-issues-${controller.groups.single.id}'),
+      );
+      expect(issues, findsOneWidget);
+      await _tap(tester, issues);
+      expect(
+        find.byKey(const Key('subscription-issues-dialog')),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Часть подключений пока не поддерживается.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('synthetic.invalid'), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
@@ -182,15 +234,11 @@ void main() {
       await _open(tester, AppController.demo());
       await _tap(tester, find.byKey(const Key('connect-button')));
       expect(find.text('VPN пока недоступен'), findsOneWidget);
-      expect(
-        find.textContaining('защита трафика не включается'),
-        findsOneWidget,
-      );
-      expect(find.text('Подключено'), findsNothing);
-      expect(find.text('Не подключено'), findsOneWidget);
+      expect(find.text('В этой сборке VPN пока недоступен.'), findsOneWidget);
+      _expectDisconnected(tester);
       await _tap(tester, find.text('Понятно'));
       expect(find.byType(AlertDialog), findsNothing);
-      expect(find.text('Не подключено'), findsOneWidget);
+      _expectDisconnected(tester);
     },
   );
 
@@ -227,20 +275,20 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('deleting subscriptions from settings restores the empty CTA', (
+  testWidgets('settings omit subscription management and preserve selection', (
     tester,
   ) async {
     final controller = AppController();
     controller.addSubscription(name: 'Temporary', raw: _sampleProfile);
     await _open(tester, controller);
     await _tap(tester, find.byKey(const Key('settings-button')));
-    await _tap(tester, find.byTooltip('Удалить Temporary'));
-    expect(find.text('Удалить подписку?'), findsOneWidget);
-    await _tap(tester, find.text('Удалить'));
+    expect(find.byTooltip('Удалить Temporary'), findsNothing);
+    expect(find.text('Подписки'), findsNothing);
+    expect(find.text('created by БЕЛКА'), findsOneWidget);
     await _tap(tester, find.byTooltip('Закрыть настройки'));
-    expect(controller.groups, isEmpty);
-    expect(controller.selectedServer, isNull);
-    expect(find.byKey(const Key('empty-add-button')), findsOneWidget);
+    expect(controller.groups, hasLength(1));
+    expect(controller.selectedServer, isNotNull);
+    expect(find.byKey(const Key('empty-add-button')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

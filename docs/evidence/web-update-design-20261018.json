@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-18",
+  "scope": "web design only; synthetic update scenario",
+  "source": "working tree; commit pending",
+  "installedVersionUnchanged": "0.1.0+20",
+  "settings": {
+    "themeChoices": ["Тёмная", "Светлая", "Я дизайнер"],
+    "systemThemeButtonRemoved": true,
+    "languageDisplaysResolvedEndonym": true,
+    "systemLocaleRemainsDefaultUntilManualSelection": true
+  },
+  "subscriptionFeedback": {
+    "groupWarningAndRetry": "reviewed",
+    "shortGroupDialog": "reviewed",
+    "noGlobalSubscriptionError": "reviewed",
+    "lastWorkingProfilesRetained": true
+  },
+  "updateStrip": {
+    "logicalHeight": 24,
+    "fullWidth": true,
+    "windowCanvasUnchanged": true,
+    "observed": ["available", "download progress", "simulated reopen", "0.1.1 build21 label"],
+    "downloadAndRestartAreSimulated": true,
+    "realUpdateHttpRequests": false,
+    "nativeInstallOrRestart": false,
+    "formatPreservedAfterMinimalToLargeAndSimulatedRestart": true
+  },
+  "checkedModes": ["medium light", "minimal dark", "large dark"],
+  "targetedDartAnalyze": "No issues found, six changed UI/preview files",
+  "diffCheck": "PASS",
+  "screenshots": "design/screenshots/windows-update-design/",
+  "nativeBuilds": false,
+  "functionalVpnTests": false,
+  "fullRunner": false,
+  "published": false
+}

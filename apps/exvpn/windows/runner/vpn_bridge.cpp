@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "vpn_bridge.h"
+#include "system_proxy.h"
 
 #include <flutter/event_stream_handler_functions.h>
 #include <flutter/standard_method_codec.h>
@@ -78,9 +79,15 @@ Value Status(const JsonObject& s) {
                                         "connected",    "reconnecting",
                                         "blocked",      "error"};
   if (!phases.count(phase)) Fail("ipc_invalid_response");
+  const auto mode = winrt::to_string(s.GetNamedString(L"mode", L"vpn"));
+  if (mode != "vpn" && mode != "proxy") Fail("ipc_invalid_response");
+  const auto capabilities = s.GetNamedObject(L"capabilities");
   Map m{{Value("phase"), Value(phase)},
+        {Value("mode"), Value(mode)},
+        {Value("systemProxySupported"),
+         Value(capabilities.GetNamedBoolean(L"systemProxy", false))},
         {Value("processCrashProtection"),
-         Value(s.GetNamedObject(L"capabilities").GetNamedBoolean(L"verified") &&
+         Value(mode == "vpn" && capabilities.GetNamedBoolean(L"verified") &&
                s.GetNamedBoolean(L"guardActive"))}};
   if (s.HasKey(L"activeProfileId"))
     m.emplace(Value("activeProfileId"),
@@ -94,8 +101,12 @@ Value Status(const JsonObject& s) {
               Value(winrt::to_string(s.GetNamedString(L"code"))));
   return Value(m);
 }
-Value Unavailable(const char* code) {
+Value Unavailable(const char* code, const std::string& mode,
+                  bool proxy_supported, bool cleanup) {
   return Value(Map{{Value("phase"), Value("error")},
+                   {Value("mode"), Value(mode)},
+                   {Value("systemProxySupported"), Value(proxy_supported)},
+                   {Value("cleanupRequired"), Value(cleanup)},
                    {Value("processCrashProtection"), Value(false)},
                    {Value("errorCode"), Value(code)}});
 }
@@ -185,7 +196,7 @@ void Transfer(HANDLE pipe, void* data, DWORD size, bool write,
   }
 }
 JsonObject Request(const std::string& command, const Value* profile,
-                   const List& exclusions) {
+                   const List& exclusions, const std::string& mode = "") {
   Handle pipe{CreateFileW(
       kPipe, 0x12019b, 0, nullptr, OPEN_EXISTING,
       FILE_FLAG_OVERLAPPED | SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION,
@@ -199,6 +210,8 @@ JsonObject Request(const std::string& command, const Value* profile,
   request.Insert(L"command",
                  JsonValue::CreateStringValue(winrt::to_hstring(command)));
   if (profile) request.Insert(L"profile", Json(*profile));
+  if (!mode.empty())
+    request.Insert(L"mode", JsonValue::CreateStringValue(winrt::to_hstring(mode)));
   if (command == "setExclusions")
     request.Insert(L"exclusions", Json(Value(exclusions)));
   std::string body = winrt::to_string(request.Stringify());
@@ -314,6 +327,11 @@ void VpnBridge::Enqueue(Job job) {
 void VpnBridge::Work() {
   winrt::init_apartment();
   List exclusions;
+  SystemProxy system_proxy(CreateWindowsProxyBackend());
+  std::string last_mode = "vpn";
+  bool proxy_supported = false;
+  bool status_seen = false;
+  bool awaiting_explicit_proxy = false;
   for (;;) {
     Job job;
     {
@@ -332,7 +350,9 @@ void VpnBridge::Work() {
     completion.result = std::move(job.result);
     try {
       if (job.method == "coreVersion") {
-        completion.value = Value("26.10.10-exvpn.4");
+        const auto response = Request("status", nullptr, {});
+        completion.value = Value(winrt::to_string(
+            response.GetNamedObject(L"status").GetNamedString(L"coreVersion")));
       } else if (job.method == "listApplications") {
         completion.value = Applications();
       } else if (job.method == "openSystemProtectionSettings") {
@@ -363,17 +383,61 @@ void VpnBridge::Work() {
         }
         completion.value = Value(result);
       } else if (job.method == "getStatus" || job.method == "connect" ||
+                 job.method == "reconnect" ||
                  job.method == "disconnect" || job.method == "probe") {
         const Value* profile = nullptr;
-        if (job.method == "connect" || job.method == "probe")
+        std::string mode;
+        if (job.method == "connect" || job.method == "reconnect") {
+          mode = "vpn";
+          const auto* arguments = std::get_if<Map>(&job.arguments);
+          if (!arguments) Fail("invalid_native_request");
+          const auto found = arguments->find(Value("mode"));
+          if (found != arguments->end()) {
+            const auto* requested = std::get_if<std::string>(&found->second);
+            if (!requested || (*requested != "vpn" && *requested != "proxy"))
+              Fail("mode_invalid");
+            mode = *requested;
+          }
+        }
+        if (job.method == "connect" || job.method == "reconnect" ||
+            job.method == "probe")
           profile = &Field(job.arguments, "profile");
+        std::string restore_error;
+        if (job.method == "disconnect") {
+          awaiting_explicit_proxy = false;
+          try { system_proxy.Restore(); }
+          catch (const std::runtime_error& error) { restore_error = error.what(); }
+          catch (...) { restore_error = "proxy_restore_failed"; }
+        }
         auto response =
             Request(job.method == "getStatus" ? "status" : job.method, profile,
-                    exclusions);
-        completion.status = Status(response.GetNamedObject(L"status"));
+                    exclusions, mode);
+        const auto native_status = response.GetNamedObject(L"status");
+        completion.status = Status(native_status);
+        last_mode = winrt::to_string(native_status.GetNamedString(L"mode", L"vpn"));
+        status_seen = true;
+        proxy_supported = native_status.GetNamedObject(L"capabilities")
+            .GetNamedBoolean(L"systemProxy", false);
         if (!response.GetNamedBoolean(L"ok"))
           throw std::runtime_error(
               winrt::to_string(response.GetNamedString(L"code")));
+        if (job.method == "connect" || job.method == "reconnect")
+          awaiting_explicit_proxy = mode == "proxy";
+        if (!restore_error.empty()) Fail(restore_error.c_str());
+        const auto state = native_status.GetNamedString(L"state");
+        if (last_mode == "proxy" && state == L"connected") {
+          const auto port = native_status.GetNamedNumber(L"proxyPort", 0);
+          if (!proxy_supported || !std::isfinite(port) || port < 1 ||
+              port > 65535 || std::floor(port) != port)
+            Fail("proxy_invalid_endpoint");
+          system_proxy.Enable(static_cast<uint16_t>(port), awaiting_explicit_proxy);
+          awaiting_explicit_proxy = false;
+        } else if (state == L"disconnected" ||
+                   (last_mode == "vpn" &&
+                    native_status.GetNamedBoolean(L"guardActive"))) {
+          system_proxy.Restore();
+          if (state == L"disconnected") awaiting_explicit_proxy = false;
+        }
         if (job.method == "getStatus") {
           completion.value = completion.status;
           try {
@@ -405,16 +469,42 @@ void VpnBridge::Work() {
     } catch (const std::runtime_error& e) {
       completion.error = e.what();
       if (job.method == "getStatus") {
-        completion.status = Unavailable(e.what());
+        bool cleanup = false;
+        try { cleanup = system_proxy.HasLease(); }
+        catch (...) { cleanup = true; }
+        if (cleanup && !status_seen) last_mode = "proxy";
+        if (auto* status = std::get_if<Map>(&completion.status)) {
+          (*status)[Value("phase")] = Value("error");
+          (*status)[Value("processCrashProtection")] = Value(false);
+          (*status)[Value("errorCode")] = Value(e.what());
+          (*status)[Value("cleanupRequired")] = Value(cleanup);
+        } else {
+          completion.status = Unavailable(e.what(), last_mode, proxy_supported, cleanup);
+        }
         completion.value = completion.status;
         completion.error.clear();
       }
     } catch (...) {
       completion.error = "native_request_failed";
       if (job.method == "getStatus") {
-        completion.status = Unavailable("native_request_failed");
+        bool cleanup = false;
+        try { cleanup = system_proxy.HasLease(); }
+        catch (...) { cleanup = true; }
+        if (cleanup && !status_seen) last_mode = "proxy";
+        completion.status = Unavailable("native_request_failed", last_mode,
+                                         proxy_supported, cleanup);
         completion.value = completion.status;
         completion.error.clear();
+      }
+    }
+    if (completion.error.rfind("proxy_", 0) == 0) {
+      if (auto* status = std::get_if<Map>(&completion.status)) {
+        (*status)[Value("phase")] = Value("error");
+        (*status)[Value("processCrashProtection")] = Value(false);
+        (*status)[Value("errorCode")] = Value(completion.error);
+        bool cleanup = true;
+        try { cleanup = system_proxy.HasLease(); } catch (...) {}
+        (*status)[Value("cleanupRequired")] = Value(cleanup);
       }
     }
     if (job.method == "getStatus" &&

@@ -17,6 +17,11 @@ const ServiceName = "ExVPNService"
 // stopping; ordinary stop/shutdown continues to preserve the crash latch.
 const MaintenanceControl svc.Cmd = 128
 
+// Automatic updates must not turn a new connection into a hidden disconnect.
+// Refusal leaves the service running; an old service which does not understand
+// this control also cannot satisfy the installer's stopped-state requirement.
+const IdleMaintenanceControl svc.Cmd = 129
+
 type Host struct {
 	Identity       ClientIdentity
 	NetworkTesting bool
@@ -46,6 +51,7 @@ func (h *Host) Execute(_ []string, requests <-chan svc.ChangeRequest, changes ch
 	if e != nil {
 		return true, 2
 	}
+	c.SetProxyFactory(WindowsProxyFactory())
 	s, e := Listen(h.Identity, c)
 	if e != nil {
 		return true, 3
@@ -63,6 +69,16 @@ func (h *Host) Execute(_ []string, requests <-chan svc.ChangeRequest, changes ch
 			return true, 4
 		case request := <-requests:
 			switch request.Cmd {
+			case IdleMaintenanceControl:
+				if c.BeginIdleMaintenance() != nil {
+					changes <- request.CurrentStatus
+					continue
+				}
+				changes <- svc.Status{State: svc.StopPending, WaitHint: 30000}
+				cancel()
+				s.Close()
+				s.Wait()
+				return false, 0
 			case MaintenanceControl:
 				changes <- svc.Status{State: svc.StopPending, WaitHint: 30000}
 				cancel()

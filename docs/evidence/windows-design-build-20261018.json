@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "date": "2026-10-18T01:03:45+07:00",
+  "sourceCommit": "4b791fd9a79304543affcbf1f9b0597f439799b7",
+  "sourceState": "working tree; commit pending",
+  "version": "0.1.0+18",
+  "scope": "Local Windows design build; no installer or publication",
+  "flutter": "3.47.7",
+  "command": "flutter build windows --release --pub --dart-define=EXVPN_DEMO=false",
+  "buildExitCode": 0,
+  "flutterBuildSeconds": 29.8,
+  "bundlePath": "V:\\GitProjects\\ExVPN\\artifacts\\windows\\design-20261018-010345",
+  "exeSha256": "e9e105bd783d19223e92daee5feefa925a0f077e07061acf4d1623b6d0fddd27",
+  "aotSha256": "6ea1611a5209c057fab2430e51d2e57f108da57bc1b6538a86bc60b0e5ea3321",
+  "runtime": "Launched local build after user confirmed normal exit of installed UI; ExVPN window created and process responding. No mode/DPI acceptance run.",
+  "launch": {
+    "date": "2026-10-18T01:10:59+07:00",
+    "pid": 45052,
+    "windowTitle": "ExVPN",
+    "responding": true,
+    "singleInstanceRespected": true
+  },
+  "notRun": [
+    "VPN tests",
+    "Full runner",
+    "installer build",
+    "release workflow",
+    "DPI/multi-monitor acceptance"
+  ]
+}

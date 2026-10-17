@@ -5,10 +5,17 @@ import 'subscription_loader.dart';
 
 /// Refreshes data only. It never reconnects or changes the active native tunnel.
 final class SubscriptionRefresh extends ChangeNotifier {
-  SubscriptionRefresh(this.controller, {SubscriptionLoader? loader})
-    : _loader = loader ?? SubscriptionLoader();
+  SubscriptionRefresh(
+    this.controller, {
+    SubscriptionLoader? loader,
+    this.canApply,
+  }) : _loader = loader ?? SubscriptionLoader();
   final AppController controller;
   final SubscriptionLoader _loader;
+
+  /// A restart reservation prevents a late HTTP response mutating saved state.
+  final bool Function()? canApply;
+  bool get _allowed => !_disposed && (canApply?.call() ?? true);
   final Map<String, Future<bool>> _running = {};
   final Map<String, int> _failedRevisions = {};
   final Map<String, SubscriptionLoadErrorCode> _failureCodes = {};
@@ -22,7 +29,7 @@ final class SubscriptionRefresh extends ChangeNotifier {
   bool get busy => _running.isNotEmpty;
 
   Future<bool> refresh(String id) {
-    if (_disposed) return Future.value(false);
+    if (!_allowed) return Future.value(false);
     return _running[id] ??= _load(id).whenComplete(() {
       _running.remove(id);
       if (!_disposed) notifyListeners();
@@ -37,7 +44,7 @@ final class SubscriptionRefresh extends ChangeNotifier {
     controller.discardPendingUpdate(id);
     try {
       final raw = await _loader.load(group!.sourceUrl!);
-      if (_disposed) return false;
+      if (!_allowed) return false;
       final current = controller.groups
           .where((item) => item.id == id)
           .firstOrNull;
@@ -59,7 +66,7 @@ final class SubscriptionRefresh extends ChangeNotifier {
       }
       return applied;
     } catch (error) {
-      if (!_disposed) {
+      if (_allowed) {
         final current = controller.groups
             .where((item) => item.id == id)
             .firstOrNull;
@@ -89,7 +96,7 @@ final class SubscriptionRefresh extends ChangeNotifier {
         )
         .toList();
     for (final group in groups) {
-      if (_disposed) return;
+      if (!_allowed) return;
       await refresh(group.id);
     }
   }

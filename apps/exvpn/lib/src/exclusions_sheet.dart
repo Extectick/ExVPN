@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../services/vpn_controller.dart';
 import '../services/native_vpn_bridge.dart';
+import 'app_strings.dart';
 
 class ExclusionsSheet extends StatefulWidget {
   const ExclusionsSheet({super.key, required this.vpn});
@@ -119,28 +120,30 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
         )
         .toList(growable: false);
     return Scaffold(
-      appBar: AppBar(title: const Text('Исключения приложений')),
+      appBar: AppBar(title: Text(context.tr('Исключения приложений'))),
       body: Column(
         children: [
           Expanded(
             child: ListView(
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(16),
+                Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Text(
-                    'Выбранные приложения выходят в интернет напрямую. Изменения доступны при отключённом VPN. Приложения с общей системной учётной записью исключить нельзя.',
+                    context.tr(
+                      'Выбранные приложения выходят в интернет напрямую. Изменения доступны при отключённом VPN. Приложения с общей системной учётной записью исключить нельзя.',
+                    ),
                   ),
                 ),
                 if (widget.vpn.canDisconnect)
-                  const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text('Сначала отключите VPN.'),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(context.tr('Сначала отключите VPN.')),
                   ),
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      _error!,
+                      context.tr(_error!),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,
                       ),
@@ -152,7 +155,7 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
                     children: [
                       TextButton(
                         onPressed: _saving ? null : _load,
-                        child: const Text('Повторить чтение'),
+                        child: Text(context.tr('Повторить чтение')),
                       ),
                       TextButton(
                         key: const Key('reset-exclusions'),
@@ -162,7 +165,11 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
                                 widget.vpn.commandPending
                             ? null
                             : _reset,
-                        child: Text(_saving ? 'Сброс…' : 'Сбросить исключения'),
+                        child: Text(
+                          context.tr(
+                            _saving ? 'Сброс…' : 'Сбросить исключения',
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -174,10 +181,10 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
                       controller: _searchController,
                       enabled: !_saving,
                       textInputAction: TextInputAction.search,
-                      decoration: const InputDecoration(
-                        labelText: 'Поиск приложений',
-                        hintText: 'Название, пакет или путь',
-                        prefixIcon: Icon(Icons.search),
+                      decoration: InputDecoration(
+                        labelText: context.tr('Поиск приложений'),
+                        hintText: context.tr('Название, пакет или путь'),
+                        prefixIcon: const Icon(Icons.search),
                       ),
                       onChanged: (_) => setState(() {}),
                     ),
@@ -188,7 +195,10 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Выбрано всего: ${_selected.length}',
+                        context.tr(
+                          'Выбрано всего: {count}',
+                          values: {'count': _selected.length},
+                        ),
                         key: const Key('exclusions-selected-count'),
                       ),
                     ),
@@ -199,7 +209,7 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
                     child: Center(
                       child: _error == null
                           ? const CircularProgressIndicator()
-                          : const Text('Список недоступен'),
+                          : Text(context.tr('Список недоступен')),
                     ),
                   )
                 else if (visibleApps!.isEmpty)
@@ -207,9 +217,11 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
                     padding: const EdgeInsets.all(24),
                     child: Center(
                       child: Text(
-                        query.isEmpty
-                            ? 'Список приложений пуст'
-                            : 'Ничего не найдено',
+                        context.tr(
+                          query.isEmpty
+                              ? 'Список приложений пуст'
+                              : 'Ничего не найдено',
+                        ),
                       ),
                     ),
                   )
@@ -220,7 +232,9 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
                       subtitle: Text(
                         app.sharedIdentityGroup == null
                             ? app.id
-                            : 'Общий системный UID · исключение недоступно',
+                            : context.tr(
+                                'Общий системный UID · исключение недоступно',
+                              ),
                       ),
                       value: _selected.contains(app.id),
                       onChanged:
@@ -246,7 +260,7 @@ class _ExclusionsSheetState extends State<ExclusionsSheet> {
                 onPressed: _apps == null || _saving || widget.vpn.canDisconnect
                     ? null
                     : _save,
-                child: Text(_saving ? 'Сохранение…' : 'Сохранить'),
+                child: Text(context.tr(_saving ? 'Сохранение…' : 'Сохранить')),
               ),
             ),
           ),

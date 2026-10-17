@@ -19,8 +19,16 @@ final class VpnController extends ChangeNotifier {
   bool _commandPending = false;
   bool _policyPending = false;
   bool _dataUpdatePending = false;
+  bool _applicationRestartPending = false;
+  bool _applicationRestartCommitted = false;
+  bool Function()? _applicationRestartSafe;
+  String _applicationRestartFailure = 'restart_busy';
+  bool get applicationRestartPending => _applicationRestartPending;
   bool get commandPending =>
-      _commandPending || _policyPending || _dataUpdatePending;
+      _commandPending ||
+      _policyPending ||
+      _dataUpdatePending ||
+      _applicationRestartPending;
   String? lastErrorCode;
   String? core;
   Set<String> exclusions = {};
@@ -33,6 +41,14 @@ final class VpnController extends ChangeNotifier {
   bool _started = false;
   bool _mayHaveTunnel = false;
   int _unsafeEpoch = 0;
+  VpnMode _mode = VpnMode.vpn;
+
+  /// The desired mode is retained while idle; active native state wins.
+  VpnMode get mode => _mode;
+  bool get modeSwitchSupported =>
+      bridge is ConnectionModeBridge &&
+      (bridge as ConnectionModeBridge).supportsConnectionModes &&
+      status.systemProxySupported;
 
   bool get canApplyDataUpdate =>
       !_disposed &&
@@ -72,6 +88,62 @@ final class VpnController extends ChangeNotifier {
       _dataUpdatePending = false;
       _changed();
     }
+  }
+
+  /// Reserves VPN commands while storage is flushed and a native updater takes
+  /// ownership of a UI restart. A Dart-only restart leaves the service and its
+  /// proxy lease untouched. An installer additionally requires native idle state.
+  Future<T> runForApplicationRestart<T>(
+    Future<T> Function(bool Function() stillSafe) action, {
+    bool requireDisconnected = false,
+  }) async {
+    final failure = requireDisconnected
+        ? 'update_requires_disconnected'
+        : 'restart_busy';
+    if (_disposed ||
+        !initialized ||
+        commandPending ||
+        (requireDisconnected && !canApplyDataUpdate)) {
+      throw VpnFailure(failure);
+    }
+    _applicationRestartPending = true;
+    _applicationRestartCommitted = false;
+    _applicationRestartFailure = failure;
+    _changed();
+    try {
+      await refresh();
+      final epoch = _unsafeEpoch;
+      final command = _command;
+      bool stillSafe() =>
+          !_disposed &&
+          initialized &&
+          _applicationRestartPending &&
+          !_commandPending &&
+          !_policyPending &&
+          !_dataUpdatePending &&
+          command == _command &&
+          (!requireDisconnected ||
+              (!canDisconnect &&
+                  status.phase == VpnPhase.disconnected &&
+                  epoch == _unsafeEpoch));
+      _applicationRestartSafe = stillSafe;
+      if (!stillSafe()) throw VpnFailure(failure);
+      return await action(stillSafe);
+    } finally {
+      _applicationRestartSafe = null;
+      if (!_applicationRestartCommitted) _applicationRestartPending = false;
+      _changed();
+    }
+  }
+
+  /// Once the native handoff is accepted, retain the reservation until UI
+  /// destruction. A posted native exit may outlive its channel acknowledgement.
+  void commitApplicationRestart() {
+    final stillSafe = _applicationRestartSafe;
+    if (stillSafe == null || !stillSafe()) {
+      throw VpnFailure(_applicationRestartFailure);
+    }
+    _applicationRestartCommitted = true;
   }
 
   bool get canDisconnect =>
@@ -134,15 +206,21 @@ final class VpnController extends ChangeNotifier {
     if (value.phase != VpnPhase.connected ||
         status.phase != VpnPhase.connected ||
         value.activeProfileId != status.activeProfileId ||
+        value.mode != status.mode ||
         value.connectedAt != status.connectedAt) {
       _clearStatistics();
     }
     status = value;
-    _mayHaveTunnel = switch (value.phase) {
-      VpnPhase.disconnected => false,
-      VpnPhase.error => _mayHaveTunnel,
-      _ => true,
-    };
+    if (value.phase != VpnPhase.disconnected || value.cleanupRequired) {
+      _mode = value.mode;
+    }
+    _mayHaveTunnel =
+        value.cleanupRequired ||
+        switch (value.phase) {
+          VpnPhase.disconnected => false,
+          VpnPhase.error => _mayHaveTunnel || value.activeProfileId != null,
+          _ => true,
+        };
     lastErrorCode = value.errorCode;
     _changed();
   }
@@ -164,6 +242,9 @@ final class VpnController extends ChangeNotifier {
       processCrashProtection: false,
       activeProfileId: status.activeProfileId,
       errorCode: lastErrorCode,
+      mode: status.mode,
+      systemProxySupported: status.systemProxySupported,
+      cleanupRequired: status.cleanupRequired,
     );
     _changed();
   }
@@ -188,19 +269,90 @@ final class VpnController extends ChangeNotifier {
   }
 
   Future<void> connect(ConnectionProfile profile) async {
-    if (!initialized || commandPending || canDisconnect) return;
+    if (_disposed ||
+        !initialized ||
+        commandPending ||
+        canDisconnect ||
+        status.phase != VpnPhase.disconnected) {
+      return;
+    }
+    if (_mode != VpnMode.vpn && !modeSwitchSupported) {
+      _reject('mode_unsupported');
+      return;
+    }
+    final modeBridge = modeSwitchSupported
+        ? bridge as ConnectionModeBridge
+        : null;
     _mayHaveTunnel = true;
-    await _run(() => bridge.connect(profile));
+    await _run(
+      () => modeBridge == null
+          ? bridge.connect(profile)
+          : modeBridge.connectInMode(profile, _mode),
+    );
   }
 
-  Future<void> disconnect() => _run(bridge.disconnect);
-  Future<void> _run(Future<void> Function() action) async {
+  /// A native reconfiguration keeps the protection guard owned throughout.
+  /// Never emulate this with disconnect followed by connect in the UI process.
+  Future<bool> switchServer(ConnectionProfile profile) async {
+    if (_disposed || !initialized || commandPending || connecting) return false;
+    if (status.phase != VpnPhase.connected) {
+      return _reject('mode_switch_requires_connected');
+    }
+    if (profile.id == status.activeProfileId) return true;
+    if (!modeSwitchSupported) return _reject('mode_unsupported');
+    return _run(
+      () => (bridge as ConnectionModeBridge).reconnect(profile, status.mode),
+    );
+  }
+
+  Future<bool> changeMode(
+    VpnMode requested, {
+    ConnectionProfile? profile,
+  }) async {
+    if (_disposed || !initialized || commandPending || connecting) return false;
+    if (!modeSwitchSupported) return _reject('mode_unsupported');
+    if (status.phase == VpnPhase.disconnected && !canDisconnect) {
+      if (_mode != requested) {
+        _mode = requested;
+        lastErrorCode = null;
+        _changed();
+      }
+      return true;
+    }
+    if (status.phase != VpnPhase.connected) {
+      return _reject('mode_switch_requires_connected');
+    }
+    if (status.mode == requested) return true;
+    if (profile == null) return _reject('profile_required');
+    if (profile.id != status.activeProfileId) {
+      return _reject('mode_profile_mismatch');
+    }
+    return _run(
+      () => (bridge as ConnectionModeBridge).reconnect(profile, requested),
+    );
+  }
+
+  bool _reject(String code) {
+    lastErrorCode = code;
+    _changed();
+    return false;
+  }
+
+  Future<void> disconnect() async {
+    if (_applicationRestartPending) return;
+    await _run(bridge.disconnect);
+  }
+
+  Future<bool> _run(Future<void> Function() action) async {
+    if (_disposed) return false;
     final command = ++_command;
     _commandPending = true;
     lastErrorCode = null;
+    var accepted = false;
     _changed();
     try {
       await action();
+      accepted = true;
     } catch (error) {
       if (!_disposed && command == _command) {
         lastErrorCode = error is VpnFailure ? error.code : 'native_failure';
@@ -216,6 +368,12 @@ final class VpnController extends ChangeNotifier {
         _changed();
       }
     }
+    return accepted &&
+        !_disposed &&
+        command == _command &&
+        lastErrorCode == null &&
+        status.phase != VpnPhase.error &&
+        status.phase != VpnPhase.blocked;
   }
 
   Future<void> setExclusions(Set<String> ids) async {
@@ -274,6 +432,31 @@ String vpnErrorText(String? code) => switch (code) {
   'service_not_installed' || 'service_unavailable' || 'ipc_unavailable' =>
     'Служба ExVPN недоступна. Проверьте установку приложения.',
   'service_access_denied' => 'Нет доступа к службе ExVPN.',
+  'mode_unsupported' =>
+    'Смена режима недоступна. Обновите установленную ExVPN.',
+  'mode_invalid' ||
+  'connection_mode_rejected' => 'Этот режим подключения не поддерживается.',
+  'connection_busy' => 'Подключение уже изменяется. Дождитесь завершения.',
+  'mode_switch_requires_connected' => 'Состояние подключения изменилось. Отключите соединение и попробуйте снова.',
+  'mode_profile_mismatch' =>
+    'Активный сервер изменился. Повторите выбор режима.',
+  'proxy_query_failed' ||
+  'proxy_store_unavailable' => 'Не удалось прочитать настройки прокси Windows.',
+  'proxy_setup_failed' ||
+  'proxy_invalid_endpoint' ||
+  'proxy_unavailable' ||
+  'proxy_start_failed' ||
+  'proxy_endpoint_unavailable' ||
+  'proxy_bind_failed' => 'Не удалось включить системный прокси Windows.',
+  'proxy_stop_failed' => 'Не удалось остановить прокси. Повторите отключение.',
+  'proxy_unreachable' => 'Прокси-сервер недоступен. Выберите другой сервер.',
+  'proxy_exclusions_unsupported' =>
+    'Исключения приложений доступны только в режиме VPN.',
+  'proxy_requires_guard_recovery' =>
+    'Сначала отключите VPN, чтобы снять блокировку сети.',
+  'proxy_restore_failed' => 'Не удалось восстановить настройки прокси Windows.',
+  'proxy_settings_changed' || 'proxy_settings_conflict' =>
+    'Настройки прокси Windows изменены другим приложением.',
   'network_unavailable' =>
     'Нет доступной сети. Проверьте подключение к интернету.',
   'reconnect_required' => 'Сначала отключите VPN, затем измените исключения.',

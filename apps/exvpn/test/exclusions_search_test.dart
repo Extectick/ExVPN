@@ -1,8 +1,10 @@
 import 'package:exvpn/services/native_vpn_bridge.dart';
 import 'package:exvpn/services/vpn_controller.dart';
+import 'package:exvpn/src/app_strings.dart';
 import 'package:exvpn/src/exclusions_sheet.dart';
 import 'package:exvpn_domain/exvpn_domain.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'vpn_controller_test.dart' show FakeBridge;
@@ -53,6 +55,8 @@ Future<void> openExclusions(
   WidgetTester tester,
   SearchPolicyBridge bridge,
 ) async {
+  tester.platformDispatcher.localesTestValue = const [Locale('ru')];
+  addTearDown(tester.platformDispatcher.clearLocalesTestValue);
   await tester.binding.setSurfaceSize(const Size(800, 900));
   final vpn = VpnController(bridge);
   addTearDown(() async {
@@ -64,6 +68,9 @@ Future<void> openExclusions(
   await vpn.initialize();
   await tester.pumpWidget(
     MaterialApp(
+      supportedLocales: appSupportedLocales,
+      localeListResolutionCallback: resolveAppLocale,
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: Builder(
         builder: (context) => Scaffold(
           body: TextButton(

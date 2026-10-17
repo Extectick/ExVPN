@@ -4,7 +4,7 @@
 Set-StrictMode -Version Latest
 
 function Get-FastValidationLaneNames {
-    @('domain', 'state', 'updates', 'app', 'core', 'android', 'windows', 'xray', 'installer', 'scripts', 'ci')
+    @('domain', 'state', 'updates', 'app', 'core', 'android', 'windows', 'appupdater', 'xray', 'installer', 'scripts', 'ci')
 }
 
 function Get-FastValidationExecutionOrder {
@@ -12,7 +12,7 @@ function Get-FastValidationExecutionOrder {
     # Start long independent suites first so the scripts lane does not become
     # the tail of Full. This is scheduling only: never add or remove a suite.
     # Priorities use observed local durations, not mutable cached test results.
-    $priority = @('scripts', 'ci', 'app', 'core', 'xray', 'android', 'windows', 'updates', 'domain', 'state', 'installer')
+    $priority = @('scripts', 'ci', 'app', 'core', 'xray', 'android', 'windows', 'appupdater', 'updates', 'domain', 'state', 'installer')
     $selected = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     foreach ($lane in $Lanes) {
         if ($lane -cnotin $priority -or !$selected.Add($lane)) {
@@ -37,6 +37,7 @@ function Get-FastValidationPlan {
         core = @('domain', 'android', 'windows')
         android = @('app')
         windows = @('app', 'installer')
+        appupdater = @('app', 'installer')
         xray = @('core')
         # CI selector fixtures were formerly part of scripts. Selecting that
         # lane must still execute its complete original suite after the split.
@@ -58,6 +59,8 @@ function Get-FastValidationPlan {
                 '^native/core/' { 'core'; break }
                 '^native/android/' { 'android'; break }
                 '^native/windows/' { 'windows'; break }
+                '^native/appupdater/' { 'appupdater'; break }
+                '^config/updates/' { 'appupdater'; break }
                 '^native/patches/' { 'xray'; break }
                 '^docs/evidence/(?:[a-zA-Z0-9_.-]+/)*[a-zA-Z0-9_.-]+\.json$' { 'documentation'; break }
                 '^(docs|design)/.*\.(md|png|jpe?g|gif|webp|svg|pdf)$' { 'documentation'; break }

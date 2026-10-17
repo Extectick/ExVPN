@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:exvpn/main.dart';
+import 'package:exvpn/src/power_button.dart';
 import 'package:exvpn/services/vpn_controller.dart';
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:exvpn_domain/exvpn_domain.dart';
@@ -10,6 +11,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'vpn_controller_test.dart' show FakeBridge;
 
 void main() {
+  setUp(() {
+    TestWidgetsFlutterBinding.instance.platformDispatcher.localesTestValue =
+        const [Locale('ru')];
+  });
+  tearDown(() {
+    TestWidgetsFlutterBinding.instance.platformDispatcher
+        .clearLocalesTestValue();
+  });
   testWidgets('cold UI waits for native status before offering connect', (
     tester,
   ) async {
@@ -19,7 +28,16 @@ void main() {
       ExVpnApp(controller: AppController.demo(), vpn: VpnController(bridge)),
     );
     await tester.pump();
-    expect(find.text('Проверка состояния VPN…'), findsOneWidget);
+    expect(
+      tester
+          .widget<PowerButton>(find.byKey(const Key('connect-button')))
+          .enabled,
+      isFalse,
+    );
+    expect(
+      tester.widget<PowerButton>(find.byKey(const Key('connect-button'))).label,
+      'Проверка состояния VPN',
+    );
     expect(find.text('Не подключено'), findsNothing);
     await tester.tap(find.byKey(const Key('connect-button')));
     await tester.pump();
@@ -33,12 +51,18 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Трафик заблокирован'), findsOneWidget);
-    expect(find.text('Отключить'), findsOneWidget);
     expect(
-      find.textContaining('Код: native_storage_unavailable'),
+      tester.widget<PowerButton>(find.byKey(const Key('connect-button'))).label,
+      'Отключить VPN',
+    );
+    await tester.tap(find.byKey(const Key('connection-notice')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Трафик заблокирован'), findsOneWidget);
+    expect(
+      find.text('Не удалось открыть защищённые настройки VPN.'),
       findsOneWidget,
     );
+    expect(find.textContaining('Код:'), findsNothing);
     await tester.pumpWidget(const SizedBox());
     await bridge.close();
   });
@@ -69,16 +93,32 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Отключить'), findsOneWidget);
-      expect(find.textContaining('Подключено ·'), findsOneWidget);
+      final power = tester.widget<PowerButton>(
+        find.byKey(const Key('connect-button')),
+      );
+      expect(power.label, 'Отключить VPN');
+      expect(power.active, isTrue);
+      expect(power.elapsedLabel, matches(RegExp(r'^\d{2}:\d{2}:\d{2}$')));
+      expect(find.textContaining('Подключено ·'), findsNothing);
       expect(
         find.text('Защита при сбое процесса не подтверждена'),
-        findsOneWidget,
+        findsNothing,
       );
       await tester.tap(find.byKey(const Key('connect-button')));
       await tester.pumpAndSettle();
       expect(bridge.disconnects, 1);
-      expect(find.text('Не подключено'), findsOneWidget);
+      expect(
+        tester
+            .widget<PowerButton>(find.byKey(const Key('connect-button')))
+            .active,
+        isFalse,
+      );
+      expect(
+        tester
+            .widget<PowerButton>(find.byKey(const Key('connect-button')))
+            .label,
+        'Подключить VPN',
+      );
       await tester.pumpWidget(const SizedBox());
       await bridge.close();
     },

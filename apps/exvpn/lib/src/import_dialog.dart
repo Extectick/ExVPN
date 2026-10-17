@@ -5,7 +5,9 @@ import 'package:flutter/foundation.dart';
 import '../services/subscription_loader.dart';
 import '../services/subscription_persistence.dart';
 import '../services/qr_import.dart';
+import 'app_strings.dart';
 import 'subscription_issues_dialog.dart';
+import 'sliding_segments.dart';
 
 class ImportDialog extends StatefulWidget {
   const ImportDialog({
@@ -155,13 +157,17 @@ class _ImportDialogState extends State<ImportDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            widget.persistence?.error != null
-                ? 'Подписка применена в этом сеансе, но не сохранена. Повторите сохранение на главном экране.'
-                : applied
-                ? result.issues.isEmpty
-                      ? 'Подписка ${group == null ? 'добавлена' : 'обновлена'}'
-                      : 'Подписка импортирована с замечаниями'
-                : 'Не удалось импортировать подключения. Проверьте данные подписки.',
+            context.tr(
+              widget.persistence?.error != null
+                  ? 'Подписка применена в этом сеансе, но не сохранена. Повторите сохранение на главном экране.'
+                  : applied
+                  ? result.issues.isEmpty
+                        ? group == null
+                              ? 'Подписка добавлена'
+                              : 'Подписка обновлена'
+                        : 'Подписка импортирована с замечаниями'
+                  : 'Не удалось импортировать подключения. Проверьте данные подписки.',
+            ),
           ),
         ),
       );
@@ -209,7 +215,9 @@ class _ImportDialogState extends State<ImportDialog> {
     canPop: !_loading,
     child: AlertDialog(
       title: Text(
-        widget.group == null ? 'Добавить подписку' : 'Обновить подписку',
+        context.tr(
+          widget.group == null ? 'Добавить подписку' : 'Обновить подписку',
+        ),
       ),
       content: SizedBox(
         width: 440,
@@ -223,30 +231,32 @@ class _ImportDialogState extends State<ImportDialog> {
                 enabled: !_loading && widget.group == null,
                 maxLength: 80,
                 key: const Key('subscription-name'),
-                decoration: const InputDecoration(
-                  labelText: 'Название подписки',
+                decoration: InputDecoration(
+                  labelText: context.tr('Название подписки'),
                   counterText: '',
                 ),
               ),
               const SizedBox(height: 18),
-              SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(
+              SlidingSegments<bool>(
+                width: 440,
+                height: 40,
+                items: [
+                  SlidingSegment(
                     value: true,
-                    label: Text('Ссылка'),
-                    icon: Icon(Icons.link),
+                    label: context.tr('Ссылка'),
+                    icon: Icons.link,
                   ),
-                  ButtonSegment(
+                  SlidingSegment(
                     value: false,
-                    label: Text('Текст'),
-                    icon: Icon(Icons.notes_rounded),
+                    label: context.tr('Текст'),
+                    icon: Icons.notes_rounded,
                   ),
                 ],
-                selected: {_link},
-                onSelectionChanged: _loading
+                value: _link,
+                onChanged: _loading
                     ? null
                     : (value) => setState(() {
-                        _link = value.single;
+                        _link = value;
                         _error = null;
                       }),
               ),
@@ -255,14 +265,16 @@ class _ImportDialogState extends State<ImportDialog> {
                 key: const Key('qr-import-button'),
                 onPressed: _loading ? null : _readQr,
                 icon: const Icon(Icons.qr_code, size: 20),
-                label: const Text('QR из изображения'),
+                label: Text(context.tr('QR из изображения')),
               ),
               if (_qrRead)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    'QR-код прочитан. Проверьте данные и подтвердите импорт.',
-                    style: TextStyle(fontSize: 12),
+                    context.tr(
+                      'QR-код прочитан. Проверьте данные и подтвердите импорт.',
+                    ),
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ),
               const SizedBox(height: 12),
@@ -278,9 +290,9 @@ class _ImportDialogState extends State<ImportDialog> {
                     ? TextInputType.url
                     : TextInputType.multiline,
                 decoration: InputDecoration(
-                  labelText: _link
-                      ? 'Ссылка HTTPS'
-                      : 'Ссылки подключений или JSON',
+                  labelText: context.tr(
+                    _link ? 'Ссылка HTTPS' : 'Ссылки подключений или JSON',
+                  ),
                   hintText: _link
                       ? 'https://…'
                       : 'VLESS, VMess, Trojan, Shadowsocks, Hysteria2',
@@ -288,9 +300,11 @@ class _ImportDialogState extends State<ImportDialog> {
               ),
               const SizedBox(height: 16),
               Text(
-                widget.persistence == null
-                    ? 'В этой сборке подписки хранятся только до закрытия приложения.'
-                    : 'Подписки сохраняются в защищённом хранилище устройства.',
+                context.tr(
+                  widget.persistence == null
+                      ? 'В этой сборке подписки хранятся только до закрытия приложения.'
+                      : 'Подписки сохраняются в защищённом хранилище устройства.',
+                ),
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.5,
@@ -301,7 +315,7 @@ class _ImportDialogState extends State<ImportDialog> {
                 Padding(
                   padding: const EdgeInsets.only(top: 14),
                   child: Text(
-                    _error!,
+                    context.tr(_error!),
                     style: TextStyle(
                       fontSize: 13,
                       color: Theme.of(context).colorScheme.error,
@@ -315,7 +329,7 @@ class _ImportDialogState extends State<ImportDialog> {
       actions: [
         TextButton(
           onPressed: _loading ? null : () => Navigator.pop(context),
-          child: const Text('Отмена'),
+          child: Text(context.tr('Отмена')),
         ),
         FilledButton(
           key: const Key('import-submit'),
@@ -326,7 +340,9 @@ class _ImportDialogState extends State<ImportDialog> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text(widget.group == null ? 'Добавить' : 'Обновить'),
+              : Text(
+                  context.tr(widget.group == null ? 'Добавить' : 'Обновить'),
+                ),
         ),
       ],
     ),

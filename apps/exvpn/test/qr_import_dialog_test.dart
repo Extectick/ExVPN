@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:exvpn/services/qr_import.dart';
 import 'package:exvpn/src/import_dialog.dart';
+import 'package:exvpn/src/sliding_segments.dart';
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 const _profile =
     'vless://00000000-0000-4000-8000-000000000001@sample.invalid:443'
@@ -21,6 +23,9 @@ Future<void> _open(
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(
     MaterialApp(
+      locale: const Locale('ru'),
+      supportedLocales: const [Locale('ru')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: Scaffold(
         body: Builder(
           builder: (context) => TextButton(
@@ -66,9 +71,9 @@ void main() {
     );
     expect(
       tester
-          .widget<SegmentedButton<bool>>(find.byType(SegmentedButton<bool>))
-          .selected,
-      {false},
+          .widget<SlidingSegments<bool>>(find.byType(SlidingSegments<bool>))
+          .value,
+      false,
     );
     await tester.tap(find.byKey(const Key('import-submit')));
     await tester.pumpAndSettle();
@@ -90,9 +95,9 @@ void main() {
     expect(controller.groups, isEmpty);
     expect(
       tester
-          .widget<SegmentedButton<bool>>(find.byType(SegmentedButton<bool>))
-          .selected,
-      {true},
+          .widget<SlidingSegments<bool>>(find.byType(SlidingSegments<bool>))
+          .value,
+      true,
     );
     await tester.tap(find.text('Отмена'));
     await tester.pumpAndSettle();

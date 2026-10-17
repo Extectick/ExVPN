@@ -27,7 +27,8 @@ $appVersion = Get-NoticeAppVersion (Get-Content -LiteralPath (Join-Path $reposit
 $pubLockPath = Join-Path $repository 'apps/exvpn/pubspec.lock'
 $packageConfigPath = Join-Path $repository 'apps/exvpn/.dart_tool/package_config.json'
 $dartInputs = @(Get-NoticeDartInputs $repository (Get-Content -LiteralPath $pubLockPath -Raw) $packageConfigPath -FlutterSdkRoot $runtime.SdkRoot)
-if ($NativeBinaries.Count -ne $(if ($Target -eq 'Windows') { 1 } else { 2 })) { throw 'Supply the exact staged Windows service or both Android ABI libraries.' }
+if (($Target -eq 'Windows' -and $NativeBinaries.Count -notin @(1,2)) -or
+    ($Target -eq 'Android' -and $NativeBinaries.Count -ne 2)) { throw 'Supply the exact staged Windows service with its optional app updater, or both Android ABI libraries.' }
 if ($Target -eq 'Windows' -and !(Test-Path -LiteralPath $WintunLicensePath -PathType Leaf)) { throw 'Supply the Wintun license staged with the Windows native payload.' }
 if (!$OutputDirectory) { $OutputDirectory = Join-Path $repository "artifacts/notices/$($Target.ToLowerInvariant())" }
 $output = [IO.Path]::GetFullPath($OutputDirectory)
@@ -76,11 +77,11 @@ foreach ($binaryPathInput in $NativeBinaries) {
     $buildInfo = (& $go version -m -json $binaryPath) -join "`n"
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect Go binary build information.' }
     $info = $buildInfo | ConvertFrom-Json -AsHashtable
-    if (!$info.Deps.Count) { throw 'Go module build information is missing.' }
+    $dependencies = Get-NoticeBinaryDependencies $Target $info $lock.go.version
     $binary = Get-NoticeBinaryName $Target $info $lock.go.version
     if (!$binaryNames.Add($binary)) { throw 'Duplicate native ABI supplied; one required ABI would be missing.' }
-    $binaryEvidence.Add([ordered]@{ name = $binary; sha256 = (Get-FileHash -LiteralPath $binaryPath -Algorithm SHA256).Hash.ToLowerInvariant(); go = $info.GoVersion; modules = $info.Deps })
-    foreach ($dependency in $info.Deps) {
+    $binaryEvidence.Add([ordered]@{ name = $binary; sha256 = (Get-FileHash -LiteralPath $binaryPath -Algorithm SHA256).Hash.ToLowerInvariant(); go = $info.GoVersion; modules = @($dependencies) })
+    foreach ($dependency in $dependencies) {
         if ($dependency.Path.StartsWith('github.com/Extectick/ExVPN/')) { continue }
         if ($dependency['Replace']) { throw "External replacement requires a source review: $($dependency.Path)" }
         $key = "$($dependency.Path)@$($dependency.Version)"
@@ -88,6 +89,7 @@ foreach ($binaryPathInput in $NativeBinaries) {
         $modules[$key] = $dependency
     }
 }
+if ($Target -eq 'Windows' -and !$binaryNames.Contains('service/exvpn-service.exe')) { throw 'The staged Windows service is required for its notice evidence.' }
 
 foreach ($key in @($modules.Keys | Sort-Object)) {
     # Downloads only the version embedded in the built binary, checked against
@@ -147,6 +149,9 @@ if ($Target -eq 'Windows') {
     Add-SingleNotice 'Wintun prebuilt DLL' $wintun.version $WintunLicensePath $wintun.source
 }
 Add-SingleNotice 'Inter font' 'SHA256:29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031' (Join-Path $repository 'apps/exvpn/assets/fonts/OFL.txt')
+Add-SingleNotice 'Noto Sans SC' 'google-fonts:47d54ca1ebb14fd864695f1d39dc734f39017c33' (Join-Path $repository 'apps/exvpn/assets/fonts/NotoSansSC-OFL.txt') 'https://github.com/google/fonts/tree/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/notosanssc'
+Add-SingleNotice 'Noto Sans Arabic' 'google-fonts:47d54ca1ebb14fd864695f1d39dc734f39017c33' (Join-Path $repository 'apps/exvpn/assets/fonts/NotoSansArabic-OFL.txt') 'https://github.com/google/fonts/tree/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/notosansarabic'
+Add-SingleNotice 'flag-icons' '7.5.0:7aa5b2bdddd570ece62c812c0cb588ccdc099e2e' (Join-Path $repository 'apps/exvpn/assets/licenses/FlagIcons.txt') 'https://github.com/lipis/flag-icons/tree/7aa5b2bdddd570ece62c812c0cb588ccdc099e2e'
 Add-SingleNotice 'Material Icons' $lock.flutter.version (Join-Path $repository 'apps/exvpn/assets/licenses/MaterialIcons.txt')
 Add-SingleNotice 'Cupertino Icons' '1.0.9' (Join-Path $repository 'apps/exvpn/assets/licenses/CupertinoIcons.txt')
 

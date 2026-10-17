@@ -1,4 +1,5 @@
 import 'package:exvpn_domain/exvpn_domain.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// Only stable diagnostic codes cross into UI. Platform messages can contain
@@ -67,9 +68,30 @@ const _codes = {
   'timeout',
   'ipc_disconnected',
   'channel_closed',
+  'mode_unsupported',
+  'mode_invalid',
+  'mode_switch_requires_connected',
+  'mode_profile_mismatch',
+  'proxy_setup_failed',
+  'proxy_query_failed',
+  'proxy_restore_failed',
+  'proxy_settings_conflict',
+  'proxy_settings_changed',
+  'proxy_store_unavailable',
+  'proxy_invalid_endpoint',
+  'proxy_unavailable',
+  'connection_mode_rejected',
+  'connection_busy',
+  'proxy_exclusions_unsupported',
+  'proxy_requires_guard_recovery',
+  'proxy_start_failed',
+  'proxy_stop_failed',
+  'proxy_unreachable',
+  'proxy_endpoint_unavailable',
+  'proxy_bind_failed',
 };
 
-final class NativeVpnBridge implements VpnBridge {
+final class NativeVpnBridge implements VpnBridge, ConnectionModeBridge {
   NativeVpnBridge({
     MethodChannel? methods,
     EventChannel? stateEvents,
@@ -111,9 +133,42 @@ final class NativeVpnBridge implements VpnBridge {
   @override
   Future<VpnStatus> getStatus() async =>
       decodeStatus(await _invoke('getStatus'));
+
+  @override
+  bool get supportsConnectionModes =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+
   @override
   Future<void> connect(ConnectionProfile profile) async {
-    await _invoke('connect', {'profile': profile.toNativeJson()});
+    if (supportsConnectionModes) {
+      await connectInMode(profile, VpnMode.vpn);
+    } else {
+      await _invoke('connect', {'profile': profile.toNativeJson()});
+    }
+  }
+
+  @override
+  Future<void> connectInMode(ConnectionProfile profile, VpnMode mode) async {
+    if (!supportsConnectionModes) {
+      if (mode != VpnMode.vpn) throw const VpnFailure('mode_unsupported');
+      await connect(profile);
+      return;
+    }
+    await _invoke('connect', {
+      'profile': profile.toNativeJson(),
+      'mode': mode.name,
+    });
+  }
+
+  @override
+  Future<void> reconnect(ConnectionProfile profile, VpnMode mode) async {
+    if (!supportsConnectionModes) {
+      throw const VpnFailure('mode_unsupported');
+    }
+    await _invoke('reconnect', {
+      'profile': profile.toNativeJson(),
+      'mode': mode.name,
+    });
   }
 
   @override
@@ -198,6 +253,16 @@ final class NativeVpnBridge implements VpnBridge {
     if (phase == VpnPhase.connected && (id == null || epoch == null)) {
       throw const VpnFailure('invalid_native_response');
     }
+    final mode = map.containsKey('mode')
+        ? VpnMode.values.where((value) => value.name == map['mode']).firstOrNull
+        : VpnMode.vpn;
+    if (mode == null ||
+        (map.containsKey('systemProxySupported') &&
+            map['systemProxySupported'] is! bool) ||
+        (map.containsKey('cleanupRequired') &&
+            map['cleanupRequired'] is! bool)) {
+      throw const VpnFailure('invalid_native_response');
+    }
     return VpnStatus(
       phase: phase,
       processCrashProtection: map['processCrashProtection'] as bool,
@@ -208,6 +273,9 @@ final class NativeVpnBridge implements VpnBridge {
       errorCode: map['errorCode'] == null
           ? null
           : safeVpnCode(map['errorCode']),
+      mode: mode,
+      systemProxySupported: map['systemProxySupported'] == true,
+      cleanupRequired: map['cleanupRequired'] == true,
     );
   }
 }

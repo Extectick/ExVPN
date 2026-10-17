@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import 'package:exvpn/main.dart';
+import 'package:exvpn/services/app_updates.dart';
 import 'package:exvpn/services/data_updates.dart';
 import 'package:exvpn/services/dart_updates.dart';
 import 'package:exvpn/services/vpn_controller.dart';
@@ -7,10 +8,18 @@ import 'package:exvpn/src/updates_sheet.dart';
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'dart_updates_test.dart' show FakeDartUpdates;
 import 'updates_sheet_test.dart' show tapVisible;
 import 'vpn_controller_test.dart' show FakeBridge, running;
+
+Widget _russianUpdates(Widget home) => MaterialApp(
+  locale: const Locale('ru'),
+  supportedLocales: const [Locale('ru')],
+  localizationsDelegates: GlobalMaterialLocalizations.delegates,
+  home: home,
+);
 
 void main() {
   testWidgets(
@@ -27,9 +36,7 @@ void main() {
       addTearDown(dart.dispose);
       await dart.initialize();
       await tester.pumpWidget(
-        MaterialApp(
-          home: UpdatesSheet(updates: data, dartUpdates: dart),
-        ),
+        _russianUpdates(UpdatesSheet(updates: data, dartUpdates: dart)),
       );
       expect(find.text('Недоступен в этой сборке'), findsOneWidget);
       expect(find.text('Базовый выпуск'), findsNothing);
@@ -44,7 +51,7 @@ void main() {
   );
 
   testWidgets(
-    'versions load lazily; patch download leaves the active VPN controller alone',
+    'startup checks once; opening versions and patch download leave active VPN alone',
     (tester) async {
       final bridge = FakeBridge();
       final vpn = VpnController(bridge);
@@ -55,22 +62,30 @@ void main() {
         vpn: vpn,
         backend: DisabledDataUpdatesBackend(),
       );
+      final appUpdates = AppUpdatesController(
+        fullBackend: const DisabledFullUpdatesBackend(),
+        dartUpdates: dart,
+      );
+      tester.platformDispatcher.localesTestValue = const [Locale('ru')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
       await tester.pumpWidget(
         ExVpnApp(
           controller: AppController(),
           vpn: vpn,
           updates: data,
           dartUpdates: dart,
+          appUpdates: appUpdates,
         ),
       );
       await tester.pumpAndSettle();
       bridge.emit(running());
       await tester.pump();
-      expect(backend.reads, 0);
+      expect(backend.reads, 1);
+      expect(backend.checks, 1);
       await tapVisible(tester, find.byKey(const Key('settings-button')));
       await tapVisible(tester, find.text('Версии и обновления'));
       expect(backend.reads, 1);
-      expect(backend.checks, 0);
+      expect(backend.checks, 1);
       expect(find.text('Патч 7'), findsOneWidget);
       await tapVisible(tester, find.byKey(const Key('dart-updates-check')));
       backend.saved = const DartPatchSnapshot(
@@ -119,9 +134,7 @@ void main() {
       addTearDown(dart.dispose);
       await dart.initialize();
       await tester.pumpWidget(
-        MaterialApp(
-          home: UpdatesSheet(updates: data, dartUpdates: dart),
-        ),
+        _russianUpdates(UpdatesSheet(updates: data, dartUpdates: dart)),
       );
       await tester.scrollUntilVisible(find.text('Патч 4'), 200);
       expect(find.text('Патч 4'), findsOneWidget);
@@ -152,9 +165,7 @@ void main() {
     addTearDown(dart.dispose);
     await dart.initialize();
     await tester.pumpWidget(
-      MaterialApp(
-        home: UpdatesSheet(updates: data, dartUpdates: dart),
-      ),
+      _russianUpdates(UpdatesSheet(updates: data, dartUpdates: dart)),
     );
     expect(find.text('Не удалось определить'), findsNWidgets(2));
     expect(find.text('Базовый выпуск'), findsNothing);

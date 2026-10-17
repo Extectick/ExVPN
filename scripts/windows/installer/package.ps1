@@ -4,10 +4,12 @@ param(
     [Parameter(Mandatory)][ValidateSet('Inspect','Install','Uninstall','Recover','Rollback')][string]$Action,
     [string]$PayloadRoot,
     [string]$OwnerSid = 'AUTO',
-    [switch]$EnableNetworkTesting
+    [switch]$EnableNetworkTesting,
+    [switch]$RequireDisconnected
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'package-common.ps1')
+if ($RequireDisconnected -and $Action -ne 'Install') { throw 'The automatic update gate is only valid for Install.' }
 
 function Read-PackageJson([string]$Path) {
     if ((Get-Item -LiteralPath $Path).Length -gt 10MB) { throw 'Package metadata is too large.' }
@@ -19,6 +21,18 @@ function Read-Payload([string]$Root) {
     foreach ($tree in @('ui','service','control')) { Assert-TreeManifest (Join-Path $Root $tree) $metadata.trees.$tree }
     if (!(Test-Path -LiteralPath (Join-Path $Root 'ui/exvpn.exe')) -or !(Test-Path -LiteralPath (Join-Path $Root 'service/exvpn-service.exe'))) { throw 'Package binaries missing.' }
     $metadata
+}
+
+function Resolve-PackageNetworkTesting($Current, [bool]$WasExplicit, [bool]$Requested) {
+    if ($Current -and $Current.networkTesting -isnot [bool]) { throw 'Installed network-testing state must be a boolean.' }
+    if ($WasExplicit) { return $Requested }
+    if ($Current) { return $Current.networkTesting }
+    return $false
+}
+
+function Get-PackageMaintenanceControl([bool]$RequireIdle) {
+    if ($RequireIdle) { return 129 }
+    return 128
 }
 
 if ($Action -eq 'Inspect') {
@@ -41,13 +55,26 @@ function Read-InstalledState {
     if (!(Test-Path -LiteralPath $statePath)) { return $null }
     Assert-ProtectedPackage $roots.control
     $state = Read-PackageJson $statePath
-    if ($state.format -ne 1 -or $state.ownerSid -notmatch '^S-1-5-21-\d+-\d+-\d+-\d+$' -or $state.build -lt 1) { throw 'Invalid installed state.' }
+    if ($state.format -ne 1 -or $state.ownerSid -notmatch '^S-1-5-21-\d+-\d+-\d+-\d+$' -or $state.build -lt 1 -or $state.networkTesting -isnot [bool]) { throw 'Invalid installed state.' }
     foreach ($tree in @('ui','service','control')) {
         Assert-ProtectedPackage $roots[$tree]
         if ($tree -eq 'control') { Assert-TreeManifest $roots[$tree] $state.trees.$tree @('install-state.json') }
         else { Assert-TreeManifest $roots[$tree] $state.trees.$tree }
     }
     $state
+}
+
+function Assert-OwnerProxyReleased($State) {
+    # WinINET belongs to the desktop account. Elevated package maintenance must
+    # never overwrite a different user's HKCU or decrypt their proxy snapshot.
+    # Require explicit Disconnect by the owning UI before replacing its service.
+    $ownerHive = 'Registry::HKEY_USERS\' + $State.ownerSid
+    if (!(Test-Path -LiteralPath $ownerHive)) { throw 'Sign in as the ExVPN owner before package maintenance; proxy recovery cannot be checked while the user hive is unloaded.' }
+    $leaseKey = Join-Path $ownerHive 'Software\ExVPN\SystemProxy.v1'
+    if (Test-Path -LiteralPath $leaseKey) {
+        $key = Get-Item -LiteralPath $leaseKey
+        if ('Lease' -in $key.GetValueNames()) { throw 'Disconnect PROXY in ExVPN before package maintenance so the previous Windows proxy settings are restored.' }
+    }
 }
 
 function Get-ExpectedServiceCommand($State) {
@@ -59,20 +86,29 @@ function Assert-OwnedService($State) {
     if ($service -and ($service.PathName -cne (Get-ExpectedServiceCommand $State) -or $service.StartName -ne 'LocalSystem')) { throw 'Service identity/configuration differs from owned installation.' }
     $service
 }
+function Request-OwnedServiceStop([int]$Control) {
+    & "$env:SystemRoot\System32\sc.exe" control ExVPNService $Control | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'Maintenance stop was not accepted; existing protection was retained.' }
+}
 function Stop-OwnedService($State) {
     $existing = Assert-OwnedService $State
+    if ($RequireDisconnected -and (!$existing -or $existing.State -ne 'Running')) {
+        throw 'Automatic update requires a running service that can confirm disconnected state. Existing protection was retained.'
+    }
     if ($existing -and $existing.State -ne 'Stopped') {
         if ($existing.State -ne 'Running') { throw 'Service is transitioning; retry maintenance later.' }
-        & "$env:SystemRoot\System32\sc.exe" control ExVPNService 128 | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw 'Explicit maintenance disconnect was not accepted.' }
+        $control = Get-PackageMaintenanceControl ([bool]$RequireDisconnected)
+        Request-OwnedServiceStop $control
         $service = Get-Service ExVPNService
         $service.WaitForStatus([ServiceProcess.ServiceControllerStatus]::Stopped,[TimeSpan]::FromSeconds(40))
         $existing = Assert-OwnedService $State
         if ($existing.ExitCode -ne 0 -or $existing.ServiceSpecificExitCode -ne 0) { throw 'Service maintenance failed; files and protection retained.' }
     }
     if (Get-NetAdapter -Name 'ExVPN-Tunnel' -ErrorAction SilentlyContinue) { throw 'An adapter remains after service stop. Restore the VM snapshot or complete owned adapter recovery before proceeding.' }
-    & (Join-Path $roots.service 'exvpn-service.exe') recover-guard
-    if ($LASTEXITCODE -ne 0) { throw 'Owned guard recovery failed; installation retained.' }
+    if (!$RequireDisconnected) {
+        & (Join-Path $roots.service 'exvpn-service.exe') recover-guard
+        if ($LASTEXITCODE -ne 0) { throw 'Owned guard recovery failed; installation retained.' }
+    }
 }
 function Delete-OwnedService($State) {
     if (Assert-OwnedService $State) {
@@ -247,7 +283,9 @@ function Invoke-PackageUninstall($Current) {
 $maintenanceLock = Enter-MachineMaintenanceLock
 try {
 $current = Read-InstalledState
+if ($current) { Assert-OwnerProxyReleased $current }
 if ($Action -eq 'Install') {
+    if ($RequireDisconnected -and !$current) { throw 'Automatic update requires an existing managed installation.' }
     $metadata = Read-Payload $PayloadRoot
     Assert-ProtectedPackage $PayloadRoot
     $resolvedOwner = Resolve-PackageOwner $OwnerSid
@@ -290,7 +328,8 @@ try {
         }
         Write-Host 'Previous package restored; no subscription data or automatic VPN session was restored.'; return
     }
-    $new = [pscustomobject]@{ format = 1; version = $metadata.version; build = $metadata.build; ownerSid = $resolvedOwner; networkTesting = [bool]$EnableNetworkTesting; rollbackPath = $null; trees = $metadata.trees }
+    $networkTesting = Resolve-PackageNetworkTesting $current ($PSBoundParameters.ContainsKey('EnableNetworkTesting')) ([bool]$EnableNetworkTesting)
+    $new = [pscustomobject]@{ format = 1; version = $metadata.version; build = $metadata.build; ownerSid = $resolvedOwner; networkTesting = $networkTesting; rollbackPath = $null; trees = $metadata.trees }
     # The NSIS-generated uninstaller is written into protected staging after
     # payload extraction; record its actual hash before any installation change.
     $uninstaller = Join-Path $PayloadRoot 'Uninstall.exe'

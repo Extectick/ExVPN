@@ -1,3 +1,7 @@
 # Checksummed patch bytes must be identical on Windows and CI checkouts.
 native/patches/*.patch text eol=lf
 native/patches/*.json text eol=lf
+
+# Keep upstream OFL notices byte-for-byte, including their original whitespace.
+apps/exvpn/assets/fonts/NotoSansArabic-OFL.txt -text -whitespace
+apps/exvpn/assets/fonts/NotoSansSC-OFL.txt -text -whitespace

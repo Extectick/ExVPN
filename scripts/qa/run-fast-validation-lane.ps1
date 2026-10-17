@@ -2,7 +2,7 @@
 #requires -Version 7.0
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)][ValidateSet('domain', 'state', 'updates', 'app', 'core', 'android', 'windows', 'xray', 'installer', 'scripts', 'ci')][string]$Lane,
+    [Parameter(Mandatory)][ValidateSet('domain', 'state', 'updates', 'app', 'core', 'android', 'windows', 'appupdater', 'xray', 'installer', 'scripts', 'ci')][string]$Lane,
     [switch]$FreshGoTests,
     [ValidateRange(1, 16)][int]$TestConcurrency = 2,
     [switch]$OnlineDependencies
@@ -73,6 +73,24 @@ switch ($Lane) {
         if ($FreshGoTests) { $arguments += '-count=1' }
         $arguments += './...'
         Invoke-Check $go $arguments
+        Invoke-Check $go @('vet', '-mod=readonly', '-p', "$TestConcurrency", './...')
+        break
+    }
+    'appupdater' {
+        # Package-updater tests are synthetic and standard-library-only. No
+        # installer, Windows service, feed or public dependency network is used.
+        Set-Location -LiteralPath (Join-Path $repository 'native/appupdater')
+        $env:GOPROXY = 'off'
+        $env:GOSUMDB = 'off'
+        $env:GOWORK = 'off'
+        $env:GOTOOLCHAIN = 'local'
+        $modules = @(& $go list -mod=readonly -m all)
+        if ($LASTEXITCODE -ne 0 -or $modules.Count -ne 1 -or
+            $modules[0] -cne 'github.com/Extectick/ExVPN/native/appupdater') {
+            throw 'App updater must retain its pinned standard-library-only module graph.'
+        }
+        Invoke-Check $go @('mod', 'verify')
+        Invoke-Check $go @('test', '-mod=readonly', '-count=1', '-p', "$TestConcurrency", '-parallel', "$TestConcurrency", '-timeout', '5m', './...')
         Invoke-Check $go @('vet', '-mod=readonly', '-p', "$TestConcurrency", './...')
         break
     }

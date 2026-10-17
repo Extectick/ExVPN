@@ -1,0 +1,32 @@
+{
+  "status": "PASS",
+  "go": "1.27.2",
+  "scope": "mock lifecycle and loopback HTTP forward/CONNECT through independent VLESS peer; no host network mutation",
+  "focusedRace": "PASS",
+  "nativeWindowsUnit": "PASS",
+  "vet": "PASS",
+  "serviceBuild": false,
+  "serviceRuntimeAcceptance": false,
+  "files": [
+    {
+      "path": "native/windows/proxy_config.go",
+      "sha256": "dbfa72c637485b5ce5c0d24e046fe587c9cba8312728b2410356bb175295ad2a"
+    },
+    {
+      "path": "native/windows/proxy_controller_test.go",
+      "sha256": "6706bf2febd7bfdda7e8ead0e600b67c3f1d94672097e203e9a853d09315b796"
+    },
+    {
+      "path": "native/windows/proxy_controller.go",
+      "sha256": "77fb82b9dee3bd479d73f0ae0ee75620aa7b2b1b81d408802c4e79343bdb6c0f"
+    },
+    {
+      "path": "native/windows/proxy_runtime_windows_test.go",
+      "sha256": "f5503ee2f8d6331b47900c3e84306a021c34d7ce54a63ee5cd2427fdc91ce897"
+    },
+    {
+      "path": "native/windows/proxy_runtime_windows.go",
+      "sha256": "1452ec976857a3db3116efe54e61c3e4fe69df4e4b04cd2e98a66900ba8931d5"
+    }
+  ]
+}

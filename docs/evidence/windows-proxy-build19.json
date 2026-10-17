@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "date": "2026-10-18T02:10:30+07:00",
+  "sourceCommit": "4b791fd9a79304543affcbf1f9b0597f439799b7",
+  "sourceState": "working tree; commit pending",
+  "version": "0.1.0+19",
+  "scope": "Windows system proxy and server/mode switching; light theme and row spacing",
+  "builds": {
+    "windowsUi": "PASS",
+    "windowsService": "PASS",
+    "installer": {
+      "file": "ExVPN-0.1.0-19-windows-x64-development.exe",
+      "sha256": "8d999e72fdd488d3fd8846b0340833abaf17c9c9d40e8555db6126132dcc5ece",
+      "nsis": "3.13",
+      "version": "0.1.0",
+      "build": 19,
+      "signed": false,
+      "systemTested": false
+    },
+    "componentNotices": 142,
+    "published": false
+  },
+  "checks": {
+    "dartControllerAndCodec": {
+      "passed": 34,
+      "log": "artifacts/qa/proxy-dart-final-20261018.log"
+    },
+    "nativeWindows": {
+      "unit": "PASS",
+      "focusedRace": "PASS",
+      "vet": "PASS",
+      "loopback": "HTTP forward and HTTPS CONNECT through independent synthetic VLESS; TLS rejection/stats/close/no direct fallback",
+      "evidence": "evidence/windows-proxy-native-build19.json"
+    },
+    "systemProxyPolicy": {
+      "passed": 11,
+      "backend": "in-memory fake; no host settings changed",
+      "covers": "original/PAC/bypass/flags recovery, switch, interrupted writes, external changes, explicit-intent polling"
+    },
+    "independentReview": "foreign-settings polling issue fixed and reviewed again",
+    "fullRunner": "not run per focused UI/work scope"
+  },
+  "installation": {
+    "exitCode": 0,
+    "version": "0.1.0+19",
+    "uiExe": "C:\\Program Files\\ExVPN\\exvpn.exe",
+    "uiPid": 42832,
+    "uiWindow": "ExVPN",
+    "responding": true,
+    "serviceState": "Running",
+    "servicePid": 54372,
+    "payloadExeAotServiceHashesMatch": true,
+    "previousPackageBackup": "C:\\Program Files\\ExVPN Rollback\\b0821f52-a4c5-4bca-9a3e-1aadf72dc221",
+    "ownerAndNetworkGatePreserved": true,
+    "userSubscriptionsUntouched": true
+  },
+  "remaining": [
+    "Actual WinINET apply/restore and installed PROXY-VPN runtime acceptance",
+    "Latest light-theme and row spacing visual acceptance",
+    "Android PROXY and atomic server reconnect unsupported",
+    "Stable release acceptance remains open"
+  ]
+}

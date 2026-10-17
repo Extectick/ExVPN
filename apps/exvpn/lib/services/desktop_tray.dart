@@ -118,6 +118,7 @@ final class DesktopTrayController {
   Future<void> handleCommand(String command) async {
     if (_disposed ||
         _handling ||
+        vpn.applicationRestartPending ||
         !const {'connect', 'disconnect', 'exit'}.contains(command)) {
       return;
     }
@@ -126,7 +127,12 @@ final class DesktopTrayController {
     try {
       if (command == 'exit') {
         await tray.showWindow();
-        if (_disposed || !await confirmExit() || _disposed) return;
+        if (_disposed ||
+            !await confirmExit() ||
+            _disposed ||
+            vpn.applicationRestartPending) {
+          return;
+        }
         if (!await saveBeforeExit()) {
           if (!_disposed) {
             showNotice(
@@ -135,7 +141,9 @@ final class DesktopTrayController {
           }
           return;
         }
-        if (!_disposed) await tray.exitApplication();
+        if (!_disposed && !vpn.applicationRestartPending) {
+          await tray.exitApplication();
+        }
         return;
       }
 

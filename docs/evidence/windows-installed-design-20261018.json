@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "date": "2026-10-18T01:23:06+07:00",
+  "sourceCommit": "4b791fd9a79304543affcbf1f9b0597f439799b7",
+  "sourceState": "working tree; commit pending",
+  "version": "0.1.0+18",
+  "uiRevision": "design-20261018.2",
+  "scope": "Windows UI changes and installed UI-only replacement; no VPN acceptance",
+  "build": {
+    "exitCode": 0,
+    "seconds": 24.8,
+    "command": "flutter build windows --release --pub --dart-define=EXVPN_DEMO=false",
+    "bundlePath": "V:\\GitProjects\\ExVPN\\artifacts\\windows\\design-update-20261018-012013\\ui"
+  },
+  "uiChanges": [
+    "minimal selection opens modal without layout change",
+    "server actions header fixed above scrolling groups",
+    "subscription issues read-only summary and top-right close",
+    "application messages concise without raw error code"
+  ],
+  "verification": {
+    "dartAnalyze": "2 changed Dart files; no issues",
+    "fileTransactionChecks": "8/8 temp-file scenarios; no system mutation",
+    "manifestHashCrossRuntime": "PS5.1 and PS7 agree after ordinal sort",
+    "sourceBundleSha256": "1186f4413d5bfe822a4d12b803ed90e762924a809a4f832b94c0bf1cacfd5f8e",
+    "installedExeSha256": "e9e105bd783d19223e92daee5feefa925a0f077e07061acf4d1623b6d0fddd27",
+    "installedAotSha256": "ce4c76f762983531235151f457418f117fffcff2e2cad734f99bf02b49654e1a",
+    "installedFilesMatchBuiltFiles": true,
+    "processPath": "C:\\Program Files\\ExVPN\\exvpn.exe",
+    "pid": 29292,
+    "windowTitle": "ExVPN",
+    "windowResponding": true
+  },
+  "deployment": {
+    "transaction": "320eb5a9-26c3-4df7-9019-9b93370bb37f",
+    "backupRoot": "C:\\Program Files\\ExVPN Design Updates\\320eb5a9-26c3-4df7-9019-9b93370bb37f",
+    "serviceStayedRunning": true,
+    "servicePidBefore": 54088,
+    "servicePidAfter": 54088,
+    "serviceConfigAndFilesPreserved": true,
+    "userStorageUntouched": true,
+    "crtAndProtectedAclsPreserved": true
+  },
+  "limitations": [
+    "manual inspection of latest picker and pinned header pending",
+    "DPI/multi-monitor acceptance pending",
+    "VPN tests, Full runner and publication not run"
+  ]
+}

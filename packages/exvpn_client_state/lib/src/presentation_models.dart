@@ -26,13 +26,14 @@ final class ServerEntry {
 
   String get id => profile.id;
 
-  /// Move an explicit leading flag into the flag column. Do not geolocate hosts
+  /// Move an explicit flag into the flag column. Do not geolocate hosts
   /// or guess a country from a server name.
   String get name {
     final trimmed = profile.name.trim();
-    if (_countryFromFlag(trimmed) == null) return trimmed;
-    final suffix = String.fromCharCodes(trimmed.runes.skip(2)).trimLeft();
-    return suffix.isEmpty ? trimmed : suffix;
+    final flag = _flagPattern.firstMatch(trimmed);
+    if (flag == null) return trimmed;
+    final withoutFlag = trimmed.replaceRange(flag.start, flag.end, '').trim();
+    return withoutFlag.isEmpty ? trimmed : withoutFlag;
   }
 
   String get protocolLabel {
@@ -61,12 +62,12 @@ final class ServerEntry {
   String toString() => 'ServerEntry(<redacted>, demo: $isDemo)';
 }
 
+final _flagPattern = RegExp('[\u{1f1e6}-\u{1f1ff}]{2}', unicode: true);
+
 String? _countryFromFlag(String name) {
-  final runes = name.trimLeft().runes.take(2).toList();
-  if (runes.length != 2 ||
-      runes.any((rune) => rune < 0x1f1e6 || rune > 0x1f1ff)) {
-    return null;
-  }
+  final match = _flagPattern.firstMatch(name);
+  if (match == null) return null;
+  final runes = match.group(0)!.runes;
   return String.fromCharCodes(runes.map((rune) => rune - 0x1f1e6 + 65));
 }
 

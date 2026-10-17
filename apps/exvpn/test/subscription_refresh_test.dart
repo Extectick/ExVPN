@@ -13,6 +13,46 @@ const newProfile =
     'vless://00000000-0000-4000-8000-000000000002@sample.invalid:443?security=tls#New';
 void main() {
   test(
+    'restart reservation discards a late HTTP response before storage changes',
+    () async {
+      final app = AppController()
+        ..addSubscription(
+          name: 'Example',
+          raw: oldProfile,
+          sourceUrl: 'https://example.invalid/sub',
+        );
+      var allowed = true;
+      final response = Completer<http.Response>();
+      var requests = 0;
+      final refresh = SubscriptionRefresh(
+        app,
+        canApply: () => allowed,
+        loader: SubscriptionLoader(
+          client: MockClient((_) {
+            requests++;
+            return response.future;
+          }),
+        ),
+      );
+      addTearDown(refresh.dispose);
+      addTearDown(app.dispose);
+      var changes = 0;
+      final listener = app.changes.listen((_) => changes++);
+      addTearDown(listener.cancel);
+      final pending = refresh.refresh(app.groups.single.id);
+      allowed = false;
+      final before = changes;
+      response.complete(http.Response(newProfile, 200));
+      expect(await pending, isFalse);
+      expect(app.selectedServer!.name, 'Old');
+      expect(changes, before);
+      expect(refresh.failed, isEmpty);
+      expect(await refresh.refresh(app.groups.single.id), isFalse);
+      expect(requests, 1);
+    },
+  );
+
+  test(
     'background partial refresh retains the working list until confirmation',
     () async {
       final app = AppController()

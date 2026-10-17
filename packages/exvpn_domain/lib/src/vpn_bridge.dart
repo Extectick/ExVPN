@@ -10,6 +10,8 @@ enum VpnPhase {
   error,
 }
 
+enum VpnMode { proxy, vpn }
+
 final class VpnStatus {
   const VpnStatus({
     required this.phase,
@@ -17,6 +19,9 @@ final class VpnStatus {
     this.activeProfileId,
     this.connectedAt,
     this.errorCode,
+    this.mode = VpnMode.vpn,
+    this.systemProxySupported = false,
+    this.cleanupRequired = false,
   });
   final VpnPhase phase;
 
@@ -27,6 +32,10 @@ final class VpnStatus {
 
   /// Stable diagnostic code; never a raw exception or core configuration.
   final String? errorCode;
+  final VpnMode mode;
+  final bool systemProxySupported;
+  /// Local native recovery is pending even when the service cannot be reached.
+  final bool cleanupRequired;
 }
 
 final class ApplicationIdentity {
@@ -69,4 +78,11 @@ abstract interface class VpnBridge {
   Future<ProbeResult> probe(ConnectionProfile profile);
   Future<String> coreVersion();
   Future<void> openSystemProtectionSettings();
+}
+
+/// Optional native capability; legacy/Android bridges keep the VPN-only API.
+abstract interface class ConnectionModeBridge {
+  bool get supportsConnectionModes;
+  Future<void> connectInMode(ConnectionProfile profile, VpnMode mode);
+  Future<void> reconnect(ConnectionProfile profile, VpnMode mode);
 }

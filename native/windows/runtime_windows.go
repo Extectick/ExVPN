@@ -48,8 +48,11 @@ func (t *xrayTunnel) Statistics() (Traffic, error) {
 	return readTraffic(manager)
 }
 func readTraffic(manager stats.Manager) (Traffic, error) {
-	upload := manager.GetCounter("inbound>>>vpn>>>traffic>>>uplink")
-	download := manager.GetCounter("inbound>>>vpn>>>traffic>>>downlink")
+	return readTrafficTag(manager, "vpn")
+}
+func readTrafficTag(manager stats.Manager, tag string) (Traffic, error) {
+	upload := manager.GetCounter("inbound>>>" + tag + ">>>traffic>>>uplink")
+	download := manager.GetCounter("inbound>>>" + tag + ">>>traffic>>>downlink")
 	if upload == nil || download == nil {
 		return Traffic{}, Code("statistics_unavailable")
 	}

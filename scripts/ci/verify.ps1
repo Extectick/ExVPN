@@ -57,7 +57,7 @@ try {
 
 # These tests use loopback sockets and temporary named pipes only. They never
 # install services/drivers, mutate WFP, or change routes/DNS on the runner.
-foreach ($module in @('native/core', 'native/android', 'native/windows')) {
+foreach ($module in @('native/core', 'native/android', 'native/windows', 'native/appupdater')) {
     Push-Location (Join-Path $repository $module)
     try {
         Invoke-Checked $go @('mod', 'verify')

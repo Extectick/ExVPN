@@ -1,17 +1,21 @@
 import 'dart:async';
 
 import 'package:exvpn_client_state/exvpn_client_state.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../services/vpn_controller.dart';
-import 'exclusions_sheet.dart';
-import '../services/subscription_persistence.dart';
-import '../services/safe_diagnostics.dart';
 import '../build_identity.dart';
-import '../services/data_updates.dart';
 import '../services/dart_updates.dart';
+import '../services/data_updates.dart';
+import '../services/safe_diagnostics.dart';
+import '../services/subscription_persistence.dart';
+import '../services/vpn_controller.dart';
+import 'app_strings.dart';
+import 'appearance.dart';
+import 'exclusions_sheet.dart';
+import 'sliding_segments.dart';
+import 'theme_editor.dart';
 import 'updates_sheet.dart';
 
 class SettingsSheet extends StatefulWidget {
@@ -23,6 +27,8 @@ class SettingsSheet extends StatefulWidget {
     required this.onAdd,
     this.vpn,
     this.persistence,
+    this.previewVersion,
+    this.previewBuild,
   });
   final AppController controller;
   final ThemeMode themeMode;
@@ -30,20 +36,25 @@ class SettingsSheet extends StatefulWidget {
   final VoidCallback onAdd;
   final VpnController? vpn;
   final SubscriptionPersistence? persistence;
+  final String? previewVersion;
+  final int? previewBuild;
   @override
   State<SettingsSheet> createState() => _SettingsSheetState();
 }
 
 class _SettingsSheetState extends State<SettingsSheet> {
-  late ThemeMode _mode = widget.themeMode;
-  late StreamSubscription<void> _changes;
+  late final AppearanceController _fallbackAppearance;
+
   @override
   void initState() {
     super.initState();
+    _fallbackAppearance = AppearanceController(persist: false)
+      ..setChoice(switch (widget.themeMode) {
+        ThemeMode.system => ThemeChoice.system,
+        ThemeMode.dark => ThemeChoice.dark,
+        ThemeMode.light => ThemeChoice.light,
+      });
     widget.vpn?.addListener(_vpnChanged);
-    _changes = widget.controller.changes.listen((_) {
-      if (mounted) setState(() {});
-    });
   }
 
   void _vpnChanged() {
@@ -52,50 +63,20 @@ class _SettingsSheetState extends State<SettingsSheet> {
 
   @override
   void dispose() {
-    _changes.cancel();
     widget.vpn?.removeListener(_vpnChanged);
+    _fallbackAppearance.dispose();
     super.dispose();
-  }
-
-  Future<void> _remove(SubscriptionGroup group) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Удалить подписку?'),
-        content: Text('«${group.name}» и её подключения будут удалены.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Отмена'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Удалить'),
-          ),
-        ],
-      ),
-    );
-    if (result == true && mounted) {
-      widget.controller.removeSubscription(group.id);
-      await widget.persistence?.flush();
-      if (mounted && widget.persistence?.error != null) {
-        _info(
-          'Сохранение не завершено',
-          'Не удалось сохранить удаление. Повторите сохранение на главном экране.',
-        );
-      }
-    }
   }
 
   void _info(String title, String content) => showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text(title),
-      content: Text(content),
+      title: Text(ctx.tr(title)),
+      content: Text(ctx.tr(content)),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Понятно'),
+          child: Text(ctx.tr('Понятно')),
         ),
       ],
     ),
@@ -112,14 +93,16 @@ class _SettingsSheetState extends State<SettingsSheet> {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Обезличенная диагностика'),
+        title: Text(ctx.tr('Обезличенная диагностика')),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Отчёт содержит только версии и состояние приложения. Подписки, ключи, адреса и история трафика не включены.',
+              Text(
+                ctx.tr(
+                  'Отчёт содержит только версии и состояние приложения. Подписки, ключи, адреса и история трафика не включены.',
+                ),
               ),
               const SizedBox(height: 16),
               SelectableText(
@@ -132,18 +115,18 @@ class _SettingsSheetState extends State<SettingsSheet> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Закрыть'),
+            child: Text(ctx.tr('Закрыть')),
           ),
           FilledButton.icon(
             icon: const Icon(Icons.copy, size: 18),
-            label: const Text('Копировать'),
+            label: Text(ctx.tr('Копировать')),
             onPressed: () async {
               try {
                 await Clipboard.setData(ClipboardData(text: report));
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Отчёт скопирован')),
+                    SnackBar(content: Text(context.tr('Отчёт скопирован'))),
                   );
                 }
               } catch (_) {
@@ -162,210 +145,289 @@ class _SettingsSheetState extends State<SettingsSheet> {
     );
   }
 
+  void _openThemeEditor(AppearanceController appearance) {
+    appearance.setChoice(ThemeChoice.custom);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      constraints: const BoxConstraints(maxWidth: 560),
+      builder: (_) => ThemeEditorSheet(appearance: appearance),
+    );
+  }
+
+  Widget _sectionLabel(BuildContext context, String label) => Text(
+    context.tr(label),
+    style: TextStyle(
+      fontSize: 10,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 1.4,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    ),
+  );
+
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: MediaQuery.sizeOf(context).height * 0.85,
-    child: ListView(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-      children: [
-        Row(
+  Widget build(BuildContext context) {
+    final scopedAppearance = AppearanceScope.maybeOf(context);
+    final appearance = scopedAppearance ?? _fallbackAppearance;
+    return ListenableBuilder(
+      listenable: appearance,
+      builder: (context, _) => SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.85,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
           children: [
-            const Expanded(
-              child: Text(
-                'Настройки',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
-              ),
-            ),
-            IconButton(
-              tooltip: 'Закрыть настройки',
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.close),
-            ),
-          ],
-        ),
-        const SizedBox(height: 28),
-        const Text(
-          'ОФОРМЛЕНИЕ',
-          style: TextStyle(fontSize: 11, letterSpacing: 1.5),
-        ),
-        const SizedBox(height: 14),
-        SegmentedButton<ThemeMode>(
-          key: const Key('theme-selector'),
-          segments: const [
-            ButtonSegment(
-              value: ThemeMode.dark,
-              label: Text('Тёмная'),
-              icon: Icon(Icons.dark_mode_outlined),
-            ),
-            ButtonSegment(
-              value: ThemeMode.light,
-              label: Text('Светлая'),
-              icon: Icon(Icons.light_mode_outlined),
-            ),
-          ],
-          selected: {_mode},
-          onSelectionChanged: (value) {
-            setState(() => _mode = value.single);
-            widget.onThemeChanged(_mode);
-          },
-        ),
-        const SizedBox(height: 30),
-        Row(
-          children: [
-            const Expanded(
-              child: Text(
-                'ПОДПИСКИ',
-                style: TextStyle(fontSize: 11, letterSpacing: 1.5),
-              ),
-            ),
-            IconButton(
-              tooltip: 'Добавить подписку',
-              onPressed: () {
-                Navigator.pop(context);
-                widget.onAdd();
-              },
-              icon: const Icon(Icons.add),
-            ),
-          ],
-        ),
-        if (widget.controller.groups.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text('Подписок пока нет'),
-          ),
-        for (final group in widget.controller.groups)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(group.name),
-            subtitle: Text(
-              'Подключения: ${group.servers.length}${group.isDemo ? ' · пример' : ''}',
-            ),
-            trailing: IconButton(
-              tooltip: 'Удалить ${group.name}',
-              onPressed: () => _remove(group),
-              icon: const Icon(Icons.delete_outline),
-            ),
-          ),
-        const SizedBox(height: 20),
-        const Divider(),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.apps_outlined),
-          title: const Text('Исключения приложений'),
-          subtitle: Text(
-            widget.vpn == null
-                ? 'Требуется системный VPN-модуль'
-                : 'Прямой доступ для выбранных приложений',
-          ),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: widget.vpn != null
-              ? () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => ExclusionsSheet(vpn: widget.vpn!),
-                  ),
-                )
-              : () => _info(
-                  'Исключения приложений',
-                  'Список приложений и правила обхода VPN будут доступны после подключения и проверки системного модуля.',
-                ),
-        ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.shield_outlined),
-          title: const Text('Защита соединения'),
-          subtitle: Text(
-            widget.vpn?.status.processCrashProtection == true
-                ? 'Системная защита подтверждена'
-                : 'Защита при сбое процесса не подтверждена',
-          ),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => showDialog<void>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Защита соединения'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'На Android защита при аварии процесса требует Always-on VPN и «Блокировать соединения без VPN» в настройках системы. Эта блокировка может оставаться включённой после отключения в приложении. На Windows защитой управляет служба ExVPN.',
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    context.tr('Настройки'),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 20),
-                    Text(
-                      DataUpdatesScope.maybeOf(ctx)?.snapshot.help ??
-                          bundledConnectionHelp,
+                  ),
+                ),
+                IconButton(
+                  tooltip: context.tr('Закрыть настройки'),
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _sectionLabel(context, 'ОФОРМЛЕНИЕ'),
+            const SizedBox(height: 10),
+            LayoutBuilder(
+              builder: (context, constraints) => SlidingSegments<ThemeChoice>(
+                key: const Key('theme-selector'),
+                width: constraints.maxWidth,
+                height: 42,
+                iconSize: 16,
+                items: [
+                  SlidingSegment(
+                    value: ThemeChoice.dark,
+                    label: context.tr('Тёмная'),
+                    tooltip: context.tr('Тёмная'),
+                    icon: Icons.dark_mode_outlined,
+                  ),
+                  SlidingSegment(
+                    value: ThemeChoice.light,
+                    label: context.tr('Светлая'),
+                    tooltip: context.tr('Светлая'),
+                    icon: Icons.light_mode_outlined,
+                  ),
+                  SlidingSegment(
+                    value: ThemeChoice.custom,
+                    label: context.tr('Я дизайнер'),
+                    tooltip: context.tr('Я дизайнер'),
+                    icon: Icons.palette_outlined,
+                  ),
+                ],
+                value: appearance.choice == ThemeChoice.system
+                    ? Theme.of(context).brightness == Brightness.dark
+                          ? ThemeChoice.dark
+                          : ThemeChoice.light
+                    : appearance.choice,
+                onChanged: (choice) {
+                  appearance.setChoice(choice);
+                  if (scopedAppearance == null) {
+                    widget.onThemeChanged(appearance.themeMode);
+                  }
+                },
+              ),
+            ),
+            if (appearance.choice == ThemeChoice.custom) ...[
+              const SizedBox(height: 6),
+              TextButton.icon(
+                key: const Key('custom-theme-editor'),
+                onPressed: () => _openThemeEditor(appearance),
+                icon: const Icon(Icons.tune, size: 18),
+                label: Text(context.tr('Настроить цвета')),
+              ),
+            ],
+            const SizedBox(height: 22),
+            _sectionLabel(context, 'ЯЗЫК'),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              key: ValueKey(
+                'language-${appearance.locale?.languageCode ?? Localizations.localeOf(context).languageCode}',
+              ),
+              initialValue:
+                  appearance.locale?.languageCode ??
+                  Localizations.localeOf(context).languageCode,
+              isExpanded: true,
+              menuMaxHeight: 360,
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.language, size: 20),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                isDense: true,
+              ),
+              items: [
+                for (final language in _languages)
+                  DropdownMenuItem(
+                    value: language.$1,
+                    child: Text(language.$2),
+                  ),
+              ],
+              onChanged: appearance.setLocale,
+            ),
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 8),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.apps_outlined),
+              title: Text(context.tr('Исключения приложений')),
+              subtitle: Text(
+                context.tr(
+                  widget.vpn == null
+                      ? 'Требуется системный VPN-модуль'
+                      : 'Прямой доступ для выбранных приложений',
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: widget.vpn != null
+                  ? () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => ExclusionsSheet(vpn: widget.vpn!),
+                      ),
+                    )
+                  : () => _info(
+                      'Исключения приложений',
+                      'Список приложений и правила обхода VPN будут доступны после подключения и проверки системного модуля.',
+                    ),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.shield_outlined),
+              title: Text(context.tr('Защита соединения')),
+              subtitle: Text(
+                context.tr(
+                  widget.vpn?.status.processCrashProtection == true
+                      ? 'Системная защита подтверждена'
+                      : 'Защита при сбое процесса не подтверждена',
+                ),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => showDialog<void>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(ctx.tr('Защита соединения')),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          ctx.tr(
+                            'На Android защита при аварии процесса требует Always-on VPN и «Блокировать соединения без VPN» в настройках системы. Эта блокировка может оставаться включённой после отключения в приложении. На Windows защитой управляет служба ExVPN.',
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          ctx.tr(
+                            DataUpdatesScope.maybeOf(ctx)?.snapshot.help ??
+                                bundledConnectionHelp,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    if (widget.vpn != null)
+                      TextButton(
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          try {
+                            await widget.vpn!.bridge
+                                .openSystemProtectionSettings();
+                          } catch (_) {
+                            if (mounted) {
+                              _info(
+                                'Системные настройки',
+                                'Откройте настройки VPN в вашей системе.',
+                              );
+                            }
+                          }
+                        },
+                        child: Text(ctx.tr('Настройки системы')),
+                      ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text(ctx.tr('Понятно')),
                     ),
                   ],
                 ),
               ),
-              actions: [
-                if (widget.vpn != null)
-                  TextButton(
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      try {
-                        await widget.vpn!.bridge.openSystemProtectionSettings();
-                      } catch (_) {
-                        if (mounted) {
-                          _info(
-                            'Системные настройки',
-                            'Откройте настройки VPN в вашей системе.',
-                          );
-                        }
-                      }
-                    },
-                    child: const Text('Настройки системы'),
-                  ),
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Понятно'),
-                ),
-              ],
             ),
-          ),
-        ),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.system_update_alt),
-          title: const Text('Версии и обновления'),
-          subtitle: const Text('ExVPN $appVersion · сборка $appBuild'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () {
-            final updates = DataUpdatesScope.maybeOf(context);
-            final dartUpdates = DartUpdatesScope.maybeOf(context);
-            if (updates != null) {
-              unawaited(dartUpdates?.initialize());
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) =>
-                      UpdatesSheet(updates: updates, dartUpdates: dartUpdates),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.system_update_alt),
+              title: Text(context.tr('Версии и обновления')),
+              subtitle: Text(
+                context.tr(
+                  'ExVPN {version} · сборка {build}',
+                  values: {
+                    'version': widget.previewVersion ?? appVersion,
+                    'build': '${widget.previewBuild ?? appBuild}',
+                  },
                 ),
-              );
-            }
-          },
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                final updates = DataUpdatesScope.maybeOf(context);
+                final dartUpdates = DartUpdatesScope.maybeOf(context);
+                if (updates != null) {
+                  unawaited(dartUpdates?.initialize());
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => UpdatesSheet(
+                        updates: updates,
+                        dartUpdates: dartUpdates,
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.description_outlined),
+              title: Text(context.tr('Обезличенная диагностика')),
+              subtitle: Text(context.tr('Посмотреть и скопировать отчёт')),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _diagnostics,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              context.tr('created by БЕЛКА'),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 24),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.description_outlined),
-          title: const Text('Обезличенная диагностика'),
-          subtitle: const Text('Посмотреть и скопировать отчёт'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: _diagnostics,
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Предварительная версия\n${widget.persistence == null ? 'Подписки не сохраняются после закрытия.' : 'Подписки хранятся с системным шифрованием.'} '
-          '${widget.vpn == null ? 'В браузере системный VPN недоступен.' : 'Состояние соединения поступает от системного VPN-модуля.'}',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 12,
-            height: 1.6,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }
+
+const _languages = [
+  ('ru', 'Русский'),
+  ('en', 'English'),
+  ('kk', 'Қазақша'),
+  ('de', 'Deutsch'),
+  ('fr', 'Français'),
+  ('es', 'Español'),
+  ('pt', 'Português'),
+  ('tr', 'Türkçe'),
+  ('zh', '中文'),
+  ('ar', 'العربية'),
+];

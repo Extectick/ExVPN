@@ -104,6 +104,27 @@ $f = New-Findings
 Test-AuditGoBinary $info 'service/exvpn-service.exe' ('a' * 64) $pins '1.27.2' $f | Out-Null
 Assert-True ((Has-Code $f 'native_module_pin_mismatch') -and (Has-Code $f 'external_go_module_replacement') -and (Has-Code $f 'native_platform_mismatch') -and (Has-Code $f 'native_go_version_mismatch')) 'wrong pin/toolchain/platform/replacement rejected'
 
+$helperInfo = @{
+    GoVersion='go1.27.2'; Path='github.com/Extectick/ExVPN/native/appupdater'
+    Main=@{Path='github.com/Extectick/ExVPN/native/appupdater'}
+    Settings=@(@{Key='GOOS';Value='windows'},@{Key='GOARCH';Value='amd64'},@{Key='-buildmode';Value='exe'})
+}
+$f = New-Findings
+$helperEvidence = Test-AuditGoBinary $helperInfo 'ui/exvpn-updater.exe' ('9' * 64) @{} '1.27.2' $f
+Assert-True ($f.Count -eq 0 -and $helperEvidence.modules.Count -eq 0) 'exact app updater stdlib evidence'
+Assert-Rejected { Test-AuditGoBinary $helperInfo 'service/exvpn-service.exe' ('9' * 64) @{} '1.27.2' (New-Findings) } 'native_module_information_missing'
+$helperInfo.Main.Path='github.com/Extectick/ExVPN/native/other'
+Assert-Rejected { Test-AuditGoBinary $helperInfo 'ui/exvpn-updater.exe' ('9' * 64) @{} '1.27.2' (New-Findings) } 'native_updater_identity_mismatch'
+$helperInfo.Main.Path='github.com/Extectick/ExVPN/native/appupdater'
+$helperInfo.Deps=@(@{Path='example.invalid/dep';Version='v1.0.0';Sum='h1:synthetic'})
+Assert-Rejected { Test-AuditGoBinary $helperInfo 'ui/exvpn-updater.exe' ('9' * 64) @{} '1.27.2' (New-Findings) } 'native_updater_dependencies_present'
+$helperInfo.Remove('Deps')
+$helperInfo.Main.Replace=@{Path='example.invalid/replacement'}
+Assert-Rejected { Test-AuditGoBinary $helperInfo 'ui/exvpn-updater.exe' ('9' * 64) @{} '1.27.2' (New-Findings) } 'native_updater_identity_mismatch'
+$helperInfo.Main.Remove('Replace')
+Assert-True ((Get-AuditWindowsNativePaths @{}).Count -eq 1) 'historical Windows service-only compatibility'
+Assert-True ((Get-AuditWindowsNativePaths @{'ui/exvpn-updater.exe'=@{}}).Count -eq 2) 'packaged app updater included in exact native audit'
+
 $noticeFiles = New-AuditFileMap
 $noticeFiles.Add('license.txt', @{ path = 'license.txt'; sha256 = ('b' * 64); size = 5 })
 $notice = @{ path = 'license.txt'; sha256 = ('b' * 64) }
@@ -117,6 +138,16 @@ $inventory = @{ schema = 1; target = 'Windows'; app = @{ version = '0.1.0+9' }; 
 $f = New-Findings
 Test-AuditNotices $inventory $noticeFiles @($nativeEvidence) 'Windows' '0.1.0+9' ('c' * 64) $f
 Assert-True ($f.Count -eq 0) 'exact notice/native/version binding'
+$inventory.nativeBinaries += @{name='ui/exvpn-updater.exe';sha256=('9' * 64);go='go1.27.2';modules=@()}
+$inventory.components += @{name='Go runtime';version='1.27.2';scope='runtime-or-asset';notices=@($notice)}
+$f=New-Findings
+Test-AuditNotices $inventory $noticeFiles @($nativeEvidence,$helperEvidence) 'Windows' '0.1.0+9' ('c' * 64) $f
+Assert-True ($f.Count -eq 0) 'helper byte identity bound to own and existing Go runtime notices'
+$inventory.components=@($inventory.components | Where-Object name -CNE 'Go runtime')
+$f=New-Findings
+Test-AuditNotices $inventory $noticeFiles @($nativeEvidence,$helperEvidence) 'Windows' '0.1.0+9' ('c' * 64) $f
+Assert-True (Has-Code $f 'stdlib_go_runtime_notice_missing') 'stdlib updater still requires Go runtime license'
+$inventory.nativeBinaries=@($inventory.nativeBinaries[0])
 $inventory.components[0].version = '0.1.0+1'
 $inventory.nativeBinaries[0].name = 'artifacts/windows/exvpn-service.exe'
 $inventory.dartLockSha256 = 'outdated'

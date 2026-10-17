@@ -71,6 +71,29 @@ if ((Get-NoticeBinaryName 'Windows' $info '1.27.2') -cne 'service/exvpn-service.
 $checks++
 Assert-Rejected { Get-NoticeBinaryName 'Android' $info '1.27.2' }
 Assert-Rejected { Get-NoticeBinaryName 'Windows' $info '1.27.1' }
+$helper = @{
+    GoVersion='go1.27.2'
+    Path='github.com/Extectick/ExVPN/native/appupdater'
+    Main=@{Path='github.com/Extectick/ExVPN/native/appupdater'}
+    Settings=$info.Settings
+}
+if ((Get-NoticeBinaryName 'Windows' $helper '1.27.2') -cne 'ui/exvpn-updater.exe' -or
+    (Get-NoticeBinaryDependencies 'Windows' $helper '1.27.2').Count -ne 0) { throw 'Exact stdlib-only app updater was rejected.' }; $checks++
+Assert-Rejected { Get-NoticeBinaryDependencies 'Windows' $info '1.27.2' }
+$helper.Main.Path='github.com/Extectick/ExVPN/native/other'
+Assert-Rejected { Get-NoticeBinaryDependencies 'Windows' $helper '1.27.2' }
+$helper.Main.Path='github.com/Extectick/ExVPN/native/appupdater'
+$helper.Path='github.com/Extectick/ExVPN/native/appupdater/cmd/other'
+Assert-Rejected { Get-NoticeBinaryDependencies 'Windows' $helper '1.27.2' }
+$helper.Path='github.com/Extectick/ExVPN/native/appupdater'
+$helper.Deps=@(@{Path='example.invalid/unexpected';Version='v1.0.0';Sum='h1:synthetic'})
+Assert-Rejected { Get-NoticeBinaryDependencies 'Windows' $helper '1.27.2' }
+$helper.Remove('Deps')
+$helper.Main.Replace=@{Path='example.invalid/replacement'}
+Assert-Rejected { Get-NoticeBinaryDependencies 'Windows' $helper '1.27.2' }
+$helper.Main.Remove('Replace')
+Assert-Rejected { Get-NoticeBinaryDependencies 'Android' $helper '1.27.2' }
+Assert-Rejected { Get-NoticeBinaryDependencies 'Windows' $helper '1.27.1' }
 $info.Settings = @(@{Key='GOOS';Value='android'},@{Key='GOARCH';Value='arm64'},@{Key='-buildmode';Value='c-shared'})
 if ((Get-NoticeBinaryName 'Android' $info '1.27.2') -cne 'lib/arm64-v8a/libexvpn.so') { throw 'Wrong Android ABI identity.' }
 $checks++
@@ -81,6 +104,12 @@ $checks++
 $inventory = [pscustomobject]@{schema=1;app=@{version='1.2.3+42'};dartLockSha256=$hash;nativeBinaries=@(@{name='service/exvpn-service.exe';sha256=$hash});components=@(@{name='ExVPN';version='1.2.3+42'},@{name='ExVPN copyright';version='1.2.3+42'})}
 Assert-NoticePackageBinding $inventory '1.2.3+42' $hash @{'service/exvpn-service.exe'=$hash}
 $checks++
+$helperHash='b' * 64
+$inventory.nativeBinaries += @{name='ui/exvpn-updater.exe';sha256=$helperHash}
+Assert-NoticePackageBinding $inventory '1.2.3+42' $hash @{'service/exvpn-service.exe'=$hash;'ui/exvpn-updater.exe'=$helperHash}; $checks++
+Assert-Rejected { Assert-NoticePackageBinding $inventory '1.2.3+42' $hash @{'service/exvpn-service.exe'=$hash} }
+Assert-Rejected { Assert-NoticePackageBinding $inventory '1.2.3+42' $hash @{'service/exvpn-service.exe'=$hash;'ui/exvpn-updater.exe'=$hash} }
+$inventory.nativeBinaries=@($inventory.nativeBinaries[0])
 Assert-Rejected { Assert-NoticePackageBinding $inventory '1.2.3+43' $hash @{'service/exvpn-service.exe'=$hash} }
 Assert-Rejected { Assert-NoticePackageBinding $inventory '1.2.3+42' ('b' * 64) @{'service/exvpn-service.exe'=$hash} }
 Assert-Rejected { Assert-NoticePackageBinding $inventory '1.2.3+42' $hash @{'service/exvpn-service.exe'=('b' * 64)} }

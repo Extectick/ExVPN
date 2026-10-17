@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "date": "2026-10-18",
+  "scope": "Windows design preview only",
+  "status": "VISUAL_PREVIEW_PASS",
+  "reference": "design/concepts/approved-close-wordmark.png",
+  "visualReport": "design-qa.md",
+  "nativeWindowSourceImplemented": true,
+  "nativeWindowRuntimeVerified": false,
+  "nativeBuildsRun": false,
+  "vpnTestsRun": false,
+  "fullRunnerRun": false,
+  "sourceState": "working tree; commit pending",
+  "dartAnalysis": "No issues found: 4 UI files",
+  "sourceFiles": [
+    {
+      "file": "apps/exvpn/lib/design_preview.dart",
+      "sha256": "acc20465055404a467c0fc0f8868e3047172abf85302203e368eab7fa74942d2"
+    },
+    {
+      "file": "apps/exvpn/lib/src/desktop_layout.dart",
+      "sha256": "a985b3262fce6d154d3fa996d8676eeedd74277b3eb9d11605b67ccd90d4c977"
+    },
+    {
+      "file": "apps/exvpn/lib/src/home_screen.dart",
+      "sha256": "6a99dae57c89f3586136bbb7939214e44dc2587827013ca406c81720c95cbc9b"
+    },
+    {
+      "file": "apps/exvpn/lib/src/power_button.dart",
+      "sha256": "ff1a27264b46cbb7d8d233c1c6d5e5be30261bef714ee74ba86013cc21fdb238"
+    },
+    {
+      "file": "apps/exvpn/windows/runner/flutter_window.cpp",
+      "sha256": "3e8f22c2356e3fb3f60b2ac828d07f27bd7ccb82f5a8749a770f9bbb2255e755"
+    },
+    {
+      "file": "apps/exvpn/windows/runner/flutter_window.h",
+      "sha256": "d72680810bc90e33fb21fc89d7dff8c926c7c43e4516dc331ab29ceee2b1e7f5"
+    },
+    {
+      "file": "apps/exvpn/windows/runner/main.cpp",
+      "sha256": "24d8c19dca4ff2f762a2d229b79c04be1bf33cfeb690b96c0dc44ead71e3a2ce"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "large-connected.jpg",
+      "sha256": "5c5b2165f45b839532d94cddf7ad7f5fd0b418ff94a1a805c2cb8a7b3934ed91"
+    },
+    {
+      "file": "medium-connected.jpg",
+      "sha256": "0d799e14617bf1e42009902b97d15b444ee55810dd5eb1174b02df1925d93c2c"
+    },
+    {
+      "file": "medium-connecting-glow.jpg",
+      "sha256": "fbbd6af60d0f770f08cbaeccbfd8373e42e772533e9809bc974355204b987829"
+    },
+    {
+      "file": "medium-disconnected.jpg",
+      "sha256": "8a47d6911b0dfe0e62dc0ae79e8580b7880d619abf88324acd8359ea9365800c"
+    },
+    {
+      "file": "medium-scrolled.jpg",
+      "sha256": "6307689e4dbc70d87888b84c698150bf78ba65404dbf353d3395c4fa64859bb0"
+    },
+    {
+      "file": "minimal-connected.jpg",
+      "sha256": "dc44bf2d1fc6d56ab5de0342ae5a6330aec606cfdf1074b6775f29162b7bbf1f"
+    },
+    {
+      "file": "minimal-scaled.jpg",
+      "sha256": "26aeaf493215da6804895328eccb12229647b3e3b40b3f89b18e630b4b208737"
+    },
+    {
+      "file": "overview.jpg",
+      "sha256": "55017f6dc0ffbb422f4db782b16570f511ab96328702b0014f8d15391b745d3e"
+    },
+    {
+      "file": "reference-comparison.jpg",
+      "sha256": "e1166c9297a8dc9503b208d64f5c59464bd1a16d106b667aa9a2eaae8af87e35"
+    },
+    {
+      "file": "subscription-issue.jpg",
+      "sha256": "3efc1246ae46d9943fd0cf0c447e9258facd66fc967b7f4d7e3caf72f590bbf4"
+    }
+  ]
+}

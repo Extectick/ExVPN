@@ -31,6 +31,8 @@ type Controller struct {
 	ops                sync.Mutex
 	guard              Guard
 	start              TunnelFactory
+	startProxy         TunnelFactory
+	tunnelMode         string
 	validateExclusions func([]string) error
 	networkEnabled     bool
 	status             Status
@@ -58,7 +60,7 @@ func NewControllerWithPolicy(g Guard, f TunnelFactory, validate func([]string) e
 	if err != nil {
 		return nil, Code("guard_inspection_failed")
 	}
-	c := &Controller{guard: g, start: f, validateExclusions: validate, networkEnabled: networkEnabled, status: Status{State: "disconnected", Code: "idle", GuardActive: armed, CoreVersion: exvpn.CoreVersion, Capabilities: Capabilities{SystemTunnel: networkEnabled, PersistentGuard: networkEnabled, ApplicationExclusions: networkEnabled, Verified: false}}}
+	c := &Controller{guard: g, start: f, tunnelMode: ModeVPN, validateExclusions: validate, networkEnabled: networkEnabled, status: Status{Mode: ModeVPN, State: "disconnected", Code: "idle", GuardActive: armed, CoreVersion: exvpn.CoreVersion, Capabilities: Capabilities{SystemTunnel: networkEnabled, PersistentGuard: networkEnabled, ApplicationExclusions: networkEnabled, Verified: false}}}
 	c.monitorInterval = 15 * time.Second
 	c.reconnectDelays = []time.Duration{5 * time.Second, 15 * time.Second, 30 * time.Second}
 	if armed {
@@ -90,6 +92,14 @@ func NewControllerWithPolicy(g Guard, f TunnelFactory, validate func([]string) e
 	return c, nil
 }
 func (c *Controller) Status() Status { c.mu.Lock(); defer c.mu.Unlock(); return c.status }
+
+// Install before serving IPC. Existing constructors remain VPN-only by default.
+func (c *Controller) SetProxyFactory(factory TunnelFactory) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.startProxy = factory
+	c.status.Capabilities.SystemProxy = c.networkEnabled && factory != nil
+}
 func (c *Controller) set(state, code string, active bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -98,6 +108,9 @@ func (c *Controller) set(state, code string, active bool) {
 	c.status.GuardActive = active
 	if state != "connected" {
 		c.status.ConnectedAt = 0
+	}
+	if state == "error" || state == "blocked" || state == "disconnected" {
+		c.status.ProxyPort = 0
 	}
 }
 func (c *Controller) Handle(r Request) Response {
@@ -131,15 +144,15 @@ func (c *Controller) Handle(r Request) Response {
 		}
 		result := c.Probe(p.ID)
 		return Response{Version: ProtocolVersion, ID: r.ID, OK: true, Code: "ok", Status: c.Status(), Probe: &result}
-	case "validate", "connect":
+	case "validate", "connect", "reconnect":
 		p, e := exvpn.DecodeProfile(bytes.NewReader(r.Profile))
 		if e != nil {
 			code = "profile_rejected"
 			ok = false
 			break
 		}
-		if r.Command == "connect" {
-			e = c.connectWithPolicy(p, r.Exclusions, r.Exclusions == nil)
+		if r.Command == "connect" || r.Command == "reconnect" {
+			e = c.connectInMode(p, r.Exclusions, r.Exclusions == nil, r.Mode, r.Command == "reconnect")
 		} else {
 			c.mu.Lock()
 			_, e = c.resolvePolicyLocked(p, r.Exclusions, r.Exclusions == nil)
@@ -215,6 +228,27 @@ func (c *Controller) setExclusions(paths []string) error {
 }
 
 func (c *Controller) connectWithPolicy(p exvpn.Profile, paths []string, stored bool) error {
+	return c.connectInMode(p, paths, stored, ModeVPN, false)
+}
+
+const ModeVPN = "vpn"
+const ModeProxy = "proxy"
+
+func (c *Controller) ConnectMode(p exvpn.Profile, mode string) error {
+	return c.connectInMode(p, nil, true, mode, false)
+}
+
+func (c *Controller) Reconnect(p exvpn.Profile, mode string) error {
+	return c.connectInMode(p, nil, true, mode, true)
+}
+
+func (c *Controller) connectInMode(p exvpn.Profile, paths []string, stored bool, mode string, replace bool) error {
+	if mode == "" {
+		mode = ModeVPN
+	}
+	if mode != ModeVPN && mode != ModeProxy {
+		return Code("connection_mode_rejected")
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.closed {
@@ -223,10 +257,29 @@ func (c *Controller) connectWithPolicy(p exvpn.Profile, paths []string, stored b
 	if !c.networkEnabled {
 		return Code("system_testing_required")
 	}
-	if c.cancel != nil || c.tunnel != nil || c.stopping != 0 {
+	if c.stopping != 0 || (!replace && (c.cancel != nil || c.tunnel != nil)) {
 		return Code("connection_busy")
 	}
-	exclusions, err := c.resolvePolicyLocked(p, paths, stored)
+	// Only an explicitly selected transition from an owned, healthy VPN may
+	// remove its guard. Recovery/unknown cleanup is never a proxy bypass.
+	allowGuardRelease := replace && c.tunnel != nil && c.tunnelMode == ModeVPN &&
+		c.status.GuardActive && (c.status.State == "connected" || c.status.State == "reconnecting")
+	var exclusions []string
+	var err error
+	if mode == ModeProxy {
+		if c.startProxy == nil {
+			return Code("proxy_unavailable")
+		}
+		if paths != nil {
+			return Code("proxy_exclusions_unsupported")
+		}
+		if c.status.State == "blocked" || (c.status.GuardActive && !allowGuardRelease) {
+			return Code("proxy_requires_guard_recovery")
+		}
+		err = validateTunnelProfile(p, nil)
+	} else {
+		exclusions, err = c.resolvePolicyLocked(p, paths, stored)
+	}
 	if err != nil {
 		return err
 	}
@@ -234,8 +287,14 @@ func (c *Controller) connectWithPolicy(p exvpn.Profile, paths []string, stored b
 	if err != nil {
 		return err
 	}
-	if err = c.savePolicyLocked(exclusions); err != nil {
+	if mode == ModeVPN {
+		err = c.savePolicyLocked(exclusions)
+	}
+	if err != nil {
 		return err
+	}
+	if c.cancel != nil {
+		c.cancel()
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	c.cancel = cancel
@@ -246,13 +305,30 @@ func (c *Controller) connectWithPolicy(p exvpn.Profile, paths []string, stored b
 	c.status.Code = "starting"
 	c.status.ConnectedAt = 0
 	c.status.ActiveProfileID = p.ID
-	go c.connect(ctx, generation, p, append([]string(nil), exclusions...))
+	c.status.Mode, c.status.ProxyPort = mode, 0
+	go c.connect(ctx, generation, p, append([]string(nil), exclusions...), mode, replace, allowGuardRelease)
 	return nil
 }
-func (c *Controller) connect(ctx context.Context, generation uint64, p exvpn.Profile, exclusions []string) {
+func (c *Controller) connect(ctx context.Context, generation uint64, p exvpn.Profile, exclusions []string, mode string, replace, allowGuardRelease bool) {
 	c.ops.Lock()
 	defer c.ops.Unlock()
 	if ctx.Err() != nil {
+		return
+	}
+	if replace {
+		c.mu.Lock()
+		cleanupRequired := c.tunnel != nil || (c.tunnelMode != ModeProxy && c.status.GuardActive)
+		c.mu.Unlock()
+		if cleanupRequired {
+			if err := c.stopTunnel(); err != nil {
+				c.set("blocked", safeCode(err, "tunnel_stop_failed"), c.Status().GuardActive)
+				c.finishAttempt(generation)
+				return
+			}
+		}
+	}
+	if mode == ModeProxy {
+		c.connectProxy(ctx, generation, p, allowGuardRelease)
 		return
 	}
 	if e := c.guard.Arm(); e != nil {
@@ -266,6 +342,9 @@ func (c *Controller) connect(ctx context.Context, generation uint64, p exvpn.Pro
 		return
 	}
 	c.set("connecting", "guard_armed", true)
+	c.mu.Lock()
+	c.tunnelMode = ModeVPN
+	c.mu.Unlock()
 	t, e := c.start(ctx, p, exclusions)
 	if t != nil {
 		c.mu.Lock()
@@ -398,6 +477,31 @@ func (c *Controller) finishAttempt(generation uint64) {
 		c.cancel = nil
 	}
 }
+
+// BeginIdleMaintenance atomically reserves a genuinely idle service for an app
+// update. It never cancels a connection, stops a core, or removes protection.
+// The same locks serialize Connect/Reconnect, workers and the stopping gate.
+func (c *Controller) BeginIdleMaintenance() error {
+	if !c.ops.TryLock() {
+		return Code("maintenance_requires_disconnected")
+	}
+	defer c.ops.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.closed || c.stopping != 0 || c.cancel != nil || c.tunnel != nil ||
+		c.status.State != "disconnected" || c.status.GuardActive ||
+		c.status.ProxyPort != 0 || c.status.ActiveProfileID != "" {
+		return Code("maintenance_requires_disconnected")
+	}
+	armed, err := c.guard.Armed()
+	if err != nil || armed {
+		return Code("maintenance_requires_disconnected")
+	}
+	c.closed = true
+	c.generation++
+	return nil
+}
+
 func (c *Controller) Disconnect() error {
 	c.mu.Lock()
 	if c.closed {
@@ -415,7 +519,7 @@ func (c *Controller) Disconnect() error {
 	defer c.ops.Unlock()
 	defer func() { c.mu.Lock(); c.stopping--; c.mu.Unlock() }()
 	if err := c.stopTunnel(); err != nil {
-		c.set("blocked", safeCode(err, "tunnel_stop_failed"), true)
+		c.set("blocked", safeCode(err, "tunnel_stop_failed"), c.Status().GuardActive)
 		return err
 	}
 	// Shutdown can begin while Close is in progress or while this request waits
@@ -426,14 +530,17 @@ func (c *Controller) Disconnect() error {
 	if c.closed {
 		return Code("service_stopping")
 	}
-	if err := c.guard.Disarm(); err != nil {
-		c.status.State, c.status.Code, c.status.GuardActive = "blocked", "guard_remove_failed", true
-		c.status.ConnectedAt = 0
-		return Code("guard_remove_failed")
+	if c.tunnelMode != ModeProxy || c.status.GuardActive {
+		if err := c.guard.Disarm(); err != nil {
+			c.status.State, c.status.Code, c.status.GuardActive = "blocked", "guard_remove_failed", true
+			c.status.ConnectedAt = 0
+			return Code("guard_remove_failed")
+		}
 	}
 	c.status.State, c.status.Code, c.status.GuardActive = "disconnected", "explicit_disconnect", false
 	c.status.ConnectedAt = 0
 	c.status.ActiveProfileID = ""
+	c.status.ProxyPort = 0
 	if !c.exclusionsKnown && c.policy == nil {
 		c.exclusions = []string{}
 		c.exclusionsKnown = true
@@ -503,6 +610,7 @@ func (c *Controller) Statistics() (Traffic, error) {
 func (c *Controller) stopTunnel() error {
 	c.mu.Lock()
 	t := c.tunnel
+	proxyOwned := c.tunnelMode == ModeProxy
 	c.mu.Unlock()
 	// Keep the service's existing permit while retiring outbound sockets and
 	// closing the core. Revoking it first can prevent TCP teardown from reaching
@@ -514,8 +622,10 @@ func (c *Controller) stopTunnel() error {
 	// A failed Close must still revoke dynamic permits. Preserve the owner
 	// until both operations succeed so no replacement core or Disarm can run
 	// after incomplete cleanup. A failed revocation takes diagnostic priority.
-	if e := c.guard.Suspend(); e != nil {
-		return Code("guard_suspend_failed")
+	if !proxyOwned {
+		if e := c.guard.Suspend(); e != nil {
+			return Code("guard_suspend_failed")
+		}
 	}
 	if closeErr != nil {
 		return Code("tunnel_stop_failed")
@@ -523,6 +633,7 @@ func (c *Controller) stopTunnel() error {
 	if t != nil {
 		c.mu.Lock()
 		c.tunnel = nil
+		c.status.ProxyPort = 0
 		c.mu.Unlock()
 	}
 	return nil
@@ -548,6 +659,8 @@ func (c *Controller) Shutdown() error {
 	}
 	if armed {
 		c.set("blocked", "service_stopped", true)
+	} else if c.Status().Mode == ModeProxy {
+		c.set("disconnected", "service_stopped", false)
 	}
 	return err
 }

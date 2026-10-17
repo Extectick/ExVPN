@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import 'package:exvpn/main.dart';
+import 'package:exvpn/build_identity.dart';
+import 'package:exvpn/services/app_updates.dart';
 import 'package:exvpn/services/data_updates.dart';
 import 'package:exvpn/services/dart_updates.dart';
 import 'package:exvpn/services/vpn_controller.dart';
@@ -7,20 +9,32 @@ import 'package:exvpn/src/updates_sheet.dart';
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'data_updates_test.dart' show FakeUpdates;
 import 'vpn_controller_test.dart' show FakeBridge, running, off;
 
 Future<void> tapVisible(WidgetTester tester, Finder target) async {
-  await tester.scrollUntilVisible(
-    target,
-    250,
-    scrollable: find.byType(Scrollable).last,
-  );
+  if (target.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      target,
+      250,
+      scrollable: find.byType(Scrollable).last,
+    );
+  } else {
+    await tester.ensureVisible(target);
+  }
   await tester.pumpAndSettle();
   await tester.tap(target);
   await tester.pumpAndSettle();
 }
+
+Widget _russianUpdates(Widget home) => MaterialApp(
+  locale: const Locale('ru'),
+  supportedLocales: const [Locale('ru')],
+  localizationsDelegates: GlobalMaterialLocalizations.delegates,
+  home: home,
+);
 
 void main() {
   testWidgets(
@@ -39,9 +53,9 @@ void main() {
       addTearDown(controller.dispose);
       await controller.initialize();
       await tester.pumpWidget(
-        MaterialApp(home: UpdatesSheet(updates: controller)),
+        _russianUpdates(UpdatesSheet(updates: controller)),
       );
-      expect(find.text('ExVPN 0.1.0'), findsOneWidget);
+      expect(find.text('ExVPN $appVersion'), findsOneWidget);
       expect(find.byKey(const Key('updates-check')), findsNothing);
       await tester.scrollUntilVisible(
         find.byKey(const Key('updates-disabled')),
@@ -73,9 +87,7 @@ void main() {
     bridge.emit(running());
     await controller.initialize();
     await controller.check();
-    await tester.pumpWidget(
-      MaterialApp(home: UpdatesSheet(updates: controller)),
-    );
+    await tester.pumpWidget(_russianUpdates(UpdatesSheet(updates: controller)));
     await tester.scrollUntilVisible(
       find.byKey(const Key('updates-apply')),
       250,
@@ -122,13 +134,21 @@ void main() {
           help: 'Сохранённая проверенная справка для подключения.',
         );
       final updates = DataUpdatesController(vpn: null, backend: backend);
+      final dart = DartUpdatesController(
+        backend: const DisabledDartUpdatesBackend(),
+      );
+      final appUpdates = AppUpdatesController(
+        fullBackend: const DisabledFullUpdatesBackend(),
+        dartUpdates: dart,
+      );
+      tester.platformDispatcher.localesTestValue = const [Locale('ru')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
       await tester.pumpWidget(
         ExVpnApp(
           controller: AppController(),
           updates: updates,
-          dartUpdates: DartUpdatesController(
-            backend: const DisabledDartUpdatesBackend(),
-          ),
+          dartUpdates: dart,
+          appUpdates: appUpdates,
         ),
       );
       await tester.pumpAndSettle();

@@ -204,21 +204,40 @@ function Invoke-AuditTool([string]$Executable, [string[]]$Arguments, [int]$Timeo
     } finally { $process.Dispose() }
 }
 
+function Test-AuditAppUpdaterIdentity([System.Collections.IDictionary]$Info) {
+    $module = 'github.com/Extectick/ExVPN/native/appupdater'
+    return $Info.Contains('Path') -and $Info['Path'] -ceq $module -and
+        $Info.Contains('Main') -and $Info['Main'] -is [System.Collections.IDictionary] -and $Info['Main']['Path'] -ceq $module -and
+        (!$Info['Main'].Contains('Replace') -or $null -eq $Info['Main']['Replace'])
+}
+
+function Get-AuditWindowsNativePaths($Files) {
+    $paths = @('service/exvpn-service.exe')
+    if ($Files.ContainsKey('ui/exvpn-updater.exe')) { $paths += 'ui/exvpn-updater.exe' }
+    return ,$paths
+}
+
 function Test-AuditGoBinary($Info, [string]$RelativePath, [string]$Sha256, $Pins, [string]$GoVersion, $Findings) {
     if ($Info.GoVersion -cne "go$GoVersion") { Add-AuditFinding $Findings 'native_go_version_mismatch' $RelativePath }
-    if (!$Info.Deps.Count) { throw 'native_module_information_missing' }
+    $dependencies = @(if ($Info.Contains('Deps') -and $null -ne $Info['Deps']) { $Info['Deps'] })
+    if ($RelativePath -ceq 'ui/exvpn-updater.exe') {
+        if (!(Test-AuditAppUpdaterIdentity $Info)) { throw 'native_updater_identity_mismatch' }
+        if ($dependencies.Count) { throw 'native_updater_dependencies_present' }
+    } elseif (!$dependencies.Count) { throw 'native_module_information_missing' }
     $settings = @{}
     foreach ($setting in $Info.Settings) { $settings[$setting.Key] = $setting.Value }
     $expected = switch ($RelativePath) {
         'service/exvpn-service.exe' { @('windows', 'amd64') }
+        'ui/exvpn-updater.exe' { @('windows', 'amd64') }
         'lib/arm64-v8a/libexvpn.so' { @('android', 'arm64') }
         'lib/x86_64/libexvpn.so' { @('android', 'amd64') }
         default { throw 'unexpected_native_binary' }
     }
     if ($settings['GOOS'] -cne $expected[0] -or $settings['GOARCH'] -cne $expected[1]) { Add-AuditFinding $Findings 'native_platform_mismatch' $RelativePath }
+    if ($RelativePath -ceq 'ui/exvpn-updater.exe' -and $settings['-buildmode'] -cne 'exe') { Add-AuditFinding $Findings 'native_platform_mismatch' $RelativePath }
     $modules = [Collections.Generic.List[object]]::new()
     $seen = @{}
-    foreach ($module in $Info.Deps) {
+    foreach ($module in $dependencies) {
         if ($module.Path.StartsWith('github.com/Extectick/ExVPN/')) { continue }
         if ($seen.ContainsKey($module.Path)) { throw 'duplicate_embedded_module' }
         $seen[$module.Path] = $true
@@ -272,6 +291,9 @@ function Test-AuditNotices($Inventory, $Files, $Native, [string]$Target, [string
     }
     $usedNative = @{}
     foreach ($binary in $Native) {
+        if ($binary.path -ceq 'ui/exvpn-updater.exe' -and !$components.ContainsKey("runtime-or-asset/Go runtime@$($binary.go.Substring(2))")) {
+            Add-AuditFinding $Findings 'stdlib_go_runtime_notice_missing' $binary.path
+        }
         $matches = @($Inventory.nativeBinaries | Where-Object { $_.sha256 -ceq $binary.sha256 })
         if ($matches.Count -ne 1) { Add-AuditFinding $Findings 'notice_native_hash_not_bound' $binary.path; continue }
         $declared = $matches[0]

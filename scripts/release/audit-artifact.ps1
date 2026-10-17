@@ -47,7 +47,8 @@ $flutterRuntimeInputs = $null
 $pinPaths = @('apps/exvpn/pubspec.yaml', 'apps/exvpn/pubspec.lock', 'scripts/bootstrap/toolchain.lock.json',
     'scripts/windows/wintun.lock.json', 'scripts/windows/msvc-runtime.lock.json', 'scripts/windows/nsis.lock.json',
     'native/windows/go.mod', 'native/windows/go.sum', 'native/android/go.mod', 'native/android/go.sum',
-    'native/core/go.mod', 'native/core/go.sum', 'LICENSE', 'NOTICE',
+    'native/core/go.mod', 'native/core/go.sum', 'native/appupdater/go.mod', 'config/updates/windows-beta.json',
+    'scripts/windows/build-app-updater.ps1', 'LICENSE', 'NOTICE',
     'native/patches/xray-lifecycle.lock.json', 'native/patches/xray-lifecycle.patch',
     'scripts/release/audit-artifact.ps1', 'scripts/release/artifact-audit-lib.ps1', 'scripts/release/notice-inputs.ps1',
     'scripts/release/nsis-audit-lib.ps1', 'scripts/release/archive-inspector.lock.json',
@@ -105,7 +106,7 @@ try {
             # No download or implicit preparation during the offline audit.
             Add-AuditFinding $findings 'nsis_embedded_payload_not_independently_verified'
         }
-        $nativePaths = @('service/exvpn-service.exe')
+        $nativePaths = Get-AuditWindowsNativePaths $files
         $noticeRoot = Join-Path $payload 'control/notices'
         if (Test-Path -LiteralPath (Join-Path $noticeRoot 'inventory.json')) { $noticeSource = if ($nsisEvidence.verified) { 'installer-payload-verified' } else { 'staged-payload' } }
         $wintun = Get-Content -LiteralPath (Join-Path $repository 'scripts/windows/wintun.lock.json') -Raw | ConvertFrom-Json -AsHashtable

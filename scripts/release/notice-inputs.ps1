@@ -109,6 +109,7 @@ function Get-NoticeBinaryName([string]$Target, $Info, [string]$GoVersion) {
         $settings[$setting.Key] = $setting.Value
     }
     if ($Target -eq 'Windows' -and $settings.GOOS -ceq 'windows' -and $settings.GOARCH -ceq 'amd64' -and $settings['-buildmode'] -ceq 'exe') {
+        if (Test-AuditAppUpdaterIdentity $Info) { return 'ui/exvpn-updater.exe' }
         return 'service/exvpn-service.exe'
     }
     if ($Target -eq 'Android' -and $settings.GOOS -ceq 'android' -and $settings['-buildmode'] -ceq 'c-shared') {
@@ -116,6 +117,17 @@ function Get-NoticeBinaryName([string]$Target, $Info, [string]$GoVersion) {
         if ($settings.GOARCH -ceq 'amd64') { return 'lib/x86_64/libexvpn.so' }
     }
     throw 'Native binary does not match the requested platform, ABI or build mode.'
+}
+
+function Get-NoticeBinaryDependencies([string]$Target, [System.Collections.IDictionary]$Info, [string]$GoVersion) {
+    $binary = Get-NoticeBinaryName $Target $Info $GoVersion
+    $dependencies = @(if ($Info.Contains('Deps') -and $null -ne $Info['Deps']) { $Info['Deps'] })
+    if ($binary -ceq 'ui/exvpn-updater.exe') {
+        if ($dependencies.Count) { throw 'Windows app updater must use only the pinned Go standard library.' }
+    } elseif (!$dependencies.Count) {
+        throw 'Go module build information is missing.'
+    }
+    return ,$dependencies
 }
 
 function Assert-NoticePackageBinding($Inventory, [string]$AppVersion, [string]$DartLockSha256, [System.Collections.IDictionary]$NativeHashes, $Runtime = $null) {

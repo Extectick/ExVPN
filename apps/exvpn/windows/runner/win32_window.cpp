@@ -91,7 +91,9 @@ const wchar_t* WindowClassRegistrar::GetWindowClass() {
     WNDCLASS window_class{};
     window_class.hCursor = LoadCursor(nullptr, IDC_ARROW);
     window_class.lpszClassName = kWindowClassName;
-    window_class.style = CS_HREDRAW | CS_VREDRAW;
+    // Flutter redraws its retained surface; avoid a second erase on every
+    // 1px WM_SIZE which otherwise flashes behind the scaled canvas.
+    window_class.style = CS_DBLCLKS;
     window_class.cbClsExtra = 0;
     window_class.cbWndExtra = 0;
     window_class.hInstance = GetModuleHandle(nullptr);
