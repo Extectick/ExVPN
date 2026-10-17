@@ -30,6 +30,7 @@ const controlRoot = `C:\Program Files\ExVPN UI QA Control`
 
 var stage = "guest-validation"
 var runID string
+var subscriptionPhase string
 
 type tokenFacts struct {
 	Administrator   bool   `json:"administratorToken"`
@@ -238,6 +239,9 @@ func save(name string, value any) error {
 	if err != nil {
 		return err
 	}
+	if subscriptionPhase != "" {
+		name = "subscriptions-" + subscriptionPhase + "-" + name
+	}
 	return os.WriteFile(filepath.Join(outputRoot, name), data, 0600)
 }
 
@@ -251,11 +255,11 @@ func run() (uint32, error) {
 		return 2, errors.New("guest path required")
 	}
 	var marker struct {
-		Format          int
-		ForbiddenHost   string
-		RunID           string
-		Unelevated      bool
-		TransportCycles int
+		qaRunMode
+		Format        int
+		ForbiddenHost string
+		RunID         string
+		Unelevated    bool
 	}
 	stage = "read-marker"
 	data, err := os.ReadFile(inputRoot + `\sandbox-bundle.json`)
@@ -267,14 +271,24 @@ func run() (uint32, error) {
 		return 2, errors.New("guest isolation required")
 	}
 	runID = marker.RunID
-	if err = selectTransportOutput(marker.TransportCycles, marker.RunID); err != nil {
+	if err = selectRunOutput(marker.qaRunMode, marker.RunID); err != nil {
 		return 2, err
 	}
-	var state struct{ OwnerSID string }
+	if marker.SubscriptionUi {
+		subscriptionPhase = marker.SubscriptionPhase
+	}
+	var state struct {
+		OwnerSID       string
+		RunID          string
+		SubscriptionUi bool
+	}
 	stage = "read-installer-owner"
 	data, err = os.ReadFile(controlRoot + `\state.json`)
 	if err != nil || len(data) > 131072 || json.Unmarshal(bytes.TrimPrefix(data, []byte{0xef, 0xbb, 0xbf}), &state) != nil || !regexp.MustCompile(`^S-1-5-21-\d+-\d+-\d+-\d+$`).MatchString(state.OwnerSID) {
 		return 2, errors.New("installer owner required")
+	}
+	if marker.SubscriptionUi && (!state.SubscriptionUi || state.RunID != marker.RunID) {
+		return 2, errors.New("subscription QA ownership differs")
 	}
 	var source windows.Token
 	stage = "open-source-token"
@@ -329,14 +343,21 @@ func run() (uint32, error) {
 	if err != nil || !facts.limited() {
 		return 2, errors.New("actual child token differs")
 	}
+	var created, exited, kernel, userTime windows.Filetime
+	if err = windows.GetProcessTimes(process.Process, &created, &exited, &kernel, &userTime); err != nil {
+		return 2, err
+	}
 	report := struct {
 		tokenFacts
-		RunID        string `json:"runId"`
-		Desktop      bool   `json:"desktopUser"`
-		Method       string `json:"tokenMethod"`
-		Verified     bool   `json:"processTokenVerified"`
-		AccessDenied bool   `json:"privilegedAccessDenied"`
-	}{facts, marker.RunID, true, "restricted-medium-same-user", true, true}
+		RunID                string `json:"runId"`
+		Desktop              bool   `json:"desktopUser"`
+		Method               string `json:"tokenMethod"`
+		Verified             bool   `json:"processTokenVerified"`
+		AccessDenied         bool   `json:"privilegedAccessDenied"`
+		ProcessID            uint32 `json:"processId"`
+		ProcessStartFiletime uint64 `json:"processStartFiletime"`
+		Phase                string `json:"subscriptionPhase,omitempty"`
+	}{facts, marker.RunID, true, "restricted-medium-same-user", true, true, process.ProcessId, uint64(created.HighDateTime)<<32 | uint64(created.LowDateTime), subscriptionPhase}
 	if err = save("launch-report.json", report); err != nil {
 		return 2, err
 	}
@@ -344,7 +365,11 @@ func run() (uint32, error) {
 	if _, err = windows.ResumeThread(process.Thread); err != nil {
 		return 2, err
 	}
-	wait, err := windows.WaitForSingleObject(process.Process, 20*60*1000)
+	deadline := uint32(20 * 60 * 1000)
+	if marker.SubscriptionUi {
+		deadline = 3 * 60 * 1000
+	}
+	wait, err := windows.WaitForSingleObject(process.Process, deadline)
 	if err != nil || wait != windows.WAIT_OBJECT_0 {
 		return 2, errors.New("bounded UI deadline expired")
 	}

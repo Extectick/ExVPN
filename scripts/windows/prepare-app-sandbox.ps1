@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #requires -Version 7.0
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$Installer,[switch]$IncludeFaults,[switch]$PolicyRecovery,[switch]$Unelevated,[switch]$ProviderMatrix,[switch]$NetworkRecovery,[ValidateRange(0,20)][int]$TransportCycles=0)
+param([Parameter(Mandatory)][string]$Installer,[switch]$IncludeFaults,[switch]$PolicyRecovery,[switch]$Unelevated,[switch]$ProviderMatrix,[switch]$NetworkRecovery,[ValidateRange(0,20)][int]$TransportCycles=0,[switch]$SubscriptionUi)
 $ErrorActionPreference = 'Stop'
 if ($IncludeFaults -and $PolicyRecovery) { throw 'Choose either network faults or policy recovery for this QA bundle.' }
 if ($ProviderMatrix -and ($IncludeFaults -or $PolicyRecovery)) { throw 'Provider tests cannot stop external servers or mutate fault fixtures.' }
 if ($NetworkRecovery -and (!$ProviderMatrix -or !$Unelevated)) { throw 'Network recovery requires the provider matrix and an unelevated UI.' }
 if ($TransportCycles -and ($TransportCycles -lt 3 -or !$Unelevated -or $IncludeFaults -or $PolicyRecovery -or $ProviderMatrix -or $NetworkRecovery)) { throw 'Transport lifecycle requires 3..20 cycles, an unelevated UI and no other QA mode.' }
+if ($SubscriptionUi -and (!$Unelevated -or $TransportCycles -or $IncludeFaults -or $PolicyRecovery -or $ProviderMatrix -or $NetworkRecovery)) { throw 'Subscription UI requires an unelevated UI and no VPN QA mode.' }
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $repository 'scripts/bootstrap/enter-environment.ps1')
 . (Join-Path $PSScriptRoot 'installer/package-common.ps1')
@@ -18,15 +19,15 @@ $version = Get-Content -LiteralPath (Join-Path $repository 'apps/exvpn/pubspec.y
 if ($version -notmatch '(?m)^version:\s*(\d+\.\d+\.\d+)\+(\d+)\s*$') { throw 'Version missing.' }
 $build = [int]$Matches[2]
 if ($artifact.build -ne $build -or $artifact.version -cne $Matches[1]) { throw 'QA source and installer versions differ.' }
-$testTarget = if ($PolicyRecovery) { 'integration_test/windows_policy_test.dart' } else { 'integration_test/windows_sandbox_test.dart' }
+$testTarget = if ($SubscriptionUi) { 'integration_test/windows_subscriptions_test.dart' } elseif ($PolicyRecovery) { 'integration_test/windows_policy_test.dart' } else { 'integration_test/windows_sandbox_test.dart' }
 $stamp = [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss') + '-' + [Guid]::NewGuid().ToString('N').Substring(0,8)
 $runId = [Guid]::NewGuid().ToString()
 $output = Join-Path $repository ('artifacts/windows/app-qa-' + $stamp)
 $inputRoot = Join-Path $output 'input'
-$resultRoot = if ($TransportCycles) { Join-Path $repository ('.private/windows-lifecycle-results/' + $runId) } else { Join-Path $output 'output' }
+$resultRoot = if ($TransportCycles -or $SubscriptionUi) { Join-Path $repository ('.private/windows-lifecycle-results/' + $runId) } else { Join-Path $output 'output' }
 $sourceRoot = Join-Path $output 'source'
 New-Item -ItemType Directory -Path $inputRoot,$sourceRoot | Out-Null
-if (!$TransportCycles) { New-Item -ItemType Directory -Path $resultRoot | Out-Null }
+if (!$TransportCycles -and !$SubscriptionUi) { New-Item -ItemType Directory -Path $resultRoot | Out-Null }
 # Isolate the test target from the ordinary release build directory. Only Git
 # source files are copied, never caches, SDKs, credentials or private fixtures.
 $files = @(& git -C $repository ls-files --cached --others --exclude-standard -- apps/exvpn packages | Sort-Object -Unique)
@@ -76,7 +77,10 @@ Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'sandbox/guest-app-network.ps1')
 if ($TransportCycles) {
     Copy-Item -LiteralPath (Join-Path $repository 'scripts/qa/guest-transport-observe.ps1') -Destination $inputRoot
 }
+if ($SubscriptionUi) {
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'sandbox/guest-app-subscriptions.ps1'),(Join-Path $repository 'scripts/qa/windows-subscriptions-lib.ps1') -Destination $inputRoot
+}
 $manifest = @(Get-TreeManifest $inputRoot)
-[ordered]@{format=1;forbiddenHost=$env:COMPUTERNAME;build=$build;runId=$runId;faults=[bool]($IncludeFaults -or $PolicyRecovery);policyRecovery=$(if ($PolicyRecovery) { 'reset' } else { $null });unelevated=[bool]$Unelevated;providerMatrix=[bool]$ProviderMatrix;networkRecovery=[bool]$NetworkRecovery;transportCycles=$TransportCycles;files=$manifest} | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Encoding utf8NoBOM
+[ordered]@{format=1;forbiddenHost=$env:COMPUTERNAME;build=$build;runId=$runId;faults=[bool]($IncludeFaults -or $PolicyRecovery);policyRecovery=$(if ($PolicyRecovery) { 'reset' } else { $null });unelevated=[bool]$Unelevated;providerMatrix=[bool]$ProviderMatrix;networkRecovery=[bool]$NetworkRecovery;transportCycles=$TransportCycles;subscriptionUi=[bool]$SubscriptionUi;subscriptionPhase=$(if ($SubscriptionUi) { 'edit' } else { $null });files=$manifest} | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Encoding utf8NoBOM
 [ordered]@{directory=$output;input=$inputRoot;output=$resultRoot} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $repository 'artifacts/windows/app-qa-latest.json') -Encoding utf8
 Write-Host "Prepared only, not executed: $output"

@@ -286,3 +286,31 @@ LocalSystem, owner SID, полный manifest, service hash и ACL перед и
 папке результатов. В `finally` восстанавливаются policy и production binding,
 сверяются сеть/guard/TUN. Успех требует двух `frameworkPassed`/`passed`,
 `policy-coordinator.passed=true`, `cleanupPassed=true` и нулевого exit code.
+
+## Частичная замена подписки и восстановление хранилища
+
+Отдельный сценарий E3-008 не запускает VPN. После установки нужного build:
+
+```powershell
+pwsh -NoProfile -File scripts/windows/prepare-app-sandbox.ps1 -Installer <development-exe> -Unelevated -SubscriptionUi
+pwsh -NoProfile -File scripts/qa/run-windows-subscriptions.ps1 -SandboxId <owned-id> -BundleDirectory <prepared-bundle>
+```
+
+Два разных процесса `windows_subscriptions_test.dart` проверяют настоящий
+Flutter UI и Windows DPAPI: создание синтетической группы, отклонённые записи
+с номерами/причинами, отмену с сохранением рабочего списка и выбора, явное
+подтверждение замены, cold restore и удаление своей тестовой группы.
+Оба процесса должны иметь medium token одного installer owner и одинаковый
+SHA-256 executable; восстановленный снимок и ciphertext сверяются по хешам.
+
+Используется отдельный guest-local каталог в `C:\ProgramData\ExVPN Subscription QA`
+с ACL для SYSTEM и владельца установки. Это проверяет storage API и DPAPI,
+но не обычное расположение AppData. Provider input и HTTP не используются;
+снимки UI делаются после закрытия диалога с исходным текстом.
+
+Guest helper сохраняет/восстанавливает прежнее QA-дерево, не меняет production
+client binding, службу, TUN, WFP, маршруты или DNS. Координатор проверяет
+неизменность PID/start time/hash службы и сетевого baseline. Для PASS требуются
+обе фазы, нулевые exit codes и успешная очистка. 49 синтетических проверок
+валидаторов под PS7/PS5.1 проходят отдельно от настоящего runtime-сценария.
+Реальный прогон новой обвязки до отдельного evidence не считается выполненным.

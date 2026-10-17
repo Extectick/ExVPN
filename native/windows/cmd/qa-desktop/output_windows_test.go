@@ -69,3 +69,35 @@ func TestRejectedTransportOutputPreservesDiagnosticDestination(t *testing.T) {
 		}
 	}
 }
+
+func TestSubscriptionModeRequiresIsolatedPhaseAndRun(t *testing.T) {
+	original := outputRoot
+	t.Cleanup(func() { outputRoot = original })
+	id := "3ad3e97f-8130-4ce8-b382-254532b6f3dc"
+	for _, phase := range []string{"edit", "reopen"} {
+		mode := qaRunMode{SubscriptionUi: true, SubscriptionPhase: phase}
+		if err := selectRunOutput(mode, id); err != nil || outputRoot != filepath.Join(lifecycleOutputRoot, id) {
+			t.Fatal("subscription phase did not select the bounded output")
+		}
+	}
+	allowed := outputRoot
+	for _, mode := range []qaRunMode{
+		{SubscriptionPhase: "edit"},
+		{SubscriptionUi: true},
+		{SubscriptionUi: true, SubscriptionPhase: "../edit"},
+		{SubscriptionUi: true, SubscriptionPhase: "edit", TransportCycles: 3},
+		{SubscriptionUi: true, SubscriptionPhase: "edit", Faults: true},
+		{SubscriptionUi: true, SubscriptionPhase: "edit", ProviderMatrix: true},
+		{SubscriptionUi: true, SubscriptionPhase: "edit", NetworkRecovery: true},
+		{SubscriptionUi: true, SubscriptionPhase: "edit", PolicyRecovery: "reset"},
+	} {
+		if err := selectRunOutput(mode, id); err == nil || outputRoot != allowed {
+			t.Fatal("invalid mode accepted or changed the diagnostic destination")
+		}
+	}
+	for _, bad := range []string{"", "../elsewhere", "00000000-0000-0000-0000-000000000000", id + "/child"} {
+		if err := selectRunOutput(qaRunMode{SubscriptionUi: true, SubscriptionPhase: "edit"}, bad); err == nil || outputRoot != allowed {
+			t.Fatal("invalid subscription run accepted or changed output")
+		}
+	}
+}

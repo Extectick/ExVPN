@@ -10,6 +10,40 @@ import (
 const standardOutputRoot = `C:\ExVPN-App-QA-Results`
 const lifecycleOutputRoot = `C:\ExVPN-Lifecycle-QA-Results`
 
+type qaRunMode struct {
+	TransportCycles   int
+	SubscriptionUi    bool
+	SubscriptionPhase string
+	Faults            bool
+	ProviderMatrix    bool
+	NetworkRecovery   bool
+	PolicyRecovery    string
+}
+
+func (m qaRunMode) output(runID string) (string, error) {
+	if !m.SubscriptionUi {
+		if m.SubscriptionPhase != "" {
+			return "", errors.New("subscription phase without mode")
+		}
+		return outputForTransportCycles(m.TransportCycles, runID)
+	}
+	if m.TransportCycles != 0 || m.Faults || m.ProviderMatrix || m.NetworkRecovery || m.PolicyRecovery != "" || (m.SubscriptionPhase != "edit" && m.SubscriptionPhase != "reopen") {
+		return "", errors.New("invalid subscription QA mode")
+	}
+	// Reuse only the validated per-run destination; this does not enable a
+	// transport test or any service/network mutation.
+	return outputForTransportCycles(3, runID)
+}
+
+func selectRunOutput(mode qaRunMode, runID string) error {
+	selected, err := mode.output(runID)
+	if err != nil {
+		return err
+	}
+	outputRoot = selected
+	return nil
+}
+
 // Keep the last permitted diagnostic destination if marker validation fails.
 // The error handler still calls save after this function returns an error.
 func selectTransportOutput(cycles int, runID string) error {

@@ -28,7 +28,12 @@ $expandedQaPaths=@(
     'scripts/qa/guest-teardown-qa.ps1',
     'scripts/qa/run-windows-teardown.ps1',
     'scripts/qa/teardown-qa-lib.ps1',
-    'scripts/qa/test-teardown-qa.ps1'
+    'scripts/qa/test-teardown-qa.ps1',
+    'apps/exvpn/integration_test/windows_subscriptions_test.dart',
+    'scripts/windows/sandbox/guest-app-subscriptions.ps1',
+    'scripts/qa/run-windows-subscriptions.ps1',
+    'scripts/qa/test-windows-subscriptions.ps1',
+    'scripts/qa/windows-subscriptions-lib.ps1'
 )
 foreach ($path in $expandedQaPaths) {
     Check ((Get-BuildImpactPathKind $path) -ceq 'qa') "reviewed diagnostic path: $path"
@@ -42,6 +47,9 @@ foreach ($path in @(
     'scripts/qa/android-dns-capture/nested/main.go',
     'scripts/qa/android-dns-capture/README.md',
     'scripts/qa/run-windows-teardown-extra.ps1',
+    'scripts/qa/run-windows-subscriptions-extra.ps1',
+    'scripts/windows/sandbox/guest-app-subscriptions-extra.ps1',
+    'apps/exvpn/integration_test/windows_subscriptions_extra_test.dart',
     'Scripts/qa/android-dns-capture/main.go'
 )) {
     Check ((Get-BuildImpactPathKind $path) -ceq 'unknown') "diagnostic allowlist does not widen to neighbors: $path"

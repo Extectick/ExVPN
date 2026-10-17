@@ -12,6 +12,7 @@ function Get-BuildImpactPathKind([string]$Path) {
     if ($Path -cin @(
         'apps/exvpn/integration_test/windows_sandbox_test.dart',
         'apps/exvpn/integration_test/windows_policy_test.dart',
+        'apps/exvpn/integration_test/windows_subscriptions_test.dart',
         'scripts/windows/prepare-app-sandbox.ps1',
         'scripts/windows/sandbox/guest-system-qa.ps1',
         'scripts/windows/sandbox/guest-qa.ps1',
@@ -22,6 +23,7 @@ function Get-BuildImpactPathKind([string]$Path) {
         'scripts/windows/sandbox/guest-app-policy.ps1',
         'scripts/windows/sandbox/guest-app-network.ps1',
         'scripts/windows/sandbox/guest-app-launch.ps1',
+        'scripts/windows/sandbox/guest-app-subscriptions.ps1',
         'scripts/windows/sandbox/guest-app-faults.ps1',
         'scripts/qa/ensure-windows-lifecycle-mapping.ps1',
         'scripts/qa/guest-transport-observe.ps1',
@@ -39,7 +41,10 @@ function Get-BuildImpactPathKind([string]$Path) {
         'scripts/qa/guest-teardown-qa.ps1',
         'scripts/qa/run-windows-teardown.ps1',
         'scripts/qa/teardown-qa-lib.ps1',
-        'scripts/qa/test-teardown-qa.ps1'
+        'scripts/qa/test-teardown-qa.ps1',
+        'scripts/qa/run-windows-subscriptions.ps1',
+        'scripts/qa/test-windows-subscriptions.ps1',
+        'scripts/qa/windows-subscriptions-lib.ps1'
     )) { return 'qa' }
     # Documentation may accompany a QA change, but cannot itself authorize a
     # skip. Build inputs such as assets/SOURCES.md and licenses are not here.
