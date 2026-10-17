@@ -4,6 +4,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'notice-inputs.ps1')
 . (Join-Path $PSScriptRoot 'shorebird-updater-notices.ps1')
+# This standalone source collector has no network unless explicitly requested.
+& (Join-Path $PSScriptRoot 'shorebird-updater-notices-test.ps1')
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $checks = 0
 function Assert-Rejected([scriptblock]$Action) {
