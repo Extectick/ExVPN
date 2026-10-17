@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "headSha": "06a26890327450968c486dfc0e7634bae09210a5",
+  "runId": 39007085103,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/39007085103",
+  "status": "completed",
+  "conclusion": "success",
+  "createdAt": "2026-10-17T05:39:54Z",
+  "updatedAt": "2026-10-17T05:52:00Z",
+  "jobs": [
+    {
+      "name": "Android",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T05:39:58Z",
+      "completedAt": "2026-10-17T05:52:00Z",
+      "durationSeconds": 722,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39007085103/job/117321641380",
+      "nativeArtifactUploaded": true
+    },
+    {
+      "name": "Windows",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T05:39:58Z",
+      "completedAt": "2026-10-17T05:45:44Z",
+      "durationSeconds": 346,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39007085103/job/117321641586",
+      "nativeArtifactUploaded": true
+    }
+  ],
+  "scope": "Both native CI lanes passed after the fast validation queue split. These durations describe full CI jobs, not the local fast suite. Build success does not establish DNS attribution, installed Windows behavior, or release readiness."
+}

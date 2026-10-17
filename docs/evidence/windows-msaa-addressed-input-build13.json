@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "kind": "ordinary-windows-ui-addressed-ascii-diagnostic",
+  "runId": "e0c6d84b-e7bf-44d0-bf9e-d04e2d8a074f",
+  "build": "0.1.0+13",
+  "status": "REFUSED",
+  "productChanged": false,
+  "ownedSandboxOnly": true,
+  "networkActionsAuthorized": false,
+  "fixtureLaunched": false,
+  "connectActions": 0,
+  "totalDeadlineSeconds": 180,
+  "uiSha256": "e7299a563e2b81d41f334ec6d8f612971c18a58f8fd826323036503d1ba66299",
+  "serviceSha256": "3582d238cf50419fc43c596b539c99a374effe19c99d3382e9aac68ef3626e72",
+  "sourceSealSha256": "4d1010d1610468c51dcd9b3937725de4483bf57fc0a29efc19dcfa6a4f648de2",
+  "hostDriverSha256": "1c3a16bc3621f6adb9395149215a0b3d2f89340a63f2911cf17d0225735354fb",
+  "focusedProofSha256": "79b0347a84a4a30c689e420a3ef17512532bae090c5030e048e90da4055d1cce",
+  "focusedChecks": 209,
+  "privateManifestPath": ".private/windows-lifecycle-results/e0c6d84b-e7bf-44d0-bf9e-d04e2d8a074f/private-evidence-manifest.json",
+  "privateManifestSha256": "c6027a5ae61b0d162b36b244823c2a487b0f4ee81ad2f048ebb12301b498cffa",
+  "hostCoordinatorElapsedMs": 81041,
+  "uiCoordinatorElapsedMs": 46931,
+  "durationScope": "Separate host and guest stopwatches including their setup and cleanup.",
+  "receipts": [
+    {
+      "sequence": 1,
+      "step": "settings",
+      "status": "PASS",
+      "failureCode": null,
+      "actionIssued": true,
+      "actionReturnedWithoutException": true,
+      "charactersAttempted": 0,
+      "charactersSent": 0,
+      "elapsedMs": 307,
+      "sha256": "7fba8d2e784637323e2b42ec2ea900f60b9d3ea9df9616f20be40358631d9fdd"
+    },
+    {
+      "sequence": 2,
+      "step": "add",
+      "status": "PASS",
+      "failureCode": null,
+      "actionIssued": true,
+      "actionReturnedWithoutException": true,
+      "charactersAttempted": 0,
+      "charactersSent": 0,
+      "elapsedMs": 307,
+      "sha256": "5f07d5fa18d15017046fa59ed6bf54fb517c67c2b17e070f5d7e5dcd28ecf737"
+    },
+    {
+      "sequence": 3,
+      "step": "text-mode",
+      "status": "PASS",
+      "failureCode": null,
+      "actionIssued": true,
+      "actionReturnedWithoutException": true,
+      "charactersAttempted": 0,
+      "charactersSent": 0,
+      "elapsedMs": 224,
+      "sha256": "ac21af73739b166cf650ff575bd0324ec643d506c630ed6daab7d3e060751a8b"
+    },
+    {
+      "sequence": 4,
+      "step": "name",
+      "status": "PASS",
+      "failureCode": null,
+      "actionIssued": true,
+      "actionReturnedWithoutException": true,
+      "charactersAttempted": 29,
+      "charactersSent": 29,
+      "elapsedMs": 528,
+      "sha256": "b0cb91657cd9b04397974edef9e5d4ce082801e01c8cbdfd5ed22444d064ed3f"
+    },
+    {
+      "sequence": 5,
+      "step": "payload",
+      "status": "REFUSED",
+      "failureCode": "semantic_target_missing",
+      "actionIssued": true,
+      "actionReturnedWithoutException": true,
+      "charactersAttempted": 0,
+      "charactersSent": 0,
+      "elapsedMs": 325,
+      "sha256": "6571cd7a71dbb320360fae6c3008432aaac2a876b8556f27b80c8ff9adf39948"
+    }
+  ],
+  "nameInput": {
+    "status": "PASS",
+    "charactersSent": 29,
+    "exactFullReadback": true,
+    "activationActions": 0,
+    "target": "exact owned FLUTTERVIEW",
+    "targetAndNativeFocusVerified": true,
+    "activeWindowMatchesMain": true,
+    "foregroundMatchesMain": false,
+    "foregroundScope": "observation only; not the input recipient",
+    "valueLength": 29,
+    "valueSha256": "4ab8f8c42c81c23fe5b7a82c5a64bf3f3cf44d3b6f4b66fea7eb0ab6cd3115a9"
+  },
+  "refusal": {
+    "step": "payload",
+    "failureCode": "semantic_target_missing",
+    "charactersAttempted": 0,
+    "charactersSent": 0,
+    "focusActionReturned": true,
+    "savedPostTreeHasBothExpectedEditables": true,
+    "failingFreshSelectionTreeSaved": false,
+    "claim": "Known helper selection failure after focus, before any payload characters. Actual missing target not established from the preceding successful snapshot."
+  },
+  "cleanup": {
+    "status": "PASS",
+    "ordinaryUiClosed": true,
+    "storageBeforeFiles": 0,
+    "storageAfterFiles": 0,
+    "guardArmed": false,
+    "tunAbsent": true,
+    "productionBindingUnchanged": true,
+    "serviceIdentityUnchanged": true,
+    "networkUnchanged": true,
+    "rollbackUnchanged": true,
+    "uiCount": 0,
+    "otherQaCount": 0,
+    "proofs": [
+      {
+        "name": "session-native-before.json",
+        "sha256": "fc7be1a94512fb6df80089facc3593cd48ea48484c72295b05defb0392ec4d08"
+      },
+      {
+        "name": "session-native-after.json",
+        "sha256": "51e47788bc095e97773d2516a35fd0e1ece76e82d37856261621e246e256f1a1"
+      },
+      {
+        "name": "session-storage-before.json",
+        "sha256": "710691f3a2795d817d49acce9d8dd9ff2aa2df3a87c3b6ec5289c0dae061c418"
+      },
+      {
+        "name": "session-storage-after.json",
+        "sha256": "710691f3a2795d817d49acce9d8dd9ff2aa2df3a87c3b6ec5289c0dae061c418"
+      },
+      {
+        "name": "session-ui-result.json",
+        "sha256": "647cc47769894b39f56ee93350e5afe8e8c0750a3c95e9c5258eecdfd0aa7647"
+      },
+      {
+        "name": "host-summary.json",
+        "sha256": "896d0d7d0e06a451d57338ba2e33600bc6b4039116478c965fd614b8cd2c1d2a"
+      }
+    ]
+  },
+  "boundaries": [
+    "No subscription was submitted or stored. Import/remove acceptance remains untested.",
+    "Addressed ASCII WM_CHAR proof does not establish keyboard, IME, or foreground UX.",
+    "No Connect, fixture server, installer, maintenance, WFP/DNS/route changes or production source changes.",
+    "Original refusal retained. No automatic action retry."
+  ]
+}

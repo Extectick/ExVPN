@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "status": "POSITIVE_CONTROL_CONFIRMED",
+  "scope": "API30_owned5576_single_ordinary_UID_DNS_API_call_without_VPN",
+  "startedAtUtc": "2026-10-17T05:50:56.6292351Z",
+  "finishedAtUtc": "2026-10-17T05:51:55.8602117Z",
+  "durationMs": 59230,
+  "maximumDurationMs": 120000,
+  "api": {
+    "component": "ru.exvpn.netprobe/ru.exvpn.netprobe.HttpsProbe",
+    "querylogReads": 2,
+    "mode": "dnsNonce",
+    "adbdRemainedOrdinary": true,
+    "probeRunsAsOrdinaryUnsharedUid": true,
+    "invocations": 1,
+    "newApkInstalled": false,
+    "vpnStarted": false,
+    "exVpnAppLaunched": false,
+    "observer": "per-command su 0",
+    "probeApkSha256": "6c6ced3231d41a69e6ad67fb034fdd3e1c9c3910995b82f964ce710418667b66"
+  },
+  "querylog": {
+    "beforeRecordCount": 5,
+    "independentlyObservedPidMatched": true,
+    "dnsResolverCommit": "0ea40d43672581b950271d17cbd202d38f2e9b33",
+    "uniqueUid": true,
+    "physicalNetIdMatched": true,
+    "firstRecordLatencyMs": 14003,
+    "afterRecordCount": 18,
+    "completionWindowMatched": true,
+    "clockAfterRttMs": 45,
+    "deltaRecordCount": 13,
+    "matchingRequesterRecords": 1,
+    "clockBeforeRttMs": 151,
+    "expectedRecordBasis": "Pinned DnsProxyListener.cpp GetAddrInfoHandler::run reports once; maybeLogQuery pushes the first cache miss then returns. A/AAAA wire queries are not separate request records.",
+    "clockOffsetChangeMs": 46,
+    "boundedLiveProcessObservationCount": 102
+  },
+  "probe": {
+    "hostnameMaskedInQuerylog": true,
+    "freshNonceHashMatched": true,
+    "wireNonceLinked": false,
+    "dnsOutcome": "no_answer",
+    "vpnTransport": false,
+    "durationMs": 14012,
+    "deadlineOrErrorPresent": false
+  },
+  "restoration": {
+    "frozenInputsUnchanged": true,
+    "ownedPortsFree": true,
+    "ownedGuestStopped": true,
+    "vpnServiceAbsentAfter": true,
+    "original5564IdentitiesPreserved": true,
+    "watchdogNormalCompleted": true,
+    "vpnServiceAbsentBefore": true,
+    "settingsUnchanged": true,
+    "forcedExactOwnedShutdown": true,
+    "protectedStoreHashesUnchanged": true
+  },
+  "limitations": [
+    "This validates observer requester schema and controlled invocation correlation, not VPN protection or resolver success.",
+    "Querylog masks the hostname; no full wire nonce linkage is claimed.",
+    "no_answer is not proof of NXDOMAIN.",
+    "No ownership is assigned to the previous server-outage packets; that result stays INDETERMINATE.",
+    "No physical Android device, IPv6, or new VPN/fault matrix was tested."
+  ],
+  "previousAttemptResultSha256": "f594a009c81d287b7d29fe603f1c82d87dce3f0569aa6da769fd84ee763570de",
+  "proofFiles": [
+    {
+      "file": "run.ps1",
+      "sha256": "42626b9beb00995b8524ea8115c1549af9f2999c2402da8afa3c34a0f94f4638"
+    },
+    {
+      "file": "freeze.json",
+      "sha256": "1bd00e465a3c2c6e824b5a15d9a47424428520100f17aa3b3692be519e98b942"
+    },
+    {
+      "file": "positive-control-safe.json",
+      "sha256": "841a98213c2ee7f072df007aa037e6a168d087892a1d33f3755490b24c545c02"
+    },
+    {
+      "file": "before-querylog.stdout.txt",
+      "sha256": "3a22ec77287e954662ca83c06a6fab72d70d7be7eefb188074151b9547b8fd61"
+    },
+    {
+      "file": "after-querylog.stdout.txt",
+      "sha256": "539e7520bebd156fe9620dcdfe2bf71fb798784e4dfaeca25795902ee79d4419"
+    },
+    {
+      "file": "probe-invocation-private.json",
+      "sha256": "ce7a6e73f51cc5313add4925c27520b88870025e5ecc98a6557089938d4e38fc"
+    },
+    {
+      "file": "positive-control-private.json",
+      "sha256": "36cb4801f05a49d814c243f02bf33ef5038c4246be8f0ffa41a5e382a1fda037"
+    },
+    {
+      "file": "querylog-delta-private.json",
+      "sha256": "0443eedfa827948479a85f29e83667f0f0027ba14182f2ea6cda31c371440fad"
+    },
+    {
+      "file": "before-settings-private.json",
+      "sha256": "755933b969b20d8bff328203263068f71a1d8202cc3aa5f42b7592196d7eefef"
+    },
+    {
+      "file": "after-settings-private.json",
+      "sha256": "755933b969b20d8bff328203263068f71a1d8202cc3aa5f42b7592196d7eefef"
+    },
+    {
+      "file": "before-store-private.json",
+      "sha256": "0d1bf90e7e72287de66cfcac500146056fe5b12d217b323a312b5432d1e8c4a8"
+    },
+    {
+      "file": "after-store-private.json",
+      "sha256": "0d1bf90e7e72287de66cfcac500146056fe5b12d217b323a312b5432d1e8c4a8"
+    },
+    {
+      "file": "Whole-watchdog-result.json",
+      "sha256": "9a2953591c416da125ebe737727abc5d460310af76900807531f56202070af42"
+    }
+  ]
+}

@@ -30,6 +30,12 @@
 
 ## E1 — Технический прототип и обязательный gate
 
+Диагностика EXVPN-E1-009, 2026-10-17: отдельный Android DNS requester control
+PASS за 59,230 с — один вызов обычного приложения сопоставлен с UID, наблюдаемым
+PID, netId и временем в querylog. VPN не запускался; прежние DNS-пакеты остаются
+без подтверждённого владельца. [Доказательство](evidence/android-dns-positive-control-confirmed-build13.json).
+Общий E1/DNS gate остаётся открытым; рабочее дерево, commit ожидается.
+
 - [ ] **EXVPN-E1-001** — Провести инвентаризацию и закрепить Flutter/Dart, Go, Android SDK/NDK/JDK и Windows C++ toolchain. Зависимость: E0-001. Критерий: воспроизводимые версии, контрольные суммы/commits, команды установки и результаты doctor/build; нет плавающего `latest`.
 - [ ] **EXVPN-E1-002** — Проверить Xray v26.10.10 и закрепить способ линковки через собственный Go-адаптер. Зависимость: E1-001. Критерий: ядро собирается для Android/Windows, лицензии и pins записаны; TUN, Hysteria2 и Android owner hook проверены в выбранных исходниках. libXray сохранён как исследованный исходный вариант, но не runtime-зависимость.
 - [ ] **EXVPN-E1-003** — Создать общий контракт VpnBridge и технический стенд подключения. Зависимость: E1-002. Критерий: команды/состояния/ошибки типизированы, UI не выставляет фиктивный `connected`, повторные команды не создают конкурирующие туннели.
@@ -213,7 +219,9 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   отказы Android/CI и source drift прошли. Android, Windows и runner/review
   выполнялись разными владельцами. [Отчёт](evidence/fast-validation-ci-lane-build14.json),
   исходники [db17725](https://github.com/Extectick/ExVPN/commit/db177258de41ae050f131cb0a4c38689ba5e748e).
-  Последний Full, 2026-10-17: **115,59 с, 10/10 PASS**, source fingerprint совпал,
+  Обе native CI lanes на 06a2689 также PASS: Windows 346 с, Android 722 с;
+  development artifacts загружены. [Отчёт](evidence/ci-parallel-validation-build14.json).
+  Предыдущий Full для +13, 2026-10-17: **115,59 с, 10/10 PASS**, source fingerprint совпал,
   Go result cache отключён. 448 Dart/Flutter tests, 52 Java UI-сценария,
   81 Android lifecycle, 129 metadata и 72 artifact audit fixtures PASS.
   Android runtime, dependency preparation и независимый review разделены между

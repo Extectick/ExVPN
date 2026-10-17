@@ -1,5 +1,29 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+Из корня проекта в PowerShell 7:
+
+```powershell
+# Во время разработки — только затронутые проверки.
+pwsh -NoProfile -File scripts/qa/run-fast-validation.ps1 -Changed
+
+# После сведения изменений агентов — все быстрые проверки.
+pwsh -NoProfile -File scripts/qa/run-fast-validation.ps1 -Full
+```
+
+Команда сама выбирает затронутые наборы тестов, запускает до трёх независимых
+процессов и записывает длительности, exit codes и итог в
+`artifacts/qa/fast-<timestamp>-<id>/summary.json`. Рядом лежит отдельный `.log`
+каждого набора. Любая ошибка, timeout или изменение исходников во время прогона
+даёт ненулевой exit code; успешные остальные наборы не скрывают отказ.
+В `scripts.log` и `ci.log` строки `EXVPN_SUITE_TIMING` дополнительно содержат
+время каждого служебного набора, версию PowerShell и результат; приватные
+аргументы или содержимое fixtures в эти строки не входят.
+
+Это быстрые поведенческие проверки: анализ Dart/Flutter, unit/widget tests,
+Go unit/loopback tests и файловые сценарии установщика с mock SCM/ACL. Они не
+запускают установленный VPN, службу, TUN, WFP или смену маршрутов/DNS хоста.
+Приватные подписки и действующие VPN-серверы в них не участвуют.
+
 Последний прогон после разделения очереди, 2026-10-17: **11/11 за 82,03 с**,
 source fingerprint неизменен, Go result cache отключён. Все прежние 16 пар
 «проверка/PowerShell host» сохранены; `test-build-impact.ps1` выполняется в
@@ -15,6 +39,12 @@ coordinator с отказами дочерних Android/CI процессов �
 повторного выполнения перенесённого набора нет. Тайм-ауты, проверка изменения
 исходников и отдельные native/runtime gates сохраняются.
 [Исходники db17725](https://github.com/Extectick/ExVPN/commit/db177258de41ae050f131cb0a4c38689ba5e748e).
+
+После разделения очередей обе native CI lanes также завершились успешно:
+Windows — 5 мин 46 с, Android — 12 мин 2 с. APK и Windows development bundle
+загружены в artifacts этого запуска. Это длительности полных CI jobs, не
+локального быстрого цикла и не доказательство системной приёмки.
+[CI evidence](evidence/ci-parallel-validation-build14.json).
 
 После добавления непрерывных DNS-интервалов, 2026-10-17: **10/10 за 86,60 с**,
 source fingerprint неизменен, Go result cache отключён. Четыре новые offline
@@ -48,26 +78,6 @@ admin token; обычный установленный EXE не означает
 CI исходников +14 с треем успешно завершил обе native lanes — Android и Windows.
 Системная проверка установленного трея, DNS и release-подпись остаются отдельными
 критериями. [CI evidence](evidence/ci-build14-tray.json).
-
-Из корня проекта в PowerShell 7:
-
-```powershell
-pwsh -NoProfile -File scripts/qa/run-fast-validation.ps1 -Changed
-```
-
-Команда сама выбирает затронутые наборы тестов, запускает до трёх независимых
-процессов и записывает длительности, exit codes и итог в
-`artifacts/qa/fast-<timestamp>-<id>/summary.json`. Рядом лежит отдельный `.log`
-каждого набора. Любая ошибка, timeout или изменение исходников во время прогона
-даёт ненулевой exit code; успешные остальные наборы не скрывают отказ.
-В `scripts.log` и `ci.log` строки `EXVPN_SUITE_TIMING` дополнительно содержат
-время каждого служебного набора, версию PowerShell и результат; приватные
-аргументы или содержимое fixtures в эти строки не входят.
-
-Это быстрые поведенческие проверки: анализ Dart/Flutter, unit/widget tests,
-Go unit/loopback tests и файловые сценарии установщика с mock SCM/ACL. Они не
-запускают установленный VPN, службу, TUN, WFP или смену маршрутов/DNS хоста.
-Приватные подписки и действующие VPN-серверы в них не участвуют.
 
 Последний общий прогон +13 после добавления Android Instrumentation и аудита
 упакованных файлов, 2026-10-17: **10/10 наборов за 115,59 с**, source fingerprint
