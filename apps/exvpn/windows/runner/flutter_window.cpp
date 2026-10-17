@@ -27,6 +27,8 @@ bool FlutterWindow::OnCreate() {
   RegisterPlugins(flutter_controller_->engine());
   vpn_bridge_ = std::make_unique<VpnBridge>(
       flutter_controller_->engine()->messenger(), GetHandle());
+  tray_icon_ = std::make_unique<TrayIcon>(
+      flutter_controller_->engine()->messenger(), GetHandle());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() { this->Show(); });
@@ -40,6 +42,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  tray_icon_.reset();
   vpn_bridge_.reset();
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
@@ -52,6 +55,15 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
+  if (message == TrayIcon::kExitMessage) {
+    if (tray_icon_ && tray_icon_->DeferExitIfMenuOpen()) return 0;
+    Destroy();
+    return 0;
+  }
+  if (tray_icon_) {
+    const auto result = tray_icon_->HandleMessage(message, wparam, lparam);
+    if (result) return *result;
+  }
   if (message == VpnBridge::kMessage && vpn_bridge_) {
     vpn_bridge_->Drain();
     return 0;

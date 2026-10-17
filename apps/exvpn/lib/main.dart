@@ -10,6 +10,7 @@ import 'services/vpn_controller.dart';
 import 'services/subscription_store.dart';
 import 'services/subscription_persistence.dart';
 import 'services/data_updates.dart';
+import 'services/desktop_tray.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,6 +70,9 @@ class ExVpnApp extends StatefulWidget {
 class _ExVpnAppState extends State<ExVpnApp> {
   ThemeMode _themeMode = ThemeMode.dark;
   SubscriptionPersistence? _persistence;
+  DesktopTrayController? _tray;
+  final _navigator = GlobalKey<NavigatorState>();
+  final _messenger = GlobalKey<ScaffoldMessengerState>();
   late final DataUpdatesController _updates;
   @override
   void initState() {
@@ -79,12 +83,58 @@ class _ExVpnAppState extends State<ExVpnApp> {
     widget.vpn?.initialize();
     _updates = widget.updates ?? DataUpdatesController(vpn: widget.vpn);
     _updates.initialize();
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.windows &&
+        widget.vpn != null) {
+      _tray = DesktopTrayController(
+        app: widget.controller,
+        vpn: widget.vpn!,
+        tray: WindowsDesktopTray(),
+        confirmExit: _confirmExit,
+        saveBeforeExit: () async {
+          await _persistence?.flush().timeout(const Duration(seconds: 10));
+          return _persistence?.pending != true && _persistence?.error == null;
+        },
+        showNotice: (message) => _messenger.currentState?.showSnackBar(
+          SnackBar(content: Text(message)),
+        ),
+      );
+    }
+  }
+
+  Future<bool> _confirmExit() async {
+    final context = _navigator.currentContext;
+    if (context == null || !mounted) return false;
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Выйти из ExVPN?'),
+            content: Text(
+              'Работа VPN-службы не изменится. Чтобы отключить VPN, '
+              'используйте «Отключить VPN» в трее или кнопку подключения в окне.'
+              '${widget.storageWarning != null ? '\n\n${widget.storageWarning}' : ''}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Отмена'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Выйти'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   @override
   Widget build(BuildContext context) => DataUpdatesScope(
     controller: _updates,
     child: MaterialApp(
+      navigatorKey: _navigator,
+      scaffoldMessengerKey: _messenger,
       title: 'ExVPN',
       debugShowCheckedModeBanner: false,
       theme: exVpnTheme(Brightness.light),
@@ -105,6 +155,7 @@ class _ExVpnAppState extends State<ExVpnApp> {
   );
   @override
   void dispose() {
+    _tray?.dispose();
     _persistence?.dispose();
     _updates.dispose();
     widget.controller.dispose();

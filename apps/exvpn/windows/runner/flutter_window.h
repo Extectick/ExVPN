@@ -8,6 +8,7 @@
 
 #include "win32_window.h"
 #include "vpn_bridge.h"
+#include "tray_icon.h"
 
 // A window that does nothing but host a Flutter view.
 class FlutterWindow : public Win32Window {
@@ -30,6 +31,7 @@ class FlutterWindow : public Win32Window {
   // The Flutter instance hosted by this window.
   std::unique_ptr<flutter::FlutterViewController> flutter_controller_;
   std::unique_ptr<VpnBridge> vpn_bridge_;
+  std::unique_ptr<TrayIcon> tray_icon_;
 };
 
 #endif  // RUNNER_FLUTTER_WINDOW_H_
