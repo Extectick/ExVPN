@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "sourceCommit": "2cd1f71404d4516ad22312d8722f98ef4867eda3",
+  "attempt": {
+    "schemaVersion": 1,
+    "status": "INDETERMINATE",
+    "attempt": "build17_search_a2",
+    "build": "0.1.0+17",
+    "core": "26.10.10-exvpn.5",
+    "apkSha256": "67682aea20ba57b65ce847d55087165c3d3f34dd79eeff00a6757c7227419e3a",
+    "startedAtUtc": "2026-10-17T13:41:13.58958Z",
+    "finishedAtUtc": "2026-10-17T13:43:29.0754447Z",
+    "durationMs": 135483,
+    "bootMs": 33613,
+    "failureCode": "qa_exclusion_scroll_ambiguous",
+    "baseline": {
+      "exactInstalled17": true,
+      "upgradePerformed": false,
+      "priorCleanupPassed": true
+    },
+    "search": {
+      "ordinaryUiOpened": true,
+      "queryInputVerified": true,
+      "freshReadbackMatches": true,
+      "twoKnownRowsVisible": true,
+      "uncheckedRows": 2,
+      "selectedCount": 0,
+      "saveVisible": true,
+      "toggleAttempted": false,
+      "saveAttempted": false,
+      "policyAcceptance": "NOT_TESTED"
+    },
+    "network": {
+      "connectAttempted": false,
+      "captureStarted": false,
+      "https": "NOT_TESTED",
+      "dns": "NOT_TESTED",
+      "fault": "NOT_TESTED",
+      "ipv6": "NOT_TESTED",
+      "fullE1Accepted": false
+    },
+    "automaticCleanup": {
+      "status": "INCOMPLETE",
+      "qaGroupRemoved": false,
+      "exclusionPolicyVerified": false,
+      "serviceAbsent": true,
+      "vpnNetworkAbsent": true,
+      "settingsUnchanged": true,
+      "fixtureStopped": true,
+      "observerStopped": true,
+      "guestShutdown": true,
+      "originalAvdUntouched": true,
+      "forcedOwnedGuestShutdown": true
+    },
+    "sourceFreezeSha256": "06180385144e2fb7853fc1aef47bdaa706c8989326aa07dc66047e63edf87e29",
+    "sealedInputsUnchanged": true,
+    "priorAttemptCandidate": {
+      "path": ".private/android-dns-listener-build17-search/safe-candidate.json",
+      "sha256": "7e33a77465b8708fa54d9dcbc75a3a1b4649dda6520aedcbac495c779e9370e4"
+    },
+    "limitations": [
+      "No VPN/DNS acceptance from this setup refusal.",
+      "The separate cleanup does not upgrade this result.",
+      "No screenshot was captured before refusal; guest was not restarted for screenshots.",
+      "Missing search label in XML is not accessibility acceptance."
+    ]
+  },
+  "diagnosis": {
+    "schemaVersion": 1,
+    "classification": "QA_SELECTOR_REFUSAL",
+    "failureCode": "qa_exclusion_scroll_ambiguous",
+    "preKeyboard": {
+      "class": "android.widget.ScrollView",
+      "scrollable": true,
+      "scrollableNodeCount": 1,
+      "bounds": [
+        0,
+        237,
+        1080,
+        1928
+      ],
+      "searchValueEmpty": true
+    },
+    "postKeyboard": {
+      "class": "android.view.View",
+      "scrollable": false,
+      "scrollableNodeCount": 0,
+      "bounds": [
+        0,
+        237,
+        1080,
+        1243
+      ],
+      "searchQueryVerified": true,
+      "uniqueSearch": true,
+      "qaRowsVisible": 2,
+      "qaRowsUnchecked": 2,
+      "globalSelectedCount": 0,
+      "saveEnabled": true,
+      "toggleOrSaveAttempted": false
+    },
+    "cause": "Global scrollable=true lookup rejects a complete content viewport when filtered rows fit.",
+    "accessibilityLimitation": "Search label/hint are absent from observed XML although present in product source; no accessibility acceptance claim.",
+    "sourceTrees": [
+      {
+        "file": "enable-excluded-before-search-field-0-0.stdout.txt",
+        "sha256": "99a55d286e35873930ce1b50609ced55666ea0adc3150967bf6943f0a6cc9b3a"
+      },
+      {
+        "file": "enable-excluded-before-search-query-readback-0.stdout.txt",
+        "sha256": "bbb500620f2c42286e2b69c262a98882f788615c7ffab941470d8a355c115c1f"
+      },
+      {
+        "file": "cleanup-policy-state-search-field-0-0.stdout.txt",
+        "sha256": "99a55d286e35873930ce1b50609ced55666ea0adc3150967bf6943f0a6cc9b3a"
+      },
+      {
+        "file": "cleanup-policy-state-search-query-readback-0.stdout.txt",
+        "sha256": "bbb500620f2c42286e2b69c262a98882f788615c7ffab941470d8a355c115c1f"
+      }
+    ],
+    "screenshotsAvailable": false,
+    "runtimeRetryPerformed": false
+  },
+  "separateCleanup": {
+    "schemaVersion": 1,
+    "status": "PASS",
+    "mode": "cleanup_only",
+    "build": "0.1.0+17",
+    "durationMs": 91028,
+    "bootMs": 36492,
+    "shutdownMs": 4098,
+    "groupRemoved": true,
+    "noGroupsRemain": true,
+    "globalSelectedCount": 0,
+    "zeroPolicyObserved": true,
+    "policyVerification": "fresh_global_selected_count_no_input_or_save",
+    "settingsUnchanged": true,
+    "serviceAbsentBeforeAndAfter": true,
+    "vpnNetworkAbsent": true,
+    "packageOwnerAndBytesUnchanged": true,
+    "guestShutdown": true,
+    "forcedOwnedGuestShutdown": true,
+    "originalAvdUntouched": true,
+    "watchdogCompleted": true,
+    "sealedInputsUnchanged": true,
+    "connectAttempted": false,
+    "networkProbeAttempted": false,
+    "toggleOrSaveAttempted": false,
+    "sourceFreezeSha256": "1792b883192f45c555e171e56c77f8c0857cc8833442b78cb2184c2af10fd60e",
+    "originalAttemptStatusPreserved": "INDETERMINATE"
+  },
+  "proofs": [
+    {
+      "path": ".private/android-dns-listener-build17-search-a2/proof-manifest.json",
+      "sha256": "5e69fa2a612eaf24dcbe94ad2430c556c65551661a2a073440b719d67e306496",
+      "rootVerified": 400,
+      "mismatches": 0
+    },
+    {
+      "path": ".private/android-dns-listener-build17-search-a2-cleanup/proof-manifest.json",
+      "sha256": "ffd2fec08d1717e99d3c44c1d29db1bbbb30e09747ee756103e00204483609f2",
+      "rootVerified": 268,
+      "mismatches": 0
+    }
+  ]
+}

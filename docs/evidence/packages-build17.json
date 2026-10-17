@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "status": "AUDIT_COMPLETE_WITH_RELEASE_BLOCKERS",
+  "sourceCommitContext": "2cd1f71404d4516ad22312d8722f98ef4867eda3",
+  "appVersion": "0.1.0+17",
+  "nativeProofSha256": "1faef18541eb0ec2dd07105911bf7678c88a5a4a6abb1373fdfeeb641ea8fd12",
+  "nativeBindings": [
+    {
+      "id": "windows-service",
+      "path": "service/exvpn-service.exe",
+      "sha256": "70a6b7f6cb469fb3f4628c4f429c30aba7aee68bc285fe85e65536d3c91bbd43",
+      "nativeProofMatched": true,
+      "go": "go1.27.2",
+      "xrayVersion": "v1.260327.1-exvpn.5",
+      "xraySum": "h1:qiJ43pz/0NfWNLPgT1ZT6Z2r0EbX+zIuTntRaAc++1o="
+    },
+    {
+      "id": "android-arm64-v8a",
+      "path": "lib/arm64-v8a/libexvpn.so",
+      "sha256": "94dcc720cacfb2415ab9408c26fe40bb3144fad8ebed4bd1f88cc83b2ed3a532",
+      "nativeProofMatched": true,
+      "go": "go1.27.2",
+      "xrayVersion": "v1.260327.1-exvpn.5",
+      "xraySum": "h1:qiJ43pz/0NfWNLPgT1ZT6Z2r0EbX+zIuTntRaAc++1o="
+    },
+    {
+      "id": "android-x86_64",
+      "path": "lib/x86_64/libexvpn.so",
+      "sha256": "eff01161a2c331e874169f22f7ea4d3ee05c828a7379feb887daa7624ffbae37",
+      "nativeProofMatched": true,
+      "go": "go1.27.2",
+      "xrayVersion": "v1.260327.1-exvpn.5",
+      "xraySum": "h1:qiJ43pz/0NfWNLPgT1ZT6Z2r0EbX+zIuTntRaAc++1o="
+    }
+  ],
+  "runtimeIdentity": {
+    "kind": "shorebird",
+    "flutterVersion": "3.47.7",
+    "flutterRevision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+    "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+    "dartVersion": "3.13.5",
+    "cliVersion": "1.6.129",
+    "cliRevision": "9fe1370bdd1d2f117cc08c57ae416b794ed92440"
+  },
+  "updaterPolicy": {
+    "bothPackagedPoliciesMatchSource": true,
+    "autoUpdate": false,
+    "patchVerification": "strict",
+    "publicKeyFileSha256": "a9f5f027b7cbb0be337778d3950044bf780d21d6f4db5ec3056c2846fea15c87",
+    "publicKeyBits": 4096,
+    "androidBuildDeclaredTrack": "beta",
+    "trackFromBuildMetadataNotDecodedAot": true,
+    "published": false
+  },
+  "windows": {
+    "artifact": {
+      "file": "ExVPN-0.1.0-17-windows-x64-development.exe",
+      "sha256": "1120b36cdaacd6d3e1d7d77378f40f6c2aeffe3d9e3aa7918a163bb6050cea6b",
+      "bytes": 35387980
+    },
+    "auditExitCode": 2,
+    "releaseReady": false,
+    "developmentPackage": true,
+    "signature": {
+      "verified": false,
+      "trustedSignerMatched": false,
+      "debug": false,
+      "certificateSha256": []
+    },
+    "nsisPayloadVerified": true,
+    "payloadFiles": 270,
+    "noticeSource": "installer-payload-verified",
+    "counts": {
+      "files": 270,
+      "nativeBinaries": 1,
+      "noticeComponents": 143
+    },
+    "xraySourceMatched": true,
+    "engineBytesBound": true,
+    "rawSdkBytesMatched": true,
+    "findings": [
+      {
+        "code": "dart_flutter_runtime_link_inventory_incomplete",
+        "subject": "",
+        "severity": "blocker"
+      },
+      {
+        "code": "development_package",
+        "subject": "",
+        "severity": "blocker"
+      },
+      {
+        "code": "license_expressions_and_distribution_obligations_not_fully_reviewed",
+        "subject": "",
+        "severity": "blocker"
+      },
+      {
+        "code": "release_signer_not_pinned",
+        "subject": "",
+        "severity": "blocker"
+      },
+      {
+        "code": "windows_signature_not_valid",
+        "subject": "",
+        "severity": "blocker"
+      }
+    ],
+    "auditSha256": "fe4235f8e54ee1c641ee835ad38e15bfa747f2b786a4376a47dbe9e8de2604a3"
+  },
+  "android": {
+    "artifact": {
+      "file": "ExVPN-0.1.0+17-shorebird-beta.apk",
+      "sha256": "67682aea20ba57b65ce847d55087165c3d3f34dd79eeff00a6757c7227419e3a",
+      "bytes": 125130506
+    },
+    "package": "ru.exvpn.exvpn",
+    "versionCode": 17,
+    "versionName": "0.1.0",
+    "minimumSdk": 30,
+    "targetSdk": 36,
+    "debuggable": false,
+    "abis": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "auditExitCode": 2,
+    "releaseReady": false,
+    "signature": {
+      "verified": true,
+      "trustedSignerMatched": true,
+      "debug": false,
+      "certificateSha256": [
+        "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093"
+      ]
+    },
+    "sameSignerAsBuild16": true,
+    "noticeSource": "actual-apk-entries",
+    "counts": {
+      "files": 308,
+      "nativeBinaries": 2,
+      "noticeComponents": 142
+    },
+    "xraySourceMatched": true,
+    "engineBytesBound": true,
+    "rawSdkBytesMatched": false,
+    "bindingMethod": "verified_ndk_strip",
+    "findings": [
+      {
+        "code": "android_gradle_maven_runtime_inventory_missing",
+        "subject": "",
+        "severity": "blocker"
+      },
+      {
+        "code": "dart_flutter_runtime_link_inventory_incomplete",
+        "subject": "",
+        "severity": "blocker"
+      },
+      {
+        "code": "license_expressions_and_distribution_obligations_not_fully_reviewed",
+        "subject": "",
+        "severity": "blocker"
+      }
+    ],
+    "auditSha256": "9c27ebb652da48ab535e358a087b6c0a669e056b2139685ea33bd563a7dcf17d",
+    "buildMetadataMatchesActualRuntime": true
+  },
+  "boundaries": {
+    "newGuestRuntime": false,
+    "packageExecutedOrInstalled": false,
+    "buildsStarted": false,
+    "networkAccessRequired": false,
+    "privateKeysRead": false,
+    "trackedFilesChanged": false,
+    "stableReleaseReady": false,
+    "fullLicenseLinkCoverageClaimed": false,
+    "androidSourceCommitEmbeddedInJni": false,
+    "sourceCommitContextIsNotIndependentAotCompilerMembershipProof": true,
+    "windowsInstallerRuntimeSemanticsVerified": false
+  },
+  "inspectedAtUtc": "2026-10-17T13:24:39.9642152Z"
+}

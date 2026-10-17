@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "status": "AAB_REPORTED_INPUTS_BOUND_LICENSE_COVERAGE_INCOMPLETE",
+  "artifact": {
+    "file": "ExVPN-0.1.0+17-shorebird-beta.aab",
+    "sha256": "53b59cd1f753a5dd36183ad317762a1ffdfe2b8a0e458fe8b95fad4c4bd9f791"
+  },
+  "artifactBuildSourceContext": "2cd1f71404d4516ad22312d8722f98ef4867eda3",
+  "inspectionSourceCommit": "2cd1f71404d4516ad22312d8722f98ef4867eda3",
+  "bindingKind": "aab_embedded_agp_dependencies",
+  "metadata": {
+    "entry": "BUNDLE-METADATA/com.android.tools.build.libraries/dependencies.pb",
+    "sha256": "e2b69aa84f09a8f603d3d0b1f72de2278ffd9011f11104936aa7873fee8bb5a1",
+    "producerSha256": "a470f8965c422d001e6d29c63af71d0b06441f6e6e918dfdc5d8e838878d6c5b",
+    "agpVersion": "9.1.0",
+    "schemaSha256": "f499cfed9932de17feec50b6e53a3cdd4c38898ec9761fe8b64215d7a266f675"
+  },
+  "counts": {
+    "libraries": 52,
+    "boundBinaries": 48,
+    "withoutDigest": 4,
+    "edges": 235
+  },
+  "withoutProducerDigest": [
+    {
+      "coordinate": "org.jetbrains.kotlin:kotlin-stdlib-common:2.4.0",
+      "reason": "producer_reported_no_file_digest"
+    },
+    {
+      "coordinate": "androidx.annotation:annotation:1.10.0",
+      "reason": "producer_reported_no_file_digest"
+    },
+    {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1",
+      "reason": "producer_reported_no_file_digest"
+    },
+    {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.7.1",
+      "reason": "producer_reported_no_file_digest"
+    }
+  ],
+  "scope": {
+    "exactLinkedCodeInventory": false,
+    "separateApkBinding": false,
+    "licensesReviewed": false,
+    "signatureVerified": false
+  },
+  "limitations": [
+    "AGP reports pre-R8 Maven input artifacts, not exact linked classes.",
+    "Missing producer digests remain explicitly unbound; local POM availability cannot supply a historical digest.",
+    "This result applies only to this AAB, not a separately built APK.",
+    "Project plugins, Dart/Flutter/native inputs, full notices and signatures require separate checks."
+  ],
+  "inspection": {
+    "command": "scripts/release/android-aab-dependencies.ps1",
+    "exitCode": 0,
+    "invocations": 1,
+    "deadlineSeconds": 60,
+    "processElapsedSeconds": 8.339,
+    "toolElapsedSeconds": 7.746,
+    "beforeAfterInputsRehashed": 57,
+    "inputHashMismatches": 0,
+    "downloads": false,
+    "gradleInvoked": false,
+    "nativeOrAppBuildInvoked": false,
+    "guestOrRuntimeActions": false,
+    "sourceEdited": false
+  },
+  "proof": {
+    "bindingSha256": "5933bc3a669d3e4e57d02254ba34bdb4426766c067faa79cb40a339e7ad34760",
+    "localInputManifestSha256": "92f66ac98c4d67d48071db0a26695ec6b901c24591d405b08b16498628dc6444",
+    "invocationSha256": "a09565795bdbcd3c4fc17a904fa35e923a12ffd48db8e98a55e8039249a3a34b"
+  },
+  "releaseReady": false,
+  "recordedAtUtc": "2026-10-17T13:27:09.8089150Z"
+}

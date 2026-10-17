@@ -296,6 +296,28 @@ Root независимо сверил соответственно **85, 130 и
 проверку подписи, доставку или rollback.
 [Закреплённый C API](https://github.com/shorebirdtech/updater/blob/70ff1e336798474e39586d3f5ac2ca386ef32d9e/library/src/c_api/dart.rs#L65).
 
+## Базы +17, 2026-10-17
+
+Собраны Android AAB/APK и Windows NSIS с `exvpn.5` и новым поиском исключений.
+APK подписан тем же release-сертификатом, что +16; Windows остаётся unsigned
+development. В обоих пакетах проверены `auto_update=false`, обязательная
+подпись патча и точный public key. Android engine связан с закреплённым SDK
+через проверенное удаление отладочной информации NDK, Windows engine совпал
+байт-в-байт. Это проверка содержимого, не инициализации native updater.
+
+Root независимо сверил 26 файлов package evidence и 20 файлов native evidence.
+Оба аудита вернули exit 2: Android сохраняет три blocker по inventory/лицензиям;
+Windows — пять, включая подпись издателя. Выбор платной подписи отложен
+пользователем. Облачный release/patch не публиковался.
+[Пакеты](evidence/packages-build17.json), [native](evidence/native-build17.json).
+Исходники: [2cd1f71](https://github.com/Extectick/ExVPN/commit/2cd1f71404d4516ad22312d8722f98ef4867eda3).
+
+Отдельное offline-чтение AAB +17 заняло 8,339 с: 52 библиотеки, 48 совпавших
+хешей входных AAR/JAR и четыре записи без producer digest. Root перепроверил
+57 входов и восемь файлов результата. Это не связывает отдельно собранный APK
+с Maven-графом и не закрывает лицензионные обязательства.
+[AAB metadata](evidence/android-aab-metadata-build17.json).
+
 ## Оставшаяся интеграция
 
 Для native updater отдельно сохранён exact Cargo.lock inventory:

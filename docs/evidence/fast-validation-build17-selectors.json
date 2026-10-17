@@ -1,0 +1,219 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "status": "PASS",
+  "sourceCommit": "1884fae804a17b8fe9fdf41eecaf9fd09332427d",
+  "summarySha256": "55ece95cb7b935bd4831c649d9e567bfc211a4125b1fba87bca1d022ccb9fb12",
+  "full": {
+    "schemaVersion": 1,
+    "mode": "Full",
+    "scope": "behavioral checks only; excludes builds and real VPN/security/release acceptance",
+    "startedAt": "2026-10-17T20:59:28.4990057+07:00",
+    "endedAt": "2026-10-17T21:03:30.2474296+07:00",
+    "durationSeconds": 241.75,
+    "status": "passed",
+    "sourceFingerprintBefore": "80d6c8892b0d2383647a5f7fcf7e88704eac02e857f94209fe19315dd72a6401",
+    "sourceFingerprintAfter": "80d6c8892b0d2383647a5f7fcf7e88704eac02e857f94209fe19315dd72a6401",
+    "sourceUnchanged": true,
+    "toolchain": {
+      "dart": "3.13.5",
+      "flutter": "abaf9c523780a608bd46686fd5e53740a07077f8",
+      "go": "1.27.2"
+    },
+    "changedFileCount": 0,
+    "selectedLanes": [
+      "domain",
+      "state",
+      "updates",
+      "app",
+      "core",
+      "android",
+      "windows",
+      "xray",
+      "installer",
+      "scripts",
+      "ci"
+    ],
+    "executionOrder": [
+      "scripts",
+      "ci",
+      "app",
+      "core",
+      "xray",
+      "android",
+      "windows",
+      "updates",
+      "domain",
+      "state",
+      "installer"
+    ],
+    "selectionReasons": [
+      "full behavioral suite requested"
+    ],
+    "goResultCacheAllowed": false,
+    "maxParallel": 3,
+    "testConcurrency": 2,
+    "lanes": [
+      {
+        "lane": "android",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 31.61,
+        "cachedGoPackages": 0,
+        "log": "android.log"
+      },
+      {
+        "lane": "app",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 129.13,
+        "cachedGoPackages": 0,
+        "log": "app.log"
+      },
+      {
+        "lane": "ci",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 53.85,
+        "cachedGoPackages": 0,
+        "log": "ci.log"
+      },
+      {
+        "lane": "core",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 140.6,
+        "cachedGoPackages": 0,
+        "log": "core.log"
+      },
+      {
+        "lane": "domain",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 9.37,
+        "cachedGoPackages": 0,
+        "log": "domain.log"
+      },
+      {
+        "lane": "installer",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 10.22,
+        "cachedGoPackages": 0,
+        "log": "installer.log"
+      },
+      {
+        "lane": "scripts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 152.85,
+        "cachedGoPackages": 0,
+        "log": "scripts.log"
+      },
+      {
+        "lane": "state",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 8.33,
+        "cachedGoPackages": 0,
+        "log": "state.log"
+      },
+      {
+        "lane": "updates",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 21.03,
+        "cachedGoPackages": 0,
+        "log": "updates.log"
+      },
+      {
+        "lane": "windows",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 12.68,
+        "cachedGoPackages": 0,
+        "log": "windows.log"
+      },
+      {
+        "lane": "xray",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 53.44,
+        "cachedGoPackages": 0,
+        "log": "xray.log"
+      }
+    ],
+    "failure": null,
+    "requiredNextGates": [
+      "Android JNI/APK and JVM tests",
+      "Windows native/UI build",
+      "isolated VPN/IPv4/IPv6/DNS/fault acceptance",
+      "signed release and upgrade acceptance"
+    ]
+  },
+  "logs": [
+    {
+      "name": "android.log",
+      "bytes": 205,
+      "sha256": "40b248b7738386f28c801f1ed9f33d5844bcf25612ff720304b0e0dbbea45796"
+    },
+    {
+      "name": "app.log",
+      "bytes": 32851,
+      "sha256": "35d4705ca3edf46213d7f245d7de4632f326c303dc889c857dd5790f1f26fd19"
+    },
+    {
+      "name": "ci.log",
+      "bytes": 806,
+      "sha256": "7023a01f18c42d3b8700e4ede40f73b626edbe142e52b4848919fb18f1238ab0"
+    },
+    {
+      "name": "core.log",
+      "bytes": 210,
+      "sha256": "b871bbb4f9fcc9a91e4a478c7bc0256940cc231029e45cefa061cc4305c7591b"
+    },
+    {
+      "name": "domain.log",
+      "bytes": 23316,
+      "sha256": "4b84630faa73c27934bd2759a28999abf83ea888b811db198d03dcdd96c178fe"
+    },
+    {
+      "name": "installer.log",
+      "bytes": 557,
+      "sha256": "8d5eba118fdeb2d541b62cf791a78e36a6209893c67941ce6c36b5148eeed0ed"
+    },
+    {
+      "name": "scripts.log",
+      "bytes": 15697,
+      "sha256": "698a3b91dc1f73bf3c147de96e029f0e2240cf6291debd427ea79ab418bcb0ca"
+    },
+    {
+      "name": "state.log",
+      "bytes": 6853,
+      "sha256": "7ded10860e5d591b38745d2cf43428c1efacf1877e4eb4f03cc8c319ea6d8d25"
+    },
+    {
+      "name": "updates.log",
+      "bytes": 3937,
+      "sha256": "d594b02de4bb1a306e659306cde8e3ad70e45716b52f1557be17a46cc335713d"
+    },
+    {
+      "name": "windows.log",
+      "bytes": 586,
+      "sha256": "f683c25b6ff5931f86a43491e6012e81043d1ef2215259ce9a9711f46f362ad3"
+    },
+    {
+      "name": "xray.log",
+      "bytes": 519,
+      "sha256": "7ded9f5018a89731e02e3e00e69e25da2bc471a62fdefd183fe6038a289689c4"
+    }
+  ],
+  "selectorChecks": 61,
+  "scriptSuiteHostPairs": 18,
+  "independentReview": "No actionable findings; helper, synthetic fixtures and local/CI wiring",
+  "limitations": [
+    "Behavioral checks only; no new guest, VPN, DNS or release acceptance.",
+    "Earlier Android attempts remain INDETERMINATE; cleanup evidence remains separate.",
+    "This report does not claim GitHub CI completed for this commit."
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "runId": "1da4507c-e793-4730-8659-a329e786964c",
+  "fromBuild": 16,
+  "toBuild": 17,
+  "installerSha256": "1120b36cdaacd6d3e1d7d77378f40f6c2aeffe3d9e3aa7918a163bb6050cea6b",
+  "uiSha256": "c1ec949e447d1318ac667d28eb1dad42727c398642fd100add12bcbccda0b262",
+  "serviceSha256": "70a6b7f6cb469fb3f4628c4f429c30aba7aee68bc285fe85e65536d3c91bbd43",
+  "installStateSha256": "dff0ad13433f244019b2161724b9bb6bdb1d5f3fd6de167c5be0c7ec495431cc",
+  "installerExitCode": 0,
+  "installerQuiescent": true,
+  "serviceRunning": true,
+  "productionBindingVerified": true,
+  "ownerUnchanged": true,
+  "uiLaunches": 0,
+  "vpnActions": 0,
+  "hostNetworkChanged": false,
+  "cloudActions": 0,
+  "cleanup": {
+    "status": "PASS",
+    "archivedOwnedReceipts": 5,
+    "storageFiles": 0,
+    "guardArmed": false,
+    "tunnelPresent": false,
+    "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+    "backups": 21,
+    "backupInventorySha256": "fa157992bdf3744b25c2f2d16f2b209a4bfbb3b8dada346ae184a9d258e48878",
+    "preservedOriginalBackups": 20
+  },
+  "timing": {
+    "hostCoordinatorElapsedMsIncludingCleanup": 321174,
+    "hostCleanupElapsedMs": 69991,
+    "guestPhases": [
+      {
+        "phase": "baseline",
+        "elapsedMs": 64547
+      },
+      {
+        "phase": "upgrade",
+        "elapsedMs": 114548
+      },
+      {
+        "phase": "final",
+        "elapsedMs": 56982
+      },
+      {
+        "phase": "cleanup",
+        "elapsedMs": 66609
+      }
+    ]
+  },
+  "notRun": [],
+  "auditSha256": "fe4235f8e54ee1c641ee835ad38e15bfa747f2b786a4376a47dbe9e8de2604a3",
+  "releaseReadiness": "NOT_PROVEN: known unsigned development and remaining release blockers preserved",
+  "privateManifest": {
+    "path": ".private/windows-upgrade-evidence-1da4507c/private-evidence-manifest.json",
+    "sha256": "60c5fff731af01598844a1179c19404bb1a1d83dc76e1dcd2158836cbde6ee4d",
+    "records": 43
+  },
+  "sealSha256": "38bda353e44330612ff258b45756615c9282960694bde653e01c08bdd0bbbac7"
+}

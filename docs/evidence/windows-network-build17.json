@@ -1,0 +1,312 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "runId": "1fe24446-a013-44e7-b097-1dd8ce2e80a0",
+  "build": "0.1.0+17",
+  "platform": "Windows Sandbox",
+  "networkVerdict": "PASS",
+  "cleanupStatus": "PASS",
+  "artifact": {
+    "installerSha256": "1120b36cdaacd6d3e1d7d77378f40f6c2aeffe3d9e3aa7918a163bb6050cea6b",
+    "uiSha256": "c1ec949e447d1318ac667d28eb1dad42727c398642fd100add12bcbccda0b262",
+    "serviceSha256": "70a6b7f6cb469fb3f4628c4f429c30aba7aee68bc285fe85e65536d3c91bbd43",
+    "installStateSha256": "dff0ad13433f244019b2161724b9bb6bdb1d5f3fd6de167c5be0c7ec495431cc",
+    "sourceCommit": "2cd1f71404d4516ad22312d8722f98ef4867eda3",
+    "sourceModified": false,
+    "xrayVersion": "v1.260327.1-exvpn.5",
+    "xrayGoChecksum": "h1:qiJ43pz/0NfWNLPgT1ZT6Z2r0EbX+zIuTntRaAc++1o=",
+    "auditSha256": "fe4235f8e54ee1c641ee835ad38e15bfa747f2b786a4376a47dbe9e8de2604a3"
+  },
+  "scope": {
+    "profile": "single saved node4; VLESS/XHTTP/REALITY",
+    "providerInputUnchangedExceptNeutralFragment": true,
+    "profilePrefixSha256": "efb59c649d196bfeabbbbe0e938b744b17c296681f559e7a8d676e5a87b88fd4",
+    "ordinaryProductionExeAndIpcBinding": true,
+    "independentProbe": "user-owned process; not claimed unelevated",
+    "probeSha256": "43f1825d369e60d40ce2623bd3736f3b37d4dd75a96ac576a86a418fb09f082e",
+    "launcherAdminEnabled": true,
+    "integrityLevelMeasured": false,
+    "vpnConnectCalls": 1,
+    "vpnDisconnectCalls": 1,
+    "installActions": 0,
+    "cloudActions": 0,
+    "forceUiKill": false,
+    "hostNetworkChanged": false
+  },
+  "network": {
+    "numericHttpsStatus": 200,
+    "domainHttpsStatus": 204,
+    "explicitTunDnsAddressCount": 2,
+    "externalIpv4HashChanged": true,
+    "externalIpv4HashRestored": true,
+    "restoredNumericHttpsStatus": 200,
+    "restoredDomainHttpsStatus": 204,
+    "connectedWfpAndTun": true,
+    "serviceEstablishedBefore": 3,
+    "serviceEstablishedAfter": 3,
+    "adapterTrafficCounters": {
+      "sameInterfaceGuid": true,
+      "sentBytesIncrease": 5857,
+      "receivedBytesIncrease": 10858,
+      "coreIpcStats": false
+    }
+  },
+  "disconnect": {
+    "status": "PASS",
+    "sameScmGeneration": true,
+    "liveProviderSockets": 0,
+    "tunnelAbsent": true,
+    "guardAbsent": true,
+    "routesDnsRestored": true,
+    "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+    "receiptSha256": "5eed3d8994bd1732dad6ff384c5de298539058d5a22f21d004e95bf7b4e673b5"
+  },
+  "serviceLifetime": {
+    "handleHeldBeforeUiLaunch": true,
+    "samePidStartAndImageThroughout": true,
+    "finalState": "RUNNING_HELD",
+    "actualProcessExitCode": null,
+    "signals": 0,
+    "finalCleanupSameGeneration": true,
+    "startedReceiptSha256": "64ea79bed5210530b28d03525b00ac0d9afc15341fc1b412ce43ecec5161daa2",
+    "finalReceiptSha256": "58125ae2e5bc70779c80a95047263710662fdb0af2d50a94b60815faed3d7edb"
+  },
+  "ui": {
+    "steps": [
+      {
+        "step": "settings",
+        "sequence": 1,
+        "elapsedMs": 510,
+        "receiptSha256": "325e35e8f598791408ab34599183fa03ecde1d68869bcd2d3fe67f5dee29df54",
+        "assemblyLoadMs": 196,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "add",
+        "sequence": 2,
+        "elapsedMs": 616,
+        "receiptSha256": "88d482c57879c38b4979b22c37d0c1845980c1a20c169876a83598a181bf8c13",
+        "assemblyLoadMs": 198,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "text-mode",
+        "sequence": 3,
+        "elapsedMs": 617,
+        "receiptSha256": "01aaf875d121f56923089ca7e08fa650094dee3c9054f7ac257e327080ada1eb",
+        "assemblyLoadMs": 213,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "name",
+        "sequence": 4,
+        "elapsedMs": 1189,
+        "receiptSha256": "d91d6d5cfa8f758804bc64de39c428be02f63c7854448c3a735327e5a45dcb8b",
+        "assemblyLoadMs": 209,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "payload",
+        "sequence": 5,
+        "elapsedMs": 4591,
+        "receiptSha256": "3bad8a5c0e58c2d2229f115ea55a565658a493dcae55eb14e21f9fafa7318c68",
+        "assemblyLoadMs": 251,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "submit",
+        "sequence": 6,
+        "elapsedMs": 754,
+        "receiptSha256": "091b4adeca6919dc36dc7fee0f868f5521e39d7798d1833329490ef61ac80875",
+        "assemblyLoadMs": 338,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "observe-selection",
+        "sequence": 7,
+        "elapsedMs": 285,
+        "receiptSha256": "d2bafdaf7c4674e8e1065c4384b24417e4a90d58e11c6b5aca07caa13fdde081",
+        "assemblyLoadMs": 311,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "connect",
+        "sequence": 8,
+        "elapsedMs": 3861,
+        "receiptSha256": "c9e97b9e993c8469b758e591f0a50af73fcb9edd4f10e8fd5331052a3a4b2096",
+        "assemblyLoadMs": 267,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "disconnect",
+        "sequence": 9,
+        "elapsedMs": 680,
+        "receiptSha256": "8314fd525103af8ae943b5877214ceb523189150ebe8cd6144d1b0e89ef7b7e5",
+        "assemblyLoadMs": 228,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "settings-cleanup",
+        "sequence": 10,
+        "elapsedMs": 822,
+        "receiptSha256": "cd2a0e4d9785be10ad5539959419964488cc1d3c36d879796c268f3a1d880af9",
+        "assemblyLoadMs": 346,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "remove-group",
+        "sequence": 11,
+        "elapsedMs": 803,
+        "receiptSha256": "12a9ad0516f9544fc14b8d98f1b17e60a3848f11c3d4027cd59dfad48781f446",
+        "assemblyLoadMs": 210,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "confirm-remove",
+        "sequence": 12,
+        "elapsedMs": 759,
+        "receiptSha256": "2dba5ea351cb7a38eed2a5d57b54bcf2f2bd447711778b7c7cd1c308ced49893",
+        "assemblyLoadMs": 305,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "close-settings",
+        "sequence": 13,
+        "elapsedMs": 930,
+        "receiptSha256": "fe61401ee2d072fcaf90df7803eddd87e9de80753a4289b5bede0429566aba89",
+        "assemblyLoadMs": 291,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "open-exit-menu",
+        "sequence": 14,
+        "elapsedMs": 123,
+        "receiptSha256": "34109fb24a6b7d8af9d8601ce905d1aa11d3184a7868545ee5bfe0e839286e40",
+        "assemblyLoadMs": 314,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "choose-exit-menu",
+        "sequence": 15,
+        "elapsedMs": 304,
+        "receiptSha256": "81610d516341a19a0f58ba97bfbb7477f8dda278b08b9222d2800fcbe5892e9b",
+        "assemblyLoadMs": 227,
+        "runtimeCompiled": false
+      },
+      {
+        "step": "exit-confirm",
+        "sequence": 16,
+        "elapsedMs": 481,
+        "receiptSha256": "7881076cf2c9b0708cd9c813fdd6029688ad54524ee47f2df75e1932c5ed3172",
+        "assemblyLoadMs": 214,
+        "runtimeCompiled": false
+      }
+    ],
+    "normalExitCode": 0,
+    "heldGenerationExited": true,
+    "ownedGroupRemoved": true,
+    "exitGesture": "injected owned tray callback, then actual MSAA menu action and Flutter confirmation; no claim of physical Shell gesture",
+    "exitReceiptSha256": "895816751e1f358f5b2c514fa8b2a8af63721487d400005dab4ced3ffc69e0ca"
+  },
+  "policy": {
+    "semanticUnchanged": true,
+    "pathCount": 0,
+    "snapshots": [
+      {
+        "phase": "baseline",
+        "normalizedSha256": "f61f608a9cdec66fb651baedc17fe5592fbe48cee601683a9e31929d331c3245",
+        "receiptSha256": "b7259a1d2665f3a3ffd94daa344bc531aaeef26dadd2efd1f37277dc9e2daeef"
+      },
+      {
+        "phase": "before-traffic",
+        "normalizedSha256": "f61f608a9cdec66fb651baedc17fe5592fbe48cee601683a9e31929d331c3245",
+        "receiptSha256": "b0b36e34349d0b96789ffae7bba0482966caeb6ad632671c6bbb828e0ae7b2d0"
+      },
+      {
+        "phase": "after-traffic",
+        "normalizedSha256": "f61f608a9cdec66fb651baedc17fe5592fbe48cee601683a9e31929d331c3245",
+        "receiptSha256": "e525a7e9a6b046e87101e92a90c5bb2d66adcb4f9907a0990b72b0e947a48402"
+      },
+      {
+        "phase": "restored",
+        "normalizedSha256": "f61f608a9cdec66fb651baedc17fe5592fbe48cee601683a9e31929d331c3245",
+        "receiptSha256": "d4b0ea829311069861c02eac5a9d59f1266ebea9333396cc6f83ca0d88416707"
+      },
+      {
+        "phase": "cleanup",
+        "normalizedSha256": "f61f608a9cdec66fb651baedc17fe5592fbe48cee601683a9e31929d331c3245",
+        "receiptSha256": "079ea8fbafd7bc620b7e131ee8556a0929edefeab2c82a2dfbb4a6a0e1959b82"
+      }
+    ],
+    "plaintextExported": false,
+    "ciphertextNotUsedAsCrossConnectEqualityGate": true
+  },
+  "cleanup": {
+    "status": "PASS",
+    "uiAbsent": true,
+    "storageFiles": 0,
+    "ownedProtectedReceiptsArchivedAndRemoved": 2,
+    "backupCount": 21,
+    "backupInventorySha256": "fa157992bdf3744b25c2f2d16f2b209a4bfbb3b8dada346ae184a9d258e48878",
+    "backupsUnchanged": true,
+    "tunnelAbsent": true,
+    "guardAbsent": true,
+    "networkRestored": true,
+    "receiptSha256": "b6404ded7b9194b644e6d47a7f31ee27894745ee77be6c28dc9faf93304ddd99"
+  },
+  "qaAssembly": {
+    "sha256": "14e70701ef3bc003b1b9e2f0f933817b3b2f962ed1dffb925343d026d759e202",
+    "manifestSha256": "c77ac8e32795996fc0bf61af72163f7107f20c291774e0c4e49402d817570f69",
+    "sourceFiles": 4,
+    "runtimeCompilation": false,
+    "preflightLoadElapsedMs": 271,
+    "stepLoadElapsedMs": [
+      196,
+      198,
+      213,
+      209,
+      251,
+      338,
+      311,
+      267,
+      228,
+      346,
+      210,
+      305,
+      291,
+      314,
+      227,
+      214
+    ],
+    "notClaimedCauseOfOldTimeoutFix": true
+  },
+  "timing": {
+    "hostCoordinatorElapsedMsIncludingCleanup": 589856,
+    "hostCleanupElapsedMs": 82873,
+    "guestCleanupElapsedMs": 74505,
+    "startedUtc": "2026-10-17T13:38:01.6578425Z",
+    "finishedUtc": "2026-10-17T13:47:51.5284008Z"
+  },
+  "notRun": [],
+  "screenshots": [],
+  "limitations": [
+    "One node and one Connect/Disconnect cycle only.",
+    "No IPv6, DNS leak/no-bypass, exclusions, crash/kill-switch, long-running resource or physical-device acceptance in this scenario.",
+    "No native updater/OTA/cloud release verification.",
+    "Original build16 service7034/SCM1067 cause remains undetermined; successful build17 run does not prove the cause.",
+    "Development unsigned package; known release blockers remain.",
+    "MSAA/targeted ASCII input and injected tray callback do not prove keyboard/IME or physical Shell UX."
+  ],
+  "priorEvidencePreserved": [
+    "windows-network-build16-b99b5c40: service unexpected termination; cause unknown",
+    "windows-network-build16-5742b096: network partial PASS, exit harness REFUSED, independent cleanup PASS"
+  ],
+  "privateManifest": {
+    "path": ".private/windows-network-evidence-1fe24446/private-evidence-manifest.json",
+    "sha256": "f37de5055bacd0903f0a05cd2bfbbef69aa19d687ac08bef32f8f22b5b9f4eb0",
+    "records": 393,
+    "rereadHashAndLengthVerified": 393
+  },
+  "sealSha256": "b774c551c632c28a5b083043286612021eeca8110c7c70fd8a592e1588ee8764",
+  "inputProofSha256": "5b7b9c4c80b2af888d404757284b3d32552763c60d7e42545a8e48c0086bde41"
+}

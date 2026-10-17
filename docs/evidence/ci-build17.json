@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "runId": 39035579677,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/39035579677",
+  "sourceCommit": "2cd1f71404d4516ad22312d8722f98ef4867eda3",
+  "status": "completed",
+  "conclusion": "success",
+  "runtime": "ordinary pinned Flutter development builds, separate from local Shorebird release bases",
+  "jobs": [
+    {
+      "name": "Android",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T13:12:05Z",
+      "completedAt": "2026-10-17T13:32:51Z",
+      "durationSeconds": 1246,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check out source",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Select native build impact (full build on unknown/error)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache pinned SDK archives",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install repository-pinned Flutter and Go",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache verified Go dependencies and compiler outputs",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache locked Pub packages",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare Android SDK packages on the disposable runner",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze, test, and build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload Android development APK",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload Windows development bundle",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Cache locked Pub packages",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Cache verified Go dependencies and compiler outputs",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Cache pinned SDK archives",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Check out source",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "Windows",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T13:12:06Z",
+      "completedAt": "2026-10-17T13:23:17Z",
+      "durationSeconds": 671,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check out source",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Select native build impact (full build on unknown/error)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache pinned SDK archives",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install repository-pinned Flutter and Go",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache verified Go dependencies and compiler outputs",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Cache locked Pub packages",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare Android SDK packages on the disposable runner",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Analyze, test, and build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload Android development APK",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Upload Windows development bundle",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Cache locked Pub packages",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Cache verified Go dependencies and compiler outputs",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Cache pinned SDK archives",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Check out source",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    "CI success does not establish installed VPN/TUN/DNS/kill switch acceptance.",
+    "Android build pipeline also runs JVM unit tests; local Shorebird APK has separate package audit.",
+    "No signed stable release or Shorebird cloud patch is published by this run."
+  ]
+}

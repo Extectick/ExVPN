@@ -191,6 +191,33 @@ PID, netId и временем в querylog. VPN не запускался; пр�
 
 ## E4 — Android-клиент
 
+2026-10-17, первая попытка +17: same-signer upgrade +16 → +17 прошёл,
+точные APK/UID/dataDir проверены. Поиск остановлен тестовым selector до ввода
+и Connect: Android XML содержит единственное поле, но не содержит его label.
+Причина отсутствия label в dumper/engine пока неизвестна; accessibility не
+принята. Отдельная очистка прошла за 81,452 с: QA-группа удалена, выбранных
+исключений ноль, нет VPN/service, настройки ОС сохранены, owned AVD остановлен.
+Исходный INDETERMINATE не заменён PASS. Root сверил 403 + 264 файла.
+[Upgrade и границы проверки](evidence/android-upgrade-search-build17.json),
+[исходники](https://github.com/Extectick/ExVPN/commit/2cd1f71404d4516ad22312d8722f98ef4867eda3).
+
+Во второй попытке +17 реальный ввод запроса и фильтрация двух QA-приложений
+подтверждены свежим Android XML; Save и переключение исключения не выполнялись.
+Сценарий ошибочно требовал `scrollable=true`, хотя после фильтрации содержимое
+поместилось целиком. До Connect/DNS он не дошёл. Отдельный cleanup PASS за
+91,028 с вернул пустые группы/исключения и остановил owned AVD; исходный
+INDETERMINATE сохранён. Root сверил 400 + 268 evidence-файлов.
+[Вторая попытка и причина](evidence/android-search-runtime-build17.json).
+
+Для следующего прогона подготовлен общий selector: 61 synthetic check и
+read-only replay четырёх сохранённых UI tree PASS, независимый review без
+замечаний. Контейнер определяется по поиску и общему счётчику; короткий
+непрокручиваемый список допускается без разрешения свайпа. Неоднозначные,
+скрытые и неверные targets отклоняются. ADB-действий и нового сетевого
+прогона нет; интеграция helper в следующий runtime-сценарий ещё требуется.
+[Проверки](evidence/android-exclusions-selectors-build17.json),
+[код 1884fae](https://github.com/Extectick/ExVPN/commit/1884fae804a17b8fe9fdf41eecaf9fd09332427d).
+
 - [ ] **EXVPN-E4-001** — Реализовать VpnService, системное разрешение, foreground notification и полный жизненный цикл. Зависимости: E1–E3. Критерий: служба независима от Activity, видимый статус достоверен, повторный старт/stop безопасен.
   Прогресс 2026-10-16: Kotlin VpnService + TUN/JNI и общий Dart bridge реализованы; обе JNI ABI и debug APK собраны. В эмуляторе API36 после системного согласия независимое приложение получило HTTPS204 через TUN; реальные счётчики увеличились. Сохранённая подписка восстановилась после force-stop/cold start. Полный жизненный цикл и физическое устройство ещё проверяются; пункт открыт.
 - [ ] **EXVPN-E4-002** — Добавить исключения по package/UID и отображение системной защиты. Зависимость: E4-001. Критерий: package lifecycle не расширяет исключение, настройки lockdown доступны, системное поведение не обещается как управляемое приложением.
@@ -198,14 +225,22 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   названию и package/path, общий счётчик выбранных. Скрытые и отсутствующие
   в отфильтрованном списке исключения сохраняются при Save; ошибки чтения
   не показывают ложный нулевой выбор. 10 widget tests/analyze PASS, включая
-  телефон 360×640 с клавиатурой, доступность строки и Save; реальный экран
-  нового пакета ещё не проверен. [Код 464c0a5](https://github.com/Extectick/ExVPN/commit/464c0a5),
+  телефон 360×640 с клавиатурой, доступность строки и Save. В установленном
+  +17 подтверждены ввод и фильтрация; переключение/Save ещё не приняты.
+  [Код 464c0a5](https://github.com/Extectick/ExVPN/commit/464c0a5),
   [проверки](evidence/exclusions-search-build17.json). Полный пункт открыт.
 - [ ] **EXVPN-E4-003** — Реализовать интерфейс по выбранному эталону. Зависимости: E2, E4-001–002. Критерий: главный экран, подписки, настройки и ошибки проверены на физическом устройстве; сохранены обезличенные скриншоты.
 - [ ] **EXVPN-E4-004** — Выполнить Android regression на минимальной и актуальной ОС. Зависимости: E4-001–003. Критерий: смена Wi-Fi/mobile, экран выключен, закрытие UI, перезапуск процесса, авария ядра, DNS/IPv6 и явное отключение в lockdown.
   Прогресс 2026-10-16: добавлен отдельный Android11/API30 smoke на том же APK, что API36. Подтверждены VLESS TCP/HTTPS через TUN, отказ при остановке прокси, Blocked и восстановление direct после явного отключения. Остальная API30 матрица и физическое устройство ещё не проверены; [ANDROID_VALIDATION.md](ANDROID_VALIDATION.md).
 
 ## E5 — Windows-клиент
+
+2026-10-17, +17: штатный upgrade +16 → +17 в Sandbox прошёл с exit 0;
+точный payload и работа SCM-службы проверены. Сеть, пустое хранилище и 20
+прежних backup-копий сохранены, появилась одна backup-копия +16. Отдельная
+очистка пяти служебных QA-файлов прошла; UI/VPN этот сценарий не запускал.
+Root сверил 43 файла доказательств. [Upgrade](evidence/windows-upgrade-build17.json),
+[исходники](https://github.com/Extectick/ExVPN/commit/2cd1f71404d4516ad22312d8722f98ef4867eda3).
 
 - [ ] **EXVPN-E5-001** — Реализовать службу, установку/запуск, ACL IPC и управление ядром. Зависимости: E1–E3. Критерий: минимальные привилегии UI, валидация команд на стороне службы, устойчивое состояние после рестарта.
   Дополнение 2026-10-17: NSIS +5 → +6 и полный installed SCM fault run при ограниченных правах UI прошли; QueryLimited grant только owner SID, readback до IPC, контроль процесса/запись HKLM запрещены. После hard kill/restart guard сохранился, исключение восстановлено, explicit disconnect/cleanup вернули сеть. [Протокол](WINDOWS_UNELEVATED.md), исходники [a617aad](https://github.com/Extectick/ExVPN/commit/a617aad16c6e1803fcd6e1557d1c500861732e74), [59bbcdf](https://github.com/Extectick/ExVPN/commit/59bbcdfc85dc1a99c43703445ae491154b78167a). Общий E5 этим не закрывается.
@@ -253,18 +288,38 @@ PID, netId и временем в querylog. VPN не запускался; пр�
 
 - [x] **EXVPN-E5-005** — Сохранять Windows-исключения между запусками службы и дать явное восстановление при повреждении. Зависимость: реализация SCM/IPC E5-001. Критерий: owner-bound encrypted policy, отсутствие тихого пустого списка при ошибке, сохранность исключения после crash/restart/disconnect, видимый UI reset и reopen. Доказательство 2026-10-17: 10 Go tests хранения/состояния + весь Windows module/vet, 20 Flutter tests/analyze, реальный LocalSystem SCM +4 и UI recovery +5 прошли. Guard не снимается восстановлением настроек; системные изменения ограничены Sandbox. [Контракт и границы](WINDOWS_POLICY.md), [crash +4](evidence/windows-policy-build4.json), [recovery +5](evidence/windows-policy-recovery-build5.json); исходники [c3061b4](https://github.com/Extectick/ExVPN/commit/c3061b489608cc37b767479436a2bac16f0b5a73), [fd08979](https://github.com/Extectick/ExVPN/commit/fd089794723f1db0ede022e01804b4026e90de80). Общий E5 и испытания реального диска/потери питания остаются открытыми.
 
-- [ ] **EXVPN-E5-006** — Исключить обращения к Wintun после `EndSession` при
+- [x] **EXVPN-E5-006** — Исключить обращения к Wintun после `EndSession` при
   закрытии туннеля. Зависимость: E5-001–002. Критерий: retained packet и
   concurrent Read/Write/Wait/Close проходят deterministic/race tests;
   установленный новый пакет подтверждает HTTPS и обычное отключение без
-  завершения SCM-службы, с восстановлением сети. Source RED воспроизведён,
-  исправление и независимое ревью пройдены; новый runtime ещё не выполнен.
+  завершения SCM-службы, с восстановлением сети. Проверено 2026-10-17:
+  source RED воспроизведён, исправление, race ×10 и независимое ревью пройдены.
+  Установленный +17 подтвердил HTTPS200/204, TUN DNS, смену/возврат IPv4,
+  Disconnect и normal UI exit0 с тем же удерживаемым процессом SCM-службы.
+  Cleanup PASS; root независимо сверил 393 evidence-файла.
+  [Runtime +17](evidence/windows-network-build17.json). Один профиль/цикл;
+  это не закрывает общие E1/E5 и не доказывает причину прежней аварии +16.
   [Контракт и границы](WINDOWS_TUN_LIFETIME.md),
   [код d9444db](https://github.com/Extectick/ExVPN/commit/d9444db).
   Общий [Full +17](evidence/fast-validation-build17.json): 11/11 PASS за
   125,52 с, source fingerprint неизменен, Go result cache выключен.
+  Полные CI lanes пакетного commit `2cd1f71` также PASS: Android 20 мин 46 с,
+  Windows 11 мин 11 с. [CI +17](evidence/ci-build17.json).
 
 ## E6 — Версии и обновления
+
+Пакеты +17, 2026-10-17: Android release APK/AAB и Windows development NSIS
+собраны. Same-signer +16/+17, `exvpn.5`, updater policy и состав пакетов
+проверены; root сверил 26 package и 20 native evidence файлов. Android audit
+сохраняет три release blockers, Windows — пять. Сборки не закрывают runtime
+и OTA-критерии. [Отчёт](evidence/packages-build17.json),
+[native](evidence/native-build17.json),
+[исходники 2cd1f71](https://github.com/Extectick/ExVPN/commit/2cd1f71404d4516ad22312d8722f98ef4867eda3).
+
+Отдельный AAB +17: 52 библиотеки, 48 digest совпали, четыре без digest;
+offline 8,339 с, без Gradle/сети. Root сверил 57 inputs и восемь output-файлов.
+Отдельный APK и полная лицензионная проверка этим не покрыты.
+[Доказательства](evidence/android-aab-metadata-build17.json).
 
 - [ ] **EXVPN-E6-001** — Реализовать четыре идентичности версий и beta/stable. Зависимости: E3–E5. Критерий: SemVer/build, core pin, data revision и Dart patch показаны независимо; проверены совместимость и запрет downgrade вне политики отката.
 - [ ] **EXVPN-E6-002** — Реализовать signed manifest Ed25519 и SHA-256 файлов данных. Зависимость: E6-001. Критерий: неверная подпись/хеш, несовместимость, выход пути, обрыв и нехватка места отклоняются до активации.
@@ -361,6 +416,14 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   Предварительная локальная проверка 2026-10-17: 92 selector/graph/JUnit fixtures PASS; точный Android helper в чистом source archive прошёл 8/8 за 43,13 с, SDK/dependency caches общие. Независимый review не оставил замечаний. [Доказательство](evidence/ci-build-impact-build11.json), [правила и docs-only граница](CI.md). Исходники [9d035ae](https://github.com/Extectick/ExVPN/commit/9d035aee717604dafa31e0b2818b3767bfac0efe). Этот локальный результат сам по себе не закрывал фактический GitHub QA-only gate.
 
 - [x] **EXVPN-E7-005** — Ускорить локальную проверку и разделить разработку между агентами. Зависимость: E1 toolchain, E7-001. Критерий: одна команда выбирает тесты с учётом зависимостей, параллельно запускает готовые Dart/Flutter/Go runners, сохраняет результаты и не скрывает ошибки/изменения исходников; итоговый полный быстрый прогон проходит после завершения записи агентами. Системная приёмка остаётся отдельной.
+  Последний Full, 2026-10-17: **11/11 за 241,75 с**, source fingerprint
+  неизменен, Go result cache отключён. Сохранены прежние 17 script/host пар
+  и добавлен Android selector suite; 61 focused check, replay и независимый
+  review PASS. Windows и Android стендами управляли разные агенты; root
+  выполнил Full после завершения записи исходников.
+  [Отчёт](evidence/fast-validation-build17-selectors.json),
+  [код 1884fae](https://github.com/Extectick/ExVPN/commit/1884fae804a17b8fe9fdf41eecaf9fd09332427d).
+  Сетевые проверки +17 выше учитываются отдельно; полный E1 остаётся открытым.
   2026-10-17: Android observer и system-consent guards перенесены в общий
   QA helper. 192 focused checks PASS, read-only replay трёх настоящих +16
   dumps совпал с исходным результатом; продукт/эмулятор не изменялись.

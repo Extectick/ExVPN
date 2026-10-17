@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "sourceCommit": "1884fae804a17b8fe9fdf41eecaf9fd09332427d",
+  "status": "PASS",
+  "originalProofSha256": "e8a8dd0c5ffc2f3a45f726d1deff815fb7422357ee376f800c40680ff7d9aad5",
+  "rootVerifiedSourceFiles": 4,
+  "independentFocusedChecks": 61,
+  "independentReview": "No actionable findings",
+  "proof": {
+    "schemaVersion": 1,
+    "status": "PASS",
+    "helperScope": "pure_readonly_selectors",
+    "focusedChecks": 61,
+    "realTreeReplays": [
+      {
+        "file": "enable-excluded-before-search-field-0-0.stdout.txt",
+        "sha256": "99a55d286e35873930ce1b50609ced55666ea0adc3150967bf6943f0a6cc9b3a",
+        "status": "PASS",
+        "layout": "before_keyboard",
+        "supportsScroll": true,
+        "selectedCount": 0,
+        "knownUncheckedTargets": 0,
+        "visibleSaveSelected": true
+      },
+      {
+        "file": "enable-excluded-before-search-query-readback-0.stdout.txt",
+        "sha256": "bbb500620f2c42286e2b69c262a98882f788615c7ffab941470d8a355c115c1f",
+        "status": "PASS",
+        "layout": "filtered_keyboard",
+        "supportsScroll": false,
+        "selectedCount": 0,
+        "knownUncheckedTargets": 2,
+        "visibleSaveSelected": true
+      },
+      {
+        "file": "cleanup-policy-state-search-field-0-0.stdout.txt",
+        "sha256": "99a55d286e35873930ce1b50609ced55666ea0adc3150967bf6943f0a6cc9b3a",
+        "status": "PASS",
+        "layout": "before_keyboard",
+        "supportsScroll": true,
+        "selectedCount": 0,
+        "knownUncheckedTargets": 0,
+        "visibleSaveSelected": true
+      },
+      {
+        "file": "cleanup-policy-state-search-query-readback-0.stdout.txt",
+        "sha256": "bbb500620f2c42286e2b69c262a98882f788615c7ffab941470d8a355c115c1f",
+        "status": "PASS",
+        "layout": "filtered_keyboard",
+        "supportsScroll": false,
+        "selectedCount": 0,
+        "knownUncheckedTargets": 2,
+        "visibleSaveSelected": true
+      }
+    ],
+    "sourceFiles": [
+      {
+        "path": "scripts/qa/android-exclusions-selectors.ps1",
+        "bytes": 9136,
+        "sha256": "31d987dde4f0a70bcbf2a7d57c65cc3c914b1b20311aad737682fdbeefccc45c"
+      },
+      {
+        "path": "scripts/qa/test-android-exclusions-selectors.ps1",
+        "bytes": 10231,
+        "sha256": "d6826e455c507e7ba50f322eb22cb93376b6669902ac36f01c4f930dd494f8e7"
+      },
+      {
+        "path": "scripts/qa/fixtures/android-exclusions/before-keyboard.xml",
+        "bytes": 8790,
+        "sha256": "34877ec27b209390b094d8cf7ad1be754bd597eef89c3e958e12877ed8a3d070"
+      },
+      {
+        "path": "scripts/qa/fixtures/android-exclusions/filtered-keyboard.xml",
+        "bytes": 6366,
+        "sha256": "4ff96e85666dfc49d0715660343072c45e04b4228851cb85ebb8238bada59a02"
+      }
+    ],
+    "adbCalls": 0,
+    "guestActions": 0,
+    "accessibilityAccepted": false,
+    "runtimeRetried": false
+  },
+  "limitations": [
+    "Saved-tree replay and synthetic fixtures only; not a new emulator run.",
+    "Caller must obtain fresh bounded XML and check no active VPN before an action.",
+    "No-results/global count does not prove persisted policy or complete app enumeration.",
+    "Missing label semantics remain an accessibility limitation."
+  ]
+}

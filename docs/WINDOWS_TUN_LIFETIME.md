@@ -1,7 +1,8 @@
 # Закрытие Windows TUN: +17
 
-2026-10-17. Подготовлен patch `exvpn.5` ([код d9444db](https://github.com/Extectick/ExVPN/commit/d9444db)); системная приёмка нового пакета ещё
-не выполнена. Общие E1/E5 остаются открытыми.
+2026-10-17. Patch `exvpn.5` ([код d9444db](https://github.com/Extectick/ExVPN/commit/d9444db)) прошёл source/race проверки и отдельный Connect/Disconnect
+сценарий установленного +17. Узкий критерий EXVPN-E5-006 закрыт;
+общие E1/E5 остаются открытыми.
 
 В `exvpn.4` `WindowsTun.ReadPacket` возвращал gVisor-пакет с native
 `ReleaseReceivePacket` в отложенном `OnRelease`. `Close` мог уже вызвать
@@ -33,4 +34,13 @@ Windows event. Исходный RED сохранён; исправление п�
 [Доказательства и точные хеши](evidence/windows-tun-lifetime-build17.json).
 
 Изменение native-кода требует нового APK/Windows-пакета; Dart OTA не используется.
-До отдельного runtime-прогона пункт **EXVPN-E5-006** остаётся открытым.
+Установленный +17 в Windows Sandbox подтвердил независимые HTTPS200/204,
+TUN DNS и изменение внешнего IPv4. При обычном Disconnect восстановились
+исходные маршруты/DNS/IP, исчезли TUN/WFP и соединения к провайдеру.
+Удерживаемый handle SCM-процесса сохранил тот же PID/start/image через
+Disconnect, нормальный UI exit0 и финальную очистку. Все 16 UI-шагов PASS;
+root сверил 393 файла доказательств. [Runtime](evidence/windows-network-build17.json).
+
+Один успешный цикл не является испытанием всех протоколов, IPv6, исключений,
+аварий или длительного потребления ресурсов. Причина прежнего завершения
++16 остаётся неизвестной; этот результат не подменяет отсутствующий crash stack.

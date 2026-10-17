@@ -42,9 +42,21 @@ DNS-проверка остановилась до Connect из-за обход�
 В +17 добавлен поиск исключений с сохранением скрытого выбора и исправлен
 порядок освобождения Windows TUN-сессии (`exvpn.5`). Ошибка исходников
 воспроизведена отдельным тестом; её связь с аварией +16 пока не установлена.
-Новые пакеты требуют собственной проверки.
+Новые пакеты собраны и прошли проверку состава: Android release APK с тем же
+сертификатом, что у +16; Windows — unsigned development NSIS. Внутри всех трёх
+native binaries подтверждены Go 1.27.2 и `exvpn.5`; 270 Windows payload-файлов
+совпали с проверенным комплектом. Аудит сохраняет три Android и пять Windows
+release blockers. Проверки установленных пакетов учитываются отдельно.
+[Комплектация +17](evidence/packages-build17.json),
+[native build info](evidence/native-build17.json).
 [Поиск](evidence/exclusions-search-build17.json),
 [TUN lifecycle](WINDOWS_TUN_LIFETIME.md).
+
+Установленный Windows +17 затем прошёл полный ограниченный сценарий:
+HTTPS200/204 и TUN DNS, другой внешний IPv4, обычное отключение, восстановление
+сети и normal UI exit0. SCM-служба сохранила тот же процесс; очистка PASS.
+Закрыт только EXVPN-E5-006; общая матрица E1/E5 остаётся открытой.
+[Windows runtime +17](evidence/windows-network-build17.json).
 
 Дополнение +15, 2026-10-17: создан проект ExVPN в Shorebird на free account,
 doctor — 6/6 PASS. Клиент показывает текущий/подготовленный Dart-патч, даёт

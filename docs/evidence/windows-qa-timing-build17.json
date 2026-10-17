@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "kind": "saved_windows_qa_timing_analysis",
+  "createdUtc": "2026-10-17T13:46:24.6656782Z",
+  "units": "milliseconds",
+  "scope": "Existing terminal receipts only. No guest/process/test/build/network/source actions.",
+  "oldRun": {
+    "runId": "5742b096-4e63-44f3-be38-0820e2d1e3a4",
+    "status": "REFUSED",
+    "hostMs": 589304,
+    "cleanupStatus": "REFUSED",
+    "cleanupMs": 120010,
+    "separateFollowupCleanupStatus": "PASS",
+    "separateFollowupCleanupMs": 67758,
+    "baselineHostMs": 68916,
+    "baselineGuestMs": 64095,
+    "baselineBackupCount": 20,
+    "successfulUiSteps": 13,
+    "uiTotals": {
+      "hostMs": 225375,
+      "supervisorMs": 111874,
+      "hostMinusSupervisorMs": 113501,
+      "timedPreCompileMs": 40324,
+      "compileMs": 6516,
+      "lastDriverStageMs": 64510,
+      "supervisorMinusLastDriverStageMs": 47364,
+      "semanticReceiptMs": 16156
+    },
+    "probeHostMs": 67430,
+    "policyHostMs": 17623,
+    "nativeObservationHostMs": 35798,
+    "failedStep14": {
+      "hostMs": 25668,
+      "status": "REFUSED",
+      "deadlineMs": 15000,
+      "stageCount": 0,
+      "reservationPresent": false,
+      "cause": "UNKNOWN; compilation not evidenced",
+      "dllOptimizationProvenFix": false
+    }
+  },
+  "upgrade17": {
+    "runId": "1da4507c-e793-4730-8659-a329e786964c",
+    "status": "PASS",
+    "cleanupStatus": "PASS",
+    "hostMs": 321174,
+    "cleanupMs": 69991,
+    "phases": [
+      {
+        "phase": "baseline",
+        "hostMs": 68314,
+        "guestMs": 64547,
+        "hostMinusGuestMs": 3767,
+        "backupCount": 20
+      },
+      {
+        "phase": "upgrade",
+        "hostMs": 117951,
+        "guestMs": 114548,
+        "hostMinusGuestMs": 3403,
+        "backupCount": null
+      },
+      {
+        "phase": "final",
+        "hostMs": 60779,
+        "guestMs": 56982,
+        "hostMinusGuestMs": 3797,
+        "backupCount": 21
+      },
+      {
+        "phase": "cleanup",
+        "hostMs": 69933,
+        "guestMs": 66609,
+        "hostMinusGuestMs": 3324,
+        "backupCount": 21
+      }
+    ],
+    "validationPhasesHostMs": 199026,
+    "validationPhasesGuestMs": 188138,
+    "installerOnlyMs": null
+  },
+  "measurementDefinitions": [
+    "Host elapsed encloses WSB invocation and guest work; pure WSB dispatch time is not recorded.",
+    "Supervisor stopwatch starts after child start and is recorded before finally post-binding.",
+    "Driver clock starts after common input verification. Timed pre-compile includes context/binding/owner checks, not all child startup.",
+    "Semantic receipt elapsed measures the bounded Session operation. It is not the full child elapsed.",
+    "Host minus supervisor includes outer pre/post validation plus dispatch/startup/return overhead.",
+    "Supervisor minus last driver stage includes startup before stage clock and finalization, not pure startup.",
+    "Concurrent UI owner and nested intervals overlap other durations and must not be added.",
+    "Upgrade actor elapsed includes pre-validation, installer and post-validation; installer alone is unknown."
+  ],
+  "minimalProposal": [
+    "Batch one predetermined consecutive UI-only sequence through one existing guest dispatch while retaining every unchanged per-step supervisor, fresh package/owner checks, one-shot action, deadline, receipt and first-failure stop. No success cache across actions. Measure benefit before wider use.",
+    "Add timers around the existing Read-MaintenanceInstalled, Read-MaintenanceNetwork and Read-BackupInventory calls, without extra queries, before attributing cost to file hashing/ACL/CIM or consolidating repeated traversal inside one read-only phase.",
+    "Keep reviewed hash-bound DLL reuse limited to the measured compilation component. No causal claim for the pre-reservation timeout.",
+    "Optional reuse of dispatch batching for observations at the same state boundary must preserve distinct timestamps, fresh network/probe results and all guards.",
+    "Preserve failure cleanup budgets and UNKNOWN handling; no forced UI success or deadline reduction based only on elapsed time."
+  ],
+  "sourceAnchors": [
+    {
+      "file": ".private/windows-network-inputs/5742b096-4e63-44f3-be38-0820e2d1e3a4/run-step.ps1",
+      "lines": [
+        6,
+        12,
+        18,
+        23
+      ],
+      "meaning": "outer pre/post binding and supervisor clock"
+    },
+    {
+      "file": ".private/windows-network-inputs/5742b096-4e63-44f3-be38-0820e2d1e3a4/step.ps1",
+      "lines": [
+        2,
+        7,
+        13,
+        20,
+        22
+      ],
+      "meaning": "child input verification, stage clock, binding, compile"
+    },
+    {
+      "file": ".private/windows-network-inputs/5742b096-4e63-44f3-be38-0820e2d1e3a4/binding-policy.ps1",
+      "lines": [
+        23,
+        35,
+        37
+      ],
+      "meaning": "package/SCM/owner checks, called three times per step"
+    },
+    {
+      "file": ".private/windows-network-inputs/5742b096-4e63-44f3-be38-0820e2d1e3a4/native-readonly.ps1",
+      "lines": [
+        1,
+        6,
+        7,
+        15,
+        23,
+        33,
+        41,
+        44
+      ],
+      "meaning": "installed/network/backup traversal"
+    },
+    {
+      "file": ".private/windows-upgrade-inputs/1da4507c-e793-4730-8659-a329e786964c/actor.ps1",
+      "lines": [
+        10,
+        18,
+        31,
+        34,
+        35,
+        46,
+        47,
+        57
+      ],
+      "meaning": "whole upgrade phase timing"
+    }
+  ],
+  "boundaries": [
+    "No controlled benchmark or promised speedup.",
+    "No isolated hash/ACL/CIM/WSB timings.",
+    "Original REFUSED outcomes preserved.",
+    "No raw XML, SID, endpoint, profile or traffic copied.",
+    "No guest/process/source changes or tests.",
+    "No cause established for the old pre-reservation timeout."
+  ]
+}

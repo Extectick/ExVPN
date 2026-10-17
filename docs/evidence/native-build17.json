@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "status": "NATIVE_BUILD_INFO_AND_METADATA_BINDING_PASS",
+  "inspection": "read_only",
+  "sourceCommit": "2cd1f71404d4516ad22312d8722f98ef4867eda3",
+  "sourceCommitContainsNativeFix": "d9444db3684997294e6174573287e56f951f8faf",
+  "trackedSourceCleanBeforeAndAfter": true,
+  "goReaderVersion": "go version go1.27.2 windows/amd64",
+  "xrayVersion": "v1.260327.1-exvpn.5",
+  "xraySum": "h1:qiJ43pz/0NfWNLPgT1ZT6Z2r0EbX+zIuTntRaAc++1o=",
+  "artifacts": [
+    {
+      "id": "windows-service",
+      "binarySha256": "70a6b7f6cb469fb3f4628c4f429c30aba7aee68bc285fe85e65536d3c91bbd43",
+      "binaryBytes": 50787840,
+      "goVersion": "go1.27.2",
+      "entryPoint": "github.com/Extectick/ExVPN/native/windows/cmd/exvpn-service",
+      "xray": {
+        "module": "github.com/xtls/xray-core",
+        "version": "v1.260327.1-exvpn.5",
+        "sum": "h1:qiJ43pz/0NfWNLPgT1ZT6Z2r0EbX+zIuTntRaAc++1o="
+      },
+      "buildSettings": {
+        "-buildmode": "exe",
+        "-compiler": "gc",
+        "-trimpath": "true",
+        "CGO_ENABLED": "0",
+        "GOARCH": "amd64",
+        "GOOS": "windows",
+        "GOAMD64": "v1",
+        "vcs": "git",
+        "vcs.revision": "2cd1f71404d4516ad22312d8722f98ef4867eda3",
+        "vcs.time": "2026-10-17T13:10:52Z",
+        "vcs.modified": "false"
+      },
+      "binaryFormat": {
+        "format": "PE32+",
+        "machine": "AMD64",
+        "machineCode": 34404
+      },
+      "embeddedSourceCommitVerified": true,
+      "metadataBinding": null,
+      "bytesUnchangedDuringRead": true
+    },
+    {
+      "id": "android-arm64-v8a",
+      "binarySha256": "94dcc720cacfb2415ab9408c26fe40bb3144fad8ebed4bd1f88cc83b2ed3a532",
+      "binaryBytes": 37164912,
+      "goVersion": "go1.27.2",
+      "entryPoint": "github.com/Extectick/ExVPN/native/android/bridge",
+      "xray": {
+        "module": "github.com/xtls/xray-core",
+        "version": "v1.260327.1-exvpn.5",
+        "sum": "h1:qiJ43pz/0NfWNLPgT1ZT6Z2r0EbX+zIuTntRaAc++1o="
+      },
+      "buildSettings": {
+        "-buildmode": "c-shared",
+        "-compiler": "gc",
+        "-trimpath": "true",
+        "CGO_ENABLED": "1",
+        "GOARCH": "arm64",
+        "GOOS": "android",
+        "GOARM64": "v8.0"
+      },
+      "binaryFormat": {
+        "format": "ELF64",
+        "littleEndian": true,
+        "elfType": "ET_DYN",
+        "machineCode": 183
+      },
+      "embeddedSourceCommitVerified": false,
+      "metadataBinding": {
+        "abi": "arm64-v8a",
+        "coreLabel": "26.10.10-exvpn.5",
+        "go": "1.27.2",
+        "ndkDeclared": "27.1.12297006",
+        "minimumApiDeclared": 30,
+        "sha256AndSizeMatch": true,
+        "abiAndGoMatchEmbeddedBuildInfo": true,
+        "coreLabelMatchesPinnedSource": true,
+        "runtimeVerified": false
+      },
+      "bytesUnchangedDuringRead": true
+    },
+    {
+      "id": "android-x86_64",
+      "binarySha256": "eff01161a2c331e874169f22f7ea4d3ee05c828a7379feb887daa7624ffbae37",
+      "binaryBytes": 39649904,
+      "goVersion": "go1.27.2",
+      "entryPoint": "github.com/Extectick/ExVPN/native/android/bridge",
+      "xray": {
+        "module": "github.com/xtls/xray-core",
+        "version": "v1.260327.1-exvpn.5",
+        "sum": "h1:qiJ43pz/0NfWNLPgT1ZT6Z2r0EbX+zIuTntRaAc++1o="
+      },
+      "buildSettings": {
+        "-buildmode": "c-shared",
+        "-compiler": "gc",
+        "-trimpath": "true",
+        "CGO_ENABLED": "1",
+        "GOARCH": "amd64",
+        "GOOS": "android",
+        "GOAMD64": "v1"
+      },
+      "binaryFormat": {
+        "format": "ELF64",
+        "littleEndian": true,
+        "elfType": "ET_DYN",
+        "machineCode": 62
+      },
+      "embeddedSourceCommitVerified": false,
+      "metadataBinding": {
+        "abi": "x86_64",
+        "coreLabel": "26.10.10-exvpn.5",
+        "go": "1.27.2",
+        "ndkDeclared": "27.1.12297006",
+        "minimumApiDeclared": 30,
+        "sha256AndSizeMatch": true,
+        "abiAndGoMatchEmbeddedBuildInfo": true,
+        "coreLabelMatchesPinnedSource": true,
+        "runtimeVerified": false
+      },
+      "bytesUnchangedDuringRead": true
+    }
+  ],
+  "boundaries": {
+    "androidEmbeddedVcsCommitAvailable": false,
+    "androidVcsPolicy": "-buildvcs=false",
+    "androidSourceCommitIsInvocationContextNotEmbeddedProof": true,
+    "jniNdkVersionAndMinimumApiFromMetadataNotReinferredFromMachineCode": true,
+    "jni16KiBAndSymbolGatesReexecuted": false,
+    "jni16KiBAndSymbolGateOwner": "native/android/build.ps1 (already completed by builder)",
+    "binariesExecuted": false,
+    "buildsStarted": false,
+    "networkChanged": false,
+    "guestRuntimeVerified": false,
+    "apkOrInstallerAuditPerformed": false,
+    "releaseReadinessEstablished": false
+  },
+  "inspectedAtUtc": "2026-10-17T13:15:39.7130340Z"
+}
