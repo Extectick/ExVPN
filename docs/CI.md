@@ -49,6 +49,14 @@ collision атрибута `name`; исправление покрыто реа�
 Проверка QA-only ветки на холодном GitHub runner пока не выполнена; локальное
 время нельзя выдавать за измеренное ускорение CI.
 
+Полная ветка нового selector подтверждена в [run 38982631039](https://github.com/Extectick/ExVPN/actions/runs/38982631039)
+на [2b9bd54](https://github.com/Extectick/ExVPN/commit/2b9bd5408edde6bf5cb14ad956ac077632558218):
+оба job выбрали `full_production_or_unknown_path`, `skip_native_build=false`.
+Windows завершился за **9 мин 55 с**, Android — за **17 мин 26 с**; проверки,
+сборки и выгрузка development artifacts прошли. Это ожидаемое поведение для
+изменений самих CI scripts. [Обезличенное доказательство](evidence/ci-acceleration-build11.json).
+Запуск не подтверждает пропуск native-сборки на QA-only push и не закрывает E7-006.
+
 Скрипт `scripts/ci/verify.ps1 -Target Checks|Android|Windows` проверяет точные
 Flutter/Go pins, lock-файлы Dart, анализ, все unit/widget/loopback-тесты,
 Go checksums и vet. Android дополнительно собирает обе JNI ABI и APK;

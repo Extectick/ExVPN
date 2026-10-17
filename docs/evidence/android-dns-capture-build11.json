@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "status": "SETUP_BLOCKED",
+  "finishedAtUtc": "2026-10-17T00:23:33.5722572Z",
+  "platform": "Android API30 emulator",
+  "product": {
+    "unchanged": true,
+    "version": "0.1.0+11",
+    "sha256": "fcd8859014745538c645874333c9e3bba881e25279160f1e8ac8bd82af8e95ce",
+    "sourceCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f"
+  },
+  "requestedGate": "uncached system DNS capture across direct, connected, owned-fixture-stop and explicit disconnect",
+  "dnsPhasesCompleted": 0,
+  "actualVpnConnectionsInThisRun": 0,
+  "noLeakResult": "NOT_TESTED",
+  "automaticVpnRecovery": "NOT_TESTED",
+  "blocker": {
+    "existingAvdInsidePrivate": false,
+    "code": "console_capture_requires_avd_bare_filename",
+    "captureStopAcknowledged": true,
+    "rawCaptureOutsidePrivateCreated": false,
+    "rawCaptureAbsent": true
+  },
+  "attempts": [
+    {
+      "id": "immutable-initial",
+      "stopped": true,
+      "result": "qa_fixture_failed",
+      "binary": "original",
+      "ready": false,
+      "cause": "UNEXPLAINED"
+    },
+    {
+      "originalSourceSha256": "50970f6a01a9e6cd404efd28d475cc6848164fa67e8bee7eb9d783a21fea4bbf",
+      "stopped": true,
+      "ready": true,
+      "binary": "private_error_output_only_copy",
+      "diagnosticSourceSha256": "4d3e12bd4ce98e455f5865e139419aa907e9caa92529d918e63c073aa01a7797",
+      "id": "diagnostic-single",
+      "result": "READY8",
+      "causeOfInitialFailureEstablished": false,
+      "binarySha256": "3e1c5d49c3ddfbee93a7ebb2ccf3c7a40d258bddc40ffc09b14dcd5d265191cf"
+    },
+    {
+      "ready": true,
+      "result": "private_driver_stdout_sharing_violation",
+      "id": "immutable-retry",
+      "stopped": true,
+      "binary": "original"
+    },
+    {
+      "ready": true,
+      "result": "private_driver_non_vless_uri_filter_corrected",
+      "id": "immutable-runtime",
+      "stopped": true,
+      "binary": "original"
+    },
+    {
+      "ready": true,
+      "result": "import_and_selection_completed_capture_rejected_before_nonce",
+      "id": "immutable-capture",
+      "stopped": true,
+      "binary": "original"
+    }
+  ],
+  "privateDriverCorrections": [
+    "selection_snapshot_ignored_toolbar_buttons",
+    "shared_stdout_reader",
+    "filter_vless_before_uri_parse",
+    "JSON_datetime_compared_by_UTC_ticks",
+    "PID_reuse_checked_with_path_and_start_time",
+    "payload_cleanup_verified_by_file_listing"
+  ],
+  "unitValidation": {
+    "textInputChecks": 14,
+    "status": "PASS",
+    "dnsNonceChecks": 12,
+    "productionDependenciesChanged": false,
+    "networkInvoked": false,
+    "goVet": "PASS",
+    "powerShellChecks": 22,
+    "goTopLevelTests": 4,
+    "goTestDurationSeconds": 0.023,
+    "traceIpv4Checks": 24
+  },
+  "artifacts": {
+    "fixtureSha256": "79c2886d9178781ea47c053d9c1d2e8d4a2bf36e162bc78099c347898d5d540b",
+    "probeApkSha256": "8db4cb34fbf17ad0053cf20df36bfb5bdb72bc54e0b61531485f4cd7e91e9a11",
+    "parserSha256": "4a1b29f12d19fa3562cfe004cd1297052588ef5cee3ec2125c42e21f3d960635",
+    "sources": [
+      {
+        "path": "scripts/qa/android-dns-capture/main.go",
+        "sha256": "70ce4e06afd4d22a6af65833ae6ab2898c4eeb0f3933acc637761b4404d729ae"
+      },
+      {
+        "path": "scripts/qa/android-dns-capture/main_test.go",
+        "sha256": "f24e05b2ce86f0ec40cf73db6815f03ab16a9aaac2e62587ddd8ce54177e0eac"
+      },
+      {
+        "path": "scripts/qa/android-dns-capture/test.ps1",
+        "sha256": "9e4922efe77cbecfc27ec54f31c95276539ca645e2e0f84889b02aeab9047b14"
+      },
+      {
+        "path": "scripts/qa/android-https-probe/HttpsProbe.java",
+        "sha256": "f8918c1d63e331390ac1e910194c01ac068c5f5c7d63a2970166538d3c951a9e"
+      },
+      {
+        "path": "scripts/qa/android-https-probe/DnsNonceTest.java",
+        "sha256": "221a292f68d723eed57ea29ef0811adbf811be3bfc1da07504685e4f1477fd48"
+      },
+      {
+        "path": "scripts/qa/android-https-probe/test.ps1",
+        "sha256": "6009f44d56fdc32535def9a05bf96159c5a8fd073b32cf796586417326a48c55"
+      },
+      {
+        "path": "scripts/qa/android-https-probe/README.md",
+        "sha256": "a38d2a36d8e4af2291848f31d0ec21cc348da7b7f8e68ba13d1b7fa074c88a2d"
+      },
+      {
+        "path": "scripts/qa/android-lifecycle-tools.ps1",
+        "sha256": "209f23c4dbafa243f911a073600cf43db2fdd6beee02bfe04448d34d2898e868"
+      },
+      {
+        "path": "scripts/qa/test-android-lifecycle-tools.ps1",
+        "sha256": "3d7cbbb3a2b8fe0d79c66f949f79e1c02efee081689cbfb4527b77e9fc000bce"
+      }
+    ]
+  },
+  "startupCaptureResearch": {
+    "emulatorRestarted": false,
+    "avdCopied": false,
+    "tcpdumpSupported": true,
+    "absolutePrivatePathSupport": "UNVERIFIED",
+    "flag": "-tcpdump <file>",
+    "virtualEthernetCapture": true,
+    "helpSha256": "a4a8f55728a87ae3f2eacb0c9dfd4801dd991295a444ca29492383ea343e04af",
+    "netdumpSupported": false
+  },
+  "cleanup": {
+    "observedAtUtc": "2026-10-17T00:22:28.8784813Z",
+    "reverseRestored": true,
+    "directHttps": true,
+    "captureFilePresent": false,
+    "settingsUnchanged": true,
+    "status": "PASS",
+    "originalSelectionRestored": true,
+    "originalGroupsRestored": true,
+    "vpnTransport": false,
+    "qaInputPayloadDeleted": true,
+    "vpnServiceAbsent": true,
+    "ownedFixtureAliveCount": 0,
+    "groupCount": 3
+  },
+  "limitations": [
+    "No DNS capture phases ran; no leak or fail-closed conclusion from this attempt.",
+    "Private DNS policy and production APK were not changed.",
+    "Available underlay is IPv4-only; physical Android and external Trojan/Hysteria2 acceptance remain open.",
+    "Classic PCAP has no drop counter; any future zero-match result also needs capture and uncached-request positive controls.",
+    "TCP SYN control would demonstrate TCP53 visibility only; synthetic tests separately exercise framed DNS payload decoding."
+  ],
+  "privateSummarySha256": "ebfe90a563f0150f0192d22c9da0af43aca089adf3ba9353e7198bd8a32ecc1a",
+  "qaCodeCommit": "084feb60a77c794c476874b84c435c2861a9b099"
+}

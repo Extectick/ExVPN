@@ -359,6 +359,27 @@ reverse и остановлен его fixture. Настройки ОС не м�
 Точные Go cache/object counts из production APK недоступны; их проверяют
 отдельные upstream/native тесты.
 
+## Подготовка DNS capture на +11 (2026-10-17)
+
+Добавлена независимая DNS-проба с новым nonce для каждой фазы и offline-анализ
+ограниченного PCAP. Они используют штатный Android resolver и закреплённый Go
+graph, не меняя доверие TLS, DNS или production APK. JVM/PowerShell/Go fixtures
+прошли; статус parser `PARSED` означает только завершение разбора.
+
+Реальная попытка остановилась до первого DNS nonce и подключения VPN: console
+данного эмулятора принимает только bare filename и сохраняет capture в AVD,
+расположенном вне `.private`. Такой файл не создавался. Выполнено **0 фаз**,
+отсутствие утечек и поведение при обрыве этим запуском **не проверены**.
+Предшествующие ошибки запуска fixture/private driver сохранены отдельно;
+причина первого `qa_fixture_failed` не установлена последующим успешным READY.
+
+Cleanup подтвердил исходные три группы и выбор, ADB reverse и системные
+настройки, отсутствие VPN service и собственных fixture processes, прямой HTTPS
+независимого UID. [Отчёт](evidence/android-dns-capture-build11.json),
+[QA исходники](https://github.com/Extectick/ExVPN/commit/084feb60a77c794c476874b84c435c2861a9b099).
+Локальная справка поддерживает startup `-tcpdump <file>`; абсолютный путь внутри
+`.private` ещё не проверен, эмулятор ради этого не перезапускался.
+
 ## Незакрытые границы
 
 - Физический Android11+ и полный regression минимальной ОС; перечисленные API30

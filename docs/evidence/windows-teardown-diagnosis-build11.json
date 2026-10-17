@@ -1,0 +1,149 @@
+{
+  "format": 1,
+  "task": "E1-011 bounded Windows teardown diagnosis",
+  "recordedUtc": "2026-10-17T00:21:10.2325435Z",
+  "status": "INCONCLUSIVE_QA_SYNCHRONIZATION",
+  "productionChanged": false,
+  "hostNetworkChanged": false,
+  "newRuntimeAttemptsPlanned": false,
+  "production": {
+    "build": "0.1.0+11",
+    "sourceCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f",
+    "serviceSha256": "90bbda656a9f051da91e9a80c4ebed98265d513309acd600b731b1876c6a1a32",
+    "installerSha256": "eb071b0ad883e73842eb32bacdd23d7ce1005b5b20e8e312708296d6613b3333"
+  },
+  "qa": {
+    "binaryPath": "artifacts/qa/windows-teardown-20261017-071711-af48a00f/qa-teardown.exe",
+    "binarySha256": "ed03b0f749bf1fdd62c8f4d6c36f6b78066df77dabec5b3dd2d72c19cdca8cce",
+    "buildProofSha256": "ee8095f0561d3c006001a729361c022eedc28bafacc38704691652b931e7cd78",
+    "sourceCommit": "5ca1b3633b81f463ac8f19bd166a5c373187c22c",
+    "sourceState": "committed; exact source bytes checked against the build record",
+    "sourceFiles": [
+      {
+        "path": "native/windows/cmd/qa-teardown/main_windows_test.go",
+        "sha256": "f297f7d97aa3ef320b6a8c869e399d712f9b989cb16e1eb88cba84f007956c7f"
+      },
+      {
+        "path": "native/windows/cmd/qa-teardown/main_windows.go",
+        "sha256": "56ab742e08a7ad0e77f1786a1565291e11bfa6fb005a3ffcbdb1c611de9bb16d"
+      },
+      {
+        "path": "native/windows/cmd/qa-teardown/observe_windows.go",
+        "sha256": "50aecf8a134611df4199dd2e52f91fc69d13a39edf54474381206f47e7eacc3a"
+      },
+      {
+        "path": "scripts/qa/guest-teardown-qa.ps1",
+        "sha256": "a2d594d20d179bcbdf88e80b7600dcbd432cfad8a985621bad14578157d69a28"
+      },
+      {
+        "path": "scripts/qa/run-windows-teardown.ps1",
+        "sha256": "39ea0896cfc9e0f03c02b48ce4f45bc5842752a796a4fe876402e0b09b490e70"
+      },
+      {
+        "path": "scripts/qa/teardown-qa-lib.ps1",
+        "sha256": "9b1ba9cf7d139b82d50b9d995b70b758d3ed2132e8bc1e82f7195b4acabf1ccb"
+      },
+      {
+        "path": "scripts/qa/test-teardown-qa.ps1",
+        "sha256": "dddd26a464d9704ffd427bd5f4b2b7facf5aba88656dfbc2df2918e5281653c0"
+      }
+    ],
+    "sourceUnchangedSinceBuild": true,
+    "goVersion": "go version go1.27.2 windows/amd64",
+    "nativeGoModSha256": "34e1923fc15204f2dd7ecc35913e8f9ee9d736556c8055e84a037bcf5a22da3e",
+    "nativeGoSumSha256": "700607f3a72de0362d8ad9249b970ae1137303fb59146464c369890b5623c674",
+    "checks": {
+      "goTest": "PASS",
+      "goVet": "PASS",
+      "goTopLevelTests": 8,
+      "ps7Checks": 22,
+      "ps51Checks": 22,
+      "ps7Parser": "PASS",
+      "ps51Parser": "PASS"
+    }
+  },
+  "attempts": [
+    {
+      "runId": "9787863d-7443-47da-bf7c-8467f9e213a9",
+      "status": "SETUP_FAILED_BEFORE_GUARD_OR_SCM_MUTATION",
+      "helperSha256": "3f843f8a78c4d931452857959a0ddc607482db7b2293d1661337b570c69c6387",
+      "durationSeconds": 17.053,
+      "originalExperimentCleanupPassed": false,
+      "casesStarted": 0,
+      "reason": "preflight expected ERROR_NOT_FOUND; pinned GetIfEntry2 returns documented ERROR_FILE_NOT_FOUND",
+      "safeCode": "luid_absence_unproven",
+      "postFailureBaseline": {
+        "readOnlyVerified": true,
+        "serviceRunning": true,
+        "guardArmed": false,
+        "tunnelAbsent": true,
+        "ownedHelperAbsent": true,
+        "ownedHostServerStopped": true,
+        "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85"
+      }
+    },
+    {
+      "runId": "bb1c7472-8dd4-492b-9def-fd84a7908555",
+      "status": "PARTIAL_RUNTIME_QA_SYNCHRONIZATION_FAILURE",
+      "helperSha256": "ed03b0f749bf1fdd62c8f4d6c36f6b78066df77dabec5b3dd2d72c19cdca8cce",
+      "durationSeconds": 38.568,
+      "gateMilliseconds": 10000,
+      "cases": [
+        {
+          "case": "A",
+          "policy": "no guard",
+          "clientEstablished": true,
+          "serverEstablished": true,
+          "payloadBytes": 32,
+          "payloadDrained": true,
+          "peerReadEnd": "eof",
+          "peerEOF": true,
+          "peerGatePassed": true,
+          "peerGateElapsedMs": 1,
+          "peerFinalStates": [],
+          "guestAfterStates": [
+            "TIME_WAIT"
+          ],
+          "clientCloseToReportMs": 5010.155
+        },
+        {
+          "case": "B",
+          "policy": "self permit retained",
+          "hostEstablished": true,
+          "clientEchoAndEstablishedReached": true,
+          "clientEvidenceBasis": "safe failure occurs after full echo and local Established guard in exact hashed helper",
+          "safeFailure": "server_positive_control_failed",
+          "serverCheckpointFailure": "close_checkpoint_failed",
+          "peerGateResultAvailable": false,
+          "result": "INCOMPLETE_QA_SYNCHRONIZATION"
+        },
+        {
+          "case": "C",
+          "policy": "Suspend Close immediate Disarm",
+          "result": "NOT_RUN",
+          "peerGateResultAvailable": false
+        }
+      ],
+      "cleanup": {
+        "passed": true,
+        "helperStopped": true,
+        "ownedHostServerStopped": true,
+        "guardArmed": false,
+        "serviceRunning": true,
+        "tunnelAbsent": true,
+        "networkRestored": true,
+        "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+        "watchdogTimedOut": false,
+        "productionServiceHashAndBindingRechecked": true
+      }
+    }
+  ],
+  "conclusion": "A confirms baseline EOF/drain. B/C do not distinguish WFP teardown ordering, NAT, or server handler lifetime. Host ready-B existed, but the guest file checkpoint was not observed; A also spent about 5 seconds obtaining a 1 ms host result. Record this as QA filesystem synchronization, not a production regression or WFP causal finding.",
+  "limitations": [
+    "Hard kill after Arm and before durable ownership-ID checkpoint remains fail closed; this crash is not injected.",
+    "Host 10 second gate begins when its close checkpoint is observed, not exact wire Close time.",
+    "No packet trace was captured.",
+    "E1-011 remains open; existing retained-host-peer evidence is not superseded."
+  ],
+  "privateSummarySha256": "1df257d67bdb33f9381498179ff1d91e4316311297383f43b306c2bb1022f901"
+}

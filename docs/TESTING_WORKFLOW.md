@@ -17,10 +17,14 @@ Go unit/loopback tests и файловые сценарии установщик
 запускают установленный VPN, службу, TUN, WFP или смену маршрутов/DNS хоста.
 Приватные подписки и действующие VPN-серверы в них не участвуют.
 
-Последний общий прогон, 2026-10-17: **10/10 наборов за 93,90 с**, все Go tests
-выполнены заново, fingerprint исходников совпал. Он включает 134 Windows
-lifecycle helper checks и 92 CI selector/graph/JUnit checks.
-[Отчёт](evidence/fast-validation-build11-acceleration.json).
+Последний общий прогон, 2026-10-17: **10/10 наборов за 89,93 с**, все Go tests
+выполнены заново, fingerprint исходников совпал. В общий runner и CI добавлены
+offline DNS capture fixtures, nonce-проба Android и Windows teardown fixtures
+под PS7/PS5.1. [Отчёт](evidence/fast-validation-build11-diagnostics.json),
+[исходники](https://github.com/Extectick/ExVPN/commit/bbce9eaf54e341b5a258e14cf72464b18d16284c).
+Три агента независимо выполняли Windows QA, Android QA и review; итоговый Full
+выполнил координатор после завершения записи исходников. Это длительность
+конкретного расширенного набора, не измеренный коэффициент ускорения.
 Чистый Android JVM helper отдельно прошёл 8/8 за 43,13 с без APK/JNI; локальные
 SDK/dependency caches сохранены. Эти измерения относятся к разным проверкам и
 не являются коэффициентом ускорения полной сборки CI.
@@ -65,7 +69,7 @@ diff**, новые неигнорируемые файлы, удаления и 
 | Android Kotlin/Gradle или `native/android` | Go Android adapter и Flutter app; JNI/JVM/APK остаются отдельным gate |
 | Windows C++/CMake или `native/windows` | Go Windows adapter, Flutter app, installer fixtures; native/UI build остаётся отдельным gate |
 | Toolchain, CI, scripts, неизвестный новый путь | Все быстрые наборы, включая проверку PowerShell syntax и планировщика |
-| Только известные документы/изображения в `docs`/`design` | Кодовые наборы не нужны; визуальная/документальная проверка остаётся отдельной |
+| Только известные документы/изображения в `docs`/`design` или JSON-отчёты в `docs/evidence` | Кодовые наборы не нужны; визуальная/документальная проверка остаётся отдельной |
 
 ## Откуда берётся ускорение
 
@@ -136,8 +140,15 @@ Fixture создаётся только в игнорируемом `artifacts/q
 workers в отдельном fixture: exit 7 одного child и запись исходника во время
 прогона должны дать разные ошибочные результаты и ненулевой exit code.
 В `scripts` также входят 24 синтетические JVM-проверки парсера IPv4 независимого
-Android QA-probe и 14 проверок UTF-8/размера/хеша быстрого ввода; сеть и
-установленный VPN для них не используются.
+Android QA-probe, 12 проверок DNS nonce и 14 проверок UTF-8/размера/хеша быстрого
+ввода. Offline PCAP parser использует уже закреплённый Go graph без новой
+зависимости; Windows teardown helpers проверяются под PS7 и PS5.1. Сеть и
+установленный VPN для этих fixtures не используются.
+
+JSON-отчёты под `docs/evidence` классифицируются как документация, как и в CI.
+Произвольный `docs/configuration.json` или `runner.json.ps1` по-прежнему требует
+всех наборов. Смешанное изменение отчёта и кода сохраняет проверки кода.
+Эта граница входит в 31 проверку планировщика.
 
 Длинные Android-подписки в стенде вводятся готовым API `ACTION_SET_TEXT` вместо
 тысяч событий `adb input text`. Отдельный QA APK проверяет package/focus и точный

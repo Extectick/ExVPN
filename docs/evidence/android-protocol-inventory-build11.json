@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "taskId": "EXVPN-E1-005",
+  "observedAtUtc": "2026-10-16T23:49:58.7153133Z",
+  "sourceState": "Product commit specified; evidence recorded alongside committed QA tools",
+  "applicationSourceCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f",
+  "appVersion": "0.1.0+11",
+  "apkSha256": "fcd8859014745538c645874333c9e3bba881e25279160f1e8ac8bd82af8e95ce",
+  "platform": "Android 11 API30 x86_64 emulator",
+  "status": "NO_EXTERNAL_TROJAN_HYSTERIA2_TEST_INPUT",
+  "scope": "Read-only inventory of saved local subscription responses and QA fixtures; no provider requests or connection attempt with the target protocols.",
+  "inventory": {
+    "scannedLocalTextDataFiles": 930,
+    "base64DecodedFiles": 19,
+    "sourcesWithRecords": 40,
+    "uniqueUriOrJsonReferencesIncludingFixtures": 119,
+    "protocolCountsIncludingFixtures": {
+      "vless": 100,
+      "shadowsocks": 12,
+      "vmess": 5,
+      "trojan": 1,
+      "hysteria2": 1
+    },
+    "externalTrojanOrHysteria2Candidates": 0,
+    "savedSecondProviderResponse": {
+      "records": 32,
+      "protocols": [
+        "vless"
+      ]
+    },
+    "qualification": "The only Trojan and Hysteria2 records belong to an old synthetic fixture with a private-network endpoint. They are not available external servers with confirmed valid TLS."
+  },
+  "readOnlyDeviceCheck": {
+    "installedApkHashMatched": true,
+    "independentProbeUid": 10168,
+    "directHttpsStatus": 200,
+    "vpnTransport": false,
+    "vpnServiceActive": false,
+    "adbUid": 2000,
+    "osSettingsUnchanged": true,
+    "subscriptionOrSelectionCommandsIssued": false,
+    "hostNetworkChanged": false
+  },
+  "privateReportSha256": "a5e535b1212a6b7810ce2cf070bfc58d435861afc66c1259be8ac58e8601e7ea",
+  "limitations": [
+    "Saved responses may differ from the current provider response; no network refresh was performed.",
+    "Counts include synthetic and historical records, not a count of currently usable servers.",
+    "A direct HTTPS baseline does not validate any VPN protocol.",
+    "E1-005 remains open; external Trojan/Hysteria2 and all other unverified variants require real traffic evidence."
+  ],
+  "recordedWithQaCodeCommit": "bbce9eaf54e341b5a258e14cf72464b18d16284c"
+}
