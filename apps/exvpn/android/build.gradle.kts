@@ -1,3 +1,5 @@
+apply(from = "exvpn-integration-test-pins.gradle.kts")
+
 allprojects {
     repositories {
         google()
