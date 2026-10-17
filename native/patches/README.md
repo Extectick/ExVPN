@@ -1,6 +1,6 @@
 # Pinned Xray transport lifecycle patch
 
-ExVPN's modified Xray module is **`v1.260327.1-exvpn.3`**, based on upstream
+ExVPN's modified Xray module is **`v1.260327.1-exvpn.4`**, based on upstream
 `v1.260327.1-0.20261010092107-701af60772cd`, commit
 `701af60772cda123492f86e383e1fdba066614a9`. It is not an official Xray release.
 The upstream source and license are retained. Original and modified covered
@@ -21,6 +21,11 @@ retires it from the outbound handler's `Close`:
   same lifetime. A completed owner cannot re-enter the cache.
 - An independent live instance keeps its own connections. Concurrent repeated
   close calls join the same cleanup and preserve errors.
+- TUN owns a cancellable inbound context and its UDP workers. Normal Close and
+  partial startup failure cancel that context before retiring and joining UDP
+  sessions; late packets cannot create new sessions. Init/Start/Close are
+  serialized and concurrent callers retain cleanup errors. Memory-only tests
+  exercise actual gVisor packets and the DNS proxy without a system TUN.
 
 The optional upstream browser dialer is not enabled by ExVPN. Its external
 browser process is outside this patch's teardown contract. The patch does not

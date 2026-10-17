@@ -10,12 +10,12 @@
   },
   "patch": {
     "path": "xray-lifecycle.patch",
-    "sha256": "c55d66ad1dc551057eb899b7916e32d897e00acf6e891844ef9b6d7613dddfbb"
+    "sha256": "28eb0aa8382da104bacbf133f450eec74be3bd34fe4568d218c253cdce28afc1"
   },
   "patched": {
-    "version": "v1.260327.1-exvpn.3",
-    "time": "2026-10-16T22:24:15Z",
-    "sum": "h1:m+ZEAwh0kFl/jMMtP2k0k88K5oK7tfNGSeJ+I4pi9tQ=",
+    "version": "v1.260327.1-exvpn.4",
+    "time": "2026-10-17T02:13:49Z",
+    "sum": "h1:GVK3CNV0df7huIKSKGgF1VCiXIzEdZWv0W7JjeBWeq0=",
     "goModSum": "h1:YAACF9L/Pu1GznixHOBtrBqVcE95nhFjgU+gIEdWKlo="
   }
 }
