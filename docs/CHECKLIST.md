@@ -105,7 +105,7 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   импорта/выбора/удаления с настоящим DPAPI-хранилищем за 132,542 с без Computer
   Use; исходное пустое хранилище и сеть восстановлены. Cold restart этим
   сценарием не проверялся; пункт остаётся открытым.
-  [Отчёт](evidence/windows-msaa-import-remove-build13.json); рабочее дерево, commit ожидается.
+  [Отчёт](evidence/windows-msaa-import-remove-build13.json), commit [c0b6dc9](https://github.com/Extectick/ExVPN/commit/c0b6dc9).
   Дополнение 2026-10-17: Windows service policy сохраняется отдельно через LocalSystem DPAPI/HKLM с проверяемым ACL и owner SID. Build +4 подтвердил сохранение исключений после hard kill/restart и disconnect; повреждённая запись не становится пустой автоматически. [Контракт](WINDOWS_POLICY.md), [отчёт](evidence/windows-policy-build4.json), исходники [c3061b4](https://github.com/Extectick/ExVPN/commit/c3061b489608cc37b767479436a2bac16f0b5a73). Полный сценарий хранения подписок этим не закрывается.
   Прогресс: Android Keystore, Windows DPAPI и журнал реализованы; backend unit/fault-тесты и реальный DPAPI проверены, cold start Android проверен. Полный пользовательский сценарий удаления/перезапуска в Windows и физический Android остаются в приёмке. Native Android cache последнего сеанса/исключений реализован отдельно и сейчас проходит lifecycle QA.
 - [ ] **EXVPN-E3-005** — Добавить QR, вставку текста и безопасную диагностику. Зависимости: E2, E3-001–004. Критерий: реальные пользовательские потоки импорта; экспорт ошибок обезличен и не содержит ключей/URL подписки.
