@@ -7,6 +7,21 @@ function Get-FastValidationLaneNames {
     @('domain', 'state', 'updates', 'app', 'core', 'android', 'windows', 'xray', 'installer', 'scripts')
 }
 
+function Get-FastValidationExecutionOrder {
+    param([string[]]$Lanes = @())
+    # Start long independent suites first so the scripts lane does not become
+    # the tail of Full. This is scheduling only: never add or remove a suite.
+    # Priorities use observed local durations, not mutable cached test results.
+    $priority = @('scripts', 'app', 'core', 'xray', 'android', 'windows', 'updates', 'domain', 'state', 'installer')
+    $selected = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($lane in $Lanes) {
+        if ($lane -cnotin $priority -or !$selected.Add($lane)) {
+            throw 'Unknown or duplicate validation lane in execution schedule.'
+        }
+    }
+    @($priority | Where-Object { $selected.Contains($_) })
+}
+
 function Get-FastValidationPlan {
     param([string[]]$ChangedPaths = @(), [switch]$Full)
     $all = @(Get-FastValidationLaneNames)
@@ -64,6 +79,7 @@ function Get-FastValidationPlan {
     }
     [pscustomobject]@{
         lanes = @($all | Where-Object { $selected.Contains($_) })
+        executionOrder = @(Get-FastValidationExecutionOrder @($all | Where-Object { $selected.Contains($_) }))
         reasons = @($reasons | Sort-Object -Unique)
         changedFileCount = $ChangedPaths.Count
         requiresBuildAndRuntimeAcceptance = $selected.Count -gt 0

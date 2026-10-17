@@ -55,6 +55,10 @@ $reportPath = Get-ChildItem -LiteralPath (Join-Path $fixture 'artifacts/qa') -Di
     Sort-Object Name -Descending | Select-Object -First 1 -ExpandProperty FullName
 $report = Get-Content -LiteralPath (Join-Path $reportPath 'summary.json') -Raw | ConvertFrom-Json
 Assert-CompleteLaneResults $report
+$dispatch = @([regex]::Matches((Get-Content -LiteralPath (Join-Path $fixture 'failure-run.log') -Raw), '(?m)^\[([a-z]+)\] started\s*$') | ForEach-Object { $_.Groups[1].Value })
+if (($dispatch -join ',') -cne ($report.executionOrder -join ',') -or ($dispatch[0..2] -join ',') -cne 'scripts,app,core') {
+    throw 'Real coordinator did not dispatch the complete planned order.'
+}
 $failed = @($report.lanes | Where-Object status -eq 'failed')
 if ($report.status -ne 'failed' -or $failed.Count -ne 1 -or
     $failed[0].lane -ne 'android' -or $failed[0].exitCode -ne 7 -or !$report.sourceUnchanged) {

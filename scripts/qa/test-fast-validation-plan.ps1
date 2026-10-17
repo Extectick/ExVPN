@@ -45,6 +45,27 @@ Assert-Lanes @('AGENTS.md') $all
 if (((Get-FastValidationPlan -Full).lanes -join ',') -cne ($all -join ',')) { throw 'Full did not select every lane.' }
 $checks++
 
+# Scheduling preserves every possible selected subset, independently of the
+# dependency selector. Empty and single-lane plans must remain valid.
+foreach ($mask in 0..((1 -shl $all.Count) - 1)) {
+    $subset = @(for ($i=0; $i -lt $all.Count; $i++) { if ($mask -band (1 -shl $i)) { $all[$i] } })
+    $order = @(Get-FastValidationExecutionOrder $subset)
+    if ($order.Count -ne $subset.Count -or (($order | Sort-Object) -join ',') -cne (($subset | Sort-Object) -join ',')) {
+        throw 'Scheduling lost, duplicated or substituted a selected suite.'
+    }
+}
+$checks++
+$fullOrder = @((Get-FastValidationPlan -Full).executionOrder)
+if (($fullOrder[0..2] -join ',') -cne 'scripts,app,core') { throw 'Long independent suites no longer start first.' }
+if (((Get-FastValidationPlan -ChangedPaths @('packages/exvpn_updates/lib/updater.dart')).executionOrder -join ',') -cne 'app,updates') { throw 'Partial scheduling changed its selected subset or priority.' }
+$checks++
+foreach ($invalid in @(@('app','app'), @('unknown'), @('App'))) {
+    $rejected = $false
+    try { Get-FastValidationExecutionOrder $invalid | Out-Null } catch { $rejected = $true }
+    if (!$rejected) { throw 'Invalid schedule was silently accepted.' }
+}
+$checks++
+
 # Actual Git integration, in an owned ignored fixture; the project's index and
 # commits are never changed. Covers staged, unstaged, added, deleted, renamed,
 # Unicode/space names, ignored private files, and branch-base changes together.

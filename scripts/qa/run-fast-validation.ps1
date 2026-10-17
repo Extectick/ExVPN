@@ -44,6 +44,7 @@ $report = [ordered]@{
     toolchain = $null
     changedFileCount = $plan.changedFileCount
     selectedLanes = @($plan.lanes)
+    executionOrder = @($plan.executionOrder)
     selectionReasons = @($plan.reasons)
     goResultCacheAllowed = !$Full
     maxParallel = $MaxParallel
@@ -78,7 +79,7 @@ try {
             throw 'Displayed app version/build differs from pubspec.yaml.'
         }
         $queue = [Collections.Generic.Queue[string]]::new()
-        foreach ($lane in $plan.lanes) { $queue.Enqueue($lane) }
+        foreach ($lane in $plan.executionOrder) { $queue.Enqueue($lane) }
         while ($queue.Count -or $active.Count) {
             while ($queue.Count -and $active.Count -lt $MaxParallel) {
                 $lane = $queue.Dequeue()
