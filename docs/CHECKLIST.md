@@ -34,7 +34,7 @@
 PASS за 59,230 с — один вызов обычного приложения сопоставлен с UID, наблюдаемым
 PID, netId и временем в querylog. VPN не запускался; прежние DNS-пакеты остаются
 без подтверждённого владельца. [Доказательство](evidence/android-dns-positive-control-confirmed-build13.json).
-Общий E1/DNS gate остаётся открытым; рабочее дерево, commit ожидается.
+Общий E1/DNS gate остаётся открытым; отчёт [c582a6e](https://github.com/Extectick/ExVPN/commit/c582a6e).
 
 - [ ] **EXVPN-E1-001** — Провести инвентаризацию и закрепить Flutter/Dart, Go, Android SDK/NDK/JDK и Windows C++ toolchain. Зависимость: E0-001. Критерий: воспроизводимые версии, контрольные суммы/commits, команды установки и результаты doctor/build; нет плавающего `latest`.
 - [ ] **EXVPN-E1-002** — Проверить Xray v26.10.10 и закрепить способ линковки через собственный Go-адаптер. Зависимость: E1-001. Критерий: ядро собирается для Android/Windows, лицензии и pins записаны; TUN, Hysteria2 и Android owner hook проверены в выбранных исходниках. libXray сохранён как исследованный исходный вариант, но не runtime-зависимость.
