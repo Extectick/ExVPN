@@ -16,7 +16,10 @@ function Assert-True([bool]$Condition, [string]$Name) {
 function Assert-Rejected([scriptblock]$Action, [string]$Code) {
     $caught = ''
     try { & $Action | Out-Null } catch { $caught = $_.Exception.Message }
-    Assert-True ($caught -ceq $Code) $Code
+    # Keep the observed failure in the fixture report. A timeout must remain
+    # distinguishable from the expected output-limit rejection under load.
+    if ($caught -cne $Code) { throw "FAIL: expected $Code; observed '$caught'" }
+    $script:checks++
 }
 function New-Findings { ,([Collections.Generic.List[object]]::new()) }
 function Has-Code($Findings, [string]$Code) { @($Findings | Where-Object code -CEQ $Code).Count -gt 0 }

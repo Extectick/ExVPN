@@ -1,5 +1,10 @@
 # Android runtime dependency inventory
 
+Для уже готового AAB есть дополнительная быстрая offline-проверка:
+[`android-aab-dependencies.ps1`](ANDROID_AAB_DEPENDENCIES.md) связывает
+записанные AGP binary hashes с точными локальными AAR/JAR. Она не запускает
+Gradle и не заменяет следующий collector, POM/licenses или привязку APK.
+
 Из корня проекта после обычного bootstrap и dependency resolution. Режим по
 умолчанию использует только сетью не пользующийся Gradle `--offline`:
 

@@ -144,8 +144,11 @@ function New-RuntimeSdk([string]$Root, [string]$Engine, [string]$Kind) {
     Write-RuntimeFixture (Join-Path $Root '.gitignore') "/bin/cache/`n"
     Write-RuntimeFixture (Join-Path $Root 'bin/internal/engine.version') "$Engine`n"
     Write-RuntimeFixture (Join-Path $Root 'LICENSE') "synthetic $Kind SDK license"
+    $engineLicense = "synthetic $Kind engine component`n`nFull $Kind third-party license text.`n"
+    Write-RuntimeFixture (Join-Path $Root 'engine/src/flutter/sky/packages/sky_engine/LICENSE') $engineLicense
     $revision = Commit-RuntimeFixture $Root
     Write-RuntimeFixture (Join-Path $Root 'bin/cache/engine.stamp') "$Engine`n"
+    Write-RuntimeFixture (Join-Path $Root 'bin/cache/pkg/sky_engine/LICENSE') $engineLicense
     Write-RuntimeFixture (Join-Path $Root 'bin/cache/dart-sdk/version') '3.13.5'
     Write-RuntimeFixture (Join-Path $Root 'bin/cache/dart-sdk/LICENSE') "synthetic $Kind Dart license"
     Write-AuditJson (Join-Path $Root 'bin/cache/flutter.version.json') ([ordered]@{frameworkVersion='3.47.7';frameworkRevision=$revision;engineRevision=$Engine;dartSdkVersion='3.13.5'})
@@ -255,6 +258,19 @@ Write-RuntimeFixture (Join-Path $runtimeFixture 'scripts/bootstrap/toolchain.loc
 $ordinary = Get-ReleaseFlutterRuntime $runtimeFixture Android
 if ($ordinary.Identity.kind -cne 'ordinary' -or $ordinary.Identity.buildMode -cne 'debug' -or $ordinary.Evidence.engineBinaries.Count -ne 2) { throw 'Default ordinary runtime changed.' }
 $checks++
+$ordinaryEngineLicensePath=Join-Path $ordinarySdk 'bin/cache/pkg/sky_engine/LICENSE'
+$ordinaryEngineLicenseBytes=[IO.File]::ReadAllText($ordinaryEngineLicensePath)
+Write-RuntimeFixture $ordinaryEngineLicensePath 'tampered engine license'
+Assert-RuntimeRefused { Get-ReleaseFlutterRuntime $runtimeFixture Android } 'flutter_runtime_engine_license_mismatch'
+Write-RuntimeFixture $ordinaryEngineLicensePath $ordinaryEngineLicenseBytes
+$missingEngineLicensePath=Join-Path $ordinarySdk 'bin/cache/pkg/sky_engine/LICENSE.fixture-missing'
+[IO.File]::Move($ordinaryEngineLicensePath,$missingEngineLicensePath)
+try { Assert-RuntimeRefused { Get-ReleaseFlutterRuntime $runtimeFixture Android } 'flutter_runtime_engine_license_missing' }
+finally { [IO.File]::Move($missingEngineLicensePath,$ordinaryEngineLicensePath) }
+$fullEngineNotice=@($ordinary.Evidence.notices | Where-Object name -CEQ 'Flutter engine third-party licenses')
+if ($fullEngineNotice.Count -ne 1 -or $fullEngineNotice[0].version -cne $ordinary.Identity.engineRevision -or
+    $fullEngineNotice[0].path -cne 'bin/cache/pkg/sky_engine/LICENSE' -or
+    $fullEngineNotice[0].sha256 -cne (Get-AuditSha256 $ordinaryEngineLicensePath)) { throw 'Full engine license is absent from runtime evidence.' }; $checks++
 Assert-RuntimeRefused { Get-ReleaseFlutterRuntime $runtimeFixture Windows -FlutterBuildMode debug } 'flutter_runtime_mode_unsupported'
 $stamp = Join-Path $ordinarySdk 'bin/cache/engine.stamp'
 Write-RuntimeFixture $stamp ('b' * 40)
@@ -288,13 +304,24 @@ $shorebirdRevision = New-RuntimeSdk $sdkStaging ('b' * 40) 'shorebird'
 $shorebirdSdk = Join-Path $cliRoot "bin/cache/flutter/$shorebirdRevision"
 if (![IO.Path]::GetFullPath($sdkStaging).StartsWith([IO.Path]::GetFullPath($runtimeFixture)+[IO.Path]::DirectorySeparatorChar) -or
     ![IO.Path]::GetFullPath($shorebirdSdk).StartsWith([IO.Path]::GetFullPath($runtimeFixture)+[IO.Path]::DirectorySeparatorChar)) { throw 'Fixture move outside owned root.' }
-Move-Item -LiteralPath $sdkStaging -Destination $shorebirdSdk
+# Rename the owned directory atomically; Move-Item can partially recurse over
+# Git's hidden/readonly metadata on Windows instead of completing the rename.
+[IO.Directory]::Move($sdkStaging, $shorebirdSdk)
 $shorebirdPin = [ordered]@{schemaVersion=1;cli=@{version='1.6.129';revision=$cliRevision;folder='shorebird-1.6.129';repository='https://github.com/shorebirdtech/shorebird.git';powershellEntrypointSha256=(Get-AuditSha256 (Join-Path $cliRoot 'bin/shorebird.ps1'));pubspecLockSha256=(Get-AuditSha256 (Join-Path $cliRoot 'pubspec.lock'))};flutter=@{repository='https://github.com/shorebirdtech/flutter.git';version='3.47.7';revision=$shorebirdRevision;engineRevision=('b' * 40);dartVersion='3.13.5'}}
 Write-AuditJson (Join-Path $runtimeFixture 'scripts/bootstrap/shorebird.lock.json') $shorebirdPin
 $shorebird = Get-ReleaseFlutterRuntime $runtimeFixture Android -FlutterRuntime shorebird
 if ($shorebird.Identity.buildMode -cne 'release' -or $shorebird.Identity.engineRevision -ceq $ordinary.Identity.engineRevision -or
     ($shorebird.Evidence | ConvertTo-Json -Depth 12) -match [regex]::Escape($runtimeFixture)) { throw 'Shorebird identity or path-free evidence failed.' }
 $checks++
+$shorebirdEngineLicensePath=Join-Path $shorebirdSdk 'bin/cache/pkg/sky_engine/LICENSE'
+$shorebirdEngineLicenseBytes=[IO.File]::ReadAllText($shorebirdEngineLicensePath)
+# Both SDKs are valid on their own. Copying the other runtime's full text into
+# this ignored cache must still fail against the selected commit's blob.
+Write-RuntimeFixture $shorebirdEngineLicensePath $ordinaryEngineLicenseBytes
+try {
+    Assert-RuntimeRefused { Get-ReleaseFlutterRuntime $runtimeFixture Android -FlutterRuntime shorebird } 'flutter_runtime_engine_license_mismatch'
+    Assert-RuntimeRefused { Get-ReleaseFlutterRuntime $runtimeFixture Windows -FlutterRuntime shorebird } 'flutter_runtime_engine_license_mismatch'
+} finally { Write-RuntimeFixture $shorebirdEngineLicensePath $shorebirdEngineLicenseBytes }
 Assert-RuntimeRefused { Get-ReleaseFlutterRuntime $runtimeFixture Android -FlutterRuntime shorebird -FlutterBuildMode debug } 'flutter_runtime_mode_unsupported'
 $shorebirdPin.cli.powershellEntrypointSha256='0' * 64
 Write-AuditJson (Join-Path $runtimeFixture 'scripts/bootstrap/shorebird.lock.json') $shorebirdPin
@@ -336,6 +363,38 @@ Assert-RuntimeRefused { Get-ReleasePackagedFlutterEvidence $shorebird.Evidence $
 $files.Remove('lib/x86_64/libapp.so') | Out-Null
 Assert-RuntimeRefused { Get-ReleasePackagedFlutterEvidence $shorebird.Evidence $files } 'flutter_runtime_packaged_dart_missing'
 $windows = Get-ReleaseFlutterRuntime $runtimeFixture Windows -FlutterRuntime shorebird
+# Run the actual collector's notice-copy functions and runtime loop, without
+# bootstrap, native binaries or dependency resolution. This proves that the
+# distributed file contains the full text, not only the engine markdown link.
+$collectorTokens=$null; $collectorErrors=$null
+$collectorAst=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'collect-notices.ps1'),[ref]$collectorTokens,[ref]$collectorErrors)
+if ($collectorErrors.Count) { throw 'Notice collector parse failed.' }
+foreach ($name in @('Hash-Text','Add-SingleNotice')) {
+    $definitions=@($collectorAst.FindAll({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $name},$false))
+    if ($definitions.Count -ne 1) { throw 'Expected one actual notice-copy function.' }
+    . ([scriptblock]::Create($definitions[0].Extent.Text))
+}
+$copyLoops=@($collectorAst.FindAll({param($node) $node -is [Management.Automation.Language.ForEachStatementAst] -and
+    $node.Variable.VariablePath.UserPath -ceq 'notice' -and $node.Condition.Extent.Text -ceq '$runtime.Evidence.notices'},$false))
+if ($copyLoops.Count -ne 1) { throw 'Expected one actual runtime-notice copy loop.' }
+foreach ($runtime in @($ordinary,$shorebird,$windows)) {
+    $FlutterRuntime=$runtime.Identity.kind
+    $output=Join-Path $fixture ("copied-engine-notices-$FlutterRuntime-$($runtime.Identity.target)")
+    $components=[Collections.Generic.List[object]]::new()
+    & ([scriptblock]::Create($copyLoops[0].Extent.Text))
+    $copiedInventory=[ordered]@{runtime=$runtime.Evidence;components=$components.ToArray()}
+    Assert-ReleaseFlutterNotices $copiedInventory $runtime.Evidence
+    $full=@($components | Where-Object name -CEQ 'Flutter engine third-party licenses')
+    $repositoryUrl=if($FlutterRuntime -ceq 'ordinary'){'https://github.com/flutter/flutter'}else{'https://github.com/shorebirdtech/flutter'}
+    if ($full.Count -ne 1 -or $full[0].notices.Count -ne 1 -or
+        [IO.File]::ReadAllText((Join-Path $output $full[0].notices[0].path)) -cne [IO.File]::ReadAllText((Join-Path $runtime.SdkRoot 'bin/cache/pkg/sky_engine/LICENSE')) -or
+        $full[0].source -cne "$repositoryUrl/blob/$($runtime.Identity.flutterRevision)/engine/src/flutter/sky/packages/sky_engine/LICENSE") { throw 'Collector did not distribute the full pinned engine notice.' }; $checks++
+    $copiedInventory.components=@($components | Where-Object name -CNE 'Flutter engine third-party licenses')
+    Assert-RuntimeRefused { Assert-ReleaseFlutterNotices $copiedInventory $runtime.Evidence } 'flutter_runtime_notice_mismatch'
+    $copiedInventory.components=$components.ToArray()
+    $full[0].notices[0].sha256='0' * 64
+    Assert-RuntimeRefused { Assert-ReleaseFlutterNotices $copiedInventory $runtime.Evidence } 'flutter_runtime_notice_mismatch'
+}
 $files = New-AuditFileMap
 $files.Add('ui/flutter_windows.dll', $windows.Evidence.engineBinaries[0])
 $files.Add('ui/data/app.so', @{sha256=('e' * 64);size=21})

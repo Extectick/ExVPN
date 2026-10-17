@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "agpVersion": "9.1.0",
+  "schemaEntry": "app_bundle_dependencies_metadata.proto",
+  "schemaSha256": "f499cfed9932de17feec50b6e53a3cdd4c38898ec9761fe8b64215d7a266f675",
+  "schemaSource": "https://android.googlesource.com/platform/tools/base/+/2b8e201cce105f143339212b276c2f0eafb60b93/build-system/gradle-core/src/main/proto/app_bundle_dependencies_metadata.proto",
+  "parserClass": "com.android.tools.build.libraries.metadata.AppDependencies",
+  "tools": [
+    { "group": "com.android.tools.build", "name": "gradle", "version": "9.1.0", "sha256": "74b47a2a57349371273fb0893f61977a68dc40d5fb5e012a71d9e00c76ad728d" },
+    { "group": "com.google.protobuf", "name": "protobuf-java", "version": "3.25.5", "sha256": "8540247fad9e06baefa8fb45eb313802d019f485f14300e0f9d6b556ed88e753" },
+    { "group": "com.google.code.gson", "name": "gson", "version": "2.13.2", "sha256": "dd0ce1b55a3ed2080cb70f9c655850cda86c206862310009dcb5e5c95265a5e0" }
+  ]
+}

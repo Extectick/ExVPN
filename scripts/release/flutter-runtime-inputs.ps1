@@ -72,6 +72,27 @@ function Get-ReleaseRuntimeJarEngine([string]$JarPath, [string]$EntryPath, [stri
     } finally { $zip.Dispose() }
 }
 
+function Get-ReleaseEngineLicense([string]$SdkRoot, [string]$Revision, [string]$Engine) {
+    # The platform license markdown files only link to this full aggregate.
+    # bin/cache is ignored by Git, so a clean SDK/stamp does not authenticate
+    # its contents. Compare raw cache bytes with the selected commit's blob;
+    # hash-object --no-filters avoids accepting checkout CRLF or custom filters.
+    $path = 'bin/cache/pkg/sky_engine/LICENSE'
+    $sourcePath = 'engine/src/flutter/sky/packages/sky_engine/LICENSE'
+    if ($Revision -cnotmatch '^[a-f0-9]{40}$' -or $Engine -cnotmatch '^[a-f0-9]{40}$') { throw 'flutter_runtime_revision_invalid' }
+    if (!(Test-Path -LiteralPath (Join-Path $SdkRoot $path) -PathType Leaf)) { throw 'flutter_runtime_engine_license_missing' }
+    $file = Get-ReleaseRuntimeFile $SdkRoot $path
+    if ($file.size -gt 16MB) { throw 'flutter_runtime_engine_license_size_invalid' }
+    $object = "${Revision}:$sourcePath"
+    if ((Invoke-ReleaseRuntimeGit $SdkRoot @('cat-file','-t',$object)) -cne 'blob') { throw 'flutter_runtime_engine_license_source_invalid' }
+    $expected = Invoke-ReleaseRuntimeGit $SdkRoot @('rev-parse','--verify',$object)
+    $actual = Invoke-ReleaseRuntimeGit $SdkRoot @('hash-object','--no-filters','--',$path)
+    if ($expected -cnotmatch '^[a-f0-9]{40}$' -or $actual -cne $expected) { throw 'flutter_runtime_engine_license_mismatch' }
+    $after = Get-ReleaseRuntimeFile $SdkRoot $path
+    if ($after.sha256 -cne $file.sha256 -or $after.size -ne $file.size) { throw 'flutter_runtime_inputs_changed' }
+    [ordered]@{name='Flutter engine third-party licenses';version=$Engine;path=$file.path;sha256=$file.sha256;size=$file.size}
+}
+
 function Get-ReleaseFlutterRuntime {
     [CmdletBinding()]
     param(
@@ -129,6 +150,7 @@ function Get-ReleaseFlutterRuntime {
         $file = Get-ReleaseRuntimeFile $sdkRoot $definition[2]
         $notices.Add([ordered]@{name=$definition[0];version=$definition[1];path=$file.path;sha256=$file.sha256;size=$file.size})
     }
+    $notices.Add((Get-ReleaseEngineLicense $sdkRoot $pin.flutter.revision $engine))
     $artifacts = [Collections.Generic.List[object]]::new()
     $engines = [Collections.Generic.List[object]]::new()
     if ($Target -ceq 'Windows') {

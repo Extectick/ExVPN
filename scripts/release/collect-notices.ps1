@@ -128,7 +128,11 @@ Add-SingleNotice 'ExVPN' $appVersion (Join-Path $repository 'LICENSE') 'https://
 Add-SingleNotice 'ExVPN copyright' $appVersion (Join-Path $repository 'NOTICE')
 Add-SingleNotice 'Go runtime' $lock.go.version (Join-Path $repository '.tools/go/LICENSE') 'https://go.dev/LICENSE'
 foreach ($notice in $runtime.Evidence.notices) {
-    $sourceUrl = if ($notice.name -ceq 'Dart runtime') { 'https://github.com/dart-lang/sdk' }
+    $sourceUrl = if ($notice.name -ceq 'Flutter engine third-party licenses') {
+            $repositoryUrl = if ($FlutterRuntime -ceq 'shorebird') { 'https://github.com/shorebirdtech/flutter' } else { 'https://github.com/flutter/flutter' }
+            "$repositoryUrl/blob/$($runtime.Identity.flutterRevision)/engine/src/flutter/sky/packages/sky_engine/LICENSE"
+        }
+        elseif ($notice.name -ceq 'Dart runtime') { 'https://github.com/dart-lang/sdk' }
         elseif ($FlutterRuntime -ceq 'shorebird') { 'https://github.com/shorebirdtech/flutter' }
         else { 'https://github.com/flutter/flutter' }
     Add-SingleNotice $notice.name $notice.version (Join-Path $runtime.SdkRoot $notice.path) $sourceUrl

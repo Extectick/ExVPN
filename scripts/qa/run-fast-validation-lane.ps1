@@ -118,6 +118,7 @@ switch ($Lane) {
         Invoke-ScriptCheck 'scripts/release/test-artifact-audit.ps1'
         Invoke-ScriptCheck 'scripts/release/test-android-notices.ps1'
         Invoke-ScriptCheck 'scripts/release/android-runtime-inventory-test.ps1'
+        Invoke-ScriptCheck 'scripts/release/test-android-aab-dependencies.ps1'
         Invoke-ScriptCheck 'scripts/core/test-xray-patch.ps1'
         break
     }

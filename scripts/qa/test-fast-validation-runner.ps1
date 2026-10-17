@@ -33,12 +33,13 @@ $expectedSuites = @(
     'scripts/release/test-artifact-audit.ps1|7',
     'scripts/release/test-android-notices.ps1|7',
     'scripts/release/android-runtime-inventory-test.ps1|7',
+    'scripts/release/test-android-aab-dependencies.ps1|7',
     'scripts/core/test-xray-patch.ps1|7'
 )
 $actualSuites = @($dispatchSuites | ForEach-Object { $_.suite + '|' + $_.hostVersion })
 $ciSuites = @($dispatchSuites | Where-Object lane -CEQ 'ci')
 if ((($actualSuites | Sort-Object) -join ',') -cne (($expectedSuites | Sort-Object) -join ',') -or
-    $actualSuites.Count -ne 16 -or $ciSuites.Count -ne 1 -or $ciSuites[0].suite -cne 'scripts/ci/test-build-impact.ps1') {
+    $actualSuites.Count -ne 17 -or $ciSuites.Count -ne 1 -or $ciSuites[0].suite -cne 'scripts/ci/test-build-impact.ps1') {
     throw 'Scripts/CI partition lost, duplicated or substituted a required suite or PowerShell host.'
 }
 $fixture = Join-Path $repository ('artifacts/qa/runner-fixture-' + [Guid]::NewGuid().ToString('N'))
@@ -120,4 +121,4 @@ if ($report.status -ne 'source-changed-during-run' -or $report.sourceUnchanged -
     @($report.lanes | Where-Object status -ne 'passed').Count) {
     throw 'Coordinator did not distinguish source drift from child failure.'
 }
-Write-Host "Fast-validation runner: all 16 scripts/CI suites retained; Android/CI child exits 7/9 and concurrent source edit rejected; all $($expectedLanes.Count) selected child results preserved exactly once."
+Write-Host "Fast-validation runner: all $($expectedSuites.Count) scripts/CI suites retained; Android/CI child exits 7/9 and concurrent source edit rejected; all $($expectedLanes.Count) selected child results preserved exactly once."
