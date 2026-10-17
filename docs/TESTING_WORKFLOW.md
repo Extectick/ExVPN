@@ -17,14 +17,16 @@ Go unit/loopback tests и файловые сценарии установщик
 запускают установленный VPN, службу, TUN, WFP или смену маршрутов/DNS хоста.
 Приватные подписки и действующие VPN-серверы в них не участвуют.
 
-Последний общий прогон, 2026-10-17: **10/10 наборов за 89,93 с**, все Go tests
+Последний общий прогон, 2026-10-17: **10/10 наборов за 106,66 с**, все Go tests
 выполнены заново, fingerprint исходников совпал. В общий runner и CI добавлены
 offline DNS capture fixtures, nonce-проба Android и Windows teardown fixtures
-под PS7/PS5.1. [Отчёт](evidence/fast-validation-build11-diagnostics.json),
-[исходники](https://github.com/Extectick/ExVPN/commit/bbce9eaf54e341b5a258e14cf72464b18d16284c).
+под PS7/PS5.1; проверены 131 CI selector/graph/JUnit fixtures и строгие границы
+IPv6 Hop-by-Hop parser. [Отчёт](evidence/fast-validation-build12-qa.json),
+[исходники](https://github.com/Extectick/ExVPN/commit/ea9f2ca).
 Три агента независимо выполняли Windows QA, Android QA и review; итоговый Full
 выполнил координатор после завершения записи исходников. Это длительность
 конкретного расширенного набора, не измеренный коэффициент ускорения.
+Реальные проверки Android/Windows проходили параллельно на отдельных стендах.
 Чистый Android JVM helper отдельно прошёл 8/8 за 43,13 с без APK/JNI; локальные
 SDK/dependency caches сохранены. Эти измерения относятся к разным проверкам и
 не являются коэффициентом ускорения полной сборки CI.

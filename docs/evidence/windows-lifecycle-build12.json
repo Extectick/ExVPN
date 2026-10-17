@@ -1,0 +1,510 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "0.1.0+12",
+  "status": "PASS",
+  "runId": "ad40bb93-9ff7-421a-8576-d1c50d8c605c",
+  "source": {
+    "productCommit": "402245f8e701610f8ef8bafc6eebe365d7c30940",
+    "buildSnapshotCommit": "bb0a011c3f94668ad867714a6701d9da1f38b8fd",
+    "frozenInputFiles": 341,
+    "frozenInputsUnchanged": true,
+    "qaFiles": [
+      {
+        "path": "apps/exvpn/integration_test/windows_sandbox_test.dart",
+        "sha256": "9b6b7e51be40bb5e7beac0b345bce78ac8a8e6ea0492bd3b565ba12b70a51b5d"
+      },
+      {
+        "path": "scripts/windows/prepare-app-sandbox.ps1",
+        "sha256": "a53ea9d2617c199c86a452dd745148f3b671a392d3211553b814a3c080f60766"
+      },
+      {
+        "path": "scripts/windows/sandbox/guest-app-qa.ps1",
+        "sha256": "660c3f54f1d3347aa3a02bffaf79c3b454cbfa84fdbd999b44eedef396f59520"
+      },
+      {
+        "path": "scripts/windows/sandbox/guest-app-launch.ps1",
+        "sha256": "e9eb761ea2fcc812cbe3fe87687f748c237d89e531f25b534c79a27b634ce720"
+      },
+      {
+        "path": "scripts/windows/sandbox/guest-app-upgrade.ps1",
+        "sha256": "0dc8eeca65d79e2b96be9034760c2738b0f9920ec59be0478c172e839fa14064"
+      },
+      {
+        "path": "scripts/qa/run-windows-transport-lifecycle.ps1",
+        "sha256": "a8e0e1dd3e013ea93ff99b0d792b2ee7a94b29be18cbfb82b5449a9482f5a231"
+      },
+      {
+        "path": "scripts/qa/guest-transport-observe.ps1",
+        "sha256": "f91d2070793754456a017c6e668b3233b2605beb4a8e97a84246bc18681a8cb1"
+      },
+      {
+        "path": "scripts/qa/windows-transport-lifecycle-lib.ps1",
+        "sha256": "00b34f9689c3664ddec6702bdd72e5261d6e864d9988a7087ced85402c0589bf"
+      },
+      {
+        "path": "native/windows/cmd/qa-desktop/main_windows.go",
+        "sha256": "25009af919f053a26678f58557fd28896c92925d2ee229b73f20084d6ce9c8f7"
+      },
+      {
+        "path": "native/windows/cmd/qa-desktop/output_windows.go",
+        "sha256": "e7ceac9ba480a1da575a8de7dfccb9393fca2dc13e1016b01f40acabdfd8d2ab"
+      },
+      {
+        "path": "native/windows/cmd/qa-desktop/output_windows_test.go",
+        "sha256": "c7f1fe4ef070a0175855e250fc95b2901e8abd69693201187597f83ab56275b5"
+      }
+    ]
+  },
+  "artifacts": {
+    "installerPath": "artifacts/windows/package-0.1.0-12-20261017-005602-91c156e1/ExVPN-0.1.0-12-windows-x64-development.exe",
+    "installerSha256": "9fe1fb1de8f40002d7f4e7c8f7a92379e237c133c21db2409fe514f73974990a",
+    "serviceSha256": "5c37eb78c2b0eca734b59983c45d6a72f494ea4bb89c7eec19e4137ee26b621b",
+    "ordinaryUiSha256": "2d64a954e8a1d964dc426f688d90fdd0de525e03e92aac2931603084c1161984",
+    "qaBundlePath": "artifacts/windows/app-qa-20261017-005725-e6aba4cf",
+    "qaBundleManifestSha256": "0d7cae41d6e8859528c73b6f9b2c479493f8a158030cbd350994da09778e5d51",
+    "qaUiSha256": "5e8ef3d9ad7a53de683ec79ab6f21bde1d66f6d74e81e20496c9141bf03f18d3",
+    "fixturePath": "artifacts/qa/build12-fixture-20261017-005815/qa-protocol-server.exe",
+    "fixtureSha256": "cbda18b55905e94a14c72cde74f6f99a7483c8d596dfe4b04c0b3a46c9dd0a3a",
+    "development": true,
+    "signed": false
+  },
+  "buildSeconds": {
+    "ordinaryFlutter": 43.0,
+    "installer": 49.47,
+    "isolatedQa": 76.34
+  },
+  "audit": {
+    "releaseReady": false,
+    "stagedFiles": 265,
+    "noticeComponents": 140,
+    "bindingFindings": 0,
+    "blockers": [
+      "dart_flutter_runtime_link_inventory_incomplete",
+      "development_package",
+      "license_expressions_and_distribution_obligations_not_fully_reviewed",
+      "nsis_embedded_payload_not_independently_verified",
+      "release_signer_not_pinned",
+      "windows_signature_not_valid"
+    ],
+    "independentInstalledFilesCompared": {
+      "ui": 29,
+      "service": 3,
+      "control": 232
+    },
+    "generatedControlFilesExcluded": [
+      "install-state.json",
+      "Uninstall.exe"
+    ]
+  },
+  "upgrade": {
+    "elapsedSeconds": 31.01,
+    "passed": true,
+    "upgradedFromBuild": 11,
+    "installedBuild": 12,
+    "exitCode": 0
+  },
+  "setupFailure": {
+    "stage": "reservation allowlist before runtime",
+    "elapsedSeconds": 4.43,
+    "code": "transport_results_already_used",
+    "vpnGateAttempted": false,
+    "serviceMutationStarted": false,
+    "cause": "Two read-only evidence reports were placed in the reserved runtime directory.",
+    "correction": "Moved exactly those owned reports to the separate private evidence directory; hashes unchanged, reservation and original fixture identity verified."
+  },
+  "runtime": {
+    "computerUse": false,
+    "nativeVpnMocked": false,
+    "ordinaryUserTokenTested": true,
+    "cyclesPerTransport": 3,
+    "connectedChecksPassed": 9,
+    "disconnectChecksPassed": 9,
+    "hostPeerGateSeconds": 10,
+    "peerObservationTiming": "Host TCP-table query duration after the guest disconnect observation; not wire-close latency.",
+    "steps": [
+      {
+        "step": 1,
+        "transport": "VLESS gRPC",
+        "cycle": 1,
+        "numericHttpsStatus": 200,
+        "hostnameHttpsStatus": 204,
+        "tunDnsSucceeded": true,
+        "trafficCountersIncreased": true,
+        "connectedClientEstablished": 1,
+        "connectedFixtureEstablished": 1,
+        "sameServiceProcess": true,
+        "disconnectedClientEstablished": 0,
+        "disconnectedOtherOwnerEstablished": 0,
+        "fixturePeersAfterDisconnect": 0,
+        "peerObservationDurationMs": 949,
+        "peerSnapshots": 1,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true
+      },
+      {
+        "step": 2,
+        "transport": "VLESS XHTTP",
+        "cycle": 1,
+        "numericHttpsStatus": 200,
+        "hostnameHttpsStatus": 204,
+        "tunDnsSucceeded": true,
+        "trafficCountersIncreased": true,
+        "connectedClientEstablished": 7,
+        "connectedFixtureEstablished": 7,
+        "sameServiceProcess": true,
+        "disconnectedClientEstablished": 0,
+        "disconnectedOtherOwnerEstablished": 0,
+        "fixturePeersAfterDisconnect": 0,
+        "peerObservationDurationMs": 1013,
+        "peerSnapshots": 1,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true
+      },
+      {
+        "step": 3,
+        "transport": "XHTTP REALITY",
+        "cycle": 1,
+        "numericHttpsStatus": 200,
+        "hostnameHttpsStatus": 204,
+        "tunDnsSucceeded": true,
+        "trafficCountersIncreased": true,
+        "connectedClientEstablished": 3,
+        "connectedFixtureEstablished": 3,
+        "sameServiceProcess": true,
+        "disconnectedClientEstablished": 0,
+        "disconnectedOtherOwnerEstablished": 0,
+        "fixturePeersAfterDisconnect": 0,
+        "peerObservationDurationMs": 1080,
+        "peerSnapshots": 1,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true
+      },
+      {
+        "step": 4,
+        "transport": "VLESS gRPC",
+        "cycle": 2,
+        "numericHttpsStatus": 200,
+        "hostnameHttpsStatus": 204,
+        "tunDnsSucceeded": true,
+        "trafficCountersIncreased": true,
+        "connectedClientEstablished": 1,
+        "connectedFixtureEstablished": 1,
+        "sameServiceProcess": true,
+        "disconnectedClientEstablished": 0,
+        "disconnectedOtherOwnerEstablished": 0,
+        "fixturePeersAfterDisconnect": 0,
+        "peerObservationDurationMs": 1014,
+        "peerSnapshots": 1,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true
+      },
+      {
+        "step": 5,
+        "transport": "VLESS XHTTP",
+        "cycle": 2,
+        "numericHttpsStatus": 200,
+        "hostnameHttpsStatus": 204,
+        "tunDnsSucceeded": true,
+        "trafficCountersIncreased": true,
+        "connectedClientEstablished": 6,
+        "connectedFixtureEstablished": 6,
+        "sameServiceProcess": true,
+        "disconnectedClientEstablished": 0,
+        "disconnectedOtherOwnerEstablished": 0,
+        "fixturePeersAfterDisconnect": 0,
+        "peerObservationDurationMs": 993,
+        "peerSnapshots": 1,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true
+      },
+      {
+        "step": 6,
+        "transport": "XHTTP REALITY",
+        "cycle": 2,
+        "numericHttpsStatus": 200,
+        "hostnameHttpsStatus": 204,
+        "tunDnsSucceeded": true,
+        "trafficCountersIncreased": true,
+        "connectedClientEstablished": 3,
+        "connectedFixtureEstablished": 3,
+        "sameServiceProcess": true,
+        "disconnectedClientEstablished": 0,
+        "disconnectedOtherOwnerEstablished": 0,
+        "fixturePeersAfterDisconnect": 0,
+        "peerObservationDurationMs": 1094,
+        "peerSnapshots": 1,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true
+      },
+      {
+        "step": 7,
+        "transport": "VLESS gRPC",
+        "cycle": 3,
+        "numericHttpsStatus": 200,
+        "hostnameHttpsStatus": 204,
+        "tunDnsSucceeded": true,
+        "trafficCountersIncreased": true,
+        "connectedClientEstablished": 1,
+        "connectedFixtureEstablished": 1,
+        "sameServiceProcess": true,
+        "disconnectedClientEstablished": 0,
+        "disconnectedOtherOwnerEstablished": 0,
+        "fixturePeersAfterDisconnect": 0,
+        "peerObservationDurationMs": 1184,
+        "peerSnapshots": 1,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true
+      },
+      {
+        "step": 8,
+        "transport": "VLESS XHTTP",
+        "cycle": 3,
+        "numericHttpsStatus": 200,
+        "hostnameHttpsStatus": 204,
+        "tunDnsSucceeded": true,
+        "trafficCountersIncreased": true,
+        "connectedClientEstablished": 6,
+        "connectedFixtureEstablished": 6,
+        "sameServiceProcess": true,
+        "disconnectedClientEstablished": 0,
+        "disconnectedOtherOwnerEstablished": 0,
+        "fixturePeersAfterDisconnect": 0,
+        "peerObservationDurationMs": 1460,
+        "peerSnapshots": 1,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true
+      },
+      {
+        "step": 9,
+        "transport": "XHTTP REALITY",
+        "cycle": 3,
+        "numericHttpsStatus": 200,
+        "hostnameHttpsStatus": 204,
+        "tunDnsSucceeded": true,
+        "trafficCountersIncreased": true,
+        "connectedClientEstablished": 3,
+        "connectedFixtureEstablished": 3,
+        "sameServiceProcess": true,
+        "disconnectedClientEstablished": 0,
+        "disconnectedOtherOwnerEstablished": 0,
+        "fixturePeersAfterDisconnect": 0,
+        "peerObservationDurationMs": 1422,
+        "peerSnapshots": 1,
+        "tunnelAbsent": true,
+        "guardArmed": false,
+        "networkRestored": true
+      }
+    ],
+    "sameServiceProcessAcrossAllCycles": true,
+    "resources": {
+      "sameServiceProcessObservations": 19,
+      "internalCacheObjectsCounted": false,
+      "privateBytes": {
+        "initial": 56045568,
+        "minimum": 56045568,
+        "maximum": 96051200,
+        "afterFinalDisconnect": 79503360
+      },
+      "handleCount": {
+        "initial": 220,
+        "minimum": 220,
+        "maximum": 553,
+        "afterFinalDisconnect": 539
+      },
+      "threadCount": {
+        "initial": 17,
+        "minimum": 17,
+        "maximum": 25,
+        "afterFinalDisconnect": 25
+      },
+      "interpretation": "Observed Windows process-resource envelope for this finite run, not a proof of zero internal cache allocations or unbounded-run memory stability.",
+      "disconnectedCheckpoints": [
+        {
+          "transport": "baseline",
+          "threads": 17,
+          "cycle": 0,
+          "handles": 220,
+          "privateBytes": 56045568,
+          "step": 0
+        },
+        {
+          "transport": "gRPC",
+          "threads": 24,
+          "cycle": 1,
+          "handles": 498,
+          "privateBytes": 66347008,
+          "step": 1
+        },
+        {
+          "transport": "XHTTP",
+          "threads": 21,
+          "cycle": 1,
+          "handles": 507,
+          "privateBytes": 68853760,
+          "step": 2
+        },
+        {
+          "transport": "XHTTP/REALITY",
+          "threads": 21,
+          "cycle": 1,
+          "handles": 509,
+          "privateBytes": 72810496,
+          "step": 3
+        },
+        {
+          "transport": "gRPC",
+          "threads": 21,
+          "cycle": 2,
+          "handles": 513,
+          "privateBytes": 74612736,
+          "step": 4
+        },
+        {
+          "transport": "XHTTP",
+          "threads": 22,
+          "cycle": 2,
+          "handles": 519,
+          "privateBytes": 75939840,
+          "step": 5
+        },
+        {
+          "transport": "XHTTP/REALITY",
+          "threads": 23,
+          "cycle": 2,
+          "handles": 529,
+          "privateBytes": 77570048,
+          "step": 6
+        },
+        {
+          "transport": "gRPC",
+          "threads": 24,
+          "cycle": 3,
+          "handles": 531,
+          "privateBytes": 77721600,
+          "step": 7
+        },
+        {
+          "transport": "XHTTP",
+          "threads": 24,
+          "cycle": 3,
+          "handles": 531,
+          "privateBytes": 78008320,
+          "step": 8
+        },
+        {
+          "transport": "XHTTP/REALITY",
+          "threads": 25,
+          "cycle": 3,
+          "handles": 539,
+          "privateBytes": 79503360,
+          "step": 9
+        }
+      ],
+      "followUp": "If resource acceptance is pursued, compare handle types and Go heap/goroutine counters at equal disconnected checkpoints after warmup, with idle control; no such follow-up runtime was performed."
+    },
+    "hostCommandElapsedSeconds": 353.16,
+    "hostCoordinatorStartedUtc": "2026-10-17T01:04:26.5952056Z",
+    "hostCoordinatorFinishedUtc": "2026-10-17T01:10:14.758956Z",
+    "timingScope": "Outer host stopwatch includes preflight and command return; host runner UTC interval starts after preflight and ends before final report serialization. These are separate intervals, not peer-close latency.",
+    "hostCoordinatorUtcIntervalSeconds": 348.1637504
+  },
+  "cleanup": {
+    "postcheckPassed": true,
+    "installedTreesUnchanged": true,
+    "ownedFixtureStopped": true,
+    "serviceRunning": true,
+    "productionBinding": true,
+    "guardArmed": false,
+    "tunnelAbsent": true,
+    "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+    "uiProcesses": 0,
+    "helperProcesses": 0,
+    "ownerSidPreservedByUpgradeAndFinalBinding": true,
+    "finalOwnerVerification": {
+      "build": 12,
+      "ownerSidEqualsProtectedQaBaseline": true,
+      "scmCommandContainsSameOwner": true,
+      "productionBinding": true,
+      "serviceRunning": true,
+      "localSystem": true,
+      "passed": true
+    }
+  },
+  "limits": [
+    "Development installer is unsigned; release readiness remains blocked.",
+    "Synthetic local fixture may share host egress; distinct external IP was not tested.",
+    "This run did not repeat the full DNS/IPv6 leak, crash, exclusions, network-change or sleep/resume matrix.",
+    "OS socket/process observations do not enumerate internal Go cache objects.",
+    "Native IME and persistent user storage were not tested by this QA entry point.",
+    "No packet trace was taken; no specific FIN/RST drop location is claimed."
+  ],
+  "evidence": [
+    {
+      "path": "artifacts/qa/windows-build12-20261017-005400/source-before.json",
+      "sha256": "60036864cf28abb58ca8c910f78faf6df12cea6fa8803c33373dbdb5a1f11a49"
+    },
+    {
+      "path": "artifacts/qa/windows-build12-20261017-005400/immutable-build-proof.json",
+      "sha256": "192d6f667d0a115e4195b04a2a6cde5dc8afbaf328b65e5127ef93639da1177f"
+    },
+    {
+      "path": "artifacts/release-audit/windows-build12-20261017-005900/audit.json",
+      "sha256": "14c311c043b235fbc09f3c2968a299db79170a9cc231f0ae5ca9bc6ca2f47af7"
+    },
+    {
+      "path": "artifacts/release-audit/windows-build12-20261017-005900/sbom.cdx.json",
+      "sha256": "e6c30218f1b161f8afdf5333132e96694a7e297abcc3709ba3f9b8900323bb44"
+    },
+    {
+      "path": ".private/windows-build12-20261017-005400/setup-preflight-failure.json",
+      "sha256": "af894d2791d0db92b616c968e6d3c6e55b6dc9b5cf9b8b30bcf5739a4f66c2b7"
+    },
+    {
+      "path": ".private/windows-build12-20261017-005400/mapping-proof.json",
+      "sha256": "c32638e0266a62131286efd1123ff0b6c21d416a1acad3ca8429fe2ecc14fe96"
+    },
+    {
+      "path": ".private/windows-build12-20261017-005400/installed-payload.json",
+      "sha256": "b5e9d71b7e5d5b5e830a7cc45a2ff50526195b07593e011411d82f83659e0b56"
+    },
+    {
+      "path": ".private/windows-lifecycle-results/ad40bb93-9ff7-421a-8576-d1c50d8c605c/upgrade-report.json",
+      "sha256": "678b8094a9b82a115799013765a7dfa013f1189702f057f759ee889ad2b0b506"
+    },
+    {
+      "path": ".private/windows-lifecycle-results/ad40bb93-9ff7-421a-8576-d1c50d8c605c/transport-coordinator.json",
+      "sha256": "202c490734f7fc00ab25a11cd7bccce8efe65bab2beb5a803ed04e44cc5475ef"
+    },
+    {
+      "path": ".private/windows-lifecycle-results/ad40bb93-9ff7-421a-8576-d1c50d8c605c/flutter-report.json",
+      "sha256": "124792762e94ddcedb911b1f6cf8e1b522f602b1b72ef12bfb769685587f21c6"
+    },
+    {
+      "path": ".private/windows-lifecycle-results/ad40bb93-9ff7-421a-8576-d1c50d8c605c/postcheck.json",
+      "sha256": "d72243752d03eca998f553e9de67084c85e0bd6a5d4c7729b573513741b94a41"
+    },
+    {
+      "path": ".private/windows-lifecycle-results/ad40bb93-9ff7-421a-8576-d1c50d8c605c/installed-payload-after-runtime.json",
+      "sha256": "b5e9d71b7e5d5b5e830a7cc45a2ff50526195b07593e011411d82f83659e0b56"
+    },
+    {
+      "path": ".private/windows-lifecycle-results/ad40bb93-9ff7-421a-8576-d1c50d8c605c/owner-postcheck.json",
+      "sha256": "a72c4b29baf04f40e0aaccd88d631ba9bbf9ba51d41910f9190f1463a000e2cc"
+    }
+  ],
+  "privateEvidenceManifest": {
+    "path": ".private/windows-build12-20261017-005400/private-evidence-manifest.json",
+    "sha256": "0e3271b82c269e7064108bbf7cc42de6154e68c05eedfe8f41631e2bf92017a2",
+    "files": 169
+  },
+  "candidateSha256": "baaf13f209a2ea9cd156ca2c5c32edd056cc903a878342eeab73249fcea4405a",
+  "criterion": "Nine real TUN HTTPS/disconnect cycles and cleanup in one SCM process; not full VPN or release acceptance."
+}

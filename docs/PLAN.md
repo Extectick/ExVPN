@@ -31,6 +31,13 @@ Encryption и TCP Sudoku; новая подписка импортируется
 Исходный archive, patch и модифицированный Go module связаны хешами; E1 остаётся
 открытым до выполнения всей системной приёмки.
 
+В +12 исправлен порядок остановки Windows-туннеля: после upgrade +11 → +12
+девять реальных HTTPS/connect/disconnect циклов gRPC/XHTTP прошли в Sandbox.
+На неизменном Android +11 отдельно прошёл ограниченный DNS/server-fault
+сценарий в приватном API30 emulator. [Windows](evidence/windows-lifecycle-build12.json),
+[Android](evidence/android-dns-directalias-build11.json). Общий быстрый цикл
+проверок выполнил 10/10 наборов за 106,66 с; полная E1-приёмка остаётся открытой.
+
 ## 1. Цель и первый выпуск
 
 Создать собственный открытый VPN-клиент ExVPN с общей кодовой базой для Android, Windows, Linux и iOS. Flutter отвечает за интерфейс и общую логику, Xray-core через собственный Go-адаптер — за протоколы; системная VPN-интеграция реализуется отдельно для каждой ОС. libXray изучен как исходный вариант, но не включён в текущую Android/Windows линковку.

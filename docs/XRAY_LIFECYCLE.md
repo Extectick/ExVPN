@@ -161,6 +161,19 @@ Focused tests прошли, race ×10 — 4,16 с, vet без замечаний
 [проверка](evidence/fast-validation-build12.json). На момент фиксации этих
 проверок новая сборка ещё не проходила runtime gate в Sandbox.
 
+Последующая проверка **+12** в Sandbox прошла: upgrade +11 → +12, затем
+**gRPC/XHTTP/XHTTP+REALITY ×3**, все девять циклов в одном SCM process.
+Каждый цикл подтвердил HTTPS/DNS и активные sockets до Disconnect, затем
+отсутствие активных host peers/client tuples, TUN/WFP и точное восстановление
+маршрутов/DNS. Срок 10 с не расширялся. Независимый postcheck сверил production
+binding, прежнего owner и 264 установленных файла. [Доказательство](evidence/windows-lifecycle-build12.json).
+
+Process resources измерены, но не объявлены стабильными на неограниченном
+числе циклов: handles 220 до первого ядра, 539 после девятого disconnect;
+private bytes 56 045 568 → 79 503 360 (максимум 96 051 200), threads 17 → 25.
+Это не доказанный memory leak и не закрытая bounded-memory приёмка. Полная
+матрица E1, физический Android и другие отказы остаются отдельными задачами.
+
 Android и Windows требуют проверки нескольких connect/disconnect в **одном
 процессе**: перезапуск процесса между циклами скрывает retained globals.
 Независимый probe должен подтвердить HTTPS и восстановление исходной сети,
