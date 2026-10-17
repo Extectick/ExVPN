@@ -50,7 +50,11 @@ Encryption и TCP Sudoku; новая подписка импортируется
 поддерживаемые ABI с точными JNI/Flutter libraries. Полный CI обеих платформ
 успешен; [Windows runtime](evidence/windows-lifecycle-build13.json),
 [APK](evidence/android-packaging-build13.json), [CI](evidence/ci-build13.json).
-Android runtime +13 и полная E1/release-приёмка ещё не закрыты.
+Android +13 отдельно подтвердил отмену/принятие частичного списка и cold restore
+в API30 эмуляторе. Первый gRPC получил HTTPS через VPN, но последующее чтение
+UIAutomator не завершилось до deadline; повторные connect/disconnect циклы не
+засчитаны. [Android runtime и границы](evidence/android-runtime-build13.json).
+Полная E1/release-приёмка остаётся открытой.
 
 ## 1. Цель и первый выпуск
 

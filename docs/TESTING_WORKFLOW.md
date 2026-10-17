@@ -58,6 +58,13 @@ Sandbox mapping; точный manifest по-прежнему отклоняет 
 через два процесса и DPAPI за 98,984 с, включая setup/cleanup; первый отказ
 сохранён в [отчёте](evidence/windows-subscriptions-build13.json).
 
+Android +13 проверялся независимо от Windows; UI подписок и транспорт разделены
+на два bounded сценария с отдельными baseline/cleanup. UI прошёл за 191,583 с.
+Транспорт подтвердил первое HTTPS через gRPC, но остановился на UIAutomator
+timeout перед Disconnect; повторные циклы не засчитаны. Такая автоматизация
+сокращает ручное управление, но отказ стенда остаётся отдельным результатом.
+[Доказательства](evidence/android-runtime-build13.json).
+
 Предыдущий общий прогон, 2026-10-17: **10/10 наборов за 106,66 с**, все Go tests
 выполнены заново, fingerprint исходников совпал. В общий runner и CI добавлены
 offline DNS capture fixtures, nonce-проба Android и Windows teardown fixtures

@@ -1,0 +1,423 @@
+{
+  "schemaVersion": 1,
+  "status": "PARTIAL",
+  "generatedAtUtc": "2026-10-17T03:37:50.5113688Z",
+  "artifact": {
+    "sha256": "7a85645227f045c3a8c5cb875ceb53e2ed3cfbd4d291658c368254868753fccd",
+    "developmentSigned": true,
+    "core": "26.10.10-exvpn.4",
+    "buildNumber": 13,
+    "bytes": 220450592,
+    "buildEvidence": {
+      "path": "artifacts/android/build13-pinned/build-evidence-candidate.json",
+      "sha256": "82bd64b62aff02f5034db50ea59aaece4fb9c6f712b7d50f92760a99db24c1f4"
+    },
+    "unchangedConsumedInputs": 134,
+    "consumedInputsSha256": "46c2150e4d20989733f68ca3c0056ab6e0336cf769cba5b270f3cf99f3238e03",
+    "version": "0.1.0",
+    "path": "artifacts/android/build13-pinned/ExVPN-0.1.0-13-android-development.apk"
+  },
+  "environment": {
+    "physicalDevice": false,
+    "platform": "Android 11 / API 30",
+    "disposablePrivateAvd": true,
+    "computerUse": false,
+    "abi": "x86_64",
+    "originalEmulatorUntouched": true,
+    "adbReverseUsed": false,
+    "hostNetworkOrTrustMutated": false,
+    "providerOrHwidRequested": false
+  },
+  "harness": {
+    "independentReview": "NO_FINDINGS",
+    "independentReviewChecks": 22,
+    "transportEntry": {
+      "path": ".private/android-build13-runtime-20261017-reviewed/transport-only.ps1",
+      "sha256": "5f6d894c654b6a425408978aa9394e4bde4a898011c6e8d5cc70d4d3d87514ed"
+    },
+    "savedXmlFilesParsed": 70,
+    "driver": {
+      "path": ".private/android-build13-runtime-20261017-reviewed/run.ps1",
+      "sha256": "98bfd3fc815fd357dcff01d97ae7b6f522feb5f6de18ee09375cc13822351a2a"
+    },
+    "runtimeLimitsSeconds": {
+      "cleanup": 45,
+      "Ui": 360,
+      "Transport": 480
+    },
+    "fixtureReport": {
+      "path": ".private/android-build13-runtime-20261017-reviewed/selector-fixtures.json",
+      "sha256": "4cf176d079d562580a919334f4dabe865a530ed6448e74a90f058fc6b32cbf55"
+    },
+    "productionSourceChanged": false,
+    "ownOfflineChecks": 25
+  },
+  "ui": {
+    "status": "PASS",
+    "durationMs": 191583,
+    "privateProof": {
+      "path": ".private/android-build13-runtime-20261017-reviewed/Ui/result.json",
+      "sha256": "46f716834c9049ed91c2dfdc7b560eac9dc528940c572f08c42cc7f0467e8810"
+    },
+    "ownedBaselineGroupsRemoved": 1,
+    "originalCount": 3,
+    "selectedThird": true,
+    "partialCandidateSupportedCount": 1,
+    "safeIssueIndices": [
+      2,
+      3
+    ],
+    "safeReasonCodes": [
+      "unsupportedProtocol",
+      "invalidProfile"
+    ],
+    "liveReviewObservedBeforeActions": true,
+    "cancelPreservedCount": 3,
+    "cancelPreservedSelection": true,
+    "explicitAcceptanceCount": 1,
+    "oldProfilesAbsent": true,
+    "newProfileSelected": true,
+    "coldProcessRestart": true,
+    "restoredCount": 1,
+    "restoredSelection": true,
+    "encryptedStoreHashesUnchanged": true,
+    "restoredIssueIndices": [
+      2,
+      3
+    ],
+    "pendingCandidateNotRestored": true,
+    "liveIssuesXml": [
+      {
+        "path": ".private/android-build13-runtime-20261017-reviewed/Ui/review-before-cancel-0.stdout.txt",
+        "sha256": "368bfdacb70837018c922746408e301d6343a5dbe7517ba7a9b3044d166d94b9"
+      },
+      {
+        "path": ".private/android-build13-runtime-20261017-reviewed/Ui/review-reopened-0.stdout.txt",
+        "sha256": "368bfdacb70837018c922746408e301d6343a5dbe7517ba7a9b3044d166d94b9"
+      },
+      {
+        "path": ".private/android-build13-runtime-20261017-reviewed/Ui/restored-review-0.stdout.txt",
+        "sha256": "cc3280c66bde24dd0e2d3d3ea0c16873da422ea28274c07a3bd7c501267bdd23"
+      },
+      {
+        "path": ".private/android-build13-runtime-20261017-reviewed/Ui/restored-issues-close-find-0.stdout.txt",
+        "sha256": "cc3280c66bde24dd0e2d3d3ea0c16873da422ea28274c07a3bd7c501267bdd23"
+      }
+    ],
+    "cleanup": {
+      "uiDisconnected": true,
+      "qaGroupsRemoved": true,
+      "settingsUnchanged": true,
+      "serviceAbsent": true,
+      "fixtureStopped": true,
+      "guestShutdown": true,
+      "originalIdentitiesPreserved": true,
+      "inputDeleted": true,
+      "reverseEmpty": true,
+      "watchdogStopped": true,
+      "directNetworkRestored": true,
+      "forcedOwnedGuestShutdown": true
+    },
+    "forcedOwnedGuestStopAfterUiServiceAlreadyAbsent": true
+  },
+  "transport": {
+    "status": "INDETERMINATE",
+    "durationMs": 123830,
+    "privateProof": {
+      "path": ".private/android-build13-runtime-20261017-reviewed/Transport/result.json",
+      "sha256": "a1b105b2a3395ee143874022a1836271eb902b42498c13efe8d916a8cc1de1e0"
+    },
+    "diagnosis": {
+      "path": ".private/android-build13-runtime-20261017-reviewed/Transport/diagnosis.json",
+      "sha256": "f21019c5b108e57980d58ebdb7e99cda0c58e895274663be59222d34c7bda0a5"
+    },
+    "intendedCycles": 4,
+    "attemptedCycles": 1,
+    "completedConnectDisconnectCycles": 0,
+    "attemptedTransport": "grpc-h2c",
+    "xhttpAttempted": false,
+    "connected": {
+      "sameAppPidBeforeAndConnected": true,
+      "fixturePeerCount": 1,
+      "healthHttpStatus": 204,
+      "observed": true,
+      "aggregateFixtureDownloadDeltaBytes": 28433433,
+      "traceHttpStatus": 200,
+      "dnsAvailability": true,
+      "vpnTransportForAllProbes": true,
+      "waitMs": 4071,
+      "aggregateFixtureUploadDeltaBytes": 50285,
+      "independentProbeUid": true,
+      "validPublicIpv4HashObserved": true,
+      "servicePresent": true
+    },
+    "externalIpDifferenceRequired": false,
+    "externalIpScope": "The synthetic host-loopback fixture shares the host egress. Successful HTTPS plus actual VPN transport and independent server counters prove this bounded path, not a provider egress-IP change.",
+    "dnsScope": "Availability only; no DNS leak or IPv6 audit.",
+    "firstFailure": "UIAutomator dump deadline before Disconnect tap",
+    "disconnectTapIssued": false,
+    "peerDrainAfterExplicitDisconnect": "NOT_TESTED",
+    "repeatedCoreGenerations": "NOT_TESTED",
+    "postFailureHttpsStillWorkedThroughVpn": true,
+    "cleanup": {
+      "uiDisconnected": false,
+      "qaGroupsRemoved": false,
+      "settingsUnchanged": true,
+      "serviceAbsent": false,
+      "fixtureStopped": true,
+      "guestShutdown": true,
+      "originalIdentitiesPreserved": true,
+      "inputDeleted": true,
+      "reverseEmpty": true,
+      "watchdogStopped": true,
+      "uiFailureCode": "qa_adb_deadline",
+      "directNetworkRestored": false,
+      "forcedOwnedGuestShutdown": true
+    },
+    "retainedOwnedQaGroupCount": 1,
+    "retainedOwnedQaGroupProfileCount": 2,
+    "retainedGroupsAreSyntheticOnly": true,
+    "guestStoppedWhileServiceStillPresent": true,
+    "forcedOwnedGuestStop": true,
+    "hostFixtureStopped": true,
+    "ownedGuestStopped": true,
+    "originalEmulatorIdentityPreserved": true,
+    "fixture": {
+      "core": "26.10.10-exvpn.3",
+      "moduleVersion": "v1.260327.1-exvpn.3",
+      "path": "artifacts/qa/build11-fixture/qa-protocol-server.exe",
+      "sha256": "79c2886d9178781ea47c053d9c1d2e8d4a2bf36e162bc78099c347898d5d540b",
+      "tunEnabled": false
+    }
+  },
+  "attempts": [
+    {
+      "id": "initial-hash-deadline",
+      "status": "INDETERMINATE",
+      "classification": "HARNESS_HASH_DEADLINE_BEFORE_INSTALL",
+      "durationMs": 48040,
+      "startedAtUtc": "2026-10-17T03:00:56.3747241Z",
+      "finishedAtUtc": "2026-10-17T03:01:44.4194091Z",
+      "failureCode": "qa_adb_deadline",
+      "privateProof": {
+        "path": ".private/android-build13-runtime-20261017/result.json",
+        "sha256": "b12434e1debd32dc02148fd2ccde676d4b87fbacd0587e0bc7a6f840a60d170f"
+      },
+      "diagnosis": {
+        "path": ".private/android-build13-runtime-20261017/diagnosis.json",
+        "sha256": "aae2a3de17e50c6934c66f6b02eb945bf6e3ba583cdeba32f51f508867a18b94"
+      },
+      "cleanupObserved": {
+        "uiDisconnected": false,
+        "qaGroupsRemoved": false,
+        "settingsUnchanged": false,
+        "serviceAbsent": false,
+        "fixtureStopped": true,
+        "guestShutdown": true,
+        "originalIdentitiesPreserved": false,
+        "inputDeleted": false,
+        "reverseEmpty": false,
+        "watchdogStopped": true,
+        "failureCode": "qa_scroll_container_missing"
+      },
+      "note": "Eight-second installed APK hashing deadline expired before installation, subscription import or VPN connection. Original identity false was subsequently diagnosed as CIM/Get-Process timestamp precision mismatch. False cleanup flags in this early attempt are unverified observations, not proof of active VPN or modified settings."
+    },
+    {
+      "id": "fixed-hash-deadline",
+      "status": "INDETERMINATE",
+      "classification": "HARNESS_EDITABLE_COUNT_AND_CLOSE_SELECTOR",
+      "durationMs": 165769,
+      "startedAtUtc": "2026-10-17T03:05:42.9482621Z",
+      "finishedAtUtc": "2026-10-17T03:08:28.7325472Z",
+      "failureCode": "qa_input_fields_unexpected",
+      "privateProof": {
+        "path": ".private/android-build13-runtime-20261017-hash-deadline/result.json",
+        "sha256": "8dc1c552be4e05b310342254f2105175bdf61fe893a047195957763e83bb5ac8"
+      },
+      "diagnosis": {
+        "path": ".private/android-build13-runtime-20261017-hash-deadline/diagnosis.json",
+        "sha256": "53b19c0078b4a4c50867c9475a8ac6bc799e58905d41092799f1eb5531e21f25"
+      },
+      "cleanupObserved": {
+        "uiDisconnected": true,
+        "qaGroupsRemoved": false,
+        "settingsUnchanged": false,
+        "serviceAbsent": false,
+        "fixtureStopped": true,
+        "guestShutdown": true,
+        "originalIdentitiesPreserved": true,
+        "inputDeleted": false,
+        "reverseEmpty": false,
+        "watchdogStopped": true,
+        "failureCode": "qa_connection_control_not_visible",
+        "forcedOwnedGuestShutdown": true
+      },
+      "note": "Exact +12 to +13 upgrade passed, but the update dialog exposes disabled name as View and only one editable payload. No partial update was submitted. Cleanup observations after wrong generic Close were incomplete."
+    },
+    {
+      "id": "semantic-selectors",
+      "status": "INDETERMINATE",
+      "classification": "HARNESS_BUTTON_CLASS_REJECTED_CLICKABLE_VIEW",
+      "durationMs": 106073,
+      "startedAtUtc": "2026-10-17T03:13:21.4573133Z",
+      "finishedAtUtc": "2026-10-17T03:15:07.5404998Z",
+      "failureCode": "ui_target_ambiguous_or_missing",
+      "privateProof": {
+        "path": ".private/android-build13-runtime-20261017-semantic-selectors/result.json",
+        "sha256": "5a570f0037b6701fd4d36b6bb72c66ee81ef5c71ce5e8d59b4081ad39e8afa9a"
+      },
+      "diagnosis": {
+        "path": ".private/android-build13-runtime-20261017-semantic-selectors/diagnosis.json",
+        "sha256": "96219011df29bda0bacead8d41d3bcaf22788a5261fc0e5708a93cb8b4074a8a"
+      },
+      "cleanupObserved": {
+        "uiDisconnected": false,
+        "qaGroupsRemoved": false,
+        "settingsUnchanged": true,
+        "serviceAbsent": true,
+        "fixtureStopped": true,
+        "guestShutdown": true,
+        "originalIdentitiesPreserved": true,
+        "inputDeleted": true,
+        "reverseEmpty": true,
+        "watchdogStopped": true,
+        "uiFailureCode": "qa_scroll_container_missing",
+        "directNetworkRestored": true,
+        "forcedOwnedGuestShutdown": true
+      },
+      "note": "Manual group chooser is a clickable View. Partial input was not submitted. Service absent/direct HTTPS/settings equality passed; UI cleanup left the known QA group. The later Ui baseline removed it."
+    },
+    {
+      "id": "reviewed-ui",
+      "status": "PASS",
+      "classification": "UI_PASS",
+      "durationMs": 191583,
+      "startedAtUtc": "2026-10-17T03:28:43.2946656Z",
+      "finishedAtUtc": "2026-10-17T03:31:54.8913374Z",
+      "failureCode": null,
+      "privateProof": {
+        "path": ".private/android-build13-runtime-20261017-reviewed/Ui/result.json",
+        "sha256": "46f716834c9049ed91c2dfdc7b560eac9dc528940c572f08c42cc7f0467e8810"
+      },
+      "diagnosis": null,
+      "cleanupObserved": {
+        "uiDisconnected": true,
+        "qaGroupsRemoved": true,
+        "settingsUnchanged": true,
+        "serviceAbsent": true,
+        "fixtureStopped": true,
+        "guestShutdown": true,
+        "originalIdentitiesPreserved": true,
+        "inputDeleted": true,
+        "reverseEmpty": true,
+        "watchdogStopped": true,
+        "directNetworkRestored": true,
+        "forcedOwnedGuestShutdown": true
+      },
+      "note": "Independent Ui phase; no VPN connection requested. Exact encrypted store and accepted list survived a real process restart."
+    },
+    {
+      "id": "reviewed-transport",
+      "status": "INDETERMINATE",
+      "classification": "UI_OBSERVER_FAILURE_BEFORE_DISCONNECT",
+      "durationMs": 123830,
+      "startedAtUtc": "2026-10-17T03:32:21.3412107Z",
+      "finishedAtUtc": "2026-10-17T03:34:25.1776473Z",
+      "failureCode": "qa_adb_deadline",
+      "privateProof": {
+        "path": ".private/android-build13-runtime-20261017-reviewed/Transport/result.json",
+        "sha256": "a1b105b2a3395ee143874022a1836271eb902b42498c13efe8d916a8cc1de1e0"
+      },
+      "diagnosis": {
+        "path": ".private/android-build13-runtime-20261017-reviewed/Transport/diagnosis.json",
+        "sha256": "f21019c5b108e57980d58ebdb7e99cda0c58e895274663be59222d34c7bda0a5"
+      },
+      "cleanupObserved": {
+        "uiDisconnected": false,
+        "qaGroupsRemoved": false,
+        "settingsUnchanged": true,
+        "serviceAbsent": false,
+        "fixtureStopped": true,
+        "guestShutdown": true,
+        "originalIdentitiesPreserved": true,
+        "inputDeleted": true,
+        "reverseEmpty": true,
+        "watchdogStopped": true,
+        "uiFailureCode": "qa_adb_deadline",
+        "directNetworkRestored": false,
+        "forcedOwnedGuestShutdown": true
+      },
+      "note": "First gRPC HTTPS/DNS passed. No Disconnect tap was issued, and no complete connect/disconnect cycle was accepted. No further cycles were attempted."
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "ui-original.png",
+      "privateSource": {
+        "path": ".private/android-build13-runtime-20261017-reviewed/Ui/ui-original.png",
+        "sha256": "fa97a1f0b56396879fb57419723ba5897005591cd3cb969e77d2a88ca866efed"
+      },
+      "syntheticDataOnly": true,
+      "noImportPayloadVisible": true,
+      "safeToCopyToDocsEvidence": true
+    },
+    {
+      "name": "ui-review.png",
+      "privateSource": {
+        "path": ".private/android-build13-runtime-20261017-reviewed/Ui/ui-review.png",
+        "sha256": "c3014fe88703ddb3699aaac36254e77b26c603186c321c40e4723d1c9b916d8c"
+      },
+      "syntheticDataOnly": true,
+      "noImportPayloadVisible": true,
+      "safeToCopyToDocsEvidence": true,
+      "publicCopy": "docs/evidence/android-subscriptions-build13-review.png"
+    },
+    {
+      "name": "ui-canceled.png",
+      "privateSource": {
+        "path": ".private/android-build13-runtime-20261017-reviewed/Ui/ui-canceled.png",
+        "sha256": "6a9bbc4ed470c46ed4e73a3d798dd91da3fa73c735668d974ef3e4c5889f29bf"
+      },
+      "syntheticDataOnly": true,
+      "noImportPayloadVisible": true,
+      "safeToCopyToDocsEvidence": true
+    },
+    {
+      "name": "ui-accepted.png",
+      "privateSource": {
+        "path": ".private/android-build13-runtime-20261017-reviewed/Ui/ui-accepted.png",
+        "sha256": "adba54e46ce3bdaf6859ddc2e26bdc0779bef81bb6122cb900950a366ffd1452"
+      },
+      "syntheticDataOnly": true,
+      "noImportPayloadVisible": true,
+      "safeToCopyToDocsEvidence": true
+    },
+    {
+      "name": "ui-restored-issues.png",
+      "privateSource": {
+        "path": ".private/android-build13-runtime-20261017-reviewed/Ui/ui-restored-issues.png",
+        "sha256": "8d6f205ddbe43496c601e377d339b09d8030fd72267579db2edcede82258777b"
+      },
+      "syntheticDataOnly": true,
+      "noImportPayloadVisible": true,
+      "safeToCopyToDocsEvidence": true,
+      "publicCopy": "docs/evidence/android-subscriptions-build13-restored.png"
+    }
+  ],
+  "limitations": [
+    "Ui PASS does not imply Transport lifecycle PASS.",
+    "No complete four-cycle +13 Android lifecycle result.",
+    "No physical Android acceptance or arm64 runtime proof.",
+    "No full IPv4/IPv6/DNS leak, fault, sleep/resume or lockdown matrix.",
+    "No exact retained object/goroutine measurement from the ordinary APK.",
+    "No release readiness: debug signing and dependency descriptor completeness remain separate gates.",
+    "The cause of UIAutomator termination was not established; no product workaround or runtime retry was performed."
+  ],
+  "sourceCandidateSha256": "30059e40ba5541c92575b211221bdfa5e95c256ebc796e32a71646c8b8251457",
+  "sourceCommit": "b2cc272",
+  "evidenceReview": {
+    "sourceProofHashesVerified": 26,
+    "syntheticScreenshotsVisuallyInspected": 2,
+    "reviewedAt": "2026-10-17"
+  }
+}
