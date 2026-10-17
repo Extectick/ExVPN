@@ -55,6 +55,30 @@ void main() {
     await font.load();
   });
 
+  testWidgets('home exposes partial update reasons and explicit replacement', (
+    tester,
+  ) async {
+    final controller = AppController();
+    addTearDown(controller.dispose);
+    final id = controller
+        .addSubscription(name: 'Example', raw: _sampleProfile)
+        .groupId;
+    controller.updateSubscription(
+      groupId: id,
+      raw:
+          '${_sampleProfile.replaceFirst('000000000001', '000000000002').replaceFirst('#Sample', '#New')}\nunknown://invalid',
+    );
+    await _open(tester, controller);
+    expect(controller.selectedServer!.name, 'Sample');
+    await _tap(tester, find.byKey(ValueKey('subscription-issues-$id')));
+    expect(find.textContaining('Запись 2: Протокол'), findsOneWidget);
+    await _tap(tester, find.byKey(const Key('accept-partial-subscription')));
+    expect(controller.selectedServer!.name, 'New');
+    expect(find.text('Не подключено'), findsOneWidget);
+    expect(find.textContaining('Замечания к подписке: 1'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('collapsing and reopening a subscription preserves selection', (
     tester,
   ) async {
@@ -147,10 +171,7 @@ void main() {
         find.text('В подписке пока нет доступных подключений'),
         findsOneWidget,
       );
-      expect(
-        find.textContaining('записей не удалось импортировать'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Замечания к подписке:'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

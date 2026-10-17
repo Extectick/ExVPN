@@ -34,6 +34,7 @@ final class SubscriptionRefresh extends ChangeNotifier {
         .where((group) => group.id == id)
         .firstOrNull;
     if (group?.sourceUrl == null) return false;
+    controller.discardPendingUpdate(id);
     try {
       final raw = await _loader.load(group!.sourceUrl!);
       if (_disposed) return false;

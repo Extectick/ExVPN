@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 
 import 'import_dialog.dart';
+import 'subscription_issues_dialog.dart';
 import 'settings_sheet.dart';
 import 'theme.dart';
 import 'power_button.dart';
@@ -170,6 +171,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _refreshGroup(SubscriptionGroup group) async {
     final success = await _refreshes.refresh(group.id);
+    if (!mounted) return;
+    if (!success && widget.controller.pendingUpdate(group.id) != null) {
+      await _reviewSubscription(group.id);
+      return;
+    }
     await widget.persistence?.flush();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -187,6 +193,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
       );
     }
+  }
+
+  Future<void> _reviewSubscription(String groupId) async {
+    final decision = await showSubscriptionIssues(
+      context,
+      controller: widget.controller,
+      groupId: groupId,
+    );
+    await widget.persistence?.flush();
+    if (!mounted || decision == SubscriptionReviewOutcome.keptCurrent) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          decision == SubscriptionReviewOutcome.stale
+              ? 'Подписка изменилась. Повторите обновление.'
+              : widget.persistence?.error != null
+              ? 'Список применён в этом сеансе, но не сохранён. Повторите сохранение на главном экране.'
+              : 'Поддерживаемые подключения обновлены',
+        ),
+      ),
+    );
   }
 
   @override
@@ -651,11 +678,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         if (group.issues.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: Text(
-              '${group.issues.length} записей не удалось импортировать. Проверьте данные подписки.',
-              style: TextStyle(
-                fontSize: 13,
-                color: Theme.of(context).colorScheme.error,
+            child: TextButton.icon(
+              key: ValueKey('subscription-issues-${group.id}'),
+              onPressed: () => _reviewSubscription(group.id),
+              icon: const Icon(Icons.info_outline, size: 18),
+              label: Text(
+                widget.controller.pendingUpdate(group.id) == null
+                    ? 'Замечания к подписке: ${group.issues.length}'
+                    : 'Рабочий список сохранён. Проверить обновление',
               ),
             ),
           ),

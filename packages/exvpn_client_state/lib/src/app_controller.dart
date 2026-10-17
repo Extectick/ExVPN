@@ -31,6 +31,7 @@ final class AppController {
     sync: true,
   );
   List<SubscriptionGroup> _groups = const [];
+  final Map<String, PendingSubscriptionUpdate> _pendingUpdates = {};
   String? _selectedGroupId;
   String? _selectedServerId;
   int _nextGroup = 1;
@@ -42,6 +43,18 @@ final class AppController {
   bool get isDemo => _groups.any((group) => group.isDemo);
   bool get showAddSubscriptionButton => _groups.isEmpty;
   Stream<void> get changes => _changes.stream;
+
+  /// A bounded, normalized candidate kept only in memory. The working list
+  /// remains authoritative until this exact candidate is explicitly accepted.
+  PendingSubscriptionUpdate? pendingUpdate(String groupId) =>
+      _pendingUpdates[groupId];
+
+  /// Starting a newer download invalidates an old confirmation even if that
+  /// download subsequently fails. The accepted list and diagnostics stay put.
+  void discardPendingUpdate(String groupId) {
+    _ensureAlive();
+    if (_pendingUpdates.remove(groupId) != null) _notify();
+  }
 
   ServerEntry? get selectedServer {
     for (final group in _groups) {
@@ -105,15 +118,28 @@ final class AppController {
     );
     final apply =
         result.profiles.isNotEmpty && (group.servers.isEmpty || !hasErrors);
+    final servers = result.profiles
+        .map((profile) => ServerEntry(profile: profile))
+        .toList();
+    // Every parsed replacement invalidates an older confirmation, including
+    // an entirely invalid response. Never accept a superseded HTTP body.
+    _pendingUpdates.remove(groupId);
+    if (!apply && servers.isNotEmpty) {
+      _pendingUpdates[groupId] = PendingSubscriptionUpdate._(
+        groupId: groupId,
+        previousCount: group.servers.length,
+        expectedRevision: group.contentRevision,
+        servers: servers,
+        issues: result.issues,
+        sourceUrl: sourceUrl,
+        clearSourceUrl: clearSourceUrl,
+      );
+    }
     _groups = [
       for (var i = 0; i < _groups.length; i++)
         if (i == index)
           group.copyWith(
-            servers: apply
-                ? result.profiles
-                      .map((profile) => ServerEntry(profile: profile))
-                      .toList()
-                : null,
+            servers: apply ? servers : null,
             issues: result.issues,
             isDemo: apply ? false : group.isDemo,
             sourceUrl: apply ? sourceUrl : null,
@@ -131,6 +157,38 @@ final class AppController {
       applied: apply,
       issues: result.issues,
     );
+  }
+
+  /// Accepts only the exact current candidate from this controller. No fetching,
+  /// reparsing, or tunnel changes happen after the user's confirmation.
+  bool acceptPartialUpdate(PendingSubscriptionUpdate candidate) {
+    _ensureAlive();
+    final index = _groups.indexWhere((g) => g.id == candidate.groupId);
+    if (index < 0 ||
+        !identical(_pendingUpdates[candidate.groupId], candidate) ||
+        _groups[index].contentRevision != candidate._expectedRevision) {
+      return false;
+    }
+    final group = _groups[index];
+    _pendingUpdates.remove(candidate.groupId);
+    _groups = [
+      for (var i = 0; i < _groups.length; i++)
+        if (i == index)
+          group.copyWith(
+            servers: candidate._servers,
+            issues: candidate.issues,
+            isDemo: false,
+            sourceUrl: candidate._sourceUrl,
+            clearSourceUrl: candidate._clearSourceUrl,
+            updatedAt: _nowUtcMillis(),
+            contentRevision: group.contentRevision + 1,
+          )
+        else
+          _groups[i],
+    ];
+    _restoreSelection(preferredGroupId: candidate.groupId);
+    _notify();
+    return true;
   }
 
   bool toggleGroup(String groupId) {
@@ -168,6 +226,7 @@ final class AppController {
   bool removeSubscription(String groupId) {
     _ensureAlive();
     if (!_groups.any((group) => group.id == groupId)) return false;
+    _pendingUpdates.remove(groupId);
     _groups = _groups.where((group) => group.id != groupId).toList();
     _restoreSelection();
     _notify();
@@ -200,10 +259,41 @@ final class AppController {
     if (_disposed) return;
     _disposed = true;
     _groups = const [];
+    _pendingUpdates.clear();
     _selectedGroupId = null;
     _selectedServerId = null;
     unawaited(_changes.close());
   }
+}
+
+/// Safe preview fields contain counts and fixed parser codes only. Profiles and
+/// source credentials are private; candidates are deliberately not serialized.
+final class PendingSubscriptionUpdate {
+  PendingSubscriptionUpdate._({
+    required this.groupId,
+    required this.previousCount,
+    required int expectedRevision,
+    required List<ServerEntry> servers,
+    required List<ImportIssue> issues,
+    required String? sourceUrl,
+    required bool clearSourceUrl,
+  }) : _expectedRevision = expectedRevision,
+       _servers = List.unmodifiable(servers),
+       issues = List.unmodifiable(issues),
+       _sourceUrl = sourceUrl,
+       _clearSourceUrl = clearSourceUrl;
+
+  final String groupId;
+  final int previousCount;
+  final int _expectedRevision;
+  final List<ServerEntry> _servers;
+  final List<ImportIssue> issues;
+  final String? _sourceUrl;
+  final bool _clearSourceUrl;
+  int get supportedCount => _servers.length;
+
+  @override
+  String toString() => 'PendingSubscriptionUpdate(<redacted>)';
 }
 
 DateTime _nowUtcMillis() => DateTime.fromMillisecondsSinceEpoch(

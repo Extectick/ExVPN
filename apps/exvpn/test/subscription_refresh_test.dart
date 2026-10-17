@@ -13,6 +13,98 @@ const newProfile =
     'vless://00000000-0000-4000-8000-000000000002@sample.invalid:443?security=tls#New';
 void main() {
   test(
+    'background partial refresh retains the working list until confirmation',
+    () async {
+      final app = AppController()
+        ..addSubscription(
+          name: 'Example',
+          raw: oldProfile,
+          sourceUrl: 'https://example.invalid/sub',
+        );
+      final refresh = SubscriptionRefresh(
+        app,
+        loader: SubscriptionLoader(
+          client: MockClient(
+            (_) async => http.Response('$newProfile\nunknown://invalid', 200),
+          ),
+        ),
+      );
+      addTearDown(refresh.dispose);
+      addTearDown(app.dispose);
+      final id = app.groups.single.id;
+      final before = app.groups.single.updatedAt!;
+      await refresh.refreshStale(now: before.add(const Duration(hours: 7)));
+      expect(app.selectedServer!.name, 'Old');
+      expect(app.groups.single.updatedAt, before);
+      expect(refresh.failed, {id});
+      expect(app.acceptPartialUpdate(app.pendingUpdate(id)!), isTrue);
+      expect(app.selectedServer!.name, 'New');
+      expect(refresh.failed, isEmpty);
+    },
+  );
+
+  test(
+    'a newer download invalidates old consent before the HTTP outcome',
+    () async {
+      final app = AppController()
+        ..addSubscription(
+          name: 'Example',
+          raw: oldProfile,
+          sourceUrl: 'https://example.invalid/sub',
+        );
+      final id = app.groups.single.id;
+      app.updateSubscription(
+        groupId: id,
+        raw: '$newProfile\nunknown://invalid',
+      );
+      final oldCandidate = app.pendingUpdate(id)!;
+      final response = Completer<http.Response>();
+      final refresh = SubscriptionRefresh(
+        app,
+        loader: SubscriptionLoader(client: MockClient((_) => response.future)),
+      );
+      addTearDown(refresh.dispose);
+      addTearDown(app.dispose);
+      final request = refresh.refresh(id);
+      expect(app.pendingUpdate(id), isNull);
+      expect(app.acceptPartialUpdate(oldCandidate), isFalse);
+      response.complete(http.Response('', 503));
+      expect(await request, isFalse);
+      expect(app.selectedServer!.name, 'Old');
+      expect(app.pendingUpdate(id), isNull);
+    },
+  );
+
+  test(
+    'late HTTP response cannot overwrite an accepted partial replacement',
+    () async {
+      final app = AppController()
+        ..addSubscription(
+          name: 'Example',
+          raw: oldProfile,
+          sourceUrl: 'https://example.invalid/sub',
+        );
+      final id = app.groups.single.id;
+      final response = Completer<http.Response>();
+      final refresh = SubscriptionRefresh(
+        app,
+        loader: SubscriptionLoader(client: MockClient((_) => response.future)),
+      );
+      addTearDown(refresh.dispose);
+      addTearDown(app.dispose);
+      final request = refresh.refresh(id);
+      app.updateSubscription(
+        groupId: id,
+        raw: '$newProfile\nunknown://invalid',
+      );
+      expect(app.acceptPartialUpdate(app.pendingUpdate(id)!), isTrue);
+      response.complete(http.Response(oldProfile, 200));
+      expect(await request, isFalse);
+      expect(app.selectedServer!.name, 'New');
+    },
+  );
+
+  test(
     'HWID limit preserves the last working list and a safe reason',
     () async {
       final app = AppController()

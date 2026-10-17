@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../services/subscription_loader.dart';
 import '../services/subscription_persistence.dart';
 import '../services/qr_import.dart';
+import 'subscription_issues_dialog.dart';
 
 class ImportDialog extends StatefulWidget {
   const ImportDialog({
@@ -13,11 +14,13 @@ class ImportDialog extends StatefulWidget {
     this.group,
     this.persistence,
     this.qrReader,
+    this.loader,
   });
   final AppController controller;
   final SubscriptionGroup? group;
   final SubscriptionPersistence? persistence;
   final Future<String?> Function()? qrReader;
+  final SubscriptionLoader? loader;
   @override
   State<ImportDialog> createState() => _ImportDialogState();
 }
@@ -25,14 +28,16 @@ class ImportDialog extends StatefulWidget {
 class _ImportDialogState extends State<ImportDialog> {
   final _name = TextEditingController();
   final _input = TextEditingController();
-  final _loader = SubscriptionLoader();
+  late final SubscriptionLoader _loader;
   bool _link = true;
   bool _loading = false;
+  bool _reviewing = false;
   String? _error;
   bool _qrRead = false;
   @override
   void initState() {
     super.initState();
+    _loader = widget.loader ?? SubscriptionLoader();
     _name.text = widget.group?.name ?? '';
   }
 
@@ -90,9 +95,27 @@ class _ImportDialogState extends State<ImportDialog> {
       _error = null;
     });
     try {
+      final group = widget.group == null
+          ? null
+          : widget.controller.groups
+                .where((current) => current.id == widget.group!.id)
+                .firstOrNull;
+      if (widget.group != null && group == null) {
+        setState(() => _error = 'Подписка изменилась. Повторите обновление.');
+        return;
+      }
+      if (group != null) widget.controller.discardPendingUpdate(group.id);
       final raw = _link ? await _loader.load(_input.text.trim()) : _input.text;
       if (!mounted) return;
-      final group = widget.group;
+      if (group != null &&
+          !widget.controller.groups.any(
+            (current) =>
+                current.id == group.id &&
+                current.contentRevision == group.contentRevision,
+          )) {
+        setState(() => _error = 'Подписка изменилась. Повторите обновление.');
+        return;
+      }
       final result = group == null
           ? widget.controller.addSubscription(
               name: _name.text.trim(),
@@ -105,6 +128,27 @@ class _ImportDialogState extends State<ImportDialog> {
               sourceUrl: _link ? _input.text.trim() : null,
               clearSourceUrl: !_link,
             );
+      var applied = result.applied;
+      if (!applied && widget.controller.pendingUpdate(result.groupId) != null) {
+        setState(() => _reviewing = true);
+        final decision = await showSubscriptionIssues(
+          context,
+          controller: widget.controller,
+          groupId: result.groupId,
+        );
+        if (!mounted) return;
+        applied = decision == SubscriptionReviewOutcome.applied;
+        if (!applied) {
+          await widget.persistence?.flush();
+          if (!mounted) return;
+          setState(
+            () => _error = decision == SubscriptionReviewOutcome.stale
+                ? 'Подписка изменилась. Повторите обновление.'
+                : 'Частичное обновление не применено. Рабочий список сохранён.',
+          );
+          return;
+        }
+      }
       await widget.persistence?.flush();
       if (!mounted) return;
       Navigator.pop(context);
@@ -113,7 +157,7 @@ class _ImportDialogState extends State<ImportDialog> {
           content: Text(
             widget.persistence?.error != null
                 ? 'Подписка применена в этом сеансе, но не сохранена. Повторите сохранение на главном экране.'
-                : result.applied
+                : applied
                 ? result.issues.isEmpty
                       ? 'Подписка ${group == null ? 'добавлена' : 'обновлена'}'
                       : 'Подписка импортирована с замечаниями'
@@ -151,7 +195,12 @@ class _ImportDialogState extends State<ImportDialog> {
         );
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _reviewing = false;
+        });
+      }
     }
   }
 
@@ -271,7 +320,7 @@ class _ImportDialogState extends State<ImportDialog> {
         FilledButton(
           key: const Key('import-submit'),
           onPressed: _loading ? null : _submit,
-          child: _loading
+          child: _loading && !_reviewing
               ? const SizedBox(
                   width: 20,
                   height: 20,
