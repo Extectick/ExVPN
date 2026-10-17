@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "taskId": "EXVPN-E7-006",
+  "sourceCommit": "57a963ada6ede5b541dd5e784372518e8b511fc3",
+  "ciCodeCommit": "bbce9eaf54e341b5a258e14cf72464b18d16284c",
+  "productionCodeCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f",
+  "appVersion": "0.1.0+11",
+  "runId": 38986346005,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/38986346005",
+  "createdAtUtc": "2026-10-17T00:26:07Z",
+  "completedAtUtc": "2026-10-17T00:46:15Z",
+  "status": "completed",
+  "conclusion": "success",
+  "selector": {
+    "reason": "full_production_or_unknown_path",
+    "skipNativeBuild": false,
+    "verifiedInBothJobSelectorStepLogs": true,
+    "qualification": "The push changes CI scripts, so the actual workflow must select a full build. Later qa_only=true lines are synthetic fixture output, not the workflow decision."
+  },
+  "jobs": [
+    {
+      "id": 117258603106,
+      "name": "Windows",
+      "startedAtUtc": "2026-10-17T00:26:07Z",
+      "completedAtUtc": "2026-10-17T00:37:32Z",
+      "durationSeconds": 685,
+      "conclusion": "success"
+    },
+    {
+      "id": 117258603376,
+      "name": "Android",
+      "startedAtUtc": "2026-10-17T00:26:07Z",
+      "completedAtUtc": "2026-10-17T00:46:15Z",
+      "durationSeconds": 1208,
+      "conclusion": "success"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 12083157842,
+      "name": "exvpn-windows-debug-57a963ada6ede5b541dd5e784372518e8b511fc3",
+      "sizeInBytes": 72121192,
+      "archiveDigest": "sha256:9f51436aa8cfea6e49502b45de9066b470882fbdcb6d682619a60f3a63270cfe"
+    },
+    {
+      "id": 12083731976,
+      "name": "exvpn-android-debug-57a963ada6ede5b541dd5e784372518e8b511fc3",
+      "sizeInBytes": 99829908,
+      "archiveDigest": "sha256:aab54322a64de97373df22ab960190f93ed902aac6c71bef259606160940fcdf"
+    }
+  ],
+  "remoteQaOnlyRunVerified": false,
+  "limitations": [
+    "This run validates the full-build branch of the new selector, not the QA-only native-packaging skip branch.",
+    "Job timings are observations, not a controlled before/after speed comparison.",
+    "Artifacts are development/debug packages; CI does not validate installed TUN, WFP, DNS, devices or release signing.",
+    "Artifact digests describe GitHub archives, not the local installed APK or installer."
+  ]
+}

@@ -1,0 +1,272 @@
+{
+  "format": 1,
+  "task": "E1-011 TCP synchronized Windows teardown diagnosis",
+  "runId": "55649593-765b-4f9f-89aa-6d572e4bf627",
+  "recordedUtc": "2026-10-17T00:39:39.344143Z",
+  "status": "DIAGNOSTIC_COMPLETE_C_GATE_FAILED",
+  "runtimeSeconds": 69.39,
+  "productionChanged": false,
+  "hostNetworkChanged": false,
+  "matrixComplete": true,
+  "allCasesPassed": false,
+  "production": {
+    "build": "0.1.0+11",
+    "sourceCommit": "ad9b2579245b68b66bc2f9364b1d7cd5d8a8192f",
+    "serviceSha256": "90bbda656a9f051da91e9a80c4ebed98265d513309acd600b731b1876c6a1a32",
+    "installerSha256": "eb071b0ad883e73842eb32bacdd23d7ce1005b5b20e8e312708296d6613b3333"
+  },
+  "qa": {
+    "binaryPath": "artifacts/qa/windows-teardown-tcp-20261017-073434-8560f2e9/qa-teardown.exe",
+    "binarySha256": "c0fe256996aa99cb23e8674acdd96af20c5a11b89774495d255217260b55ba5a",
+    "buildProofSha256": "ea033adcd11e4d1e0c72bec2055e27110b43ad278786d748471eaabd99b2c79c",
+    "sourceCommit": "173cdf0d99552eae5c1e8bf0e35b5c72c4d8daf5",
+    "sourceState": "committed; exact source bytes checked against the build record",
+    "sourceFiles": [
+      {
+        "path": "native/windows/cmd/qa-teardown/main_windows_test.go",
+        "sha256": "1c5978cb27e56a73fb2d200d9433ada70f3830e279a1e2a9786784b7a6bf0d30"
+      },
+      {
+        "path": "native/windows/cmd/qa-teardown/main_windows.go",
+        "sha256": "b0bf4ca7805e3958a0f503c6a5c216066b33bd38cd5dd48d2ca934d9ff0f1a17"
+      },
+      {
+        "path": "native/windows/cmd/qa-teardown/observe_windows.go",
+        "sha256": "cabb0e2ef852af35f555191a04e80011cd09e649d608f2ae7feb57e04a5cdc06"
+      },
+      {
+        "path": "scripts/qa/guest-teardown-qa.ps1",
+        "sha256": "a2d594d20d179bcbdf88e80b7600dcbd432cfad8a985621bad14578157d69a28"
+      },
+      {
+        "path": "scripts/qa/run-windows-teardown.ps1",
+        "sha256": "46343c2eecc8064f3709fbab24dcf903dca7856fecb70fb2f756710f96e39f52"
+      },
+      {
+        "path": "scripts/qa/teardown-qa-lib.ps1",
+        "sha256": "9b1ba9cf7d139b82d50b9d995b70b758d3ed2132e8bc1e82f7195b4acabf1ccb"
+      },
+      {
+        "path": "scripts/qa/test-teardown-qa.ps1",
+        "sha256": "dddd26a464d9704ffd427bd5f4b2b7facf5aba88656dfbc2df2918e5281653c0"
+      }
+    ],
+    "sourceUnchangedSinceBuild": true,
+    "goVersion": "go version go1.27.2 windows/amd64",
+    "nativeGoModSha256": "34e1923fc15204f2dd7ecc35913e8f9ee9d736556c8055e84a037bcf5a22da3e",
+    "nativeGoSumSha256": "700607f3a72de0362d8ad9249b970ae1137303fb59146464c369890b5623c674",
+    "checks": {
+      "goTest": "PASS",
+      "goVet": "PASS",
+      "goTopLevelTests": 13,
+      "ps7Checks": 22,
+      "ps51Checks": 22,
+      "ps7Parser": "PASS",
+      "ps51Parser": "PASS",
+      "independentReadOnlyReview": "PASS"
+    }
+  },
+  "gate": {
+    "wireVersion": 1,
+    "milliseconds": 10000,
+    "start": "host receives close-intent on still-live data connection after echo/positive ACK and client Established",
+    "closeReadyAck": "host gate and EOF reader start before ACK; client drains ACK then executes case order",
+    "control": "different exact TCP tuple retrieves frozen outcome; cannot move deadline",
+    "deadline": "monotonic elapsed checked before success, including table-call completion",
+    "crossMachineClockComparisons": false,
+    "sharedFolderSynchronizationInsideGuard": false
+  },
+  "cases": [
+    {
+      "case": "A",
+      "clientEstablished": true,
+      "hostEstablished": true,
+      "payloadBytes": 32,
+      "payloadAndAcksDrained": true,
+      "gatePassed": true,
+      "readEnd": "eof",
+      "eof": true,
+      "gateElapsedMilliseconds": 26,
+      "hostFinalStates": [],
+      "guestAfterStates": [
+        11
+      ],
+      "sampleCount": 2,
+      "hostStateHistogram": [],
+      "lastObservationBeforeDeadline": [
+        {
+          "elapsedMs": 26,
+          "states": []
+        }
+      ],
+      "clientControlTupleDistinct": true,
+      "hostControlTupleDistinct": true,
+      "readyToCloseStartedNanos": 0,
+      "readyToCloseReturnedNanos": 0,
+      "guardCalls": []
+    },
+    {
+      "case": "B",
+      "clientEstablished": true,
+      "hostEstablished": true,
+      "payloadBytes": 32,
+      "payloadAndAcksDrained": true,
+      "gatePassed": true,
+      "readEnd": "eof",
+      "eof": true,
+      "gateElapsedMilliseconds": 26,
+      "hostFinalStates": [],
+      "guestAfterStates": [
+        11
+      ],
+      "sampleCount": 2,
+      "hostStateHistogram": [],
+      "lastObservationBeforeDeadline": [
+        {
+          "elapsedMs": 26,
+          "states": []
+        }
+      ],
+      "clientControlTupleDistinct": true,
+      "hostControlTupleDistinct": true,
+      "readyToCloseStartedNanos": 0,
+      "readyToCloseReturnedNanos": 0,
+      "guardCalls": [
+        {
+          "action": "Suspend",
+          "ok": true,
+          "startedUtc": "2026-10-17T00:36:18.6065564Z",
+          "finishedUtc": "2026-10-17T00:36:18.6077926Z"
+        },
+        {
+          "action": "Disarm",
+          "ok": true,
+          "startedUtc": "2026-10-17T00:36:18.6077926Z",
+          "finishedUtc": "2026-10-17T00:36:18.6130631Z"
+        }
+      ]
+    },
+    {
+      "case": "C",
+      "clientEstablished": true,
+      "hostEstablished": true,
+      "payloadBytes": 32,
+      "payloadAndAcksDrained": true,
+      "gatePassed": false,
+      "readEnd": "timeout",
+      "eof": false,
+      "gateElapsedMilliseconds": 10016,
+      "hostFinalStates": [
+        5
+      ],
+      "guestAfterStates": [],
+      "sampleCount": 381,
+      "hostStateHistogram": [
+        {
+          "state": 5,
+          "observations": 381
+        }
+      ],
+      "lastObservationBeforeDeadline": [
+        {
+          "elapsedMs": 9990,
+          "states": [
+            5
+          ]
+        }
+      ],
+      "clientControlTupleDistinct": true,
+      "hostControlTupleDistinct": true,
+      "readyToCloseStartedNanos": 1175900,
+      "readyToCloseReturnedNanos": 1175900,
+      "guardCalls": [
+        {
+          "action": "Suspend",
+          "ok": true,
+          "startedUtc": "2026-10-17T00:36:18.9112449Z",
+          "finishedUtc": "2026-10-17T00:36:18.9124208Z"
+        },
+        {
+          "action": "Disarm",
+          "ok": true,
+          "startedUtc": "2026-10-17T00:36:18.9124208Z",
+          "finishedUtc": "2026-10-17T00:36:18.9156433Z"
+        }
+      ]
+    }
+  ],
+  "cleanup": {
+    "watchdogPassed": true,
+    "readOnlyPostcheckPassed": true,
+    "serviceRunning": true,
+    "serviceSystem": true,
+    "serviceBindingUnchanged": true,
+    "serviceSha256": "90bbda656a9f051da91e9a80c4ebed98265d513309acd600b731b1876c6a1a32",
+    "guardArmed": false,
+    "tunnelAbsent": true,
+    "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+    "helperProcesses": 0,
+    "watchdogProcesses": 0,
+    "ownedHostServerStopped": true,
+    "watchdogTimedOut": false
+  },
+  "conclusion": "A and B received EOF and drained in26ms; only C retained the exact host data tuple in Established past10s while the guest tuple disappeared. With the same listener, network, synthetic payload and handshake, this isolates the Suspend-before-Close order as the differentiating condition. It does not identify the exact packet-drop/WFP event or validate a production fix.",
+  "limitations": [
+    "One A/B/C diagnostic run; no packet trace and no production-order change.",
+    "Initial ownership checkpoint hard-kill window remains fail closed and was not injected.",
+    "Zero recorded client durations reflect clock measurement granularity; no zero-latency claim.",
+    "E1-011 remains open until a production fix and targeted runtime/release validation."
+  ],
+  "previousEvidence": {
+    "path": ".private/windows-lifecycle-results/bb1c7472-8dd4-492b-9def-fd84a7908555/teardown-summary.json",
+    "sha256": "1df257d67bdb33f9381498179ff1d91e4316311297383f43b306c2bb1022f901",
+    "statusPreserved": "INCONCLUSIVE_QA_SYNCHRONIZATION"
+  },
+  "evidence": [
+    {
+      "path": ".private/windows-lifecycle-results/55649593-765b-4f9f-89aa-6d572e4bf627/experiment.json",
+      "sha256": "64e16f557ee58df13c404ac6e96654887476326c910e62567671fbb2edf1424e"
+    },
+    {
+      "path": ".private/windows-lifecycle-results/55649593-765b-4f9f-89aa-6d572e4bf627/cleanup.json",
+      "sha256": "aa2d8d9881cde4bc8cc2d9d23a22522dc7a020adcd62ea5cb66e8f71615080ba"
+    },
+    {
+      "path": ".private/windows-lifecycle-results/55649593-765b-4f9f-89aa-6d572e4bf627/postcheck.json",
+      "sha256": "33f0ef6839466677f906da4278faea6d411962d5e318bbc8df02853411af20f6"
+    },
+    {
+      "path": ".private/windows-lifecycle-results/55649593-765b-4f9f-89aa-6d572e4bf627/baseline.json",
+      "sha256": "21fa70213820d1683fec9651f9cbb3b4a8f980023c2533297057ac744698d59b"
+    },
+    {
+      "path": "artifacts/qa/windows-teardown-tcp-20261017-073434-8560f2e9/build.json",
+      "sha256": "ea033adcd11e4d1e0c72bec2055e27110b43ad278786d748471eaabd99b2c79c"
+    },
+    {
+      "path": ".private/windows-lifecycle-results/55649593-765b-4f9f-89aa-6d572e4bf627/client-A.json",
+      "sha256": "df73ebae05d42255786b8abeb864f5bb762f0bdb26ec3743fbefa3b66adea94c"
+    },
+    {
+      "path": ".private/teardown-inputs/55649593-765b-4f9f-89aa-6d572e4bf627/server/result-A.json",
+      "sha256": "0952c5ee0a672c4a721dd71cfb9ef3ecfe8934229628dabf0bcb583e69283bf7"
+    },
+    {
+      "path": ".private/windows-lifecycle-results/55649593-765b-4f9f-89aa-6d572e4bf627/client-B.json",
+      "sha256": "d258def0af2dd91235ba7ce216ee36243fe40182bff0854f19a60d72ba17b037"
+    },
+    {
+      "path": ".private/teardown-inputs/55649593-765b-4f9f-89aa-6d572e4bf627/server/result-B.json",
+      "sha256": "c42b29dd2339b81fef49383a19d727e7d765ad5d9d9e472d781fcf3f447fa2a7"
+    },
+    {
+      "path": ".private/windows-lifecycle-results/55649593-765b-4f9f-89aa-6d572e4bf627/client-C.json",
+      "sha256": "e5464d6f9e3cafaae75279268861afc4b7bacb77bafc2653998119a2927c394a"
+    },
+    {
+      "path": ".private/teardown-inputs/55649593-765b-4f9f-89aa-6d572e4bf627/server/result-C.json",
+      "sha256": "5a903dfd7d28f4b644c4c364005f6469d7c5bb5b0cc62d9904614cc230e4e261"
+    }
+  ],
+  "privateReportSha256": "da28d157b8dd82f791e120743532430f13241d15961f15f511697b72d849b88c"
+}

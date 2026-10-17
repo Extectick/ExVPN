@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "recordedUtc": "2026-10-17T00:43:19.5018079+00:00",
+  "recordedUtc": "2026-10-17T07:43:19.5018079+07:00",
   "task": "EXVPN-E6-004",
   "status": "CLI_READY_INTEGRATION_NOT_CONFIGURED",
   "cli": {
@@ -106,7 +106,7 @@
   "patchCreated": false,
   "appSdkChanged": false,
   "systemGitConfigChanged": false,
-  "sourceState": "working tree; commit pending",
+  "sourceState": "committed; CLI pin and documentation at aaaf6f43826508cea252c1fd0018c98b087bbde2",
   "evidence": [
     {
       "sha256": "363e54ecb6ede9e6a73da708fa1535c92f8c0eaeb9724b85fcbf059e0ae27aaf",
