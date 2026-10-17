@@ -29,7 +29,17 @@ function Get-BuildImpactPathKind([string]$Path) {
         'scripts/qa/test-windows-transport-lifecycle.ps1',
         'scripts/qa/windows-transport-lifecycle-lib.ps1',
         'scripts/qa/android-lifecycle-tools.ps1',
-        'scripts/qa/test-android-lifecycle-tools.ps1'
+        'scripts/qa/test-android-lifecycle-tools.ps1',
+        'native/windows/cmd/qa-teardown/main_windows.go',
+        'native/windows/cmd/qa-teardown/observe_windows.go',
+        'native/windows/cmd/qa-teardown/main_windows_test.go',
+        'scripts/qa/android-dns-capture/main.go',
+        'scripts/qa/android-dns-capture/main_test.go',
+        'scripts/qa/android-dns-capture/test.ps1',
+        'scripts/qa/guest-teardown-qa.ps1',
+        'scripts/qa/run-windows-teardown.ps1',
+        'scripts/qa/teardown-qa-lib.ps1',
+        'scripts/qa/test-teardown-qa.ps1'
     )) { return 'qa' }
     # Documentation may accompany a QA change, but cannot itself authorize a
     # skip. Build inputs such as assets/SOURCES.md and licenses are not here.

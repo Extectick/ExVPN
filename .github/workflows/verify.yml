@@ -49,8 +49,35 @@ jobs:
         id: build_impact
         continue-on-error: true
         run: ./scripts/ci/build-impact.ps1
+      - name: Cache pinned SDK archives
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          # Archives only: bootstrap rechecks their SHA-256 before extraction.
+          # Keep these exact names aligned with toolchain.lock.json.
+          path: |
+            .tools/downloads/go1.27.2.windows-amd64.zip
+            .tools/downloads/flutter_windows_3.47.7-stable.zip
+          key: exvpn-sdk-archives-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/bootstrap/toolchain.lock.json', 'scripts/bootstrap/bootstrap.ps1') }}
+          enableCrossOsArchive: false
       - name: Install repository-pinned Flutter and Go
+        # Always run, including cache hits; a restored archive is not SDK proof.
         run: ./scripts/bootstrap/bootstrap.ps1
+      - name: Cache verified Go dependencies and compiler outputs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .tools/cache/go/pkg/mod
+            .tools/cache/go-build
+          # Targets populate different native/race work; do not race to save
+          # an incomplete cache under a shared immutable key.
+          key: exvpn-go-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/toolchain.lock.json', 'native/core/go.mod', 'native/core/go.sum', 'native/android/go.mod', 'native/android/go.sum', 'native/windows/go.mod', 'native/windows/go.sum', 'native/patches/xray-lifecycle.lock.json', 'native/patches/xray-lifecycle.patch') }}
+          enableCrossOsArchive: false
+      - name: Cache locked Pub packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools/cache/pub
+          key: exvpn-pub-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/bootstrap/toolchain.lock.json', 'apps/exvpn/pubspec.lock', 'packages/exvpn_domain/pubspec.lock', 'packages/exvpn_client_state/pubspec.lock', 'packages/exvpn_updates/pubspec.lock') }}
+          enableCrossOsArchive: false
       - name: Prepare Android SDK packages on the disposable runner
         if: matrix.target == 'Android'
         env:
@@ -74,6 +101,8 @@ jobs:
           & $sdkManager @packages
           if ($LASTEXITCODE -ne 0) { throw 'Pinned Android packages could not be installed.' }
       - name: Analyze, test, and build
+        # Cache hits never skip version/revision, lockfile, module verification
+        # or tests. verify.ps1 keeps Go test -count=1 and -mod=readonly.
         env:
           EXVPN_CI_SKIP_NATIVE_BUILD: ${{ steps.build_impact.outcome == 'success' && steps.build_impact.outputs.skip_native_build == 'true' }}
           EXVPN_CI_TARGET: ${{ matrix.target }}

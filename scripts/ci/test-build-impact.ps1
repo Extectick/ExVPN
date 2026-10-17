@@ -17,6 +17,35 @@ function Reject([scriptblock]$Operation,[string]$ErrorCode,[string]$Label) {
 $qa='apps/exvpn/integration_test/windows_sandbox_test.dart'
 $qaOther='scripts/qa/guest-transport-observe.ps1'
 $production='apps/exvpn/lib/main.dart'
+$controller='native/windows/controller.go'
+$expandedQaPaths=@(
+    'native/windows/cmd/qa-teardown/main_windows.go',
+    'native/windows/cmd/qa-teardown/observe_windows.go',
+    'native/windows/cmd/qa-teardown/main_windows_test.go',
+    'scripts/qa/android-dns-capture/main.go',
+    'scripts/qa/android-dns-capture/main_test.go',
+    'scripts/qa/android-dns-capture/test.ps1',
+    'scripts/qa/guest-teardown-qa.ps1',
+    'scripts/qa/run-windows-teardown.ps1',
+    'scripts/qa/teardown-qa-lib.ps1',
+    'scripts/qa/test-teardown-qa.ps1'
+)
+foreach ($path in $expandedQaPaths) {
+    Check ((Get-BuildImpactPathKind $path) -ceq 'qa') "reviewed diagnostic path: $path"
+}
+foreach ($path in @(
+    $controller,
+    'native/windows/cmd/qa-teardown/new_windows.go',
+    'native/windows/cmd/qa-teardown/nested/main_windows.go',
+    'native/windows/cmd/qa-teardown/go.mod',
+    'scripts/qa/android-dns-capture/new.go',
+    'scripts/qa/android-dns-capture/nested/main.go',
+    'scripts/qa/android-dns-capture/README.md',
+    'scripts/qa/run-windows-teardown-extra.ps1',
+    'Scripts/qa/android-dns-capture/main.go'
+)) {
+    Check ((Get-BuildImpactPathKind $path) -ceq 'unknown') "diagnostic allowlist does not widen to neighbors: $path"
+}
 foreach ($path in @($qa,$qaOther,'native/windows/cmd/qa-desktop/output_windows_test.go','native/android/cmd/qa-server/main.go','scripts/windows/sandbox/guest-app-upgrade.ps1','scripts/qa/test-android-lifecycle-tools.ps1')) {
     Check ((Get-BuildImpactPathKind $path) -ceq 'qa') "known standalone QA path: $path"
 }
@@ -86,6 +115,7 @@ try {
     Write-Fixture $qa 'qa baseline'
     Write-Fixture $qaOther 'second qa baseline'
     Write-Fixture $production 'production baseline'
+    Write-Fixture $controller 'controller baseline'
     Write-Fixture 'docs/PLAN.md' 'documentation baseline'
     $script:base=Commit-Fixture
 
@@ -116,6 +146,49 @@ try {
     Write-Fixture 'native/windows/cmd/qa-desktop/new_test.go' 'synthetic standalone test'
     [void](Commit-Fixture)
     Check ((Decision).skipNativeBuild) 'new Go file in reviewed standalone command is QA-only'
+    foreach ($path in $expandedQaPaths) {
+        From-Base
+        Write-Fixture $path 'synthetic reviewed diagnostic'
+        [void](Commit-Fixture)
+        $decision=Decision
+        Check ($decision.skipNativeBuild -and $decision.qaEntries -eq 1 -and $decision.commitCount -eq 1) "exact diagnostic-only push skips packaging: $path"
+    }
+    foreach ($path in @($controller,'native/core/go.sum','scripts/bootstrap/toolchain.lock.json','scripts/qa/android-dns-capture/not-reviewed.ps1')) {
+        From-Base
+        foreach ($qaPath in $expandedQaPaths) { Write-Fixture $qaPath 'diagnostics mixed with a full-build input' }
+        Write-Fixture $path 'non-QA change'
+        [void](Commit-Fixture)
+        Must-Build (Decision) "all diagnostic paths cannot hide a full-build input: $path"
+    }
+    foreach ($pair in @(
+        @('native/windows/cmd/qa-teardown/main_windows.go','native/windows/cmd/qa-teardown/observe_windows.go'),
+        @('scripts/qa/android-dns-capture/main.go','scripts/qa/android-dns-capture/main_test.go')
+    )) {
+        From-Base
+        Write-Fixture ($pair[0]) 'diagnostic baseline'
+        $diagnosticBase=Commit-Fixture
+        [void](Git @('rm','--quiet','--',$pair[0]))
+        [void](Commit-Fixture)
+        Must-Build (Decision -Before $diagnosticBase) "diagnostic deletion remains full: $($pair[0])"
+        [void](Git @('checkout','--quiet','--detach',$diagnosticBase))
+        [void](Git @('mv','--',$pair[0],$pair[1]))
+        [void](Commit-Fixture)
+        Must-Build (Decision -Before $diagnosticBase) "diagnostic-to-diagnostic rename remains full: $($pair[0])"
+    }
+    From-Base
+    Write-Fixture $controller 'controller change in an earlier commit'
+    [void](Commit-Fixture)
+    Write-Fixture $controller 'controller baseline'
+    Write-Fixture ($expandedQaPaths[0]) 'diagnostic after controller revert'
+    [void](Commit-Fixture)
+    Must-Build (Decision) 'controller edit and revert cannot be hidden by a diagnostic-only final diff'
+    From-Base
+    Write-Fixture ($expandedQaPaths[0]) 'first diagnostic commit'
+    [void](Commit-Fixture)
+    Write-Fixture ($expandedQaPaths[3]) 'second diagnostic commit'
+    [void](Commit-Fixture)
+    $decision=Decision
+    Check ($decision.skipNativeBuild -and $decision.commitCount -eq 2 -and $decision.qaEntries -eq 2) 'both diagnostic families qualify across an entire QA-only push'
     From-Base
     Write-Fixture $qa 'qa plus docs'
     Write-Fixture 'docs/PLAN.md' 'docs changed'

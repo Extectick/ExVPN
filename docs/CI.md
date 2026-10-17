@@ -25,6 +25,13 @@ lock-файлы, notices, неизвестный путь, удаление/пе
 запуск всегда полные. Allowlist находится в `build-impact-lib.ps1`; разрешать
 целые каталоги `scripts/qa` или `native` нельзя.
 
+Дополнение 2026-10-17: allowlist расширен ровно на десять уже проверяемых
+файлов Windows TCP teardown и Android offline PCAP. Новые соседние файлы,
+controller, зависимости и toolchain по-прежнему требуют native-сборки.
+**131** selector/graph/JUnit fixtures прошли, включая смешанный push,
+удаление, переименование и изменение product-кода с последующим откатом.
+Фактический QA-only run на GitHub остаётся незакрытым критерием E7-006.
+
 Граница фильтра событий: GitHub применяет `paths-ignore` к конечному diff до
 запуска selector. Поэтому push, чей конечный diff содержит только документы,
 не запускает workflow даже при промежуточном изменении и откате product-кода.
@@ -73,6 +80,23 @@ Windows — UI, службу и проверенный Wintun archive. Кома�
 Windows runtime-проверка закрытия соединений ведётся отдельно; успех CI её
 не подтверждает.
 
+Для следующих CI runs добавлены три независимых кеша через
+`actions/cache` **6.1.0**, commit
+`55cc8345863c7cc4c66a329aec7e433d2d1c52a9`:
+
+- Только два точно названных ZIP Flutter/Go. Ключ содержит OS/архитектуру и
+  хеши toolchain lock/bootstrap. Bootstrap всегда заново сверяет SHA-256
+  архивов перед распаковкой; распакованные SDK не кешируются.
+- Go module/build cache. Ключ дополнительно содержит Android/Windows target,
+  все три module/checksum пары и Xray patch/lock; job не конкурируют за один
+  неполный compiler cache. `go mod verify`, readonly и `test -count=1` остаются.
+- Pub cache с ключом по закреплённому SDK и четырём pubspec.lock. Проверка
+  lock-файлов, анализ и тесты не пропускаются при cache hit.
+
+Нет fallback `restore-keys`, cross-OS archive, Gradle cache, приватных данных,
+готовых пакетов или signing keys. Лимиты/оплата GitHub не менялись. Первый run
+может быть cold miss; измеренного cache-hit ускорения пока нет.
+
 Flutter и Go скачиваются с официальных URL с SHA-256 из toolchain lock.
 Android packages: API36, build-tools36.0.0, NDK27.1.12297006 для собственного
 ядра, NDK28.2.13676358 для Flutter plugins. Gradle/AGP/Kotlin закреплены в
@@ -83,7 +107,8 @@ Android source. Runner предоставляет JDK21 и VS C++/ATL/CMake/Wind
 Workflow использует только `contents: read`; Git credentials не остаются в
 checkout. Нет `pull_request_target`, signing secrets, приватной подписки,
 production endpoints или публикации release. Actions закреплены полными SHA,
-проверенными в официальных repositories: checkout7.0.1 и upload-artifact6.0.0.
+проверенными в официальных repositories: checkout7.0.1, upload-artifact6.0.0
+и cache6.1.0.
 Основание: [GitHub secure use](https://docs.github.com/en/actions/reference/security/secure-use).
 
 Артефакты явно названы **debug/development**, хранятся семь дней. Debug APK
