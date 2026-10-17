@@ -1,0 +1,127 @@
+// SPDX-License-Identifier: Apache-2.0
+// Explicit preparation only. Never applied to the Android application build.
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.security.MessageDigest
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.result.ResolvedArtifactResult
+import org.gradle.api.artifacts.result.UnresolvedArtifactResult
+import org.gradle.api.artifacts.result.UnresolvedComponentResult
+import org.gradle.maven.MavenModule
+import org.gradle.maven.MavenPomArtifact
+
+def reject = { String code -> throw new GradleException('exvpn_metadata_' + code) }
+def props = gradle.startParameter.projectProperties
+if (gradle.parent != null || gradle.gradleVersion != '9.3.1' || gradle.startParameter.offline ||
+        System.getenv('GRADLE_RO_DEP_CACHE') || props['exvpnMetadataNetwork'] != 'approved-public-poms' ||
+        !props['exvpnMetadataHome'] || !props['exvpnMetadataOutput'] || !props['exvpnMetadataPlan'] ||
+        !(props['exvpnMetadataPlanSha256'] ==~ /[a-f0-9]{64}/) || !props['exvpnMetadataProject']) reject('invocation_invalid')
+def home = new File(props['exvpnMetadataHome']).canonicalFile
+def projectDir = new File(props['exvpnMetadataProject']).canonicalFile
+def output = new File(props['exvpnMetadataOutput']).canonicalFile
+def planFile = new File(props['exvpnMetadataPlan']).canonicalFile
+if (gradle.gradleUserHomeDir.canonicalFile != home || output.exists() || !planFile.isFile() ||
+        planFile.length() > 8L * 1024 * 1024 || output.parentFile != projectDir.parentFile ||
+        planFile.parentFile != projectDir.parentFile) reject('layout_invalid')
+def bytes = planFile.bytes
+if (MessageDigest.getInstance('SHA-256').digest(bytes).encodeHex().toString() != props['exvpnMetadataPlanSha256']) reject('plan_changed')
+def plan = new JsonSlurper().parse(bytes, 'UTF-8')
+if (plan.schema != 1 || plan.status != 'EXACT_METADATA_PREPARATION_PLAN' ||
+        plan.repositoryPolicy != 'google-mavenCentral-flutter-public-v1' || plan.maximumDepth != 8 || plan.maximumExtra != 64 ||
+        !(plan.runtimeCount instanceof Number) || plan.runtimeCount < 1 || plan.runtimeCount > 3000 ||
+        !(plan.metadataOnlyCount instanceof Number) || plan.metadataOnlyCount < 0 || plan.metadataOnlyCount > 64 ||
+        plan.nodes.size() != plan.runtimeCount + plan.metadataOnlyCount ||
+        plan.nodes.collect { it.id }.unique().size() != plan.nodes.size()) reject('plan_invalid')
+def expected = [:]
+def coordinates = plan.nodes.collect { node ->
+    if (!(node.id ==~ /maven:[A-Za-z0-9_.-]{1,200}:[A-Za-z0-9_.-]{1,200}:[A-Za-z0-9_.-]{1,200}/) ||
+            !(node.pom.sha256 ==~ /[a-f0-9]{64}/) || !(node.pom.size instanceof Number) ||
+            node.pom.size < 1 || node.pom.size > 8L * 1024 * 1024 || !(node.runtimeSelected instanceof Boolean)) reject('node_invalid')
+    def parts = node.id.split(':').drop(1)
+    if (parts[2].toLowerCase(Locale.ROOT).contains('snapshot') ||
+            parts[2].toLowerCase(Locale.ROOT).startsWith('latest.') || parts[2].toLowerCase(Locale.ROOT) in ['latest', 'release']) reject('version_nonexact')
+    expected[node.id] = node
+    parts
+}
+if (plan.nodes.count { it.runtimeSelected } != plan.runtimeCount) reject('roles_invalid')
+def approved = ['https://dl.google.com/dl/android/maven2/', 'https://repo.maven.apache.org/maven2/',
+                'https://storage.googleapis.com/download.flutter.io']
+def safeFailure = { Throwable failure ->
+    def classes = []; def seen = Collections.newSetFromMap(new IdentityHashMap<Throwable, Boolean>())
+    while (failure != null && classes.size() < 8 && seen.add(failure)) {
+        def name = failure.class.name
+        classes.add(name ==~ /(?:org\.gradle\.|java\.|javax\.)[A-Za-z0-9_.$]+/ ? name : 'OTHER')
+        failure = failure.cause
+    }
+    classes
+}
+
+gradle.projectsEvaluated {
+    def project = gradle.rootProject
+    if (project.projectDir.canonicalFile != projectDir) reject('project_path_mismatch')
+    // childProjects is a Map: Groovy's map.empty reads the key "empty", not
+    // isEmpty(), and therefore used to reject every valid empty project.
+    if (!project.childProjects.isEmpty()) reject('child_projects_present')
+    if (!project.repositories.isEmpty()) reject('repositories_present')
+    if (!project.configurations.isEmpty()) reject('configurations_present')
+    def allowed = { repository ->
+        repository.content { content -> coordinates.each { c -> content.includeVersion(c[0], c[1], c[2]) } }
+    }
+    allowed(project.repositories.google())
+    allowed(project.repositories.mavenCentral())
+    allowed(project.repositories.maven { name = 'flutter'; url = project.uri(approved[2]) })
+    gradle.taskGraph.whenReady { graph ->
+        if (graph.allTasks.collect { it.path } != [':prepareExactPoms']) reject('unexpected_task_graph')
+    }
+    project.tasks.register('prepareExactPoms') {
+        outputs.upToDateWhen { false }
+        doLast {
+            def result = [schema: 1, status: 'PREPARED_METADATA_ONLY', success: false,
+                planSha256: props['exvpnMetadataPlanSha256'], runtimeCount: plan.runtimeCount,
+                metadataOnlyCount: plan.metadataOnlyCount, repositories: approved, taskGraph: [':prepareExactPoms'],
+                runtimeDependencyGraphCreated: false, apkBindingVerified: false, licensesReviewed: false, records: []]
+            try {
+                if (project.repositories.collect { it.url.toString() } != approved) reject('repositories_changed')
+                def query = project.dependencies.createArtifactResolutionQuery()
+                coordinates.each { c -> query.forModule(c[0], c[1], c[2]) }
+                def resolved = query.withArtifacts(MavenModule, MavenPomArtifact).execute()
+                def seen = new HashSet<String>()
+                resolved.components.each { component ->
+                    if (!(component.id instanceof ModuleComponentIdentifier)) reject('unknown_component')
+                    def id = "maven:${component.id.group}:${component.id.module}:${component.id.version}".toString()
+                    if (!expected.containsKey(id) || !seen.add(id)) reject('unexpected_component')
+                    def record = [id: id, runtimeSelected: expected[id].runtimeSelected]
+                    if (component instanceof UnresolvedComponentResult) {
+                        record.resultType = 'UNRESOLVED_COMPONENT_RESULT'; record.failureClasses = safeFailure(component.failure)
+                    } else {
+                        def poms = component.getArtifacts(MavenPomArtifact)
+                        if (poms.size() == 1 && poms.first() instanceof ResolvedArtifactResult) {
+                            def pom = poms.first().file.canonicalFile
+                            if (!pom.toPath().startsWith(home.toPath()) || !pom.isFile() || pom.length() != expected[id].pom.size ||
+                                    pom.name != component.id.module + '-' + component.id.version + '.pom') reject('private_pom_invalid')
+                            def content = pom.bytes
+                            def hash = MessageDigest.getInstance('SHA-256').digest(content).encodeHex().toString()
+                            if (hash != expected[id].pom.sha256) reject('pom_bytes_changed')
+                            record.putAll([resultType: 'RESOLVED_ARTIFACT_RESULT', file: pom.path, name: pom.name,
+                                size: content.length, sha256: hash])
+                        } else {
+                            record.resultType = 'UNRESOLVED_OR_AMBIGUOUS_ARTIFACT'
+                            if (poms.size() == 1 && poms.first() instanceof UnresolvedArtifactResult) record.failureClasses = safeFailure(poms.first().failure)
+                        }
+                    }
+                    result.records.add(record)
+                }
+                result.records.sort { it.id }
+                result.success = seen.size() == expected.size() && result.records.every { it.resultType == 'RESOLVED_ARTIFACT_RESULT' }
+                if (!result.success) reject('preparation_incomplete')
+            } catch (Exception failure) {
+                result.success = false
+                result.code = failure.message?.find(/exvpn_metadata_[a-z_]+/) ?: 'exvpn_metadata_preparation_failed'
+                result.failureClasses = safeFailure(failure)
+            }
+            output.setText(JsonOutput.prettyPrint(JsonOutput.toJson(result)) + '\n', 'UTF-8')
+            if (!result.success) throw new GradleException(result.code ?: 'exvpn_metadata_preparation_failed')
+            println "Prepared ${plan.nodes.size()} exact private POMs. Offline application inventory is a separate gate."
+        }
+    }
+}

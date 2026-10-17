@@ -5,12 +5,14 @@ param(
     [ValidateSet('debug','release')][string]$Variant='debug',
     [string]$Repository=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..')),
     [string]$OutputDirectory='',
+    [string]$PrepareMetadataFrom='',
     [string]$AndroidSdkPath=$(if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { Join-Path $env:LOCALAPPDATA 'Android/Sdk' }),
     [string]$JavaPath=$(if ($env:JAVA_HOME) { $env:JAVA_HOME } else { 'C:/Program Files/Android/Android Studio/jbr' })
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'android-runtime-inventory-lib.ps1')
+. (Join-Path $PSScriptRoot 'android-runtime-inventory-preparation.ps1')
 . (Join-Path $PSScriptRoot 'notice-inputs.ps1')
 $Repository=[IO.Path]::GetFullPath($Repository)
 $qaRoot=Join-Path $Repository 'artifacts/qa'
@@ -26,7 +28,8 @@ $sourceTrees=[Collections.Generic.List[object]]::new()
 $snapshotTreeDefinitions=[Collections.Generic.List[object]]::new()
 $relocations=[Collections.Generic.List[object]]::new()
 $pluginInputs=[Collections.Generic.List[object]]::new()
-$environment=@{}
+$prepared=$null; $preparationRun=$null; $seed=$null; $seedHash=$null
+$phase='snapshot'
 $watch=[Diagnostics.Stopwatch]::StartNew()
 
 function Add-SourceInput([string]$Identity,[string]$Path) {
@@ -77,7 +80,8 @@ try {
         [void](Add-SourceInput "flutter/$relative" (Join-Path $flutter $relative))
     }
     if ([IO.File]::ReadAllText((Join-Path $flutter 'bin/cache/engine.realm')).Trim()) { throw 'android_inventory_custom_engine_realm' }
-    foreach ($name in @('android-runtime-inventory.ps1','android-runtime-inventory-lib.ps1','android-runtime-inventory.init.gradle','notice-inputs.ps1')) {
+    foreach ($name in @('android-runtime-inventory.ps1','android-runtime-inventory-lib.ps1','android-runtime-inventory.init.gradle',
+        'android-runtime-inventory-preparation.ps1','android-runtime-inventory-metadata.init.gradle','notice-inputs.ps1')) {
         [void](Add-SourceInput "collector/$name" (Join-Path $PSScriptRoot $name))
     }
     $wrapperProperties=Join-Path $app 'android/gradle/wrapper/gradle-wrapper.properties'
@@ -89,8 +93,12 @@ try {
         ForEach-Object { Join-Path $_.FullName 'gradle-9.3.1/bin/gradle.bat' } | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
     if ($distributions.Count -ne 1) { throw 'android_inventory_gradle_distribution_ambiguous' }
     $gradle=$distributions[0]
+    $gradleDirectory=Split-Path (Split-Path $gradle)
     [void](Add-SourceInput 'tooling/gradle.bat' $gradle)
     [void](Add-SourceInput 'tooling/gradle-launcher.jar' (Join-Path (Split-Path (Split-Path $gradle)) 'lib/gradle-launcher-9.3.1.jar'))
+    foreach ($name in @('gradle-gradle-cli-main-9.3.1.jar','agents/gradle-instrumentation-agent-9.3.1.jar')) {
+        [void](Add-SourceInput ('tooling/'+$name) (Join-Path $gradleDirectory ('lib/'+$name)))
+    }
     if (!(Test-Path -LiteralPath (Join-Path $JavaPath 'bin/java.exe') -PathType Leaf) -or
         !(Test-Path -LiteralPath (Join-Path $AndroidSdkPath 'platforms/android-36/android.jar') -PathType Leaf)) {
         throw 'android_inventory_required_sdk_missing'
@@ -156,6 +164,28 @@ try {
     # Record the explicit relocation outputs separately from original source.
     foreach ($record in $snapshotInputs) { $record.sha256=Get-AndroidInventoryHash $record.file }
     $snapshotInputs.Add([ordered]@{identity='generated/local.properties';file=(Join-Path $android 'local.properties');sha256=Get-AndroidInventoryHash (Join-Path $android 'local.properties')})
+    $selectionSource=Get-AndroidInventorySelectionSource $sourceInputs
+    $readOnlyCache=Join-Path $Repository '.tools/cache/gradle/caches'
+    $privateHome=Join-Path $OutputDirectory 'gradle-user-home'
+    if (Test-Path -LiteralPath $privateHome) { throw 'android_inventory_private_cache_not_empty' }
+    if ($PrepareMetadataFrom) {
+        $phase='metadata-plan'
+        $seedPath=Assert-AndroidInventoryPath $PrepareMetadataFrom @($Repository)
+        $seedHash=(Add-SourceInput 'preparation/seed' $seedPath).sha256
+        $seed=Read-AndroidInventorySeed $seedPath @($Repository)
+        Assert-AndroidInventorySeed $seed $Variant $engine $flutterCommit $selectionSource
+        $plan=Get-AndroidInventoryPreparedPlan $seed @($readOnlyCache)
+        foreach ($node in $plan.nodes) { [void](Add-SourceInput ('preparation/'+$node.id) $node.sourceFile) }
+        $planPath=Join-Path $OutputDirectory 'metadata-plan.json'
+        $plan | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $planPath -Encoding utf8NoBOM
+        $planHash=Get-AndroidInventoryHash $planPath
+        $snapshotInputs.Add(@{identity='generated/metadata-plan';file=$planPath;sha256=$planHash})
+        $metadataProject=Join-Path $OutputDirectory 'metadata-project'
+        [IO.Directory]::CreateDirectory($metadataProject) | Out-Null
+        [IO.File]::WriteAllText((Join-Path $metadataProject 'settings.gradle'),"rootProject.name = 'exvpn-metadata-only'`n",[Text.UTF8Encoding]::new($false))
+        [IO.File]::WriteAllText((Join-Path $metadataProject 'build.gradle'),"// No plugins, dependencies or application build tasks.`n",[Text.UTF8Encoding]::new($false))
+        $snapshotTreeDefinitions.Add(@{identity='generated/metadata-project';root=$metadataProject;excludedRelativePaths=@()})
+    }
     $inputFingerprint=Get-AndroidInventoryFingerprint $sourceInputs
     $snapshotFingerprint=Get-AndroidInventoryFingerprint $snapshotInputs
     $snapshotTrees=@(foreach ($tree in $snapshotTreeDefinitions) {
@@ -165,38 +195,53 @@ try {
     $snapshotInputs | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $OutputDirectory 'snapshot-inputs.json') -Encoding utf8NoBOM
     $sourceTrees | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $OutputDirectory 'source-trees.json') -Encoding utf8NoBOM
     $snapshotTrees | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $OutputDirectory 'snapshot-trees.json') -Encoding utf8NoBOM
-    foreach ($key in @('JAVA_HOME','PATH','ANDROID_HOME','ANDROID_SDK_ROOT','GRADLE_USER_HOME','GRADLE_RO_DEP_CACHE','GRADLE_OPTS','JAVA_OPTS','JDK_JAVA_OPTIONS','JAVA_TOOL_OPTIONS','_JAVA_OPTIONS','EXVPN_ANDROID_PACKAGE_INPUTS')) { $environment[$key]=[Environment]::GetEnvironmentVariable($key,'Process') }
-    $env:JAVA_HOME=[IO.Path]::GetFullPath($JavaPath)
-    $env:PATH=(Join-Path $env:JAVA_HOME 'bin')+[IO.Path]::PathSeparator+$env:PATH
-    $env:ANDROID_HOME=[IO.Path]::GetFullPath($AndroidSdkPath)
-    $env:ANDROID_SDK_ROOT=$env:ANDROID_HOME
-    $env:GRADLE_USER_HOME=Join-Path $OutputDirectory 'gradle-user-home'
-    # Gradle 9.3.1 requires the directory CONTAINING modules-2.
-    $env:GRADLE_RO_DEP_CACHE=Join-Path $Repository '.tools/cache/gradle/caches'
-    foreach ($key in @('GRADLE_OPTS','JAVA_OPTS','JDK_JAVA_OPTIONS','JAVA_TOOL_OPTIONS','_JAVA_OPTIONS','EXVPN_ANDROID_PACKAGE_INPUTS')) { [Environment]::SetEnvironmentVariable($key,$null,'Process') }
+    function Assert-AllInputsUnchanged {
+        Assert-InputsUnchanged $sourceInputs
+        Assert-InputsUnchanged $snapshotInputs
+        foreach ($tree in @($sourceTrees)+@($snapshotTrees)) { Assert-AndroidInventoryTreeUnchanged $tree }
+    }
+    Assert-AllInputsUnchanged
+    $baseProcess=@{GradleDirectory=$gradleDirectory;JavaPath=[IO.Path]::GetFullPath($JavaPath);
+        AndroidSdkPath=[IO.Path]::GetFullPath($AndroidSdkPath);PrivateHome=$privateHome;ReadOnlyCache=$readOnlyCache}
+    if ($PrepareMetadataFrom) {
+        $phase='preparation'
+        $preparedPath=Join-Path $OutputDirectory 'prepared-poms.json'
+        $prepareArgs=@('--project-dir',$metadataProject,'--project-cache-dir',(Join-Path $OutputDirectory 'metadata-project-cache'),
+            '--init-script',(Join-Path $PSScriptRoot 'android-runtime-inventory-metadata.init.gradle'),
+            '-Dorg.gradle.internal.http.connectionTimeout=15000','-Dorg.gradle.internal.http.socketTimeout=15000',
+            '-PexvpnMetadataNetwork=approved-public-poms',"-PexvpnMetadataHome=$privateHome","-PexvpnMetadataProject=$metadataProject",
+            "-PexvpnMetadataPlan=$planPath","-PexvpnMetadataPlanSha256=$planHash","-PexvpnMetadataOutput=$preparedPath",':prepareExactPoms')
+        $start=New-AndroidInventoryGradleStartInfo @baseProcess -Phase preparation -Project $metadataProject -Arguments $prepareArgs -AllowMetadataNetwork
+        Write-Host 'Preparing pinned public POM metadata in a fresh private cache (maximum 180 seconds).'
+        $preparationRun=Invoke-AndroidInventoryGradle $start preparation $OutputDirectory
+        Assert-AllInputsUnchanged
+        if ($preparationRun.exitCode -ne 0 -or $preparationRun.terminationReason -or !(Test-Path -LiteralPath $preparedPath)) {
+            throw 'android_inventory_metadata_preparation_failed'
+        }
+        $prepared=Get-Content -LiteralPath $preparedPath -Raw | ConvertFrom-Json -AsHashtable
+        Assert-AndroidInventoryPreparedResult $prepared $plan $planHash $privateHome
+    }
+    $phase='offline'
     $rawOutput=Join-Path $OutputDirectory 'resolved-graph.json'
     $init=Join-Path $PSScriptRoot 'android-runtime-inventory.init.gradle'
-    $arguments=@('--offline','--no-daemon','--no-build-cache','--no-configuration-cache','--console=plain','--max-workers=2',
-        '-Dorg.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=1g',
-        '--project-cache-dir',(Join-Path $OutputDirectory 'project-cache'),
-        '--gradle-user-home',$env:GRADLE_USER_HOME,
+    $arguments=@('--project-cache-dir',(Join-Path $OutputDirectory 'project-cache'),
         '--project-dir',$android,'--init-script',$init,
         '-Ptarget-platform=android-arm64,android-x64',
         "-PexvpnInventoryVariant=$Variant","-PexvpnInventoryEngine=$engine",
-        "-PexvpnInventoryGradleUserHome=$env:GRADLE_USER_HOME",
+        "-PexvpnInventoryGradleUserHome=$privateHome",
         "-PexvpnInventoryRoot=$OutputDirectory","-PexvpnInventoryProject=$android","-PexvpnInventoryOutput=$rawOutput",
         ':app:exvpnRuntimeInventory')
-    & $gradle @arguments *> (Join-Path $OutputDirectory 'gradle.log')
-    $gradleExit=$LASTEXITCODE
-    Assert-InputsUnchanged $sourceInputs
-    Assert-InputsUnchanged $snapshotInputs
-    foreach ($tree in @($sourceTrees)+@($snapshotTrees)) { Assert-AndroidInventoryTreeUnchanged $tree }
-    if ($gradleExit -ne 0 -or !(Test-Path -LiteralPath $rawOutput)) { throw 'android_inventory_gradle_resolution_failed' }
+    $start=New-AndroidInventoryGradleStartInfo @baseProcess -Phase offline -Project $android -Arguments $arguments
+    Write-Host 'Running independent strict offline input graph verification (maximum 180 seconds).'
+    $offlineRun=Invoke-AndroidInventoryGradle $start offline $OutputDirectory
+    Assert-AllInputsUnchanged
+    if ($offlineRun.exitCode -ne 0 -or $offlineRun.terminationReason -or !(Test-Path -LiteralPath $rawOutput)) { throw 'android_inventory_gradle_resolution_failed' }
     $graph=Get-Content -LiteralPath $rawOutput -Raw | ConvertFrom-Json -AsHashtable
     $roots=@((Join-Path $Repository '.tools/cache/gradle/caches'),$OutputDirectory)
     [void](Assert-AndroidInventoryGraph $graph $Variant $engine -ArtifactRoots $roots -VerifyBytes)
-    Add-AndroidInventoryModuleMetadata $graph @($roots[0],(Join-Path $env:GRADLE_USER_HOME 'caches'))
+    Add-AndroidInventoryModuleMetadata $graph @($roots[0],(Join-Path $privateHome 'caches'))
     $counts=Assert-AndroidInventoryGraph $graph $Variant $engine -ArtifactRoots $roots -VerifyBytes
+    if ($seed) { Assert-AndroidInventorySeedGraph $seed $graph }
     $dependencyFiles=@(foreach ($node in $graph.components) {
         foreach ($file in @($node.artifacts)+@($node.metadata)) { [ordered]@{identity=$node.id+'/'+$file.role+'/'+$file.name;sha256=$file.sha256} }
         if ($node.kind -ceq 'project') { [ordered]@{identity=$node.id+'/build-script';sha256=$node.buildFile.sha256} }
@@ -205,6 +250,9 @@ try {
         appVersion=($appVersion.Groups[1].Value+'+'+$appVersion.Groups[2].Value);
         sourceFingerprint=$inputFingerprint;snapshotFingerprint=$snapshotFingerprint;sourceInputsUnchanged=$true;
         sourceTreeMembershipUnchanged=$true;snapshotTreeMembershipUnchanged=$true;
+        selectionSource=$selectionSource;preparedInputWorkflow=[bool]$PrepareMetadataFrom;seedSha256=$seedHash;
+        privateCacheInitiallyEmpty=$true;preparation=$preparationRun;offline=$offlineRun;
+        semanticGraphSha256=Get-AndroidInventorySemanticHash $graph;
         dependencyFingerprint=Get-AndroidInventoryFingerprint $dependencyFiles;
         flutter=[ordered]@{version=$pins.flutter.version;revision=$flutterCommit;engineRevision=$engine};
         plugins=@($pluginInputs);relocations=@($relocations);counts=$counts;graph=$graph;
@@ -219,10 +267,9 @@ try {
     Write-Host "Inventory evidence: $OutputDirectory"
 } catch {
     $code=if ($_.Exception.Message -cmatch '^(android_inventory_[a-z_]+)$') { $Matches[1] } else { 'android_inventory_collection_failed' }
-    [ordered]@{schema=1;status='FAILED';code=$code;variant=$Variant;apkBindingVerified=$false;licensesReviewed=$false} |
+    [ordered]@{schema=1;status='FAILED';code=$code;phase=$phase;variant=$Variant;apkBindingVerified=$false;licensesReviewed=$false} |
         ConvertTo-Json | Set-Content -LiteralPath (Join-Path $OutputDirectory 'failure.json') -Encoding utf8NoBOM
     throw $code
 } finally {
-    foreach ($key in $environment.Keys) { [Environment]::SetEnvironmentVariable($key,$environment[$key],'Process') }
     $watch.Stop()
 }

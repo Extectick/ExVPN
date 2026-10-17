@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #requires -Version 7.0
 [CmdletBinding()]
-param([switch]$WithGradleFixture)
+param([switch]$WithGradleFixture,[switch]$WithMetadataFixture)
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'android-runtime-inventory-lib.ps1')
+. (Join-Path $PSScriptRoot 'android-runtime-inventory-preparation.ps1')
 $repository=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $root=Join-Path $repository ('artifacts/qa/android-runtime-inventory-fixture-'+[guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($root) | Out-Null
@@ -132,7 +133,175 @@ Check (@($copy.components[1].metadata).Count -eq 2)
 [void](ModuleCacheFile 'cache' 'different candidate')
 RejectCode { Add-AndroidInventoryModuleMetadata (Clone $report) @($cache) } 'android_inventory_module_ambiguous'
 
+# Prepared metadata never discovers new versions online. The signed-release
+# and publisher-provenance boundaries remain false even for exact local bytes.
+function PomFixture([string]$Id,[string]$Body) {
+    $parts=$Id.Split(':'); $bytes=[Text.Encoding]::UTF8.GetBytes($Body)
+    $sha1=[Convert]::ToHexString([Security.Cryptography.SHA1]::HashData($bytes)).ToLowerInvariant().TrimStart('0')
+    $path=Join-Path $root ('prepared-cache/modules-2/files-2.1/'+($parts[1..3] -join '/')+'/'+$sha1+'/'+$parts[2]+'-'+$parts[3]+'.pom')
+    [IO.Directory]::CreateDirectory((Split-Path $path)) | Out-Null
+    [IO.File]::WriteAllBytes($path,$bytes)
+    @{file=$path;name=[IO.Path]::GetFileName($path);size=$bytes.Length;sha256=Get-AndroidInventoryHash $path;role='selected-component-pom'}
+}
+$runtimeId=$engineNode.id
+$runtimePom=PomFixture $runtimeId '<project><parent><groupId>fixture</groupId><artifactId>parent</artifactId><version>1.0</version></parent></project>'
+$parentPom=PomFixture 'maven:fixture:parent:1.0' '<project><dependencyManagement><dependencies><dependency><groupId>fixture</groupId><artifactId>bom</artifactId><version>1.0</version><type>pom</type><scope>import</scope></dependency></dependencies></dependencyManagement></project>'
+$bomPom=PomFixture 'maven:fixture:bom:1.0' '<project/>'
+$preparedGraph=Clone $report
+$preparedGraph.components[1].metadata=@($runtimePom)
+$source=@{count=6;sha256='d'*64}; $flutterRevision='f'*40
+$selectionRecords=@('app/pubspec.yaml','app/pubspec.lock','toolchain.lock.json','flutter/bin/cache/engine.stamp',
+    'flutter/bin/internal/engine.version','flutter/bin/cache/engine.realm') | ForEach-Object { @{identity=$_;sha256='c'*64} }
+$selectionA=Get-AndroidInventorySelectionSource $selectionRecords
+$reverse=@($selectionRecords); [Array]::Reverse($reverse)
+Check ($selectionA.sha256 -ceq (Get-AndroidInventorySelectionSource $reverse).sha256)
+RejectCode { Get-AndroidInventorySelectionSource (@($selectionRecords)+@($selectionRecords[0])) } 'android_inventory_selection_source_missing'
+$seed=@{schema=1;status='PINNED_PREPARED_INPUTS';origin='locally_observed_gradle_inputs';variant='debug';gradleVersion='9.3.1';
+    flutterRevision=$flutterRevision;engineRevision=$engine;selectionSource=$source;semanticGraphAlgorithm='exvpn-input-graph-v1';
+    semanticGraphSha256=Get-AndroidInventorySemanticHash $preparedGraph;repositoryPolicy='google-mavenCentral-flutter-public-v1';
+    runtimeComponents=@(@{id=$runtimeId;pom=@{size=$runtimePom.size;sha256=$runtimePom.sha256};
+        artifacts=@($preparedGraph.components[1].artifacts | ForEach-Object { @{name=$_.name;size=$_.size;sha256=$_.sha256} })});
+    metadataOnlyComponents=@(@{id='maven:fixture:parent:1.0';pom=@{size=$parentPom.size;sha256=$parentPom.sha256}},
+        @{id='maven:fixture:bom:1.0';pom=@{size=$bomPom.size;sha256=$bomPom.sha256}});
+    metadataEdges=@(@{from=$runtimeId;to='maven:fixture:parent:1.0';kind='parent'},
+        @{from='maven:fixture:parent:1.0';to='maven:fixture:bom:1.0';kind='bom-import'});
+    boundaries=@{independentPublisherVerification=$false;apkBindingVerified=$false;licensesReviewed=$false}}
+Assert-AndroidInventorySeed $seed debug $engine $flutterRevision $source
+Assert-AndroidInventorySeedGraph $seed $preparedGraph
+Check $true
+$plan=Get-AndroidInventoryPreparedPlan $seed @((Join-Path $root 'prepared-cache'))
+Check ($plan.runtimeCount -eq 1 -and $plan.metadataOnlyCount -eq 2 -and $plan.nodes.Count -eq 3 -and $plan.edges.Count -eq 2)
+$reordered=Clone $preparedGraph
+$reordered.components=@($reordered.components[1],$reordered.components[0])
+Check ((Get-AndroidInventorySemanticHash $reordered) -ceq $seed.semanticGraphSha256)
+foreach ($mutation in @(
+    {param($x) $x.schema='1'}, {param($x) $x.engineRevision=@($x.engineRevision)},
+    {param($x) $x.variant='release'}, {param($x) $x.engineRevision='b'*40}, {param($x) $x.flutterRevision='b'*40},
+    {param($x) $x.selectionSource.sha256='e'*64}, {param($x) $x.selectionSource.count++},
+    {param($x) $x.origin='trusted_publisher'}, {param($x) $x.repositoryPolicy='https://example.invalid'},
+    {param($x) $x.extra='unknown'}, {param($x) $x.boundaries.licensesReviewed=$true},
+    {param($x) $x.runtimeComponents[0].id='maven:fixture:dynamic:1.+'},
+    {param($x) $x.runtimeComponents[0].id='maven:fixture:dynamic:latest'},
+    {param($x) $x.runtimeComponents[0].id='maven:io.flutter:flutter_embedding_release:1.0.0-'+('a'*40)},
+    {param($x) $x.runtimeComponents[0].artifacts=$null},
+    {param($x) $x.runtimeComponents[0].artifacts=@{}},
+    {param($x) $x.metadataOnlyComponents=@{}},
+    {param($x) $x.metadataOnlyComponents+=$x.metadataOnlyComponents[0]},
+    {param($x) $x.metadataOnlyComponents[0].pom.size=8MB+1},
+    {param($x) $x.metadataEdges+=@{from='maven:fixture:bom:1.0';to='maven:fixture:parent:1.0';kind='parent'}},
+    {param($x) $x.metadataEdges=@()}
+)) { $copy=Clone $seed; & $mutation $copy; Reject { Assert-AndroidInventorySeed $copy debug $engine $flutterRevision $source } }
+$depthIds=@(0..9 | ForEach-Object { 'maven:fixture:depth:'+$_ })
+$depthEdges=@(0..8 | ForEach-Object { @{from=$depthIds[$_];to=$depthIds[$_+1];kind='parent'} })
+RejectCode { Assert-AndroidInventoryMetadataEdges $depthIds @($depthIds[0]) $depthEdges } 'android_inventory_metadata_depth_limit'
+$copy=Clone $seed; $copy.metadataEdges[0].kind='bom-import'
+RejectCode { Get-AndroidInventoryPreparedPlan $copy @((Join-Path $root 'prepared-cache')) } 'android_inventory_metadata_closure_changed'
+$copy=Clone $seed; $copy.runtimeComponents[0].pom.sha256='a'*64
+RejectCode { Get-AndroidInventoryPreparedPlan $copy @((Join-Path $root 'prepared-cache')) } 'android_inventory_metadata_seed_bytes_mismatch'
+foreach ($badXml in @(
+    '<project>', '<other/>',
+    '<!DOCTYPE project [<!ENTITY ext SYSTEM "file:///must-not-be-read">]><project>&ext;</project>',
+    '<project><parent><groupId>fixture</groupId><artifactId>parent</artifactId><version>${parent.version}</version></parent></project>',
+    '<project><parent><groupId>fixture</groupId><groupId>second</groupId><artifactId>parent</artifactId><version>1.0</version></parent></project>',
+    '<project><profiles><profile><dependencyManagement><dependencies><dependency><scope>import</scope><type>pom</type><groupId>fixture</groupId><artifactId>bom</artifactId><version>1.0</version></dependency></dependencies></dependencyManagement></profile></profiles></project>'
+)) { Reject { Get-AndroidInventoryPomEdges ([Text.Encoding]::UTF8.GetBytes($badXml)) $runtimeId } }
+foreach ($mutation in @(
+    {param($x) $x.components[1].artifacts[0].sha256='e'*64},
+    {param($x) $x.components[1].metadata[0].sha256='e'*64},
+    {param($x) $x.edges[0].requested.required='9.0'},
+    {param($x) $x.components[0].buildFile.sha256='e'*64},
+    {param($x) $x.components+=@{kind='maven';id='maven:fixture:extra:1.0'}}
+)) { $copy=Clone $preparedGraph; & $mutation $copy; Reject { Assert-AndroidInventorySeedGraph $seed $copy } }
+$seedFile=Join-Path $root 'prepared-seed.json'
+$seed | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $seedFile -Encoding utf8NoBOM
+Assert-AndroidInventorySeed (Read-AndroidInventorySeed $seedFile @($root)) debug $engine $flutterRevision $source
+Check $true
+[IO.File]::WriteAllText($seedFile,'{"schema":1,"schema":2}')
+RejectCode { Read-AndroidInventorySeed $seedFile @($root) } 'android_inventory_seed_duplicate_key'
+[IO.File]::WriteAllText($seedFile,'{')
+RejectCode { Read-AndroidInventorySeed $seedFile @($root) } 'android_inventory_seed_json_invalid'
+$private=Join-Path $root 'prepared-private'
+[IO.Directory]::CreateDirectory($private) | Out-Null
+$preparedRecords=@(foreach ($node in $plan.nodes) {
+    $file=Join-Path $private ([IO.Path]::GetFileName($node.sourceFile))
+    Copy-Item -LiteralPath $node.sourceFile -Destination $file
+    @{id=$node.id;runtimeSelected=$node.runtimeSelected;resultType='RESOLVED_ARTIFACT_RESULT';file=$file;
+        name=[IO.Path]::GetFileName($file);size=$node.pom.size;sha256=$node.pom.sha256}
+})
+$preparedResult=@{schema=1;status='PREPARED_METADATA_ONLY';success=$true;planSha256='b'*64;runtimeCount=1;metadataOnlyCount=2;
+    repositories=@('https://dl.google.com/dl/android/maven2/','https://repo.maven.apache.org/maven2/','https://storage.googleapis.com/download.flutter.io');
+    taskGraph=@(':prepareExactPoms');runtimeDependencyGraphCreated=$false;apkBindingVerified=$false;licensesReviewed=$false;records=$preparedRecords}
+Assert-AndroidInventoryPreparedResult $preparedResult $plan ('b'*64) $private
+Check $true
+foreach ($mutation in @(
+    {param($x) $x.repositories[0]='https://example.invalid'}, {param($x) $x.records[0].sha256='a'*64},
+    {param($x) $x.records[0].id='maven:fixture:extra:1.0'}, {param($x) $x.records[0]=$x.records[1]},
+    {param($x) $x.records[0].file=$runtimePom.file}, {param($x) $x.runtimeDependencyGraphCreated=$true},
+    {param($x) $x.taskGraph+= ':app:assembleDebug'}
+)) { $copy=Clone $preparedResult; & $mutation $copy; Reject { Assert-AndroidInventoryPreparedResult $copy $plan ('b'*64) $private } }
+$processArgs=@{GradleDirectory=$root;JavaPath=$root;AndroidSdkPath=$root;PrivateHome=$private;ReadOnlyCache=(Join-Path $root 'prepared-cache');Project=$root;Arguments=@(':app:exvpnRuntimeInventory')}
+$offlineStart=New-AndroidInventoryGradleStartInfo @processArgs -Phase offline
+Check ($offlineStart.ArgumentList.Contains('--offline') -and $offlineStart.Environment['GRADLE_USER_HOME'] -ceq $private)
+RejectCode { New-AndroidInventoryGradleStartInfo @processArgs -Phase preparation } 'android_inventory_metadata_network_not_enabled'
+$networkStart=New-AndroidInventoryGradleStartInfo @processArgs -Phase preparation -AllowMetadataNetwork
+Check (!$networkStart.ArgumentList.Contains('--offline') -and !$networkStart.Environment.ContainsKey('GRADLE_RO_DEP_CACHE'))
+foreach ($key in @('JAVA_OPTS','JDK_JAVA_OPTIONS','GRADLE_OPTS','JAVA_TOOL_OPTIONS','_JAVA_OPTIONS')) { Check (!$offlineStart.Environment.ContainsKey($key)) }
+$sleepStart=[Diagnostics.ProcessStartInfo]::new()
+$sleepStart.FileName=(Get-Process -Id $PID).Path
+$sleepStart.UseShellExecute=$false; $sleepStart.CreateNoWindow=$true
+$sleepStart.RedirectStandardOutput=$true; $sleepStart.RedirectStandardError=$true
+foreach ($arg in @('-NoProfile','-Command','Start-Sleep -Seconds 30')) { $sleepStart.ArgumentList.Add($arg) }
+$bounded=Invoke-AndroidInventoryGradle $sleepStart 'synthetic-timeout' $root -MaximumSeconds 1
+Check ($bounded.terminationReason -ceq 'time_limit' -and $bounded.elapsedSeconds -lt 15 -and $bounded.exitCode -ne 0)
+$publicSeedPath=Join-Path $PSScriptRoot 'android-runtime-inventory-seed.json'
+$publicSeed=Read-AndroidInventorySeed $publicSeedPath @($repository)
+Assert-AndroidInventorySeed $publicSeed $publicSeed.variant $publicSeed.engineRevision $publicSeed.flutterRevision $publicSeed.selectionSource
+Check ($publicSeed.runtimeComponents.Count -eq 68 -and $publicSeed.metadataOnlyComponents.Count -eq 9)
+Check ([IO.File]::ReadAllText($publicSeedPath) -notmatch '[A-Z]:\\|https?://|sourceFile|exceptionMessage|stackTrace')
+
 $gradleCases=@()
+if ($WithGradleFixture -or $WithMetadataFixture) {
+    $fixtureGradle=@(Get-ChildItem -LiteralPath (Join-Path $repository '.tools/cache/gradle/wrapper/dists/gradle-9.3.1-all') -Directory |
+        ForEach-Object { Join-Path $_.FullName 'gradle-9.3.1' } | Where-Object { Test-Path -LiteralPath (Join-Path $_ 'bin/gradle.bat') })
+    if ($fixtureGradle.Count -ne 1) { throw 'android_inventory_fixture_gradle_missing' }
+    $fixtureJava=if ($env:JAVA_HOME) { $env:JAVA_HOME } else { 'C:/Program Files/Android/Android Studio/jbr' }
+    foreach ($case in @('empty-metadata-project','metadata-child','metadata-repository','metadata-configuration')) {
+        $caseRoot=Join-Path $root $case
+        $metadataProject=Join-Path $caseRoot 'project'
+        [IO.Directory]::CreateDirectory($metadataProject) | Out-Null
+        $settings="rootProject.name='metadata-fixture'`n"
+        $build=''
+        $expectedCode=switch ($case) {
+            'metadata-child' {
+                [IO.Directory]::CreateDirectory((Join-Path $metadataProject 'child')) | Out-Null
+                $settings+="include 'child'`n"
+                'exvpn_metadata_child_projects_present'
+            }
+            'metadata-repository' { $build='repositories { mavenCentral() }'; 'exvpn_metadata_repositories_present' }
+            'metadata-configuration' { $build='configurations { runtime }'; 'exvpn_metadata_configurations_present' }
+            default { 'exvpn_metadata_unexpected_task_graph' }
+        }
+        [IO.File]::WriteAllText((Join-Path $metadataProject 'settings.gradle'),$settings)
+        [IO.File]::WriteAllText((Join-Path $metadataProject 'build.gradle'),$build)
+        $planPath=Join-Path $caseRoot 'plan.json'
+        $plan | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $planPath -Encoding utf8NoBOM
+        $fixtureHome=Join-Path $root 'metadata-gradle-home'
+        $fixtureArguments=@('--project-dir',$metadataProject,'--project-cache-dir',(Join-Path $caseRoot 'project-cache'),
+            '--init-script',(Join-Path $PSScriptRoot 'android-runtime-inventory-metadata.init.gradle'),
+            '-PexvpnMetadataNetwork=approved-public-poms',"-PexvpnMetadataHome=$fixtureHome","-PexvpnMetadataProject=$metadataProject",
+            "-PexvpnMetadataPlan=$planPath",('-PexvpnMetadataPlanSha256='+(Get-AndroidInventoryHash $planPath)),
+            ('-PexvpnMetadataOutput='+(Join-Path $caseRoot 'never-query.json')),':help')
+        # :help is forbidden by the task-graph guard. This exercises the exact
+        # metadata init's project checks without ever executing a network query.
+        $start=New-AndroidInventoryGradleStartInfo -Phase preparation -GradleDirectory $fixtureGradle[0] -JavaPath $fixtureJava `
+            -AndroidSdkPath $root -PrivateHome $fixtureHome -ReadOnlyCache $root -Project $metadataProject -Arguments $fixtureArguments -AllowMetadataNetwork
+        $result=Invoke-AndroidInventoryGradle $start 'metadata-guard' $caseRoot
+        $log=[IO.File]::ReadAllText((Join-Path $caseRoot 'metadata-guard-stderr.log'))
+        Check ($result.exitCode -ne 0 -and !$result.terminationReason -and $log.Contains($expectedCode,[StringComparison]::Ordinal))
+        Check (!(Test-Path -LiteralPath (Join-Path $caseRoot 'never-query.json')))
+        $gradleCases+=@{case=$case;exitCode=$result.exitCode;expected=$true;artifactQueryExecuted=$false}
+    }
+}
 if ($WithGradleFixture) {
     $fixture=Join-Path $root 'gradle-fixture'
     $repo=Join-Path $fixture 'repo'
@@ -264,6 +433,16 @@ if (testCase.startsWith('pin-')) {
             }
             $gradleCases+=@{case=$case;exitCode=$exit;expected=$true}
         }
+        # Compile the exact preparation init on Gradle 9.3.1. Default offline
+        # mode must reject it before repository creation or artifact queries.
+        $metadataStart=New-AndroidInventoryGradleStartInfo -Phase offline -GradleDirectory (Split-Path (Split-Path $gradle[0])) `
+            -JavaPath $env:JAVA_HOME -AndroidSdkPath $root -PrivateHome $env:GRADLE_USER_HOME -ReadOnlyCache (Join-Path $root 'unused-ro-cache') `
+            -Project $fixture -Arguments @('--project-dir',$fixture,'--project-cache-dir',(Join-Path $root 'project-cache'),
+                '--init-script',(Join-Path $PSScriptRoot 'android-runtime-inventory-metadata.init.gradle'),':prepareExactPoms')
+        $metadataResult=Invoke-AndroidInventoryGradle $metadataStart 'metadata-offline-rejection' $root
+        $metadataLog=[IO.File]::ReadAllText((Join-Path $root 'metadata-offline-rejection-stderr.log'))
+        Check ($metadataResult.exitCode -ne 0 -and !$metadataResult.terminationReason -and $metadataLog.Contains('exvpn_metadata_invocation_invalid',[StringComparison]::Ordinal))
+        $gradleCases+=@{case='metadata-offline-rejection';exitCode=$metadataResult.exitCode;expected=$true}
         Check (@(Get-ChildItem -LiteralPath $fixture -File -Recurse | Where-Object { $_.Extension -in @('.apk','.aab','.so') -or $_.FullName -like '*\build\libs\*' }).Count -eq 0)
     } finally { foreach ($key in $saved.Keys) { [Environment]::SetEnvironmentVariable($key,$saved[$key],'Process') } }
 }

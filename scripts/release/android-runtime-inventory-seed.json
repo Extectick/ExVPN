@@ -1,0 +1,1118 @@
+{
+  "schema": 1,
+  "status": "PINNED_PREPARED_INPUTS",
+  "origin": "locally_observed_gradle_inputs",
+  "variant": "debug",
+  "gradleVersion": "9.3.1",
+  "flutterRevision": "abaf9c523780a608bd46686fd5e53740a07077f8",
+  "engineRevision": "deb287481e3ce9468f3434937ced4240a70539ca",
+  "selectionSource": {
+    "count": 760,
+    "sha256": "373d6528e8598300525342b3507dd0fbf63e350c83b91d3b5207026584a523dc"
+  },
+  "semanticGraphAlgorithm": "exvpn-input-graph-v1",
+  "semanticGraphSha256": "c98a29e28ca3fc0d87363a99aa37eedbac79586715b48c7abbd9ea212511dccd",
+  "repositoryPolicy": "google-mavenCentral-flutter-public-v1",
+  "runtimeComponents": [
+    {
+      "id": "maven:androidx.activity:activity:1.8.1",
+      "pom": {
+        "size": 4131,
+        "sha256": "c0ccbb0f6bd3f3a4fe338811dd8aee19b4919f4197613ee801bf33dd6dd702d7"
+      },
+      "artifacts": [
+        {
+          "name": "activity-1.8.1.aar",
+          "size": 169669,
+          "sha256": "66bc2c13bd91fb8ea09e445b21f784d3e5d3a9ec9b180cd07e0e9208c2f939c6"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.annotation:annotation-experimental:1.4.0",
+      "pom": {
+        "size": 2031,
+        "sha256": "41d2b9d879fc9221acda8e873ec7d26b153b9b8e04770ac79491e0576baef038"
+      },
+      "artifacts": [
+        {
+          "name": "annotation-experimental-1.4.0.aar",
+          "size": 39811,
+          "sha256": "c6eb7e676011ec65b32428373d450debdfc45179c4f8b3a752174fb87c17b08a"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.annotation:annotation-jvm:1.10.0",
+      "pom": {
+        "size": 2103,
+        "sha256": "5eece0903b4810aa1da85414dc4c2746046d878a543aa12dd4f1fe74171f7506"
+      },
+      "artifacts": [
+        {
+          "name": "annotation-jvm-1.10.0.jar",
+          "size": 62171,
+          "sha256": "ddd072ddbb553178e205517ce777b2f05aa9e412982d9ecb4eedc74f1212f697"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.annotation:annotation:1.10.0",
+      "pom": {
+        "size": 2286,
+        "sha256": "880f7bf4b35d060746cbef319d4a052b4bd826bb71b40500e55319721ffa4e76"
+      },
+      "artifacts": []
+    },
+    {
+      "id": "maven:androidx.arch.core:core-common:2.2.0",
+      "pom": {
+        "size": 1704,
+        "sha256": "1e17d4af8d6425be2a69f8af4d654a87e0456259a9eef1542869bcb023547e28"
+      },
+      "artifacts": [
+        {
+          "name": "core-common-2.2.0.jar",
+          "size": 11657,
+          "sha256": "65308a06b1c00ee186cb9e19321383f043b993813f1522c47f4a3e3303bdba41"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.arch.core:core-runtime:2.2.0",
+      "pom": {
+        "size": 1920,
+        "sha256": "0f953706598140d9d8735cdd5aeb1fa35933f4e2f31c0bf3eb81a053a4c8c1a5"
+      },
+      "artifacts": [
+        {
+          "name": "core-runtime-2.2.0.aar",
+          "size": 7577,
+          "sha256": "a1be5e0caa2b07623862af6ae21b3ab0718123245184d0e30dea81b53f990a47"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.collection:collection:1.1.0",
+      "pom": {
+        "size": 1338,
+        "sha256": "67e9066ca4acfdc6e3cc508293c31ba0398057ff118e4f70b1e1813c9a3456d1"
+      },
+      "artifacts": [
+        {
+          "name": "collection-1.1.0.jar",
+          "size": 42953,
+          "sha256": "632a0e5407461de774409352940e292a291037724207a787820c77daf7d33b72"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.concurrent:concurrent-futures:1.1.0",
+      "pom": {
+        "size": 1888,
+        "sha256": "748a34eb5d13d19d187adecaea82667fded5f1b0b98a655e13ed2e4a8b3d8ae6"
+      },
+      "artifacts": [
+        {
+          "name": "concurrent-futures-1.1.0.jar",
+          "size": 25987,
+          "sha256": "0ce067c514a0d1049d1bebdf709e344ed3266fe9744275682937cdcb13334e9e"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.core:core-ktx:1.13.1",
+      "pom": {
+        "size": 2450,
+        "sha256": "31cc345b8c6cdd2046dcf67872df8a8cb4f44ea0cade4df80002caa7e3b71809"
+      },
+      "artifacts": [
+        {
+          "name": "core-ktx-1.13.1.aar",
+          "size": 171581,
+          "sha256": "19ba50d094c7368ede1b4ccf1195ceb83e35970736593f823e5af716f8d05d70"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.core:core:1.13.1",
+      "pom": {
+        "size": 3654,
+        "sha256": "527abfa5a8d6af748b37e1c0162d1633a2d5ea4387b0205a8b436b6214ba1cf6"
+      },
+      "artifacts": [
+        {
+          "name": "core-1.13.1.aar",
+          "size": 1270406,
+          "sha256": "2c27de199535675005553066597a4b20fa1eea7c228ab4ef6b32b5fe39ca1f59"
+        },
+        {
+          "name": "core-1.13.1.aar",
+          "size": 1270406,
+          "sha256": "2c27de199535675005553066597a4b20fa1eea7c228ab4ef6b32b5fe39ca1f59"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.customview:customview:1.0.0",
+      "pom": {
+        "size": 1795,
+        "sha256": "ce9e47b87184f5bd5e139e9becd5b26476d42d78c31bf2fdedc37acb41b9ad49"
+      },
+      "artifacts": [
+        {
+          "name": "customview-1.0.0.aar",
+          "size": 33238,
+          "sha256": "20e5b8f6526a34595a604f56718da81167c0b40a7a94a57daa355663f2594df2"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.exifinterface:exifinterface:1.4.1",
+      "pom": {
+        "size": 2004,
+        "sha256": "944e867584e20748613cc7610bd5fa10a968cc98cb59fdfdb863e9f0201df289"
+      },
+      "artifacts": [
+        {
+          "name": "exifinterface-1.4.1.aar",
+          "size": 75523,
+          "sha256": "17e17a6b86bb54074d3a7ecfa695ab920eaff4cf667a8371ed82e377580cfcf6"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.fragment:fragment:1.7.1",
+      "pom": {
+        "size": 5439,
+        "sha256": "18bbbd3a53f8c1f026be496a847d9607ae06da9cb0f85f47f702fd27e2bd3906"
+      },
+      "artifacts": [
+        {
+          "name": "fragment-1.7.1.aar",
+          "size": 381295,
+          "sha256": "7ddebe9d830a04963733dcb340cab4bac1e69dfca797a6d59aa7bc56282150af"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.interpolator:interpolator:1.0.0",
+      "pom": {
+        "size": 1608,
+        "sha256": "0ddc07cc39699f48ecd9ec894b5830c0f09e22e82959294edf37217224c88b7b"
+      },
+      "artifacts": [
+        {
+          "name": "interpolator-1.0.0.aar",
+          "size": 7669,
+          "sha256": "33193135a64fe21fa2c35eec6688f1a76e512606c0fc83dc1b689e37add7732a"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.lifecycle:lifecycle-common-java8:2.7.0",
+      "pom": {
+        "size": 5246,
+        "sha256": "c29de269fca03230d0fb5ebf9c9560950b9f9bcd540ed7fcf85c08beca1afddb"
+      },
+      "artifacts": [
+        {
+          "name": "lifecycle-common-java8-2.7.0.jar",
+          "size": 261,
+          "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.lifecycle:lifecycle-common:2.7.0",
+      "pom": {
+        "size": 5939,
+        "sha256": "8a7c2448917f84fa6793dfe8563b49c96562d6e86eed19c642ef300d5cd16bc0"
+      },
+      "artifacts": [
+        {
+          "name": "lifecycle-common-2.7.0.jar",
+          "size": 56617,
+          "sha256": "533ded8ee0645a18f6653da53fe1ec5a15430e7f36a737d45e410531f30f3318"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0",
+      "pom": {
+        "size": 5316,
+        "sha256": "67502b56b0695b2c2a1c8ff2b93ebd23b6c3d0c214f1ea3b96211eca98960fc4"
+      },
+      "artifacts": [
+        {
+          "name": "lifecycle-livedata-core-ktx-2.7.0.aar",
+          "size": 20190,
+          "sha256": "a97f4c2191ebdd32f99ac229597bd1a92446b01cd1a088d13494cc05cabf0def"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.lifecycle:lifecycle-livedata-core:2.7.0",
+      "pom": {
+        "size": 5651,
+        "sha256": "d8e8a0ccedc798db560c637df432159cb05ec3ad18f9b8f6648f59bd4580acd6"
+      },
+      "artifacts": [
+        {
+          "name": "lifecycle-livedata-core-2.7.0.aar",
+          "size": 11311,
+          "sha256": "af8e11b87e030d6e3107ed39adcf01fa10d6259eb15c43cba6e7b4e3ffaedf27"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.lifecycle:lifecycle-livedata:2.7.0",
+      "pom": {
+        "size": 6091,
+        "sha256": "69885fd126b6866da760421636cb31cbf0fc5195f9962f45b9775c2d18496fc8"
+      },
+      "artifacts": [
+        {
+          "name": "lifecycle-livedata-2.7.0.aar",
+          "size": 57786,
+          "sha256": "9affa24c6160dc8cadaac9422d4f714e5009537d0243afc4bc74b5b7cf0de4ad"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.lifecycle:lifecycle-process:2.7.0",
+      "pom": {
+        "size": 5664,
+        "sha256": "7b07a80cb709396b69b071ea1a9177846ed699b4b44bebb1f9bad8bbbf21a23d"
+      },
+      "artifacts": [
+        {
+          "name": "lifecycle-process-2.7.0.aar",
+          "size": 16079,
+          "sha256": "6fb33d9473a4933da9d98a0b12b606127e80681bd9b90309ccd2c2230863b939"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.lifecycle:lifecycle-runtime:2.7.0",
+      "pom": {
+        "size": 6038,
+        "sha256": "fec5849eef5069ae19f0c6270d76421485f461f1025c90277b05ddd713c7e365"
+      },
+      "artifacts": [
+        {
+          "name": "lifecycle-runtime-2.7.0.aar",
+          "size": 21940,
+          "sha256": "81c6fb1dbb6a3cd7dc827d7b08e1c8142ed3a400a3422441108480e22f8937c4"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0",
+      "pom": {
+        "size": 6300,
+        "sha256": "df0107a734b53080a2847bfabbf8e127958b765f6d5a0d5e028281af3964623f"
+      },
+      "artifacts": [
+        {
+          "name": "lifecycle-viewmodel-savedstate-2.7.0.aar",
+          "size": 39363,
+          "sha256": "57c578862e219e360c6957ff0bca6f169707b1e5582d4fa593e284f7f63e33f6"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.lifecycle:lifecycle-viewmodel:2.7.0",
+      "pom": {
+        "size": 5248,
+        "sha256": "700f289173adcd0c6144da0c692c4e40b0a83af5a1392c544da982f4aabbd48e"
+      },
+      "artifacts": [
+        {
+          "name": "lifecycle-viewmodel-2.7.0.aar",
+          "size": 39819,
+          "sha256": "4e1d92e289920cd7b50e3671b9191bd413407349cda6f602b0285464f41c1c82"
+        },
+        {
+          "name": "lifecycle-viewmodel-2.7.0.aar",
+          "size": 39819,
+          "sha256": "4e1d92e289920cd7b50e3671b9191bd413407349cda6f602b0285464f41c1c82"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.loader:loader:1.0.0",
+      "pom": {
+        "size": 2207,
+        "sha256": "c978d550808b47434aa49a63164110a50b55b0bcc6160a93a2e37d5110df8c5e"
+      },
+      "artifacts": [
+        {
+          "name": "loader-1.0.0.aar",
+          "size": 33445,
+          "sha256": "11f735cb3b55c458d470bed9e25254375b518b4b1bad6926783a7026db0f5025"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.profileinstaller:profileinstaller:1.3.1",
+      "pom": {
+        "size": 2418,
+        "sha256": "08263eb70a814a7cb26d11d3a83825f84c29f3e4b59f9134724e0e02e2bbd768"
+      },
+      "artifacts": [
+        {
+          "name": "profileinstaller-1.3.1.aar",
+          "size": 47619,
+          "sha256": "d0e402ec31f24028a1dc7eb6a0a3f9d9635c1459392cd734396343b73d673948"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.savedstate:savedstate:1.2.1",
+      "pom": {
+        "size": 2549,
+        "sha256": "0d33bc285df1e12f22780f1624a6f0b38ea2a6181b0955ec6641caf620c50cbf"
+      },
+      "artifacts": [
+        {
+          "name": "savedstate-1.2.1.aar",
+          "size": 20217,
+          "sha256": "21a7d4bcf6bdb94ad7b9283801529300b4fbb8808ca4f191e0cdce6fd8e4705a"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.startup:startup-runtime:1.1.1",
+      "pom": {
+        "size": 1949,
+        "sha256": "f4114b5c6859bb1bc3caf281cb6d6f25998fa7f7292c64ceaea74a93210e746b"
+      },
+      "artifacts": [
+        {
+          "name": "startup-runtime-1.1.1.aar",
+          "size": 19371,
+          "sha256": "e0a6329a371262fe4c450372b70fdaf33b769ef6917094723787cfce896b1dd3"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.test.espresso:espresso-core:3.3.0",
+      "pom": {
+        "size": 2313,
+        "sha256": "66f16d47c965966208acc0cc6dbc3bfefea01946bee1a3e8bd3d03b805cd4871"
+      },
+      "artifacts": [
+        {
+          "name": "espresso-core-3.3.0.aar",
+          "size": 550876,
+          "sha256": "23ebf6014645e0c60aec7d1ed924d4d4c848ae8c3673b7d8d06b2ec6a56cafee"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.test.espresso:espresso-idling-resource:3.3.0",
+      "pom": {
+        "size": 1061,
+        "sha256": "8c5e5b4b4e0c8c91f5547c6324d72c6c0c81d612f307837652ed412174264a4b"
+      },
+      "artifacts": [
+        {
+          "name": "espresso-idling-resource-3.3.0.aar",
+          "size": 4708,
+          "sha256": "29519b112731f289cc6e2f9b2eccc5ea72c754b04272bb93370f45d7e170a7c6"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.test:monitor:1.3.0",
+      "pom": {
+        "size": 1216,
+        "sha256": "02f51704232b39ad94e8a6efdc1cd1a1424eba3c4f16fc211eb76282be829824"
+      },
+      "artifacts": [
+        {
+          "name": "monitor-1.3.0.aar",
+          "size": 72821,
+          "sha256": "f73a31306a783e63150c60c49e140dc38da39a1b7947690f4b73387b5ebad77e"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.test:rules:1.2.0",
+      "pom": {
+        "size": 1204,
+        "sha256": "4746045af7a8b3f4de3f4dce9d8dd2ab0044087b8b7a4866a3c66892516a90f1"
+      },
+      "artifacts": [
+        {
+          "name": "rules-1.2.0.aar",
+          "size": 46803,
+          "sha256": "24bd7111e0db91b4a5f6d5c3e3e89698580dc90d29273d04a775bb7fe7c2a761"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.test:runner:1.3.0",
+      "pom": {
+        "size": 1550,
+        "sha256": "4dcf050ef3409eac87eef276a530df554025ef537ac0edb7097c3e931aab4655"
+      },
+      "artifacts": [
+        {
+          "name": "runner-1.3.0.aar",
+          "size": 168380,
+          "sha256": "61d13f5a9fcbbd73ba18fa84e1d6a0111c6e1c665a89b418126966e61fffd93b"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.tracing:tracing:1.2.0",
+      "pom": {
+        "size": 1968,
+        "sha256": "f34bec4eb58871d31002901377108aaa1ebfe77fa6d882b8b86200b158e26ea1"
+      },
+      "artifacts": [
+        {
+          "name": "tracing-1.2.0.aar",
+          "size": 6060,
+          "sha256": "6faa90390d1fdbf0adb9a99bf99de67b94c6c6f35aea9510593a9d17973736a2"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.versionedparcelable:versionedparcelable:1.1.1",
+      "pom": {
+        "size": 1643,
+        "sha256": "5f51e65873ca612de3838fa90d2ee95b8d040efd31b9c390a19bf94d615cdb2f"
+      },
+      "artifacts": [
+        {
+          "name": "versionedparcelable-1.1.1.aar",
+          "size": 31061,
+          "sha256": "57e8d93260d18d5b9007c9eed3c64ad159de90c8609ebfc74a347cbd514535a4"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.viewpager:viewpager:1.0.0",
+      "pom": {
+        "size": 1997,
+        "sha256": "1f72f836339d03c6eb013f65075e76ca87075a577578eb4f95f74a3a5d253128"
+      },
+      "artifacts": [
+        {
+          "name": "viewpager-1.0.0.aar",
+          "size": 53513,
+          "sha256": "147af4e14a1984010d8f155e5e19d781f03c1d70dfed02a8e0d18428b8fc8682"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.window.extensions.core:core:1.0.0",
+      "pom": {
+        "size": 1997,
+        "sha256": "ec7573c61c1f9f510f6e5bcad2683b4dcb401fee75426c0f57b41490836791c8"
+      },
+      "artifacts": [
+        {
+          "name": "core-1.0.0.aar",
+          "size": 3737,
+          "sha256": "3100854b2dc0de5c4d88b47e1c5db30801770c821dca28189443b7624f4008ae"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.window:window-java:1.2.0",
+      "pom": {
+        "size": 3305,
+        "sha256": "73570afdc9db596396a92beefe4de5d22afac7eab112c4ab30737bb7f884a1fd"
+      },
+      "artifacts": [
+        {
+          "name": "window-java-1.2.0.aar",
+          "size": 11547,
+          "sha256": "e3defb5ee3857757505d7ad66275dc3a0b014169301b89d6e4eec03b0e45bcab"
+        }
+      ]
+    },
+    {
+      "id": "maven:androidx.window:window:1.2.0",
+      "pom": {
+        "size": 3753,
+        "sha256": "280c00e2495e1d5749b1c0ab59fc728a2964ccb33f5e11880857ee2efe4ec15b"
+      },
+      "artifacts": [
+        {
+          "name": "window-1.2.0.aar",
+          "size": 347924,
+          "sha256": "a834c217d973112777533daf1281dab33bd778fadd2d66bebc39b5fe81a890ac"
+        }
+      ]
+    },
+    {
+      "id": "maven:com.getkeepsafe.relinker:relinker:1.4.5",
+      "pom": {
+        "size": 1615,
+        "sha256": "099e4e007b80700c25190b81ac7b256f42b04f1e829dbd0673f0c415e9613426"
+      },
+      "artifacts": [
+        {
+          "name": "relinker-1.4.5.aar",
+          "size": 27284,
+          "sha256": "b03b4d113a9fef79400ae854c17757c2915725e6ffd1d61116eadaeb5613374a"
+        }
+      ]
+    },
+    {
+      "id": "maven:com.google.code.findbugs:jsr305:3.0.2",
+      "pom": {
+        "size": 4286,
+        "sha256": "19889dbdf1b254b2601a5ee645b8147a974644882297684c798afe5d63d78dfe"
+      },
+      "artifacts": [
+        {
+          "name": "jsr305-3.0.2.jar",
+          "size": 19936,
+          "sha256": "766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7"
+        }
+      ]
+    },
+    {
+      "id": "maven:com.google.code.gson:gson:2.13.2",
+      "pom": {
+        "size": 13490,
+        "sha256": "3aa06aa7c0f9af092961a42d09578e4324be146348a0ee6ed47857f7c2677b76"
+      },
+      "artifacts": [
+        {
+          "name": "gson-2.13.2.jar",
+          "size": 289901,
+          "sha256": "dd0ce1b55a3ed2080cb70f9c655850cda86c206862310009dcb5e5c95265a5e0"
+        }
+      ]
+    },
+    {
+      "id": "maven:com.google.crypto.tink:tink-android:1.23.0",
+      "pom": {
+        "size": 4083,
+        "sha256": "a2d27e7207e6a25764859b62924fc7b972f41884ce272cead9b946c15a1f410f"
+      },
+      "artifacts": [
+        {
+          "name": "tink-android-1.23.0.jar",
+          "size": 3320451,
+          "sha256": "c656918451b01c45ce5b20c7b6d4c388f956f61b3a3528e769048c8944c42f9e"
+        }
+      ]
+    },
+    {
+      "id": "maven:com.google.errorprone:error_prone_annotations:2.41.0",
+      "pom": {
+        "size": 4252,
+        "sha256": "a151df1e2e0b48618d8b06a180748a29b3abb39b1b2396f6a1c879a727488c6e"
+      },
+      "artifacts": [
+        {
+          "name": "error_prone_annotations-2.41.0.jar",
+          "size": 20389,
+          "sha256": "a56e782b5b50811ac204073a355a21d915a2107fce13ec711331ad036f660fcc"
+        }
+      ]
+    },
+    {
+      "id": "maven:com.google.guava:failureaccess:1.0.1",
+      "pom": {
+        "size": 2413,
+        "sha256": "e96042ce78fecba0da2be964522947c87b40a291b5fd3cd672a434924103c4b9"
+      },
+      "artifacts": [
+        {
+          "name": "failureaccess-1.0.1.jar",
+          "size": 4617,
+          "sha256": "a171ee4c734dd2da837e4b16be9df4661afab72a41adaf31eb84dfdaf936ca26"
+        }
+      ]
+    },
+    {
+      "id": "maven:com.google.guava:guava:28.1-android",
+      "pom": {
+        "size": 8726,
+        "sha256": "0196bebabaa26560f108eeb104d62987ad8bea607d9b13eda3f0286b765d6ea6"
+      },
+      "artifacts": [
+        {
+          "name": "guava-28.1-android.jar",
+          "size": 2604792,
+          "sha256": "e112ce92c0f0733965eede73d94589c59a72128b06b08bba5ebe2f9ea672ef60"
+        }
+      ]
+    },
+    {
+      "id": "maven:com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava",
+      "pom": {
+        "size": 2278,
+        "sha256": "18d4b1db26153d4e55079ce1f76bb1fe05cdb862ef9954a88cbcc4ff38b8679b"
+      },
+      "artifacts": [
+        {
+          "name": "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+          "size": 2199,
+          "sha256": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99"
+        }
+      ]
+    },
+    {
+      "id": "maven:com.google.j2objc:j2objc-annotations:1.3",
+      "pom": {
+        "size": 2762,
+        "sha256": "5faca824ba115bee458730337dfdb2fcea46ba2fd774d4304edbf30fa6a3f055"
+      },
+      "artifacts": [
+        {
+          "name": "j2objc-annotations-1.3.jar",
+          "size": 8781,
+          "sha256": "21af30c92267bd6122c0e0b4d20cccb6641a37eaf956c6540ec471d584e64a7b"
+        }
+      ]
+    },
+    {
+      "id": "maven:com.squareup:javawriter:2.1.1",
+      "pom": {
+        "size": 2881,
+        "sha256": "d47fc646324c22c66f2b0e0e743c850dde9a51990c53925e7501d960f2e8df84"
+      },
+      "artifacts": [
+        {
+          "name": "javawriter-2.1.1.jar",
+          "size": 11911,
+          "sha256": "f699823d0081f69cbb676c1845ea222e0ada79bc88a53e5d22d8bd02d328f57e"
+        }
+      ]
+    },
+    {
+      "id": "maven:io.flutter:arm64_v8a_debug:1.0.0-deb287481e3ce9468f3434937ced4240a70539ca",
+      "pom": {
+        "size": 508,
+        "sha256": "d07cadb9d903dd09e6168253c63f073418ce213f7ea6dff956bf99f74edb0552"
+      },
+      "artifacts": [
+        {
+          "name": "arm64_v8a_debug-1.0.0-deb287481e3ce9468f3434937ced4240a70539ca.jar",
+          "size": 180591679,
+          "sha256": "e58ef2523b336de488f6d19df27a63c032cfe6c09e1d55c26b6a4f22dc735695"
+        }
+      ]
+    },
+    {
+      "id": "maven:io.flutter:flutter_embedding_debug:1.0.0-deb287481e3ce9468f3434937ced4240a70539ca",
+      "pom": {
+        "size": 2542,
+        "sha256": "71ff19c1b0da0ee2e3c16f6971fe2e6312c03a33cfbc6fcb48731a4546298aaf"
+      },
+      "artifacts": [
+        {
+          "name": "flutter_embedding_debug-1.0.0-deb287481e3ce9468f3434937ced4240a70539ca.jar",
+          "size": 1589924,
+          "sha256": "dc61d3cce023b28d0da84817bff4edcc6a72f9e8cfba93063e117292af855708"
+        }
+      ]
+    },
+    {
+      "id": "maven:io.flutter:x86_64_debug:1.0.0-deb287481e3ce9468f3434937ced4240a70539ca",
+      "pom": {
+        "size": 505,
+        "sha256": "8d6c687755f4d3f94b343699b5bac58ebaa46025727c5f2cf24fdd1c867576fd"
+      },
+      "artifacts": [
+        {
+          "name": "x86_64_debug-1.0.0-deb287481e3ce9468f3434937ced4240a70539ca.jar",
+          "size": 119914282,
+          "sha256": "4b7b223efcf023dc3b91d736c429b6be9821fe92798dc40e28c807075b32c7bf"
+        }
+      ]
+    },
+    {
+      "id": "maven:javax.inject:javax.inject:1",
+      "pom": {
+        "size": 612,
+        "sha256": "943e12b100627804638fa285805a0ab788a680266531e650921ebfe4621a8bfa"
+      },
+      "artifacts": [
+        {
+          "name": "javax.inject-1.jar",
+          "size": 2497,
+          "sha256": "91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff"
+        }
+      ]
+    },
+    {
+      "id": "maven:junit:junit:4.12",
+      "pom": {
+        "size": 23678,
+        "sha256": "90f163f78e3ffb6f1c7ad97de9e7eba4eea25807141b85d6d12be67ca25449c4"
+      },
+      "artifacts": [
+        {
+          "name": "junit-4.12.jar",
+          "size": 314932,
+          "sha256": "59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a"
+        }
+      ]
+    },
+    {
+      "id": "maven:org.checkerframework:checker-compat-qual:2.5.5",
+      "pom": {
+        "size": 2747,
+        "sha256": "42f21ebd9183be049ee5afc822b345403a5da764037875734a039b0d6e0353be"
+      },
+      "artifacts": [
+        {
+          "name": "checker-compat-qual-2.5.5.jar",
+          "size": 5852,
+          "sha256": "11d134b245e9cacc474514d2d66b5b8618f8039a1465cdc55bbc0b34e0008b7a"
+        }
+      ]
+    },
+    {
+      "id": "maven:org.codehaus.mojo:animal-sniffer-annotations:1.18",
+      "pom": {
+        "size": 2572,
+        "sha256": "adf522f4839c35f5329ea97c407aebebfa8807b644852dc4d5cd7c97b7a6d2e0"
+      },
+      "artifacts": [
+        {
+          "name": "animal-sniffer-annotations-1.18.jar",
+          "size": 3452,
+          "sha256": "47f05852b48ee9baefef80fa3d8cea60efa4753c0013121dd7fe5eef2e5c729d"
+        }
+      ]
+    },
+    {
+      "id": "maven:org.hamcrest:hamcrest-core:1.3",
+      "pom": {
+        "size": 766,
+        "sha256": "fde386a7905173a1b103de6ab820727584b50d0e32282e2797787c20a64ffa93"
+      },
+      "artifacts": [
+        {
+          "name": "hamcrest-core-1.3.jar",
+          "size": 45024,
+          "sha256": "66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9"
+        }
+      ]
+    },
+    {
+      "id": "maven:org.hamcrest:hamcrest-integration:1.3",
+      "pom": {
+        "size": 1264,
+        "sha256": "42f0be9bf98c12dacdcb99dd141d83d4dc5bb7c37a6f26684cd3ff2287667fba"
+      },
+      "artifacts": [
+        {
+          "name": "hamcrest-integration-1.3.jar",
+          "size": 4820,
+          "sha256": "70f418efbb506c5155da5f9a5a33262ea08a9e4d7fea186aa9015c41a7224ac2"
+        }
+      ]
+    },
+    {
+      "id": "maven:org.hamcrest:hamcrest-library:1.3",
+      "pom": {
+        "size": 820,
+        "sha256": "1ceb4bfb0f098ae29b935044b2363e11323313fe3ed2055df8b79737d5056277"
+      },
+      "artifacts": [
+        {
+          "name": "hamcrest-library-1.3.jar",
+          "size": 53070,
+          "sha256": "711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c"
+        }
+      ]
+    },
+    {
+      "id": "maven:org.jetbrains.kotlin:kotlin-stdlib-common:2.4.0",
+      "pom": {
+        "size": 1819,
+        "sha256": "fd1a658edbed7880ac3e0a0dbd20ae1a46c987e40af544e3a6b110825bbefcf5"
+      },
+      "artifacts": []
+    },
+    {
+      "id": "maven:org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.20",
+      "pom": {
+        "size": 1389,
+        "sha256": "3622d106578cddcc0a9ec20f8ce815f7f49ff542f640228d2141fcaf80616b06"
+      },
+      "artifacts": [
+        {
+          "name": "kotlin-stdlib-jdk7-1.8.20.jar",
+          "size": 963,
+          "sha256": "af1ec40c3b951afdcc0c2a0173c7b81763c5281c2d5bafbf0a8544a24c5dcc0c"
+        }
+      ]
+    },
+    {
+      "id": "maven:org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.20",
+      "pom": {
+        "size": 1581,
+        "sha256": "3a462214a336e995687769531b1e37b0c81d8e10c9949cd5ea7ae1d7803a0232"
+      },
+      "artifacts": [
+        {
+          "name": "kotlin-stdlib-jdk8-1.8.20.jar",
+          "size": 969,
+          "sha256": "e398b67977622718bf18ff99b739c7d9da060f33fb458a2e25203221c16af010"
+        }
+      ]
+    },
+    {
+      "id": "maven:org.jetbrains.kotlin:kotlin-stdlib:2.4.0",
+      "pom": {
+        "size": 2299,
+        "sha256": "8194ff79a9ee24a7fa3f74a6b179c04a1859de8b987a4f0983056e59451721de"
+      },
+      "artifacts": [
+        {
+          "name": "kotlin-stdlib-2.4.0.jar",
+          "size": 1841929,
+          "sha256": "ccb14ff83fabcb11458b798dbc9824748ccdffeec79c9aba789e6ed1cda86b1c"
+        }
+      ]
+    },
+    {
+      "id": "maven:org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1",
+      "pom": {
+        "size": 2226,
+        "sha256": "80f47d014115258758d4e1c5e4c9238c9eed36d2249d1d25858a934b29aba5df"
+      },
+      "artifacts": [
+        {
+          "name": "kotlinx-coroutines-android-1.7.1.jar",
+          "size": 20637,
+          "sha256": "107313760c18f8da174e8d8103504a468e806e88f7b55a84bd1c0eaeea118e9a"
+        }
+      ]
+    },
+    {
+      "id": "maven:org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.7.1",
+      "pom": {
+        "size": 4291,
+        "sha256": "b925aa988c40a5c7aa0c77b21373feb18c39414926bd51c76ef44434f5bae9c2"
+      },
+      "artifacts": []
+    },
+    {
+      "id": "maven:org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.1",
+      "pom": {
+        "size": 2395,
+        "sha256": "85c19db10dbc448a04663cdfb478243eda0a8d6b127f108f19955b16d489b35d"
+      },
+      "artifacts": [
+        {
+          "name": "kotlinx-coroutines-core-jvm-1.7.1.jar",
+          "size": 1548432,
+          "sha256": "7496cffdd3eb10109acdda1c3212f6ac7815789e09380dc9e2ccdec496dba3fc"
+        }
+      ]
+    },
+    {
+      "id": "maven:org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1",
+      "pom": {
+        "size": 2057,
+        "sha256": "046b010fc7a0e43d2bfc73a9de7675de5541006cbce96163121746034d69d723"
+      },
+      "artifacts": []
+    },
+    {
+      "id": "maven:org.jetbrains:annotations:23.0.0",
+      "pom": {
+        "size": 1354,
+        "sha256": "c9490f655132328df2cfbcfdf743f53fc3916d6c1d10437175a6ca6e3a67771c"
+      },
+      "artifacts": [
+        {
+          "name": "annotations-23.0.0.jar",
+          "size": 29371,
+          "sha256": "7b0f19724082cbfcbc66e5abea2b9bc92cf08a1ea11e191933ed43801eb3cd05"
+        }
+      ]
+    },
+    {
+      "id": "maven:org.jspecify:jspecify:1.0.0",
+      "pom": {
+        "size": 1511,
+        "sha256": "cdab929a3b95211f43d2090c5e2d0dfe8465960e378bc32b35841dab324433a6"
+      },
+      "artifacts": [
+        {
+          "name": "jspecify-1.0.0.jar",
+          "size": 3819,
+          "sha256": "1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab"
+        }
+      ]
+    }
+  ],
+  "metadataOnlyComponents": [
+    {
+      "id": "maven:com.google.code.gson:gson-parent:2.13.2",
+      "pom": {
+        "size": 27017,
+        "sha256": "83ab528a9d50fd76aeb8ad6f727b3ee9cb766586255774ed16ca8c4c76d9dacd"
+      }
+    },
+    {
+      "id": "maven:com.google.errorprone:error_prone_parent:2.41.0",
+      "pom": {
+        "size": 15920,
+        "sha256": "c538388d760a5c1c98dcf06f6ed3cfe5f11a651827db5cbd2ed8288c795cad42"
+      }
+    },
+    {
+      "id": "maven:com.google.guava:guava-parent:26.0-android",
+      "pom": {
+        "size": 10180,
+        "sha256": "f8698ab46ca996ce889c1afc8ca4f25eb8ac6b034dc898d4583742360016cc04"
+      }
+    },
+    {
+      "id": "maven:com.google.guava:guava-parent:28.1-android",
+      "pom": {
+        "size": 13015,
+        "sha256": "f8afcb43fd24c3b6226e408bdb9cec569173715a4c2c80173ccaedd84e151891"
+      }
+    },
+    {
+      "id": "maven:org.codehaus.mojo:animal-sniffer-parent:1.18",
+      "pom": {
+        "size": 9106,
+        "sha256": "4e9df546a47cf6304a1317c46870100a8726fbea11b0dd18322f957e4070973c"
+      }
+    },
+    {
+      "id": "maven:org.codehaus.mojo:mojo-parent:50",
+      "pom": {
+        "size": 34099,
+        "sha256": "f819cad1b15b6a7791c8b601e96bde33765e4681395807db4537d2f0dedd493b"
+      }
+    },
+    {
+      "id": "maven:org.hamcrest:hamcrest-parent:1.3",
+      "pom": {
+        "size": 1972,
+        "sha256": "6d535f94efb663bdb682c9f27a50335394688009642ba7a9677504bc1be4129b"
+      }
+    },
+    {
+      "id": "maven:org.sonatype.oss:oss-parent:7",
+      "pom": {
+        "size": 4824,
+        "sha256": "b51f8867c92b6a722499557fc3a1fdea77bdf9ef574722fe90ce436a29559454"
+      }
+    },
+    {
+      "id": "maven:org.sonatype.oss:oss-parent:9",
+      "pom": {
+        "size": 6569,
+        "sha256": "fb40265f982548212ff82e362e59732b2187ec6f0d80182885c14ef1f982827a"
+      }
+    }
+  ],
+  "metadataEdges": [
+    {
+      "from": "maven:com.google.code.findbugs:jsr305:3.0.2",
+      "to": "maven:org.sonatype.oss:oss-parent:7",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:com.google.code.gson:gson:2.13.2",
+      "to": "maven:com.google.code.gson:gson-parent:2.13.2",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:com.google.crypto.tink:tink-android:1.23.0",
+      "to": "maven:org.sonatype.oss:oss-parent:7",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:com.google.errorprone:error_prone_annotations:2.41.0",
+      "to": "maven:com.google.errorprone:error_prone_parent:2.41.0",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:com.google.guava:failureaccess:1.0.1",
+      "to": "maven:com.google.guava:guava-parent:26.0-android",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:com.google.guava:guava-parent:26.0-android",
+      "to": "maven:org.sonatype.oss:oss-parent:9",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:com.google.guava:guava:28.1-android",
+      "to": "maven:com.google.guava:guava-parent:28.1-android",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava",
+      "to": "maven:com.google.guava:guava-parent:26.0-android",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:com.google.j2objc:j2objc-annotations:1.3",
+      "to": "maven:org.sonatype.oss:oss-parent:7",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:com.squareup:javawriter:2.1.1",
+      "to": "maven:org.sonatype.oss:oss-parent:7",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:org.codehaus.mojo:animal-sniffer-annotations:1.18",
+      "to": "maven:org.codehaus.mojo:animal-sniffer-parent:1.18",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:org.codehaus.mojo:animal-sniffer-parent:1.18",
+      "to": "maven:org.codehaus.mojo:mojo-parent:50",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:org.hamcrest:hamcrest-core:1.3",
+      "to": "maven:org.hamcrest:hamcrest-parent:1.3",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:org.hamcrest:hamcrest-integration:1.3",
+      "to": "maven:org.hamcrest:hamcrest-parent:1.3",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:org.hamcrest:hamcrest-library:1.3",
+      "to": "maven:org.hamcrest:hamcrest-parent:1.3",
+      "kind": "parent"
+    },
+    {
+      "from": "maven:org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1",
+      "to": "maven:org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.7.1",
+      "kind": "bom-import"
+    },
+    {
+      "from": "maven:org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.1",
+      "to": "maven:org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.7.1",
+      "kind": "bom-import"
+    },
+    {
+      "from": "maven:org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1",
+      "to": "maven:org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.7.1",
+      "kind": "bom-import"
+    }
+  ],
+  "boundaries": {
+    "independentPublisherVerification": false,
+    "apkBindingVerified": false,
+    "licensesReviewed": false
+  }
+}
