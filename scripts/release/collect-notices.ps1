@@ -21,6 +21,8 @@ try {
 $go = Join-Path $repository '.tools/go/bin/go.exe'
 $lock = Get-Content -LiteralPath (Join-Path $repository 'scripts/bootstrap/toolchain.lock.json') -Raw | ConvertFrom-Json
 $runtime = Get-ReleaseFlutterRuntime -Repository $repository -Target $Target -FlutterRuntime $FlutterRuntime -FlutterBuildMode $FlutterBuildMode
+. (Join-Path $PSScriptRoot 'shorebird-updater-notices.ps1')
+$updaterNotices = Get-ShorebirdUpdaterNotices $repository $runtime
 $appVersion = Get-NoticeAppVersion (Get-Content -LiteralPath (Join-Path $repository 'apps/exvpn/pubspec.yaml') -Raw) (Get-Content -LiteralPath (Join-Path $repository 'apps/exvpn/lib/build_identity.dart') -Raw)
 $pubLockPath = Join-Path $repository 'apps/exvpn/pubspec.lock'
 $packageConfigPath = Join-Path $repository 'apps/exvpn/.dart_tool/package_config.json'
@@ -137,6 +139,9 @@ foreach ($notice in $runtime.Evidence.notices) {
         else { 'https://github.com/flutter/flutter' }
     Add-SingleNotice $notice.name $notice.version (Join-Path $runtime.SdkRoot $notice.path) $sourceUrl
 }
+if ($updaterNotices) {
+    Add-Notice $updaterNotices.Name $updaterNotices.Version $updaterNotices.SourceRoot 'engine-source-updater' $updaterNotices.SourceUrl
+}
 if ($Target -eq 'Windows') {
     $wintun = Get-Content -LiteralPath (Join-Path $repository 'scripts/windows/wintun.lock.json') -Raw | ConvertFrom-Json
     Add-SingleNotice 'Wintun prebuilt DLL' $wintun.version $WintunLicensePath $wintun.source
@@ -164,6 +169,10 @@ $manifest = [ordered]@{
 $runtimeAfter = Get-ReleaseFlutterRuntime -Repository $repository -Target $Target -FlutterRuntime $FlutterRuntime -FlutterBuildMode $FlutterBuildMode
 Assert-ReleaseFlutterRuntimeEvidence $runtimeAfter.Evidence $runtime.Evidence
 Assert-ReleaseFlutterNotices $manifest $runtime.Evidence
+$updaterAfter = Get-ShorebirdUpdaterNotices $repository $runtimeAfter
+if (((Get-ReleaseRuntimeField $updaterAfter 'Evidence') | ConvertTo-Json -Depth 10 -Compress) -cne ((Get-ReleaseRuntimeField $updaterNotices 'Evidence') | ConvertTo-Json -Depth 10 -Compress)) { throw 'shorebird_updater_inputs_changed' }
+if ($updaterNotices) { $manifest.shorebirdUpdater = $updaterNotices.Evidence }
+Assert-ShorebirdUpdaterNotices $manifest $updaterNotices $output
 $manifest | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $output 'inventory.json') -Encoding utf8NoBOM
 @'
 ExVPN third-party notices

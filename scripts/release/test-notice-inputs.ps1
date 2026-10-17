@@ -3,6 +3,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'notice-inputs.ps1')
+. (Join-Path $PSScriptRoot 'shorebird-updater-notices.ps1')
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $checks = 0
 function Assert-Rejected([scriptblock]$Action) {
@@ -146,6 +147,19 @@ function New-RuntimeSdk([string]$Root, [string]$Engine, [string]$Kind) {
     Write-RuntimeFixture (Join-Path $Root 'LICENSE') "synthetic $Kind SDK license"
     $engineLicense = "synthetic $Kind engine component`n`nFull $Kind third-party license text.`n"
     Write-RuntimeFixture (Join-Path $Root 'engine/src/flutter/sky/packages/sky_engine/LICENSE') $engineLicense
+    if ($Kind -ceq 'shorebird') {
+        $updaterDeps = @'
+vars = {
+  "updater_git": "https://github.com/shorebirdtech/updater.git",
+  "updater_rev": "70ff1e336798474e39586d3f5ac2ca386ef32d9e",
+}
+deps = {
+  'engine/src/flutter/third_party/updater':
+    Var('updater_git') + '@' + Var('updater_rev'),
+}
+'@
+        Write-RuntimeFixture (Join-Path $Root 'DEPS') $updaterDeps.Replace("`r`n","`n")
+    }
     $revision = Commit-RuntimeFixture $Root
     Write-RuntimeFixture (Join-Path $Root 'bin/cache/engine.stamp') "$Engine`n"
     Write-RuntimeFixture (Join-Path $Root 'bin/cache/pkg/sky_engine/LICENSE') $engineLicense
@@ -300,13 +314,21 @@ Write-RuntimeFixture (Join-Path $cliRoot 'pubspec.lock') 'synthetic CLI dependen
 $cliRevision = Commit-RuntimeFixture $cliRoot
 $sdkStaging = Join-Path $cliRoot 'bin/cache/flutter/fixture'
 $shorebirdRevision = New-RuntimeSdk $sdkStaging ('b' * 40) 'shorebird'
-# Move only this exact new fixture directory to its derived pinned path.
+# Copy only this exact new fixture directory to its derived pinned path.
 $shorebirdSdk = Join-Path $cliRoot "bin/cache/flutter/$shorebirdRevision"
 if (![IO.Path]::GetFullPath($sdkStaging).StartsWith([IO.Path]::GetFullPath($runtimeFixture)+[IO.Path]::DirectorySeparatorChar) -or
-    ![IO.Path]::GetFullPath($shorebirdSdk).StartsWith([IO.Path]::GetFullPath($runtimeFixture)+[IO.Path]::DirectorySeparatorChar)) { throw 'Fixture move outside owned root.' }
-# Rename the owned directory atomically; Move-Item can partially recurse over
-# Git's hidden/readonly metadata on Windows instead of completing the rename.
-[IO.Directory]::Move($sdkStaging, $shorebirdSdk)
+    ![IO.Path]::GetFullPath($shorebirdSdk).StartsWith([IO.Path]::GetFullPath($runtimeFixture)+[IO.Path]::DirectorySeparatorChar)) { throw 'Fixture copy outside owned root.' }
+# Retain both owned fixtures. Directory renaming can be refused on Windows;
+# copying their small synthetic inputs also preserves hidden Git metadata.
+$sdkFixtureFiles=@([IO.Directory]::EnumerateFiles($sdkStaging,'*',[IO.SearchOption]::AllDirectories))
+if ($sdkFixtureFiles.Count -gt 256 -or (Test-Path -LiteralPath $shorebirdSdk)) { throw 'Unexpected SDK fixture copy inputs.' }
+foreach ($file in $sdkFixtureFiles) {
+    Assert-AuditNoLinks $file
+    if ((Get-Item -LiteralPath $file -Force).Length -gt 1MB) { throw 'Unexpected SDK fixture file size.' }
+    $destination=Join-Path $shorebirdSdk ([IO.Path]::GetRelativePath($sdkStaging,$file))
+    [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($destination)) | Out-Null
+    [IO.File]::Copy($file,$destination,$false)
+}
 $shorebirdPin = [ordered]@{schemaVersion=1;cli=@{version='1.6.129';revision=$cliRevision;folder='shorebird-1.6.129';repository='https://github.com/shorebirdtech/shorebird.git';powershellEntrypointSha256=(Get-AuditSha256 (Join-Path $cliRoot 'bin/shorebird.ps1'));pubspecLockSha256=(Get-AuditSha256 (Join-Path $cliRoot 'pubspec.lock'))};flutter=@{repository='https://github.com/shorebirdtech/flutter.git';version='3.47.7';revision=$shorebirdRevision;engineRevision=('b' * 40);dartVersion='3.13.5'}}
 Write-AuditJson (Join-Path $runtimeFixture 'scripts/bootstrap/shorebird.lock.json') $shorebirdPin
 $shorebird = Get-ReleaseFlutterRuntime $runtimeFixture Android -FlutterRuntime shorebird
@@ -363,13 +385,105 @@ Assert-RuntimeRefused { Get-ReleasePackagedFlutterEvidence $shorebird.Evidence $
 $files.Remove('lib/x86_64/libapp.so') | Out-Null
 Assert-RuntimeRefused { Get-ReleasePackagedFlutterEvidence $shorebird.Evidence $files } 'flutter_runtime_packaged_dart_missing'
 $windows = Get-ReleaseFlutterRuntime $runtimeFixture Windows -FlutterRuntime shorebird
+
+# Native updater source inputs are a separate, offline component. Use the
+# checked-in upstream license/lock bytes and an actual committed SDK fixture.
+$updaterPinPath = Join-Path $runtimeFixture 'scripts/release/shorebird-updater-notices.lock.json'
+New-Item -ItemType Directory -Path (Split-Path $updaterPinPath) -Force | Out-Null
+$updaterPin = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'shorebird-updater-notices.lock.json') -Raw | ConvertFrom-Json -AsHashtable
+$updaterPin.flutter.revision=$shorebirdRevision; $updaterPin.flutter.engineRevision='b' * 40
+$updaterPin.flutter.depsSha256=Get-AuditSha256 (Join-Path $shorebirdSdk 'DEPS')
+$updaterPin.flutter.depsSize=(Get-Item -LiteralPath (Join-Path $shorebirdSdk 'DEPS')).Length
+$updaterPin.flutter.depsGitBlob=Invoke-ReleaseRuntimeGit $shorebirdSdk @('rev-parse','--verify',"${shorebirdRevision}:DEPS")
+function Save-UpdaterPin { Write-AuditJson $updaterPinPath $updaterPin }
+Save-UpdaterPin
+$updaterRelative="scripts/release/licenses/shorebird-updater-$($updaterPin.updater.revision)"
+$updaterRoot=Join-Path $runtimeFixture $updaterRelative
+New-Item -ItemType Directory -Path $updaterRoot -Force | Out-Null
+foreach($name in @('Cargo.lock','LICENSE-APACHE','LICENSE-MIT','.gitattributes')) {
+    [IO.File]::Copy((Join-Path $repository "$updaterRelative/$name"),(Join-Path $updaterRoot $name),$false)
+}
+$updaterExpected=Get-ShorebirdUpdaterNotices $runtimeFixture $shorebird
+if ($updaterExpected.Version -cne '70ff1e336798474e39586d3f5ac2ca386ef32d9e' -or
+    $updaterExpected.Evidence.cargoLock.sha256 -cne '5c189f184ccf4cd52ed8bda705fddfc187ae393a3906dea3aa722823a01f62b1' -or
+    $updaterExpected.Evidence.notices.Count -ne 2 -or $updaterExpected.Evidence.binaryDependencyClosureVerified -or
+    $updaterExpected.Evidence.completeLicenseCoverage -or ($updaterExpected.Evidence | ConvertTo-Json -Depth 10) -match [regex]::Escape($runtimeFixture)) { throw 'Updater provenance or incomplete boundary changed.' }; $checks++
+$depsFixturePath=Join-Path $shorebirdSdk 'DEPS'; $depsFixtureBytes=[IO.File]::ReadAllBytes($depsFixturePath)
+Invoke-ReleaseRuntimeGit $shorebirdSdk @('config','core.autocrlf','true') | Out-Null
+try {
+    [IO.File]::WriteAllText($depsFixturePath,[Text.Encoding]::UTF8.GetString($depsFixtureBytes).Replace("`n","`r`n"),[Text.UTF8Encoding]::new($false))
+    # Refresh the fixture index after changing checkout EOLs. The committed
+    # blob/HEAD stay fixed and are checked independently by the real helper.
+    Invoke-ReleaseRuntimeGit $shorebirdSdk @('add','--','DEPS') | Out-Null
+    $crlfUpdater=Get-ShorebirdUpdaterNotices $runtimeFixture $shorebird
+    if ($crlfUpdater.Evidence.deps.sha256 -cne $updaterExpected.Evidence.deps.sha256 -or
+        $crlfUpdater.Evidence.deps.gitBlob -cne $updaterExpected.Evidence.deps.gitBlob -or
+        $crlfUpdater.Evidence.deps.checkoutSha256 -ceq $updaterExpected.Evidence.deps.checkoutSha256) { throw 'CRLF checkout did not preserve exact source binding.' }; $checks++
+} finally {
+    [IO.File]::WriteAllBytes($depsFixturePath,$depsFixtureBytes)
+    Invoke-ReleaseRuntimeGit $shorebirdSdk @('add','--','DEPS') | Out-Null
+}
+if ($null -ne (Get-ShorebirdUpdaterNotices (Join-Path $fixture 'missing-updater-inputs') $ordinary)) { throw 'Ordinary runtime acquired an updater dependency.' }; $checks++
+$badRuntime=@{Identity=@{kind='other'}}
+Assert-RuntimeRefused { Get-ShorebirdUpdaterNotices $runtimeFixture $badRuntime } 'shorebird_updater_runtime_invalid'
+$shorebird.Identity.buildMode='debug'
+try { Assert-RuntimeRefused { Get-ShorebirdUpdaterNotices $runtimeFixture $shorebird } 'shorebird_updater_runtime_invalid' }
+finally { $shorebird.Identity.buildMode='release' }
+$shorebird.Identity.engineRevision='c' * 40
+try { Assert-RuntimeRefused { Get-ShorebirdUpdaterNotices $runtimeFixture $shorebird } 'shorebird_updater_runtime_mismatch' }
+finally { $shorebird.Identity.engineRevision='b' * 40 }
+$savedSdkRoot=$shorebird.SdkRoot; $shorebird.SdkRoot=$ordinarySdk
+try { Assert-RuntimeRefused { Get-ShorebirdUpdaterNotices $runtimeFixture $shorebird } 'flutter_runtime_checkout_mismatch' }
+finally { $shorebird.SdkRoot=$savedSdkRoot }
+$updaterPin.updater.revision='d' * 40; Save-UpdaterPin
+Assert-RuntimeRefused { Get-ShorebirdUpdaterNotices $runtimeFixture $shorebird } 'shorebird_updater_deps_selection_mismatch'
+$updaterPin.updater.revision=$updaterExpected.Version
+$savedDepsHash=$updaterPin.flutter.depsSha256; $updaterPin.flutter.depsSha256='0' * 64; Save-UpdaterPin
+Assert-RuntimeRefused { Get-ShorebirdUpdaterNotices $runtimeFixture $shorebird } 'shorebird_updater_deps_mismatch'
+$updaterPin.flutter.depsSha256=$savedDepsHash
+$updaterPin.updater.notices[0].path='../LICENSE-APACHE'; Save-UpdaterPin
+Assert-RuntimeRefused { Get-ShorebirdUpdaterNotices $runtimeFixture $shorebird } 'shorebird_updater_pin_invalid'
+$updaterPin.updater.notices[0].path='LICENSE-APACHE'
+$savedBlob=$updaterPin.updater.cargoLock.gitBlob; $updaterPin.updater.cargoLock.gitBlob='0' * 40; Save-UpdaterPin
+Assert-RuntimeRefused { Get-ShorebirdUpdaterNotices $runtimeFixture $shorebird } 'shorebird_updater_input_mismatch'
+$updaterPin.updater.cargoLock.gitBlob=$savedBlob; Save-UpdaterPin
+foreach($name in @('Cargo.lock','LICENSE-APACHE','LICENSE-MIT')) {
+    $path=Join-Path $updaterRoot $name; $savedBytes=[IO.File]::ReadAllBytes($path)
+    try {
+        [IO.File]::WriteAllText($path,'tampered input')
+        Assert-RuntimeRefused { Get-ShorebirdUpdaterNotices $runtimeFixture $shorebird } 'shorebird_updater_input_mismatch'
+    } finally { [IO.File]::WriteAllBytes($path,$savedBytes) }
+    $missingPath=Join-Path $fixture "missing-updater-$name"
+    [IO.File]::Move($path,$missingPath)
+    try { Assert-RuntimeRefused { Get-ShorebirdUpdaterNotices $runtimeFixture $shorebird } 'shorebird_updater_input_missing' }
+    finally { [IO.File]::Move($missingPath,$path) }
+}
+$unexpectedLicense=Join-Path $updaterRoot 'LICENSE-EXTRA'
+[IO.File]::WriteAllText($unexpectedLicense,'unreviewed')
+try { Assert-RuntimeRefused { Get-ShorebirdUpdaterNotices $runtimeFixture $shorebird } 'shorebird_updater_input_unexpected' }
+finally { [IO.File]::Delete($unexpectedLicense) }
+
+# Execute the full collector through its real SDK/source preflight. The missing
+# updater input must be refused before output creation or native/dependency work.
+foreach($name in @('collect-notices.ps1','notice-inputs.ps1','flutter-runtime-inputs.ps1','artifact-audit-lib.ps1','shorebird-updater-notices.ps1')) {
+    [IO.File]::Copy((Join-Path $PSScriptRoot $name),(Join-Path $runtimeFixture "scripts/release/$name"),$false)
+}
+Write-RuntimeFixture (Join-Path $runtimeFixture 'scripts/bootstrap/enter-environment.ps1') '# Isolated fixture: no environment changes, commands or dependencies.'
+$missingLock=Join-Path $fixture 'updater-preflight-missing-lock'
+[IO.File]::Move((Join-Path $updaterRoot 'Cargo.lock'),$missingLock)
+$refusedOutput=Join-Path $fixture 'refused-updater-output'
+try {
+    Assert-RuntimeRefused { & (Join-Path $runtimeFixture 'scripts/release/collect-notices.ps1') -Target Windows -FlutterRuntime shorebird -NativeBinaries unused -OutputDirectory $refusedOutput } 'shorebird_updater_input_missing'
+    if (Test-Path -LiteralPath $refusedOutput) { throw 'Collector created an incomplete updater notice bundle.' }; $checks++
+} finally { [IO.File]::Move($missingLock,(Join-Path $updaterRoot 'Cargo.lock')) }
+
 # Run the actual collector's notice-copy functions and runtime loop, without
 # bootstrap, native binaries or dependency resolution. This proves that the
 # distributed file contains the full text, not only the engine markdown link.
 $collectorTokens=$null; $collectorErrors=$null
 $collectorAst=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'collect-notices.ps1'),[ref]$collectorTokens,[ref]$collectorErrors)
 if ($collectorErrors.Count) { throw 'Notice collector parse failed.' }
-foreach ($name in @('Hash-Text','Add-SingleNotice')) {
+foreach ($name in @('Hash-Text','Add-SingleNotice','Add-Notice')) {
     $definitions=@($collectorAst.FindAll({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $name},$false))
     if ($definitions.Count -ne 1) { throw 'Expected one actual notice-copy function.' }
     . ([scriptblock]::Create($definitions[0].Extent.Text))
@@ -377,12 +491,37 @@ foreach ($name in @('Hash-Text','Add-SingleNotice')) {
 $copyLoops=@($collectorAst.FindAll({param($node) $node -is [Management.Automation.Language.ForEachStatementAst] -and
     $node.Variable.VariablePath.UserPath -ceq 'notice' -and $node.Condition.Extent.Text -ceq '$runtime.Evidence.notices'},$false))
 if ($copyLoops.Count -ne 1) { throw 'Expected one actual runtime-notice copy loop.' }
+$updaterCopy=@($collectorAst.FindAll({param($node) $node -is [Management.Automation.Language.IfStatementAst] -and
+    $node.Clauses[0].Item1.Extent.Text -ceq '$updaterNotices' -and $node.Extent.Text.Contains("'engine-source-updater'")},$false))
+if ($updaterCopy.Count -ne 1) { throw 'Expected one actual updater-notice copy branch.' }
 foreach ($runtime in @($ordinary,$shorebird,$windows)) {
     $FlutterRuntime=$runtime.Identity.kind
     $output=Join-Path $fixture ("copied-engine-notices-$FlutterRuntime-$($runtime.Identity.target)")
     $components=[Collections.Generic.List[object]]::new()
     & ([scriptblock]::Create($copyLoops[0].Extent.Text))
+    $updaterNotices=Get-ShorebirdUpdaterNotices $runtimeFixture $runtime
+    & ([scriptblock]::Create($updaterCopy[0].Extent.Text))
     $copiedInventory=[ordered]@{runtime=$runtime.Evidence;components=$components.ToArray()}
+    if ($updaterNotices) { $copiedInventory.shorebirdUpdater=$updaterNotices.Evidence }
+    Assert-ShorebirdUpdaterNotices $copiedInventory $updaterNotices $output
+    $checks++
+    if ($updaterNotices) {
+        $native=@($components | Where-Object name -CEQ 'Shorebird native updater')
+        foreach($expectedNotice in $updaterNotices.Evidence.notices) {
+            $copied=@($native[0].notices | Where-Object { [IO.Path]::GetFileName($_.path) -ceq $expectedNotice.path })
+            if ($copied.Count -ne 1 -or (Get-AuditSha256 (Join-Path $output $copied[0].path)) -cne $expectedNotice.sha256) { throw 'Full upstream updater license was not distributed.' }; $checks++
+        }
+        $copiedInventory.components=@($components | Where-Object name -CNE 'Shorebird native updater')
+        Assert-RuntimeRefused { Assert-ShorebirdUpdaterNotices $copiedInventory $updaterNotices $output } 'shorebird_updater_notice_mismatch'
+        $copiedInventory.components=$components.ToArray()
+        $copiedFile=Join-Path $output $native[0].notices[0].path
+        $originalBytes=[IO.File]::ReadAllBytes($copiedFile)
+        try {
+            [IO.File]::WriteAllText($copiedFile,'post-copy mutation')
+            Assert-RuntimeRefused { Assert-ShorebirdUpdaterNotices $copiedInventory $updaterNotices $output } 'shorebird_updater_notice_mismatch'
+        } finally { [IO.File]::WriteAllBytes($copiedFile,$originalBytes) }
+        Assert-RuntimeRefused { Assert-ShorebirdUpdaterNotices $copiedInventory $null $output } 'shorebird_updater_notice_unexpected'
+    }
     Assert-ReleaseFlutterNotices $copiedInventory $runtime.Evidence
     $full=@($components | Where-Object name -CEQ 'Flutter engine third-party licenses')
     $repositoryUrl=if($FlutterRuntime -ceq 'ordinary'){'https://github.com/flutter/flutter'}else{'https://github.com/shorebirdtech/flutter'}

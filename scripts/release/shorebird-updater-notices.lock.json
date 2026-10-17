@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "flutter": {
+    "revision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+    "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+    "depsSha256": "04550f6b0aa057484ae23ec20b534f37ea8f31ee73de5560466374848a5225be",
+    "depsSize": 38967,
+    "depsGitBlob": "5116806ab44d74bcbed41d53b910636a29b8c67a"
+  },
+  "updater": {
+    "repository": "https://github.com/shorebirdtech/updater",
+    "revision": "70ff1e336798474e39586d3f5ac2ca386ef32d9e",
+    "cargoLock": {
+      "sha256": "5c189f184ccf4cd52ed8bda705fddfc187ae393a3906dea3aa722823a01f62b1",
+      "size": 61390,
+      "gitBlob": "bfbaab5f2c21c0d57d738b05af64e53c08105560"
+    },
+    "notices": [
+      {
+        "path": "LICENSE-APACHE",
+        "sha256": "95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc",
+        "size": 9722,
+        "gitBlob": "a7e77cb28d386ec6eddeaabf441f91473ddefa1e"
+      },
+      {
+        "path": "LICENSE-MIT",
+        "sha256": "1847e0e0698142ed4347c1441a9fa81c8fbddd44b1d8bbcd5e3647f991759d7f",
+        "size": 1035,
+        "gitBlob": "6802bc4b80c0f8df1413d55b16267c0969e352c9"
+      }
+    ]
+  }
+}
