@@ -59,7 +59,7 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   неоднозначными. Исходный strict=false/INDETERMINATE сохранён, cleanup PASS;
   986 файлов и 30 файлов addendum сверены. [Полный запуск](evidence/android-dns-fault-continuous-build13.json),
   [отдельная корреляция](evidence/android-dns-attribution-addendum-build13.json).
-  Рабочее дерево; commit ожидается.
+  Доказательства: [1fd0bd5](https://github.com/Extectick/ExVPN/commit/1fd0bd55b876a0251e803fc1123390546442568b).
   Проверка Android +13, 2026-10-17: защищённый numeric HTTPS при остановке
   сервера отказал, исключённый UID получил HTTPS 200 при живом VPN. Непрерывный
   capture, включая промежутки между фазами, обнаружил три открытых DNS-запроса
@@ -203,7 +203,7 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   Doctor: 5/6 validators PASS, пять URL доступны; остаётся конфигурация проекта.
   OAuth ожидал пользователя и завершился тайм-аутом; cloud app/release/patch не
   создавались. [Доказательство](evidence/shorebird-user-install-doctor.json).
-  Рабочее дерево; commit ожидается.
+  Доказательства: [1fd0bd5](https://github.com/Extectick/ExVPN/commit/1fd0bd55b876a0251e803fc1123390546442568b).
   Подготовка 2026-10-17: отдельный CLI 1.6.129 закреплён commit/lock/entry-point hashes и успешно запущен; `doctor --json` выявил ожидаемые ограничения detached pin и отсутствие app config, несмотря на exit 0. Cloud app/release/patch/ключи не создавались. [Контракт](SHOREBIRD.md), [доказательство](evidence/shorebird-cli-preflight.json), исходники [aaaf6f4](https://github.com/Extectick/ExVPN/commit/aaaf6f43826508cea252c1fd0018c98b087bbde2). Это не проверка Dart OTA.
 - [ ] **EXVPN-E6-005** — Проверить полное обновление APK/Windows. Зависимости: E4–E5, ключи подписи. Критерий: сохранены подписки/настройки, идентичность подписи, непрерывность защиты и явный безопасный перезапуск ядра.
 
@@ -302,7 +302,7 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   733 сохранённых Flutter input hashes проверены реальным pinned-алгоритмом;
   для 896 входов исторических хешей нет. Это неполное доказательство build inputs,
   не runtime link graph; release blocker сохранён. [Отчёт](evidence/flutter-build-input-metadata-build14.json).
-  Рабочее дерево; commit ожидается.
+  Доказательства: [1fd0bd5](https://github.com/Extectick/ExVPN/commit/1fd0bd55b876a0251e803fc1123390546442568b).
   Дополнение 2026-10-17: явный prepared-input режим прошёл в новом private cache:
   77 POM, затем строгий offline граф из 68 Maven + 6 проектов / 279 связей совпал
   с закреплённым seed. Подготовка 19,837 с, offline 110,423 с, всего 148,158 с;
