@@ -1,0 +1,114 @@
+{
+  "schema": 1,
+  "status": "READ_ONLY_MSAA_DISCOVERY_PASS",
+  "productionBuild": 13,
+  "uiSha256": "e7299a563e2b81d41f334ec6d8f612971c18a58f8fd826323036503d1ba66299",
+  "serviceSha256": "3582d238cf50419fc43c596b539c99a374effe19c99d3382e9aac68ef3626e72",
+  "preflight": {
+    "ps51ParserErrors": 0,
+    "bomAllSources": true,
+    "csharpCompilationPassed": true,
+    "comSta": true,
+    "actualChildPathAndHashVerifiedBeforeLaunch": true,
+    "sourceCount": 6,
+    "hostOnlyFirstRefusal": "null parser array was counted for non-PS msaa.cs; corrected before guest/UI; sources unchanged"
+  },
+  "observation": {
+    "api": "MSAA OBJID_CLIENT",
+    "status": "OBSERVED",
+    "passes": 2,
+    "nodes": 18,
+    "maxDepth": 6,
+    "uniqueFlutterChild": true,
+    "allowlisted": [
+      {
+        "label": "ExVPN",
+        "role": 41,
+        "state": 3145728,
+        "defaultActionDescriptionPresent": false
+      },
+      {
+        "label": "Настройки",
+        "role": 43,
+        "state": 3145728,
+        "defaultActionDescriptionPresent": false
+      },
+      {
+        "label": "Подключить VPN",
+        "role": 43,
+        "state": 3145728,
+        "defaultActionDescriptionPresent": false
+      },
+      {
+        "label": "Обновить подписки",
+        "role": 43,
+        "state": 3145728,
+        "defaultActionDescriptionPresent": false
+      },
+      {
+        "label": "Серверы",
+        "role": 41,
+        "state": 3145728,
+        "defaultActionDescriptionPresent": false
+      },
+      {
+        "label": "Добавить подписку",
+        "role": 43,
+        "state": 3145728,
+        "defaultActionDescriptionPresent": false
+      },
+      {
+        "label": "Добавить подписку",
+        "role": 43,
+        "state": 3145728,
+        "defaultActionDescriptionPresent": false
+      },
+      {
+        "label": "Подключить",
+        "role": 41,
+        "state": 3145728,
+        "defaultActionDescriptionPresent": false
+      },
+      {
+        "label": "Не подключено",
+        "role": 41,
+        "state": 3145728,
+        "defaultActionDescriptionPresent": false
+      }
+    ],
+    "accessibilityElapsedMs": 427,
+    "boundedChildElapsedMs": 3187,
+    "childLimitMs": 15000,
+    "nodeLimit": 2048,
+    "depthLimit": 64,
+    "invocations": 0,
+    "valuesRead": 0,
+    "callerAdministrator": true
+  },
+  "postcheck": {
+    "comparedNativeFields": 21,
+    "allNativeFieldsUnchanged": true,
+    "serviceBindingAndOwnerUnchanged": true,
+    "storageMetadataUnchanged": true,
+    "storageFilesBefore": 0,
+    "storageFilesAfter": 0,
+    "storageDecrypted": false,
+    "guardArmed": false,
+    "tunnelAbsent": true,
+    "ownedUiClosed": true,
+    "remainingUi": 0,
+    "remainingQa": 0,
+    "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85"
+  },
+  "privateSummarySha256": "9860f8cf08cce269f43d2d6985e2a165e348388a0573f96774032caeecb85e87",
+  "privateEvidenceManifestSha256": "5b34d4f4410b866557610c72007a68ceac1f4056f977ec01e7e89b1ad879112a",
+  "priorUIASummarySha256": "883c35e6bcd09ab58d06d25cf633097e32e2e62e698de5b4ee439a9614b4e1b5",
+  "limitations": [
+    "Read-only discovery proves semantic controls are visible; action/input behavior is untested.",
+    "Two Add subscription buttons exist on empty home; label-only unique action would be ambiguous.",
+    "Default action description is absent; pinned Flutter maps accDoDefaultAction to Tap independently, but no action was attempted.",
+    "Ordinary installed release UI ran with administrator caller token.",
+    "UIA setup failures and original attempt1 report-path loss remain preserved in earlier summaries.",
+    "No settings, import, Connect, VPN or maintenance actions were performed."
+  ]
+}

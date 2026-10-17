@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "0.1.0+14",
+  "sourceCommit": "e90e66bb59e1c2cc893eec8408b545e759fe3ddf",
+  "status": "BUILD_AND_BEHAVIOR_PASS_RUNTIME_PENDING",
+  "artifact": {
+    "file": "ExVPN-0.1.0-14-windows-x64-development.exe",
+    "sha256": "d230a1899224ef71d9569b50bbae99d794d90ee9570df069246eba26250c4844",
+    "bytes": 34390147
+  },
+  "uiSha256": "1bd34a7787e150ab90f2e4e6b4c9d631aff87c21a10615a5304c5f88ba4f314f",
+  "serviceSha256": "3582d238cf50419fc43c596b539c99a374effe19c99d3382e9aac68ef3626e72",
+  "sourceFingerprintBefore": "d4efac139d294f17bce665e1eec4c854bf167e6912497a9403cc6246d29fdf6c",
+  "sourceFingerprintAfter": "d4efac139d294f17bce665e1eec4c854bf167e6912497a9403cc6246d29fdf6c",
+  "sourceUnchanged": true,
+  "buildProofSha256": "4f3ff1e9e07ab680574b8821d57cd135f40213008063e6b8709193b0d8c106f9",
+  "buildLogSha256": "c3ec3a9ac0b1193056516172ff48caed8cc01b0420c469756694b640ecb47d05",
+  "packageLogSha256": "6e595b7892774029cce2291b400189ba9706363771fffab63c9bd76487dcfdd6",
+  "focusedTrayTests": 17,
+  "flutterAnalyze": "passed",
+  "independentSourceReview": "passed",
+  "fullBehavioral": {
+    "lanes": 10,
+    "durationSeconds": 96.93,
+    "dartFlutterTests": 465,
+    "sourceUnchanged": true,
+    "goResultCacheAllowed": false,
+    "reportSha256": "ff7df03c066b08917c50acc208f953f1ca90a4db8fa2d9589c36d803d25c1fe8"
+  },
+  "packageExtraction": {
+    "verified": true,
+    "installerExecuted": false,
+    "installerInstructionSemanticsVerified": false,
+    "toolVersion": "26.04",
+    "tools": [
+      {
+        "name": "7z.exe",
+        "sha256": "95fff19b73eff77c87c0d7bd32822e43fb90dd2932459f962eb532d8dfb6ba53"
+      },
+      {
+        "name": "7z.dll",
+        "sha256": "899cd73d7fc60e1c1c35c7de0f5bed3dc69bfe2cecbd48014d868a347970a0b1"
+      },
+      {
+        "name": "License.txt",
+        "sha256": "519ac0a4bded9c18ea02e0afb71f663d8c47373bd9facd3ac96a79f51d77765d"
+      }
+    ],
+    "payloadFiles": 265,
+    "installerEntries": 270,
+    "uninstallerEntries": 4,
+    "maintenanceScriptsMatched": 2,
+    "nsisSourceArchiveSha256": "ba63dffc4410ee89193e1cb5a41989991bd77c61068da17e3156d136b7b0b3d8",
+    "uninstallerSha256": "35344f62d7eb1bcaa8da72202ec2be64108c72d5eee17bfa11ee8b13e1b9b682",
+    "plugins": [
+      {
+        "container": "installer",
+        "path": "$PLUGINSDIR/modern-wizard.bmp",
+        "size": 26494,
+        "sha256": "3ad2dc318056d0a2024af1804ea741146cfc18cc404649a44610cbf8b2056cf2",
+        "pinnedArchiveEntry": "nsis-3.13/Contrib/Graphics/Wizard/win.bmp"
+      },
+      {
+        "container": "installer",
+        "path": "$PLUGINSDIR/nsDialogs.dll",
+        "size": 9728,
+        "sha256": "9c76f4d53ceee2a471c936e0899688405e1009ce962d140e9acb49ed68d114cb",
+        "pinnedArchiveEntry": "nsis-3.13/Plugins/x86-unicode/nsDialogs.dll"
+      },
+      {
+        "container": "installer",
+        "path": "$PLUGINSDIR/nsExec.dll",
+        "size": 7168,
+        "sha256": "1dee37f6abb2dec9e767bd022d29386b6b295bbd55bf316d2649b8d298f89e9d",
+        "pinnedArchiveEntry": "nsis-3.13/Plugins/x86-unicode/nsExec.dll"
+      },
+      {
+        "container": "installer",
+        "path": "$PLUGINSDIR/System.dll",
+        "size": 12288,
+        "sha256": "afe032f942e2ed0bf7494ec08ba813f5739fb522c640bde81d30ecaf9f894432",
+        "pinnedArchiveEntry": "nsis-3.13/Plugins/x86-unicode/System.dll"
+      },
+      {
+        "container": "uninstaller",
+        "path": "$PLUGINSDIR/nsExec.dll",
+        "size": 7168,
+        "sha256": "1dee37f6abb2dec9e767bd022d29386b6b295bbd55bf316d2649b8d298f89e9d",
+        "pinnedArchiveEntry": "nsis-3.13/Plugins/x86-unicode/nsExec.dll"
+      },
+      {
+        "container": "uninstaller",
+        "path": "$PLUGINSDIR/System.dll",
+        "size": 12288,
+        "sha256": "afe032f942e2ed0bf7494ec08ba813f5739fb522c640bde81d30ecaf9f894432",
+        "pinnedArchiveEntry": "nsis-3.13/Plugins/x86-unicode/System.dll"
+      }
+    ]
+  },
+  "packageAuditSha256": "4ba0ddd2ddf48ea7e22c1ef585ff32c8990888d601d30f3fbb758c97a109065d",
+  "releaseBlockers": [
+    "dart_flutter_runtime_link_inventory_incomplete",
+    "development_package",
+    "license_expressions_and_distribution_obligations_not_fully_reviewed",
+    "release_signer_not_pinned",
+    "windows_signature_not_valid"
+  ],
+  "installed": false,
+  "runtimeTested": false,
+  "releaseReady": false,
+  "earlierPreparationFailures": [
+    "First package refused mismatched displayed build number; appBuild incremented and rebuilt.",
+    "Second package refused global Pub cache roots; pinned offline restore and fresh rebuild fixed inputs.",
+    "First audit invocation used unsupported EXE path; correct package-directory invocation verified extraction."
+  ],
+  "limitations": [
+    "Windows tray needs real installed ordinary-user close/show/commands/Explorer restart/keyboard/DPI acceptance.",
+    "No Android +14 APK was built in this local run; Android fault runtime uses immutable +13.",
+    "Unsigned development installer; E1, E5 and release gates remain open."
+  ],
+  "previousSuccessfulCi": {
+    "headSha": "f41cdf6ffcf04239b8277b05e0edc4926d4ce6ca",
+    "runId": 39001762691,
+    "android": "success",
+    "windows": "success",
+    "coversTrayBuild14": false
+  }
+}

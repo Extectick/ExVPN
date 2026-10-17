@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "headSha": "f41cdf6ffcf04239b8277b05e0edc4926d4ce6ca",
+  "runId": 39001762691,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/39001762691",
+  "status": "completed",
+  "conclusion": "success",
+  "createdAt": "2026-10-17T04:13:37Z",
+  "updatedAt": "2026-10-17T04:29:05Z",
+  "jobs": [
+    {
+      "name": "Android",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T04:13:40Z",
+      "completedAt": "2026-10-17T04:29:05Z",
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39001762691/job/117305998904"
+    },
+    {
+      "name": "Windows",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T04:13:40Z",
+      "completedAt": "2026-10-17T04:20:03Z",
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39001762691/job/117305999001"
+    }
+  ],
+  "scope": "Both native CI lanes on +13; does not cover pending +14 tray runtime or full release acceptance."
+}

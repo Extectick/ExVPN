@@ -1,5 +1,25 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+Прогон **+14 после source freeze**, 2026-10-17: **10/10 наборов за 96,93 с**,
+465 Dart/Flutter tests, Go/installer/QA checks PASS; Go result cache отключён,
+fingerprint исходников совпал. Добавлены 17 поведенческих тестов tray.
+[Отчёт](evidence/fast-validation-build14-tray.json),
+[код](https://github.com/Extectick/ExVPN/commit/e90e66bb59e1c2cc893eec8408b545e759fe3ddf).
+Это длительность конкретного прогона; обязательные native/runtime gates отдельно.
+
+На установленном Windows +13 выполнено read-only обнаружение UI без Computer Use.
+UIA показал только Window/Pane; закреплённый Flutter предоставляет дерево MSAA.
+`AccessibleObjectFromWindow(OBJID_CLIENT)` обнаружил 18 узлов за 427 мс, bounded
+child завершился за 3187 мс. 32 private evidence hashes проверены координатором;
+21 native/network поле и пустое production storage не изменились. Это только
+чтение: действия, ввод текста и maintenance ещё не проверены. Caller имел
+admin token; обычный установленный EXE не означает unelevated acceptance.
+[Отчёт и ограничения](evidence/windows-msaa-discovery-build13.json).
+
+CI исходников +13 после Instrumentation/metadata изменений успешно завершил обе
+native lanes. Он не покрывает новый tray +14.
+[CI evidence](evidence/ci-build13-instrumentation.json).
+
 Из корня проекта в PowerShell 7:
 
 ```powershell
