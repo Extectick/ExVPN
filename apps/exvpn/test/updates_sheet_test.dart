@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import 'package:exvpn/main.dart';
 import 'package:exvpn/services/data_updates.dart';
+import 'package:exvpn/services/dart_updates.dart';
 import 'package:exvpn/services/vpn_controller.dart';
 import 'package:exvpn/src/updates_sheet.dart';
 import 'package:exvpn_client_state/exvpn_client_state.dart';
@@ -122,7 +123,13 @@ void main() {
         );
       final updates = DataUpdatesController(vpn: null, backend: backend);
       await tester.pumpWidget(
-        ExVpnApp(controller: AppController(), updates: updates),
+        ExVpnApp(
+          controller: AppController(),
+          updates: updates,
+          dartUpdates: DartUpdatesController(
+            backend: const DisabledDartUpdatesBackend(),
+          ),
+        ),
       );
       await tester.pumpAndSettle();
       await tapVisible(tester, find.byKey(const Key('settings-button')));

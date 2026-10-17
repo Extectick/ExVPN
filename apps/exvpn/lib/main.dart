@@ -10,6 +10,7 @@ import 'services/vpn_controller.dart';
 import 'services/subscription_store.dart';
 import 'services/subscription_persistence.dart';
 import 'services/data_updates.dart';
+import 'services/dart_updates.dart';
 import 'services/desktop_tray.dart';
 
 Future<void> main() async {
@@ -57,12 +58,14 @@ class ExVpnApp extends StatefulWidget {
     this.store,
     this.storageWarning,
     this.updates,
+    this.dartUpdates,
   });
   final AppController controller;
   final VpnController? vpn;
   final SubscriptionStore? store;
   final String? storageWarning;
   final DataUpdatesController? updates;
+  final DartUpdatesController? dartUpdates;
   @override
   State<ExVpnApp> createState() => _ExVpnAppState();
 }
@@ -74,6 +77,7 @@ class _ExVpnAppState extends State<ExVpnApp> {
   final _navigator = GlobalKey<NavigatorState>();
   final _messenger = GlobalKey<ScaffoldMessengerState>();
   late final DataUpdatesController _updates;
+  late final DartUpdatesController _dartUpdates;
   @override
   void initState() {
     super.initState();
@@ -83,6 +87,7 @@ class _ExVpnAppState extends State<ExVpnApp> {
     widget.vpn?.initialize();
     _updates = widget.updates ?? DataUpdatesController(vpn: widget.vpn);
     _updates.initialize();
+    _dartUpdates = widget.dartUpdates ?? DartUpdatesController();
     if (!kIsWeb &&
         defaultTargetPlatform == TargetPlatform.windows &&
         widget.vpn != null) {
@@ -130,26 +135,29 @@ class _ExVpnAppState extends State<ExVpnApp> {
   }
 
   @override
-  Widget build(BuildContext context) => DataUpdatesScope(
-    controller: _updates,
-    child: MaterialApp(
-      navigatorKey: _navigator,
-      scaffoldMessengerKey: _messenger,
-      title: 'ExVPN',
-      debugShowCheckedModeBanner: false,
-      theme: exVpnTheme(Brightness.light),
-      darkTheme: exVpnTheme(Brightness.dark),
-      themeMode: _themeMode,
-      locale: const Locale('ru'),
-      supportedLocales: const [Locale('ru'), Locale('en')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      home: HomeScreen(
-        controller: widget.controller,
-        vpn: widget.vpn,
-        persistence: _persistence,
-        storageWarning: widget.storageWarning,
+  Widget build(BuildContext context) => DartUpdatesScope(
+    controller: _dartUpdates,
+    child: DataUpdatesScope(
+      controller: _updates,
+      child: MaterialApp(
+        navigatorKey: _navigator,
+        scaffoldMessengerKey: _messenger,
+        title: 'ExVPN',
+        debugShowCheckedModeBanner: false,
+        theme: exVpnTheme(Brightness.light),
+        darkTheme: exVpnTheme(Brightness.dark),
         themeMode: _themeMode,
-        onThemeChanged: (mode) => setState(() => _themeMode = mode),
+        locale: const Locale('ru'),
+        supportedLocales: const [Locale('ru'), Locale('en')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        home: HomeScreen(
+          controller: widget.controller,
+          vpn: widget.vpn,
+          persistence: _persistence,
+          storageWarning: widget.storageWarning,
+          themeMode: _themeMode,
+          onThemeChanged: (mode) => setState(() => _themeMode = mode),
+        ),
       ),
     ),
   );
@@ -158,6 +166,7 @@ class _ExVpnAppState extends State<ExVpnApp> {
     _tray?.dispose();
     _persistence?.dispose();
     _updates.dispose();
+    _dartUpdates.dispose();
     widget.controller.dispose();
     widget.vpn?.dispose();
     super.dispose();

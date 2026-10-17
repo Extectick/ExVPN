@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-10-17T07:35:35.7676576Z",
+  "status": "PASS",
+  "scope": "CLI authentication, project initialization and doctor; no release or patch",
+  "account": {
+    "authenticated": true,
+    "plan": "free"
+  },
+  "project": {
+    "name": "ExVPN",
+    "appId": "ea97a683-02e5-4d86-9aa1-779d6b4bc81e",
+    "appCountBefore": 0,
+    "appCountAfter": 1,
+    "releaseCreated": false,
+    "patchCreated": false,
+    "signingKeyCreated": false,
+    "autoUpdate": false
+  },
+  "versions": {
+    "cli": "1.6.129",
+    "flutter": "3.47.7",
+    "flutterRevision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+    "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+    "java": "21.0.6",
+    "gradle": "9.3.1"
+  },
+  "validators": [
+    {
+      "name": "Shorebird is up-to-date",
+      "ok": true,
+      "issues": []
+    },
+    {
+      "name": "AndroidManifest.xml files contain INTERNET permission",
+      "ok": true,
+      "issues": []
+    },
+    {
+      "name": "android/app/build.gradle(.kts) does not contain a legacy keepDebugSymbols line for libapp.so",
+      "ok": true,
+      "issues": []
+    },
+    {
+      "name": "Xcode project does not override FLUTTER_ build settings",
+      "ok": true,
+      "issues": []
+    },
+    {
+      "name": "shorebird.yaml found in pubspec.yaml assets",
+      "ok": true,
+      "issues": []
+    },
+    {
+      "name": "Lock files are tracked in source control",
+      "ok": true,
+      "issues": []
+    }
+  ],
+  "network": [
+    {
+      "url": "https://api.shorebird.dev",
+      "reachable": true
+    },
+    {
+      "url": "https://console.shorebird.dev",
+      "reachable": true
+    },
+    {
+      "url": "https://oauth2.googleapis.com",
+      "reachable": true
+    },
+    {
+      "url": "https://storage.googleapis.com",
+      "reachable": true
+    },
+    {
+      "url": "https://cdn.shorebird.cloud",
+      "reachable": true
+    }
+  ],
+  "sources": [
+    {
+      "path": "apps/exvpn/shorebird.yaml",
+      "sha256": "c940e31fcf8381cf8f67da1ac7c0d02c58263b672675126c45b5956794a2b9e6"
+    },
+    {
+      "path": "scripts/bootstrap/shorebird.lock.json",
+      "sha256": "93bebdbf5644d5c25386f60dafb456f01fe6add3be09a427e93afe7d447ae3e7"
+    }
+  ],
+  "privateEvidence": [
+    {
+      "name": "whoami-private.stdout.txt",
+      "sha256": "8765f8654b89e9feb0888b547bcaf1d8f3df31556af522aec80f17c94397e043"
+    },
+    {
+      "name": "apps-private.json",
+      "sha256": "52c0cb3789d7b7da34694ba8d1cfd94ba76e719b16de3b1b8e80f20759ea4b87"
+    },
+    {
+      "name": "orgs-private.json",
+      "sha256": "e609281b3d325ecf8072483f530df4847a1fc0c65eedd1c973f3649a20e2cde7"
+    },
+    {
+      "name": "init-private.stdout.txt",
+      "sha256": "8547798918b7f95fbb4ddcf7c1905fa3afa422a79baaa526ef2206c8f8d65cb3"
+    },
+    {
+      "name": "init-private.stderr.txt",
+      "sha256": "783a626ede5f3a208981d5a433f1b8a80f1c3a0f43ced78e0d0da335042cd144"
+    },
+    {
+      "name": "init-wrapper-private.stdout.txt",
+      "sha256": "77333c9682b0bfab637769e18a9c12d3f0331977d40a9c5b0d3098aa191da21a"
+    },
+    {
+      "name": "init-wrapper-private.stderr.txt",
+      "sha256": "8c0dc7d6a74c9fcbb6aad26d7e84eef271c3c4ae446ebf31976d2ffa1845cad3"
+    },
+    {
+      "name": "apps-after-private.json",
+      "sha256": "c0659baa05fe3739ba4b7e5b4f4241d6bb8dea4e7e7db017622f3d92ae57bdb8"
+    },
+    {
+      "name": "doctor-project-private.json",
+      "sha256": "babe13b12b1771cfabd9735a1623afc0fe9e1164455f878678cfb7d99ee3e0c4"
+    }
+  ],
+  "limitations": [
+    "doctor exit code alone is not acceptance; six individual validators checked",
+    "Initial worktree init stopped before cloud app creation: ignored Gradle wrapper missing; copied exact existing wrapper files, no APK rebuild",
+    "Regular Flutter artifacts still have no Shorebird engine",
+    "Signature enforcement, native notices and release -> patch -> rollback must be verified on Android/Windows",
+    "The auxiliary loopback login timed out; user completed an independent CLI login, then account API authenticated successfully"
+  ]
+}

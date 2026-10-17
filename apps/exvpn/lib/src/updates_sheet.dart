@@ -3,14 +3,17 @@ import 'package:flutter/material.dart';
 
 import '../build_identity.dart';
 import '../services/data_updates.dart';
+import '../services/dart_updates.dart';
+import 'dart_updates_section.dart';
 
 class UpdatesSheet extends StatelessWidget {
-  const UpdatesSheet({super.key, required this.updates});
+  const UpdatesSheet({super.key, required this.updates, this.dartUpdates});
   final DataUpdatesController updates;
+  final DartUpdatesController? dartUpdates;
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-    animation: updates,
+    animation: Listenable.merge([updates, dartUpdates]),
     builder: (context, _) {
       final proposal = updates.proposal;
       return Scaffold(
@@ -31,11 +34,12 @@ class UpdatesSheet extends StatelessWidget {
                       ? 'Встроенные'
                       : 'Ревизия ${updates.snapshot.revision}',
                 ),
-                _version(
-                  'Dart-патч',
-                  'Базовая сборка · Shorebird не подключён',
-                ),
+                _version('Dart-патч', dartPatchVersionText(dartUpdates)),
                 _version('Канал данных', updates.channel),
+                if (dartUpdates != null) ...[
+                  const SizedBox(height: 24),
+                  DartUpdatesSection(controller: dartUpdates!),
+                ],
                 const SizedBox(height: 24),
                 Text(
                   'Обновления данных',

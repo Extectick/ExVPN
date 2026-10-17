@@ -11,6 +11,7 @@ import '../services/subscription_persistence.dart';
 import '../services/safe_diagnostics.dart';
 import '../build_identity.dart';
 import '../services/data_updates.dart';
+import '../services/dart_updates.dart';
 import 'updates_sheet.dart';
 
 class SettingsSheet extends StatefulWidget {
@@ -332,10 +333,13 @@ class _SettingsSheetState extends State<SettingsSheet> {
           trailing: const Icon(Icons.chevron_right),
           onTap: () {
             final updates = DataUpdatesScope.maybeOf(context);
+            final dartUpdates = DartUpdatesScope.maybeOf(context);
             if (updates != null) {
+              unawaited(dartUpdates?.initialize());
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => UpdatesSheet(updates: updates),
+                  builder: (_) =>
+                      UpdatesSheet(updates: updates, dartUpdates: dartUpdates),
                 ),
               );
             }
