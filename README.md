@@ -2,24 +2,29 @@
 
 Открытый VPN-клиент с общей кодовой базой Flutter для Android, Windows, Linux и iOS. Первый выпуск ориентирован на Android 11+ и Windows 10/11 x64; VPN-ядро — Xray через собственный адаптер.
 
-**Статус: предварительный demo-выпуск, разработка продолжается.** Полная системная приёмка VPN, исключений приложений и защиты от утечек ещё не завершена. Подтверждённые результаты и оставшиеся задачи находятся в [чеклисте](docs/CHECKLIST.md).
+**Статус: предварительный выпуск, разработка продолжается.** Полная системная приёмка VPN, исключений приложений и защиты от утечек ещё не завершена. Подтверждённые результаты и оставшиеся задачи находятся в [чеклисте](docs/CHECKLIST.md).
 
-Текущая версия исходников — **0.1.1+22**, тег `v0.1.1`.
-[Изменения и проверки](docs/RELEASE_0.1.1.md).
+Текущая версия — **0.1.3+24**, тег `v0.1.3`.
+[Изменения и ограничения](docs/releases/0.1.3.md),
+[проверка опубликованных файлов](docs/evidence/release-v0.1.3.json).
 
-Доступен [ExVPN 0.1.0 Demo, build 18](https://github.com/Extectick/ExVPN/releases/tag/v0.1.0-demo), собранный GitHub Actions:
+Доступен [ExVPN 0.1.3 Preview, build 24](https://github.com/Extectick/ExVPN/releases/tag/v0.1.3), собранный GitHub Actions:
 
-- [Android 11+ APK](https://github.com/Extectick/ExVPN/releases/download/v0.1.0-demo/ExVPN-0.1.0-demo-android.apk), подписан постоянным release-ключом.
-- [Windows 10/11 x64](https://github.com/Extectick/ExVPN/releases/download/v0.1.0-demo/ExVPN-0.1.0-demo-windows-x64.exe), установщик без подписи издателя, для тестового стенда.
+- [Android 11+ APK](https://github.com/Extectick/ExVPN/releases/download/v0.1.3/ExVPN-0.1.3-24-android.apk), подписан постоянным release-ключом.
+- [Windows 10/11 x64](https://github.com/Extectick/ExVPN/releases/download/v0.1.3/ExVPN-0.1.3-24-windows-x64-development.exe), установщик без подписи издателя.
 
-[Установка и ограничения демо](docs/releases/0.1.0-demo.md). Dart OTA в этой сборке недоступен; это prerelease, не стабильная версия.
+[Установка и ограничения](docs/releases/0.1.3.md). Dart OTA в этой сборке недоступен; это prerelease, не стабильная версия. Перед обновлением отключите VPN/PROXY и закройте ExVPN; подписки и настройки сохраняются.
 
 На Android 11 и 16 в эмуляторах подтверждены реальный HTTPS через TUN и
 блокировка защищаемого запроса при отказе тестового сервера. На Android 16 также
 проверены семь вариантов протоколов/транспортов и подписанное обновление данных
 с откатом. Windows UI собран; в Sandbox прошли установка службы, ACL,
 recovery/restart и удаление. Полная системная VPN-приёмка Windows ещё не выполнена.
-Production OTA, Shorebird и подписанный beta-выпуск не готовы.
+В 0.1.3 на API30 отдельно подтверждены маршруты include/exclude, отказ сервера
+для защищаемого UID и восстановление. Windows beta feed подписан Ed25519:
+установленная +21 обнаружила и скачала +24 с проверкой целостности. Это не
+подменяет приёмку установки/перезапуска, Windows Sandbox, физических устройств
+и полного цикла Shorebird.
 
 ## Документация
 

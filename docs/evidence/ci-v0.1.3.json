@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "version": "0.1.3+24",
+  "runs": [
+    {
+      "id": 39078862571,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39078862571",
+      "sourceCommit": "3d4e363fc8d6a75d2006f7e043585589005f68c8",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Android",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-17T23:23:56Z",
+          "completedAt": "2026-10-17T23:39:11Z"
+        },
+        {
+          "name": "Windows",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-17T23:23:56Z",
+          "completedAt": "2026-10-17T23:33:29Z"
+        }
+      ]
+    },
+    {
+      "id": 39078862310,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39078862310",
+      "sourceCommit": "3d4e363fc8d6a75d2006f7e043585589005f68c8",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "Preview Android",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-17T23:23:58Z",
+          "completedAt": "2026-10-17T23:37:47Z"
+        },
+        {
+          "name": "Preview Windows",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-17T23:23:58Z",
+          "completedAt": "2026-10-17T23:36:00Z"
+        },
+        {
+          "name": "Publish verified preview and update feed",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-10-17T23:37:51Z",
+          "completedAt": "2026-10-17T23:38:42Z"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "verifiedUtc": "2026-10-18T06:39:48.175859+07:00",
+  "version": "0.1.3+24",
+  "sourceCommit": "3d4e363fc8d6a75d2006f7e043585589005f68c8",
+  "allDownloadedAssetsVerified": true,
+  "manifestAssetCount": 13,
+  "checksumEntryCount": 14,
+  "artifactAndNoticeBindings": true,
+  "sbomVersionAndBinaryBindings": true,
+  "androidAuditReleaseSignerMatched": true,
+  "windowsPayloadAuditVerified": true,
+  "windowsFeedEd25519Verified": true,
+  "feedInstallerUrlSizeAndHashMatched": true,
+  "feedExpiresUtc": "2026-11-01T06:38:35+07:00",
+  "releaseUrl": "https://github.com/Extectick/ExVPN/releases/tag/v0.1.3",
+  "workflowRun": "https://github.com/Extectick/ExVPN/actions/runs/39078862310",
+  "stableReady": false,
+  "windowsAuthenticodeAvailable": false,
+  "android": {
+    "file": "ExVPN-0.1.3-24-android.apk",
+    "bytes": 134128703,
+    "sha256": "d876019c1792615be3a25ff39952cbf1cd4ed132657c2c4006be0385f4bba070"
+  },
+  "windows": {
+    "file": "ExVPN-0.1.3-24-windows-x64-development.exe",
+    "bytes": 49131469,
+    "sha256": "a8185d236834b1e8164551a7af13eae75a53310156725b1b8ba5d4f27c2299f5"
+  },
+  "limits": [
+    "Does not prove install/handoff/reopen",
+    "Does not replace VPN runtime and physical-device acceptance",
+    "Windows unsigned; incomplete runtime license inventory remains disclosed"
+  ],
+  "githubRemoteAssetCount": 15,
+  "githubRemoteDigestsAndSizesVerified": true,
+  "publishedUtc": "2026-10-17T23:38:33Z"
+}

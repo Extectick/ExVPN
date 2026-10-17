@@ -1,5 +1,17 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+Последний общий прогон 2026-10-18, исходники
+[3d4e363](https://github.com/Extectick/ExVPN/commit/3d4e363fc8d6a75d2006f7e043585589005f68c8):
+**12/12 PASS за 100,72 с**, 308 app tests, source fingerprint не изменился.
+Сохранены прежние suite/host пары; добавлены проверки трёх режимов и release-feed.
+[Full](evidence/fast-validation-v0.1.3.json),
+[Android JVM boundary](evidence/android-owner-build24.json),
+[отдельный API30 runtime](evidence/android-routing24-runtime.json).
+Full остаётся поведенческой проверкой: сборка, настоящая сеть, физическое
+устройство и цикл установки проверяются отдельно. APK23 прошёл Full, но runtime
+обнаружил неверное include; исправление подтверждено APK24. Успех unit-тестов
+не заменяет это разделение.
+
 После добавления чистых Android selectors, 2026-10-17: **11/11 PASS за
 241,75 с**, Go result cache отключён, исходники не менялись во время проверки.
 В scripts/CI сохранены все 17 прежних suite/host пар и добавлена одна новая.

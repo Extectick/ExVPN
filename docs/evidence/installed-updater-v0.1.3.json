@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "recordedUtc": "2026-10-17T23:39:41.6513893+00:00",
+  "helper": "installed 0.1.0+21",
+  "requestedVersion": "0.1.3+24",
+  "networkSettingsChanged": false,
+  "handoffAttempted": false,
+  "records": [
+    {
+      "command": "check",
+      "exitCode": 0,
+      "result": {
+        "type": "result",
+        "status": "available",
+        "version": "0.1.3+24",
+        "sizeBytes": 49131469
+      },
+      "progressMessages": 0
+    },
+    {
+      "command": "download",
+      "exitCode": 0,
+      "result": {
+        "type": "result",
+        "status": "ready",
+        "version": "0.1.3+24",
+        "sizeBytes": 49131469
+      },
+      "progressMessages": 175
+    }
+  ]
+}

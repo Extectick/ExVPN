@@ -155,5 +155,5 @@
     "signed release and upgrade acceptance"
   ],
   "applicationVersion": "0.1.3+24",
-  "sourceState": "working tree; source commit pending"
+  "sourceCommit": "3d4e363fc8d6a75d2006f7e043585589005f68c8"
 }

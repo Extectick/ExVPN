@@ -1,0 +1,184 @@
+{
+  "schema": 1,
+  "capturedUtc": "2026-10-17T23:33:11.2763525Z",
+  "status": "passed_with_scope",
+  "platform": {
+    "target": "owned Android emulator",
+    "api": 30,
+    "abi": "x86_64",
+    "originalUserEmulatorUntouched": true
+  },
+  "apk": {
+    "version": "0.1.3+24",
+    "sourceCommit": "3d4e363fc8d6a75d2006f7e043585589005f68c8",
+    "sha256": "494f152550d6000a35a3f5d8ef82d748e5bcd22beb0829c981523a7d54be8fbd",
+    "bytes": 134128463,
+    "installedBaseApkHashMatched": true,
+    "releaseSignerVerified": true,
+    "trustedSignerMatched": true,
+    "v2Verified": true,
+    "debuggable": false,
+    "freshJvmTests": 20,
+    "coreDisplayed": "26.10.10-exvpn.5"
+  },
+  "policy": {
+    "persistedModeReadViaModernNativeBridge": true,
+    "selectedUid": 10168,
+    "unselectedUid": 10167,
+    "selectedPackage": "ru.exvpn.netprobe.excluded",
+    "unselectedPackage": "ru.exvpn.netprobe",
+    "freshConnectAfterNormalDisconnect": true
+  },
+  "matrix": [
+    {
+      "mode": "include",
+      "probe": "protected",
+      "selected": false,
+      "connected": {
+        "success": true,
+        "httpStatus": 200,
+        "error": null,
+        "vpnTransport": true,
+        "uid": 10167,
+        "durationMs": 1062
+      },
+      "fixtureUploadDelta": 0,
+      "fixtureDownloadDelta": 0,
+      "outage": {
+        "success": true,
+        "httpStatus": 200,
+        "error": null,
+        "vpnTransport": true,
+        "uid": 10167,
+        "durationMs": 793
+      }
+    },
+    {
+      "mode": "include",
+      "probe": "excluded",
+      "selected": true,
+      "connected": {
+        "success": true,
+        "httpStatus": 200,
+        "error": null,
+        "vpnTransport": true,
+        "uid": 10168,
+        "durationMs": 268
+      },
+      "fixtureUploadDelta": 570,
+      "fixtureDownloadDelta": 1059,
+      "outage": {
+        "success": false,
+        "httpStatus": null,
+        "error": "network",
+        "vpnTransport": true,
+        "uid": 10168,
+        "durationMs": 2057
+      }
+    },
+    {
+      "mode": "exclude",
+      "probe": "protected",
+      "selected": false,
+      "connected": {
+        "success": true,
+        "httpStatus": 200,
+        "error": null,
+        "vpnTransport": true,
+        "uid": 10167,
+        "durationMs": 515
+      },
+      "fixtureUploadDelta": 570,
+      "fixtureDownloadDelta": 2829
+    },
+    {
+      "mode": "exclude",
+      "probe": "excluded",
+      "selected": true,
+      "connected": {
+        "success": true,
+        "httpStatus": 200,
+        "error": null,
+        "vpnTransport": true,
+        "uid": 10168,
+        "durationMs": 753
+      },
+      "fixtureUploadDelta": 0,
+      "fixtureDownloadDelta": 0
+    }
+  ],
+  "outageNativeVpnCaptureCount": 1,
+  "restored": [
+    {
+      "phase": "restored",
+      "mode": "include",
+      "flavor": "protected",
+      "success": true,
+      "vpnTransport": false,
+      "httpStatus": 200,
+      "error": null
+    },
+    {
+      "phase": "restored",
+      "mode": "include",
+      "flavor": "excluded",
+      "success": true,
+      "vpnTransport": false,
+      "httpStatus": 200,
+      "error": null
+    },
+    {
+      "phase": "restored",
+      "mode": "exclude",
+      "flavor": "protected",
+      "success": true,
+      "vpnTransport": false,
+      "httpStatus": 200,
+      "error": null
+    },
+    {
+      "phase": "restored",
+      "mode": "exclude",
+      "flavor": "excluded",
+      "success": true,
+      "vpnTransport": false,
+      "httpStatus": 200,
+      "error": null
+    }
+  ],
+  "cleanup": {
+    "serviceAbsent": true,
+    "vpnCaptureAbsent": true,
+    "ownedAdbReverseMappingsAbsent": true,
+    "ownedFixtureProcessesStopped": true,
+    "ownedEmulatorRetainedForFinalReleaseApkSmoke": true,
+    "hostNetworkChanged": false
+  },
+  "ui": {
+    "actualNativeIconsVisible": true,
+    "nativeIconSource": "PackageManager application icon rendered as 64x64 PNG",
+    "primaryScreenshot": "android-routing24-app-icons.png",
+    "mainScreenshot": "android-routing24-main.png",
+    "versionScreenshot": "android-routing24-versions.png",
+    "allScreenshotsOriginalUnedited": true,
+    "allProfileLabelsSynthetic": true,
+    "pinnedSearchAndClearFlowEvidence": "android-routing23-runtime.json",
+    "normalVersionsNoDeveloperDiagnostics": true
+  },
+  "regression": {
+    "oldVersion": "0.1.2+23",
+    "oldFailureEvidence": "android-routing23-runtime.json",
+    "failure": "Known unselected owner was discarded by legacy exclusion confirmation and used VPN under include.",
+    "fix": "Application owner confirmation admits eligible known unselected application UIDs for include; unknown/system/isolated/shared boundaries remain guarded.",
+    "actualRuntimeFixed": true
+  },
+  "limits": [
+    "Synthetic VLESS TCP server runs in a separately owned host process; no process-global protected dialer injection.",
+    "Fixture byte samples are aggregate inbound deltas; controlled outage is the independent route discriminator.",
+    "Primary TLS endpoint uses IPv4; this does not close IPv6, DNS leak, physical Android device, always-on/lockdown or full E1 acceptance.",
+    "Disabled-mode matrix and pinned/search/clear workflows were exercised on APK23; APK24 reruns include/outage/restore and exclude numeric pair after Kotlin-only owner fix.",
+    "Latest-server selection/cancel while connecting was not runtime-accepted in this run.",
+    "Intermittent external health/direct failures from the old run remain recorded; no failures were discarded.",
+    "Local signed runtime candidate is not the CI-published APK; final CI APK requires separate install/version/startup smoke."
+  ]
+}

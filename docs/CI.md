@@ -1,5 +1,29 @@
 # Проверки и сборки CI
 
+## Preview 0.1.3+24 и подписанный Windows feed
+
+`preview-release.yml` запускается вручную из main с точной версией, совпадающей
+с pubspec/build identity. Старый demo workflow сохраняет исходные 0.1.0+18.
+Android и Windows собираются из одного commit; действуют прежние строгие
+проверки подписи APK, native inputs, notice/SBOM binding и полного NSIS payload.
+Публикация требует уже существующего нового тега с тем же commit и проверяет
+каждый GitHub asset digest. Неизменяемые файлы выпуска не перезаписываются.
+
+Только после публикации установщика job подписывает отдельный beta manifest
+Ed25519, проверяет его URL/размер/хеш и обновляет единственный mutable pointer
+`windows-beta/windows-x64.json`. Ключ отделён от APK и хранится в защищённом
+GitHub environment. Python и все signing wheels закреплены с хешами.
+Повтор допускается лишь для идентичных неизменённых данных; downgrade,
+посторонние assets, неизвестные подписи и изменение старых bytes отклоняются.
+Windows unsigned остаётся prerelease, stable audit не ослаблен.
+
+Исходники [3d4e363](https://github.com/Extectick/ExVPN/commit/3d4e363fc8d6a75d2006f7e043585589005f68c8),
+[workflow выпуска](https://github.com/Extectick/ExVPN/actions/runs/39078862310),
+[проверка скачанных файлов](evidence/release-v0.1.3.json),
+[проверка установленного updater](evidence/installed-updater-v0.1.3.json),
+[установка опубликованного APK](evidence/android-published-v0.1.3-smoke.json).
+Полная установка через UAC и автоматическое переоткрытие — отдельная приёмка E6.
+
 ## Демо 0.1.0+18
 
 Отдельный `demo-release.yml` запускается вручную только из `main` репозитория

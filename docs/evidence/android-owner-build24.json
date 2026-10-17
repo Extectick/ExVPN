@@ -6,5 +6,7 @@
   "tests": 12,
   "apkOrJniBuilt": false,
   "emulatorTouched": false,
-  "reason": "Include confirmed unselected owners plus per-user appId range, self/system/SDK-sandbox/isolated/shared/unknown fail-closed"
+  "reason": "Include confirmed unselected owners plus per-user appId range, self/system/SDK-sandbox/isolated/shared/unknown fail-closed",
+  "sourceCommit": "3d4e363fc8d6a75d2006f7e043585589005f68c8",
+  "appIdReference": "https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android11-dev/core/java/android/os/UserHandle.java"
 }

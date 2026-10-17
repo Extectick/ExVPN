@@ -817,7 +817,7 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   в работающем интерфейсе. Проверено 2026-10-18: 52 профильных UI-теста,
   400×440 и browser preview, затем настоящий API30 Android с нативными иконками,
   поиском и подтверждением очистки. [Hover preview](evidence/settings-hover-preview-routing.png),
-  [Android](evidence/android-routing23-app-icons.png). UI-исходники:
+  [Android +24](evidence/android-routing24-app-icons.png). UI-исходники:
   [5da3ea7](https://github.com/Extectick/ExVPN/commit/5da3ea7511eb2bfdb82557648560adf470a09d8b).
   Финальный Full 12/12, 308 app tests, 100,72 с; новый native runtime учитывается отдельно.
 - [ ] **EXVPN-E4-005** — Три режима Android с подтверждённым UID и замена сервера
@@ -827,7 +827,14 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   E4/E7 gate. Прогресс 2026-10-18: disabled/exclude прошли на двух UID;
   include выявил legacy owner boundary, поэтому публикация 0.1.2 отменена.
   Исправлены известные невыбранные UID и appId рабочего профиля; 12 focused JVM
-  tests PASS. Проверка исправленного APK ожидается. Рабочее дерево; commit ожидается.
+  tests PASS; подписанный APK +24 прошёл все 20 JVM tests.
+  APK24: include — выбранный UID через VPN, невыбранный напрямую; остановка
+  fixture блокирует только защищаемый UID; exclude pair и четыре восстановления
+  direct HTTPS200 прошли. [Runtime](evidence/android-routing24-runtime.json),
+  [версии](evidence/android-routing24-versions.png). Живая замена сервера/отмена
+  и удержание TUN при ней этим прогоном не приняты, поэтому пункт остаётся открытым.
+  Исходники:
+  [3d4e363](https://github.com/Extectick/ExVPN/commit/3d4e363fc8d6a75d2006f7e043585589005f68c8).
 - [ ] **EXVPN-E5-009** — Windows modes/family anchors и смена цели при подключении.
   Критерий: mode/persistence/strict IPC/unknown-owner/family-negative tests и
   изолированная матрица реального HTTPS с отключением fixture и восстановлением
@@ -836,9 +843,22 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   сборка Windows и CI прошли. Sandbox не получил устойчивый HTTPS ещё до TUN;
   матрица остаётся открытой. [Отчёт](evidence/windows-routing23-runtime-blocker.json).
   Исходники: [8d8ceee](https://github.com/Extectick/ExVPN/commit/8d8ceee235066a7f7cdae3fe0c4f0684388a1839).
-- [ ] **EXVPN-E7-008** — Опубликовать проверенные 0.1.3 Preview Android/Windows и
+- [x] **EXVPN-E7-008** — Опубликовать проверенные 0.1.3 Preview Android/Windows и
   подписанный Windows beta feed через GitHub workflow. Критерий: исходники/новый
   тег неизменяемы, CI прошёл, APK подписан прежним ключом, все опубликованные
   bytes/hash/notices проверены скачиванием, feed Ed25519 совпадает с доверенным
-  ключом и новым установщиком. Windows unsigned остаётся prerelease. Рабочее
-  дерево; commit ожидается.
+  ключом и новым установщиком. Выполнено 2026-10-18: оба workflow и обе платформы
+  PASS, все 15 GitHub assets и 14 SHA256SUMS entries проверены скачиванием,
+  APK release-signed, Ed25519 feed совпадает с установщиком. Установленная +21
+  вернула available → ready для +24; handoff/установка/перезапуск не запускались.
+  [Выпуск](https://github.com/Extectick/ExVPN/releases/tag/v0.1.3),
+  [CI](evidence/ci-v0.1.3.json), [bytes/feed](evidence/release-v0.1.3.json),
+  [installed updater](evidence/installed-updater-v0.1.3.json).
+  Скачанный публичный APK независимо проверен apksigner/aapt2, установлен через
+  install-r; установленный хеш совпал, запуск/версии/сохранение политики PASS,
+  новых crash markers и активного VPN нет.
+  [Published APK smoke](evidence/android-published-v0.1.3-smoke.json).
+  Тег `v0.1.3` закреплён на
+  [3d4e363](https://github.com/Extectick/ExVPN/commit/3d4e363fc8d6a75d2006f7e043585589005f68c8);
+  v0.1.1/v0.1.2 не менялись. Windows unsigned остаётся prerelease, E1/E4/E5/E6/E7
+  общие критерии стабильности этим пунктом не закрыты.
