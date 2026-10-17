@@ -9,6 +9,16 @@ Windows package. Он сохраняет SHA-256 файлов, результа�
 Нужны PowerShell 7, установленный закреплённый Go из `.tools/go`; для Android —
 уже установленный Android build-tools **36.0.0** и JBR. Ничего не скачивается,
 не собирается, не устанавливается и не подписывается. APK/EXE не запускаются.
+Для независимого чтения Windows NSIS нужен закреплённый 7-Zip **26.04**:
+`pwsh -File scripts/release/prepare-archive-inspector.ps1` подготавливает только
+локальные audit tools в `.tools`, без установки в Windows и запуска installer.
+`-Offline` запрещает скачивание. Хеши загрузок сверены с metadata официального
+[релиза](https://github.com/ip7z/7zip/releases/tag/26.04), извлечённые EXE/DLL и
+License.txt также закреплены. Наличие этих хешей не является подписью издателя.
+Сам audit остаётся offline: если tools отсутствуют, соответствующий blocker
+сохраняется; если подготовленные tools подменены, проверка завершается ошибкой.
+Нужен также исходный `.cache/nsis-3.13.zip` с уже закреплённым SHA-256.
+
 Входные пакеты, SDK и рабочее дерево не изменяются; вывод разрешён только в
 **новый** каталог `artifacts/release-audit/`. Старые отчёты не перезаписываются.
 
@@ -38,7 +48,8 @@ exit code. Быстрый цикл запускает только synthetic fix
   SHA-256 артефакта, отпечатки исходных pins и инструментов, подпись, counts,
   native build info и стабильные коды блокирующих находок.
 - `sbom.cdx.json` — CycloneDX 1.6; реальные файлы APK либо **staged** Windows
-  payload, реально указанные в binaries Go-модули и отдельно помеченные
+  payload (после успешной NSIS-проверки помечены как actual NSIS entries),
+  реально указанные в binaries Go-модули и отдельно помеченные
   declarations из notice inventory. `compositions.aggregate` равен `incomplete`.
   Нет выдуманных SPDX license IDs, пустого dependency graph со смыслом
   «зависимостей нет» или подмены разрешённых pub-пакетов точным runtime graph.
@@ -59,6 +70,20 @@ Windows: точный file set и SHA-256 всех трёх manifest trees; ве
 embedded Go modules/GOOS/GOARCH/Go version из **payload/service/exvpn-service.exe**
 против текущих `go.mod`/`go.sum`; Wintun/MSVC DLL hashes и NSIS pins. Проверяются
 полные обязательные тексты в control, а не только слова о лицензиях в README.
+
+NSIS EXE читается как архив, не исполняется. До извлечения проверяются пути,
+дубликаты, коллизии file/directory, точный набор служебных файлов и пределы
+размеров. Payload сравнивается со staging побайтно через SHA-256 и размер.
+Встроенный Uninstall.exe также только извлекается: обе maintenance PowerShell
+программы сравниваются с payload, DLL плагинов и wizard bitmap — с содержимым
+закреплённого NSIS ZIP. У последних NSIS entries иногда нет объявленной длины;
+они отдельно читаются через stdout с пределом 16 MiB и таймаутом, не распаковываются
+неограниченно на диск. Новые файлы извлечения остаются в каталоге отчёта.
+
+`nsisExtraction.verified` доказывает соответствие упакованных файлов. Это не
+декомпиляция всех installer instructions, не подпись и не runtime install/
+upgrade/uninstall. Эти независимые gates сохраняются. Без успешного извлечения
+SBOM продолжает называть Windows файлы только `staged-payload-file`.
 
 Android: все реальные ZIP entries, обе обязательные ABI, собственный package ID,
 versionName/versionCode, debuggable, `apksigner verify`, hash каждого native

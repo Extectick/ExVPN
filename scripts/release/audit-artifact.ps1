@@ -15,6 +15,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'artifact-audit-lib.ps1')
+. (Join-Path $PSScriptRoot 'nsis-audit-lib.ps1')
 . (Join-Path $PSScriptRoot 'notice-inputs.ps1')
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $inputPath = [IO.Path]::GetFullPath($ArtifactPath)
@@ -38,12 +39,14 @@ $noticeSource = 'missing'
 $sourceZip = ''
 $sourceCorrespondence = [ordered]@{ present = $false; zipSha256 = ''; linkedModuleSum = ''; actualGoSum = ''; matched = $false; patch = $null }
 $signature = [ordered]@{ verified = $false; trustedSignerMatched = $false; debug = $false; certificateSha256 = @() }
+$nsisEvidence = [ordered]@{ verified=$false }
 $pinPaths = @('apps/exvpn/pubspec.yaml', 'apps/exvpn/pubspec.lock', 'scripts/bootstrap/toolchain.lock.json',
     'scripts/windows/wintun.lock.json', 'scripts/windows/msvc-runtime.lock.json', 'scripts/windows/nsis.lock.json',
     'native/windows/go.mod', 'native/windows/go.sum', 'native/android/go.mod', 'native/android/go.sum',
     'native/core/go.mod', 'native/core/go.sum', 'LICENSE', 'NOTICE',
     'native/patches/xray-lifecycle.lock.json', 'native/patches/xray-lifecycle.patch',
-    'scripts/release/audit-artifact.ps1', 'scripts/release/artifact-audit-lib.ps1', 'scripts/release/notice-inputs.ps1')
+    'scripts/release/audit-artifact.ps1', 'scripts/release/artifact-audit-lib.ps1', 'scripts/release/notice-inputs.ps1',
+    'scripts/release/nsis-audit-lib.ps1', 'scripts/release/archive-inspector.lock.json')
 $pinEvidence = @($pinPaths | Sort-Object -CaseSensitive -Culture en-US | ForEach-Object {
     [ordered]@{ path = $_; sha256 = Get-AuditSha256 (Join-Path $repository $_) }
 })
@@ -88,11 +91,17 @@ try {
             $signature.trustedSignerMatched = !!$ExpectedSignerSha256 -and $digest -ceq $ExpectedSignerSha256.ToLowerInvariant()
         }
         if (!$signature.verified) { Add-AuditFinding $findings 'windows_signature_not_valid' }
-        # A compiler manifest proves the staged tree, not extraction of final EXE.
-        Add-AuditFinding $findings 'nsis_embedded_payload_not_independently_verified'
+        $inspectorPin = Get-Content (Join-Path $PSScriptRoot 'archive-inspector.lock.json') -Raw | ConvertFrom-Json
+        if (Test-Path -LiteralPath (Join-Path $repository ".tools/7zip-$($inspectorPin.version)")) {
+            $nsisEvidence = Get-AuditNsisEvidence $repository $artifactFile $output $files
+            foreach ($tool in $nsisEvidence.tools) { $toolsUsed.Add([ordered]@{name='7zip/' + $tool.name;sha256=$tool.sha256}) }
+        } else {
+            # No download or implicit preparation during the offline audit.
+            Add-AuditFinding $findings 'nsis_embedded_payload_not_independently_verified'
+        }
         $nativePaths = @('service/exvpn-service.exe')
         $noticeRoot = Join-Path $payload 'control/notices'
-        if (Test-Path -LiteralPath (Join-Path $noticeRoot 'inventory.json')) { $noticeSource = 'staged-payload' }
+        if (Test-Path -LiteralPath (Join-Path $noticeRoot 'inventory.json')) { $noticeSource = if ($nsisEvidence.verified) { 'installer-payload-verified' } else { 'staged-payload' } }
         $wintun = Get-Content -LiteralPath (Join-Path $repository 'scripts/windows/wintun.lock.json') -Raw | ConvertFrom-Json -AsHashtable
         if (!$files.ContainsKey('service/wintun.dll') -or $files['service/wintun.dll'].sha256 -cne $wintun.dllSha256) { Add-AuditFinding $findings 'wintun_pin_mismatch' }
         $msvc = Get-Content -LiteralPath (Join-Path $repository 'scripts/windows/msvc-runtime.lock.json') -Raw | ConvertFrom-Json -AsHashtable
@@ -108,6 +117,9 @@ try {
             if (!$files.ContainsKey("control/$required")) { Add-AuditFinding $findings 'windows_distribution_notice_missing' $required }
         }
         $evidenceScope = 'Final installer SHA/signature and separate staged payload; EXE contents are not independently extracted.'
+        if ($nsisEvidence.verified) {
+            $evidenceScope = 'Final NSIS installer payload independently extracted and byte-matched to staging; uninstaller maintenance scripts and compiler-pinned plugins verified. Installer instruction semantics and runtime behavior are separate gates.'
+        }
     } else {
         $target = 'Android'
         if (![IO.Path]::GetExtension($inputPath).Equals('.apk', [StringComparison]::OrdinalIgnoreCase)) { throw 'expected_apk_or_windows_package_directory' }
@@ -166,7 +178,7 @@ try {
         $noticeSource = 'external-sidecar'
         Add-AuditFinding $findings 'external_notices_are_not_artifact_contents'
     }
-    if ($noticeSource -in 'staged-payload', 'external-sidecar') {
+    if ($noticeSource -in 'staged-payload', 'installer-payload-verified', 'external-sidecar') {
         $noticeFiles = Get-AuditTreeFiles $noticeRoot
         $inventory = Get-Content -LiteralPath (Join-Path $noticeRoot 'inventory.json') -Raw | ConvertFrom-Json -AsHashtable
         if ($noticeFiles.ContainsKey('sources/xray-core.zip')) { $sourceZip = Join-Path $noticeRoot 'sources/xray-core.zip' }
@@ -284,9 +296,10 @@ try {
         signature = $signature; pins = $pinEvidence; tools = @($toolsUsed | Sort-Object { $_.name } -CaseSensitive -Culture en-US)
         counts = [ordered]@{ files = $files.Count; nativeBinaries = $native.Count; noticeComponents = $(if ($inventory) { $inventory.components.Count } else { 0 }) }
         nativeBinaries = $native.ToArray()
+        nsisExtraction = $nsisEvidence
         findings = @($findings | Sort-Object { $_.code }, { $_.subject } -CaseSensitive -Culture en-US -Unique)
     }
-    Write-AuditJson (Join-Path $output 'sbom.cdx.json') (New-AuditSbom $target $appVersion $artifactHash $files $native $inventory)
+    Write-AuditJson (Join-Path $output 'sbom.cdx.json') (New-AuditSbom $target $appVersion $artifactHash $files $native $inventory -WindowsPayloadVerified:$nsisEvidence.verified)
     Write-AuditJson (Join-Path $output 'audit.json') $report
     $summary = @("ExVPN $appVersion / $target", "Artifact SHA-256: $artifactHash", "Files: $($files.Count); native binaries: $($native.Count); notice components: $($report.counts.noticeComponents)",
         "Notice evidence: $noticeSource", "Coverage: INCOMPLETE; release readiness: BLOCKED", $evidenceScope, '', 'Release blockers:') + @($report.findings | ForEach-Object { "- $($_.code)$(if ($_.subject) { ': ' + $_.subject })" })

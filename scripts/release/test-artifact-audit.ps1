@@ -4,6 +4,7 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'artifact-audit-lib.ps1')
+. (Join-Path $PSScriptRoot 'nsis-audit-lib.ps1')
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $fixture = Join-Path $repository ('artifacts/release-audit/fixtures-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $fixture | Out-Null
@@ -147,4 +148,60 @@ Write-AuditJson (Join-Path $fixture 'second.cdx.json') $bom2
 Assert-True ((Get-AuditSha256 (Join-Path $fixture 'first.cdx.json')) -ceq (Get-AuditSha256 (Join-Path $fixture 'second.cdx.json'))) 'deterministic SBOM independent of enumeration order'
 Assert-True ($bom1.compositions[0].aggregate -ceq 'incomplete' -and @($bom1.components | Where-Object { $_.properties -and @($_.properties | Where-Object value -CEQ 'notice-inventory-declaration-not-link-proof').Count }).Count -eq 2) 'SBOM distinguishes declarations and incomplete coverage'
 Assert-True (@($bom1.components | Group-Object { $_['bom-ref'] } | Where-Object Count -GT 1).Count -eq 0) 'unique SBOM component refs'
+
+function New-NsisListing([string[]]$Paths, [switch]$Uninstaller) {
+    $items = foreach ($path in $Paths) { "Path = $path`nSize = 12`nPacked Size = `nModified = `nAttributes = `nMethod = LZMA:23`nSolid = +`nOffset = 0" }
+    "Type = Nsis`nSubType = NSIS-3 Unicode`n`n----------`n" + ($items -join "`n`n") + "`n"
+}
+$nsisPaths = @('$_12_/package.json','$_12_/ui/exvpn.exe','$_12_/Uninstall.exe',
+    '$PLUGINSDIR/modern-wizard.bmp','$PLUGINSDIR/nsDialogs.dll','$PLUGINSDIR/System.dll','$PLUGINSDIR/nsExec.dll')
+$validNsis = New-NsisListing $nsisPaths
+$parsed = ConvertFrom-AuditNsisListing $validNsis
+Assert-True ($parsed.prefix -ceq '$_12_/' -and $parsed.entries.Count -eq 7) 'NSIS payload root and support entries identified'
+$unknownTail = $validNsis.Replace('Path = $_12_/Uninstall.exe' + "`nSize = 12", 'Path = $_12_/Uninstall.exe' + "`nSize = ")
+Assert-True (!(ConvertFrom-AuditNsisListing $unknownTail).entries['$_12_/Uninstall.exe'].sizeKnown) 'bounded stream required for unknown uninstaller size'
+Assert-Rejected { ConvertFrom-AuditNsisListing ($validNsis.Replace('Type = Nsis','Type = zip')) } 'unsupported_nsis_archive'
+Assert-Rejected { ConvertFrom-AuditNsisListing ($validNsis.Replace('Size = 12', 'Size = -1')) } 'invalid_nsis_entry_size'
+Assert-Rejected { ConvertFrom-AuditNsisListing ($validNsis.Replace('Size = 12', 'Size = 1073741825')) } 'archive_size_limit'
+Assert-Rejected { ConvertFrom-AuditNsisListing ($validNsis.Replace('Attributes = ', 'Attributes = L')) } 'unsupported_nsis_entry'
+Assert-Rejected { ConvertFrom-AuditNsisListing ($validNsis.Replace('Solid = +', 'Symbolic Link = escape')) } 'unsupported_nsis_entry'
+Assert-Rejected { ConvertFrom-AuditNsisListing (New-NsisListing ($nsisPaths + '$_12_/UI/EXVPN.EXE')) } 'duplicate_archive_path'
+Assert-Rejected { ConvertFrom-AuditNsisListing (New-NsisListing ($nsisPaths + '$_12_/ui/exvpn.exe/child')) } 'archive_path_collision'
+Assert-Rejected { ConvertFrom-AuditNsisListing (New-NsisListing ($nsisPaths + '$_13_/package.json')) } 'nsis_payload_root_ambiguous'
+Assert-Rejected { ConvertFrom-AuditNsisListing (New-NsisListing ($nsisPaths + '$_12_/other/file')) } 'unexpected_nsis_payload_entry'
+Assert-Rejected { ConvertFrom-AuditNsisListing (New-NsisListing ($nsisPaths + '$PLUGINSDIR/foreign.dll')) } 'unexpected_nsis_plugin'
+Assert-Rejected { ConvertFrom-AuditNsisListing (New-NsisListing ($nsisPaths + 'outside/file')) } 'unexpected_nsis_archive_entry'
+Assert-Rejected { ConvertFrom-AuditNsisListing (New-NsisListing ($nsisPaths | Where-Object {$_ -cne '$PLUGINSDIR/System.dll'})) } 'nsis_plugin_missing'
+Assert-Rejected { ConvertFrom-AuditNsisListing ($validNsis.Replace('Path = $_12_/ui/exvpn.exe' + "`nSize = 12", 'Path = $_12_/ui/exvpn.exe' + "`nSize = ")) } 'nsis_payload_size_unknown'
+foreach ($unsafe in @('../escape','C:/absolute','$_12_/ui/ads:stream','$_12_/ui/CON','$_12_/ui/../escape')) {
+    Assert-Rejected { ConvertFrom-AuditNsisListing (New-NsisListing ($nsisPaths + $unsafe)) } 'unsafe_relative_path'
+}
+$uninstallPaths = @('$_12_/control/package.ps1','$_12_/control/package-common.ps1','$PLUGINSDIR/System.dll','$PLUGINSDIR/nsExec.dll')
+Assert-True ((ConvertFrom-AuditNsisListing (New-NsisListing $uninstallPaths) -Uninstaller).entries.Count -eq 4) 'uninstaller restricted to maintenance scripts and two plugins'
+Assert-Rejected { ConvertFrom-AuditNsisListing (New-NsisListing ($uninstallPaths + '$_12_/control/extra.ps1')) -Uninstaller } 'unexpected_nsis_payload_entry'
+Assert-Rejected { ConvertFrom-AuditNsisListing (New-NsisListing ($uninstallPaths | Where-Object {$_ -cne '$_12_/control/package-common.ps1'})) -Uninstaller } 'nsis_maintenance_file_missing'
+$stage = New-AuditFileMap
+$stage.Add('ui/exvpn.exe',@{path='ui/exvpn.exe';size=12;sha256=('a'*64)})
+$extracted = New-AuditFileMap
+$extracted.Add('$_12_/ui/exvpn.exe',@{path='$_12_/ui/exvpn.exe';size=12;sha256=('a'*64)})
+Assert-AuditNsisPayload $extracted '$_12_/' $stage
+Assert-True $true 'actual extracted bytes match staging'
+$extracted['$_12_/ui/exvpn.exe'].sha256 = 'b'*64
+Assert-Rejected { Assert-AuditNsisPayload $extracted '$_12_/' $stage } 'nsis_staged_payload_mismatch'
+$extracted.Clear()
+Assert-Rejected { Assert-AuditNsisPayload $extracted '$_12_/' $stage } 'nsis_staged_payload_mismatch'
+$verifiedBom = New-AuditSbom 'Windows' '0.1.0+9' ('f'*64) $files @($nativeEvidence) $inventory -WindowsPayloadVerified
+Assert-True (@($verifiedBom.components | Where-Object { $_.type -eq 'file' -and @($_.properties | Where-Object value -CEQ 'actual-nsis-payload-entry').Count -eq 1 }).Count -eq $files.Count) 'SBOM upgrades only verified file evidence, not aggregate completeness'
+
+# Exercise real child I/O without installing or launching any package.
+$child = Join-Path $fixture 'inspector-child.ps1'
+[IO.File]::WriteAllText($child, "[Console]::OpenStandardOutput().Write([byte[]](65,66,67),0,3)")
+$shell = (Get-Process -Id $PID).Path
+$output = Invoke-AuditExtractor $shell @('-NoProfile','-File',$child) 3 10
+Assert-True ([Convert]::ToHexString($output) -ceq '414243') 'extractor preserves binary stdout'
+Assert-Rejected { Invoke-AuditExtractor $shell @('-NoProfile','-File',$child) 2 10 } 'archive_inspector_output_limit'
+[IO.File]::WriteAllText($child, 'exit 7')
+Assert-Rejected { Invoke-AuditExtractor $shell @('-NoProfile','-File',$child) 64 10 } 'archive_inspector_failed'
+[IO.File]::WriteAllText($child, 'Start-Sleep -Seconds 10')
+Assert-Rejected { Invoke-AuditExtractor $shell @('-NoProfile','-File',$child) 64 1 } 'archive_inspector_timeout'
 Write-Host "Artifact audit fixtures: $checks PASS. No binary installed, network modified, SDK downloaded or keys read."

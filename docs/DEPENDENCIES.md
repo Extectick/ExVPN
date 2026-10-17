@@ -54,6 +54,19 @@ Apache-2.0 проекта. [Исходники и состав закреплё�
 
 ## Условия подготовки бинарного выпуска
 
+Для независимого offline-аудита готового NSIS installer закреплён **7-Zip 26.04**
+([официальный релиз](https://github.com/ip7z/7zip/releases/tag/26.04)). Bootstrap
+`7zr.exe` используется только для извлечения 7z.exe/7z.dll/License.txt из
+официального архива; Windows-установка не выполняется. Download digests,
+извлечённые файлы и source archive закреплены в
+[`archive-inspector.lock.json`](../scripts/release/archive-inspector.lock.json).
+Это инструмент проверки, он не включается в APK/EXE ExVPN. Полный текст
+лицензий именно этого архива сохранён в
+[`7zip-26.04.txt`](../scripts/release/licenses/7zip-26.04.txt): LGPL-2.1-or-later,
+дополнительные BSD-уведомления и unRAR restriction для соответствующих частей.
+Хеши не подменяют подпись издателя; обязанности runtime ExVPN не закрываются
+лицензией инструмента проверки.
+
 В 0.1.0+7 приложение прямо использует уже закреплённый Dart `crypto` **3.0.7**
 (BSD-3-Clause) для HMAC идентификатора установки по HTTPS origin. Версия не
 изменена; dependency перенесена из dev в runtime, app lock обновлён. Секрет

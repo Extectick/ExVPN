@@ -298,7 +298,7 @@ function Test-AuditNotices($Inventory, $Files, $Native, [string]$Target, [string
     }
 }
 
-function New-AuditSbom([string]$Target, [string]$AppVersion, [string]$ArtifactHash, $Files, $Native, $Inventory) {
+function New-AuditSbom([string]$Target, [string]$AppVersion, [string]$ArtifactHash, $Files, $Native, $Inventory, [switch]$WindowsPayloadVerified) {
     $rootRef = 'exvpn:' + $Target.ToLowerInvariant() + ':' + $ArtifactHash
     $components = [Collections.Generic.List[object]]::new()
     $modules = @{}
@@ -321,7 +321,7 @@ function New-AuditSbom([string]$Target, [string]$AppVersion, [string]$ArtifactHa
     }
     foreach ($file in @($Files.Values | Sort-Object { $_.path } -CaseSensitive -Culture en-US)) {
         $components.Add([ordered]@{ type = 'file'; 'bom-ref' = 'file:' + (Get-AuditTextHash $file.path); name = $file.path; hashes = @([ordered]@{ alg = 'SHA-256'; content = $file.sha256 }); properties = @(
-            [ordered]@{ name = 'exvpn:evidence'; value = $(if ($Target -eq 'Android') { 'actual-apk-entry' } else { 'staged-payload-file' }) },
+            [ordered]@{ name = 'exvpn:evidence'; value = $(if ($Target -eq 'Android') { 'actual-apk-entry' } elseif ($WindowsPayloadVerified) { 'actual-nsis-payload-entry' } else { 'staged-payload-file' }) },
             [ordered]@{ name = 'exvpn:size'; value = [string]$file.size }
         ) })
     }
