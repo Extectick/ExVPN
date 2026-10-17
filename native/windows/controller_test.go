@@ -13,6 +13,7 @@ import (
 type fakeGuard struct {
 	mu     sync.Mutex
 	armed  bool
+	permit bool
 	events []string
 	fail   string
 }
@@ -29,6 +30,12 @@ func (g *fakeGuard) event(s string) error {
 	}
 	if s == "disarm" {
 		g.armed = false
+	}
+	if s == "permit" {
+		g.permit = true
+	}
+	if s == "suspend" {
+		g.permit = false
 	}
 	return nil
 }
@@ -111,7 +118,7 @@ func TestConnectRequiresVerifiedHTTPSAndDisconnectOrder(t *testing.T) {
 	waitState(t, c, "disconnected")
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	want := []string{"arm", "start", "permit", "verify", "suspend", "close", "disarm"}
+	want := []string{"arm", "start", "permit", "verify", "close", "suspend", "disarm"}
 	if len(g.events) != len(want) {
 		t.Fatalf("events: %v", g.events)
 	}

@@ -400,6 +400,10 @@ func (c *Controller) finishAttempt(generation uint64) {
 }
 func (c *Controller) Disconnect() error {
 	c.mu.Lock()
+	if c.closed {
+		c.mu.Unlock()
+		return Code("service_stopping")
+	}
 	c.stopping++
 	c.generation++
 	if c.cancel != nil {
@@ -411,21 +415,29 @@ func (c *Controller) Disconnect() error {
 	defer c.ops.Unlock()
 	defer func() { c.mu.Lock(); c.stopping--; c.mu.Unlock() }()
 	if err := c.stopTunnel(); err != nil {
-		c.set("blocked", "tunnel_stop_failed", true)
+		c.set("blocked", safeCode(err, "tunnel_stop_failed"), true)
 		return err
 	}
+	// Shutdown can begin while Close is in progress or while this request waits
+	// for ops. Serialize the decision and Disarm with its closed transition so
+	// an already-stopping service cannot lose the persistent latch.
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.closed {
+		return Code("service_stopping")
+	}
 	if err := c.guard.Disarm(); err != nil {
-		c.set("blocked", "guard_remove_failed", true)
+		c.status.State, c.status.Code, c.status.GuardActive = "blocked", "guard_remove_failed", true
+		c.status.ConnectedAt = 0
 		return Code("guard_remove_failed")
 	}
-	c.set("disconnected", "explicit_disconnect", false)
-	c.mu.Lock()
+	c.status.State, c.status.Code, c.status.GuardActive = "disconnected", "explicit_disconnect", false
+	c.status.ConnectedAt = 0
 	c.status.ActiveProfileID = ""
 	if !c.exclusionsKnown && c.policy == nil {
 		c.exclusions = []string{}
 		c.exclusionsKnown = true
 	}
-	c.mu.Unlock()
 	return nil
 }
 
@@ -489,16 +501,26 @@ func (c *Controller) Statistics() (Traffic, error) {
 	return traffic, err
 }
 func (c *Controller) stopTunnel() error {
-	if e := c.guard.Suspend(); e != nil {
-		return Code("guard_suspend_failed")
-	}
 	c.mu.Lock()
 	t := c.tunnel
 	c.mu.Unlock()
+	// Keep the service's existing permit while retiring outbound sockets and
+	// closing the core. Revoking it first can prevent TCP teardown from reaching
+	// the peer. Persistent deny filters remain throughout this operation.
+	var closeErr error
 	if t != nil {
-		if e := t.Close(); e != nil {
-			return Code("tunnel_stop_failed")
-		}
+		closeErr = t.Close()
+	}
+	// A failed Close must still revoke dynamic permits. Preserve the owner
+	// until both operations succeed so no replacement core or Disarm can run
+	// after incomplete cleanup. A failed revocation takes diagnostic priority.
+	if e := c.guard.Suspend(); e != nil {
+		return Code("guard_suspend_failed")
+	}
+	if closeErr != nil {
+		return Code("tunnel_stop_failed")
+	}
+	if t != nil {
 		c.mu.Lock()
 		c.tunnel = nil
 		c.mu.Unlock()
