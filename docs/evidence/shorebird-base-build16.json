@@ -118,12 +118,16 @@
     "track": "beta"
   },
   "limitations": [
-    "Runtime updater availability still awaiting ordinary app tests.",
+    "Android local versions UI and cold reopen passed; Windows upgrade passed but initial updater UI attempt remained unresolved. Neither proves native updater configuration.",
     "Signed Dart patch/restart/rollback/channel isolation not tested.",
     "Full linker/license inventory remains incomplete.",
     "Android signer differs from historical debug APKs."
   ],
   "productSourceCommit": "e707d942c5bfd01075ba57f512b6aabec954980f",
   "recordedInCommit": "e707d942c5bfd01075ba57f512b6aabec954980f",
-  "buildToolingNote": "Immutable build manifests predate the final audit checker and builder engine-binding guard. Actual app sources are unchanged; the separate final audit verifies the same APK."
+  "buildToolingNote": "Immutable build manifests predate the final audit checker and builder engine-binding guard. Actual app sources are unchanged; the separate final audit verifies the same APK.",
+  "runtimeEvidence": [
+    "docs/evidence/android-shorebird-base16-runtime.json",
+    "docs/evidence/windows-shorebird-base16-first-attempts.json"
+  ]
 }

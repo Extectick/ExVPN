@@ -9,6 +9,10 @@ public key патчей, включены strict verification и ручное о
 Сборка выполнена с `--dry-run`: облачный выпуск и патчи не опубликованы.
 Проверка запуска updater на стендах и цикл patch/rollback учитываются отдельно
 от сборки; E1/E6 остаются открытыми. [Доказательства базы](evidence/shorebird-base-build16.json).
+На Android API30 экран версий проверен до/после повторного запуска. В Windows
+прошёл upgrade +13 → +16; первая UI-проверка updater осталась незавершённой,
+причина исчезновения процесса диагностируется. Подробности и ограничения:
+[SHOREBIRD.md](SHOREBIRD.md). Код базы: [e707d94](https://github.com/Extectick/ExVPN/commit/e707d942c5bfd01075ba57f512b6aabec954980f).
 
 Дополнение +15, 2026-10-17: создан проект ExVPN в Shorebird на free account,
 doctor — 6/6 PASS. Клиент показывает текущий/подготовленный Dart-патч, даёт

@@ -146,11 +146,12 @@
   ],
   "originalReport": "artifacts/qa/fast-20261017-095157-f0d3ba97/summary.json",
   "originalReportSha256": "025c117c8cf41954a6e6377d78e783f6f1c6bd12f46af0bf46dd6c1bd512a9fd",
-  "sourceCommit": "working tree; commit pending",
+  "sourceCommit": "c2275700c0b849bba47c468c06e1412ddb1993a7",
   "priorAttempt": {
     "path": "artifacts/qa/fast-20261017-094954-55863c82/summary.json",
     "sha256": "a476604d4883eef42c955bca48e20c4ce37f15190b36697c82889e87e81119af",
     "status": "source-changed-during-run",
     "reason": "Coordinator edited public documentation while the fingerprint-guarded runner was active; all lanes passed but aggregate proof was rejected."
-  }
+  },
+  "recordedInCommit": "c2275700c0b849bba47c468c06e1412ddb1993a7"
 }

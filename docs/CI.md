@@ -20,7 +20,7 @@ Release-проверки теперь используют единый выбо
 fingerprint совпал; Go result cache разрешён. Предыдущая попытка отклонена
 общим guard из-за одновременного редактирования документации координатором.
 [Оба результата](evidence/fast-validation-sdk-resolution-build16.json).
-Рабочее дерево; commit ожидается.
+Исходники и доказательства: [c227570](https://github.com/Extectick/ExVPN/commit/c2275700c0b849bba47c468c06e1412ddb1993a7).
 
 Полный +13 run [38996842672](https://github.com/Extectick/ExVPN/actions/runs/38996842672)
 для `36c6094` прошёл 2026-10-17: Windows 11:45, Android 14:58. Оба job выполнили

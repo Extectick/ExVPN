@@ -40,5 +40,5 @@
     "Ordinary Flutter CI builds, not Shorebird native OTA acceptance.",
     "Android job is failed until a separate corrected run passes."
   ],
-  "recordingState": "working tree; commit pending"
+  "recordedInCommit": "c2275700c0b849bba47c468c06e1412ddb1993a7"
 }

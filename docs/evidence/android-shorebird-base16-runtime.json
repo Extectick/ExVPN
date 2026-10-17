@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "status": "UI_AND_COLD_REOPEN_PASS_NATIVE_CONFIGURATION_NOT_PROVEN",
+  "mechanism": "production_updates_ui_adb_v1",
+  "runId": "c68ea0ec55764f019a69b0ad3967a7d6",
+  "originalRunnerStatus": "LOCAL_BASE_RUNTIME_CONFIRMED",
+  "startedAtUtc": "2026-10-17T09:42:09.7693497Z",
+  "finishedAtUtc": "2026-10-17T09:43:26.7510774Z",
+  "scope": "Owned disposable API30 emulator5576; exact existing signed production APK+16; local UI only.",
+  "original5564Actions": 0,
+  "artifact": {
+    "apk": {
+      "path": "V:\\GitProjects\\ExVPN\\artifacts\\shorebird\\0.1.0+16-android-b70e8a8f1a0b4cadad0808d70f208665\\ExVPN-0.1.0+16-shorebird-beta.apk",
+      "bytes": 125029599,
+      "sha256": "9401f733a242a7258f69345e40bd4ca66a7300d8160d2416ce82f5b9438018da"
+    },
+    "appVersion": "0.1.0",
+    "build": 16,
+    "coreVersion": "26.10.10-exvpn.4",
+    "signerCertificateSha256": "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093",
+    "nonDebug": true,
+    "installedArtifactHashMatched": true,
+    "signatureVerified": true,
+    "engineBytesBound": true,
+    "rawSdkBytesMatched": false,
+    "engineBindingMethod": "verified_ndk_strip",
+    "abis": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "audit": {
+      "path": "V:\\GitProjects\\ExVPN\\artifacts\\release-audit\\android-shorebird16-transform-20261017\\audit.json",
+      "bytes": 28788,
+      "sha256": "2d51fb577a7bfdebe84a41129b82e2ef82d8e3c36ea58e91ce4f79737fcc08bb"
+    }
+  },
+  "observations": {
+    "firstOpen": {
+      "base": true,
+      "beta": true,
+      "section": true,
+      "checkEnabled": true,
+      "ambiguous": false,
+      "busy": false,
+      "pending": false,
+      "error": false,
+      "wrongTrack": false
+    },
+    "afterColdReopen": {
+      "base": true,
+      "beta": true,
+      "section": true,
+      "checkEnabled": true,
+      "ambiguous": false,
+      "busy": false,
+      "pending": false,
+      "error": false,
+      "wrongTrack": false
+    },
+    "actualProductionApk": true,
+    "mockBackend": false,
+    "visualInspection": "First and reopened versions screens inspected; build16/base/beta and enabled check button visible. Data channel stable is separate from Dart channel beta. No private subscription data or overlap visible.",
+    "screenshots": [
+      {
+        "name": "first-top.png",
+        "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017-mergedui\\first-top.png",
+        "bytes": 184819,
+        "sha256": "aa6f90d5dcb5468ec826bca8e81f8733caeae07bd0766c6e8bd202cb2e2532c2",
+        "safeForPublicEvidence": true
+      },
+      {
+        "name": "first-policy.png",
+        "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017-mergedui\\first-policy.png",
+        "bytes": 184819,
+        "sha256": "aa6f90d5dcb5468ec826bca8e81f8733caeae07bd0766c6e8bd202cb2e2532c2",
+        "safeForPublicEvidence": true
+      },
+      {
+        "name": "reopen-top.png",
+        "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017-mergedui\\reopen-top.png",
+        "bytes": 184819,
+        "sha256": "aa6f90d5dcb5468ec826bca8e81f8733caeae07bd0766c6e8bd202cb2e2532c2",
+        "safeForPublicEvidence": true
+      },
+      {
+        "name": "reopen-policy.png",
+        "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017-mergedui\\reopen-policy.png",
+        "bytes": 184819,
+        "sha256": "aa6f90d5dcb5468ec826bca8e81f8733caeae07bd0766c6e8bd202cb2e2532c2",
+        "safeForPublicEvidence": true
+      }
+    ],
+    "allFourScreenshotsHaveIdenticalBytes": true,
+    "coldReopen": {
+      "oldProcessAbsenceObserved": true,
+      "differentProcessObserved": true,
+      "method": "ordinary app force-stop and relaunch while VPN service absent",
+      "widgetRebuildOnly": false
+    }
+  },
+  "actions": {
+    "install": 0,
+    "uninstall": 0,
+    "clear": 0,
+    "settingsWrites": 0,
+    "vpnConnect": 0,
+    "checkPatch": 0,
+    "downloadPatch": 0,
+    "cloudCommands": 0,
+    "newProbeCalls": 0
+  },
+  "storage": {
+    "uidUnchanged": true,
+    "dataDirUnchanged": true,
+    "privateBytesCompared": false,
+    "dataMigrationClaimed": false
+  },
+  "cleanup": {
+    "status": "PASS",
+    "vpnServiceAbsentBefore": true,
+    "vpnServiceAbsentAfter": true,
+    "settingsUnchanged": true,
+    "originalEmulatorIdentitiesPreserved": true,
+    "ownedGuestStopped": true,
+    "forcedOwnedGuestShutdown": true,
+    "shutdownMethod": "Console stop followed by held-handle stop of the exact owned process.",
+    "watchdogCompleted": true,
+    "releasePackageIntentionallyRetained": true,
+    "wholeAppStateRestoredClaimed": false
+  },
+  "timing": {
+    "bootMs": 31891,
+    "totalMs": 76980,
+    "cleanupMs": 6530,
+    "totalLimitMs": 360000,
+    "cleanupLimitMs": 30000
+  },
+  "inputs": {
+    "freeze": {
+      "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017-mergedui\\freeze.json",
+      "bytes": 8412,
+      "sha256": "2e8f887a326aca300a03a091919a0e89f656a1f7f54c6c9cd9a3ed7853c77a1a"
+    },
+    "plan": {
+      "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017-mergedui\\plan.json",
+      "bytes": 2528,
+      "sha256": "3fc0c5ccd7151254a6dec095882a8cdf95496ea18737e467c9f2a60871abda32"
+    },
+    "frozenInputCount": 34,
+    "mismatches": 0,
+    "narrowFixtureProof": {
+      "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017-mergedui\\merged-ui-proof.json",
+      "bytes": 3189,
+      "sha256": "8bb228840ff61e59b18aafd410e4672017dc4d76776cc03d1e5eff6755dd4010"
+    },
+    "narrowFixtureChecks": 22,
+    "sourceFilesChangedForThisRuntime": false,
+    "newRuntimeAfterThisResult": false
+  },
+  "acceptanceLimits": {
+    "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017-mergedui\\acceptance-limitations.json",
+    "bytes": 1757,
+    "sha256": "6cc86a94777727868a843fc4085afcff3107ab41d8e1b9981d6e9498e672ccee"
+  },
+  "nativeConfigurationReadSuccess": "NOT_PROVEN",
+  "rawSdkJsonObserved": false,
+  "fullOta": "NOT_TESTED",
+  "physicalDevice": "NOT_TESTED",
+  "vpnAcceptance": "NOT_TESTED",
+  "releaseReady": false,
+  "releaseAuditBlockers": [
+    "android_gradle_maven_runtime_inventory_missing",
+    "dart_flutter_runtime_link_inventory_incomplete",
+    "license_expressions_and_distribution_obligations_not_fully_reviewed"
+  ],
+  "originalResult": {
+    "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017-mergedui\\result-safe.json",
+    "bytes": 2311,
+    "sha256": "9cd40f1a359fc7fb56a2eb40398786377c3aaaca6a71fc1e407bb4c55c6a00a9"
+  },
+  "priorAttempts": [
+    {
+      "runId": "1339f3e0ce9241ce839f4a78ef63ae70",
+      "status": "INDETERMINATE",
+      "failureCode": "qa_guest_avd_identity_mismatch",
+      "startedAtUtc": "2026-10-17T09:15:33.2363475Z",
+      "finishedAtUtc": "2026-10-17T09:16:17.6487276Z",
+      "durationMs": 44411,
+      "cleanupMs": 6370,
+      "originalResult": {
+        "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017\\result-safe.json",
+        "bytes": 1560,
+        "sha256": "aa1740c042ccd85f516ba195ca062b4d7ecdeb4e0a3023fb0b80692293f96176"
+      },
+      "candidate": {
+        "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017\\runtime-safe-candidate.json",
+        "bytes": 2915,
+        "sha256": "2f025669da31f7447313f01b1cf663eabbb38286c8b1bed285d3bed9b81b847d"
+      },
+      "proof": {
+        "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017\\runtime-proof.json",
+        "bytes": 57772,
+        "sha256": "c2ed6e816190c0cf99e3930dff0203d5377632497dde5d29fea76cd3cfb19d65"
+      },
+      "proofFileCount": 249,
+      "proofMismatches": 0,
+      "historicalFilesRewritten": false,
+      "boundary": "AVD console CRCRLF parser refused before package/settings/UI writes; observed AVD name actually matched."
+    },
+    {
+      "runId": "bc83264ff8c94b12b552d02605143273",
+      "status": "INDETERMINATE",
+      "failureCode": "qa_local_patch_read_not_complete",
+      "startedAtUtc": "2026-10-17T09:25:41.3585081Z",
+      "finishedAtUtc": "2026-10-17T09:26:54.7701539Z",
+      "durationMs": 73409,
+      "cleanupMs": 6454,
+      "originalResult": {
+        "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017-avdparser\\result-safe.json",
+        "bytes": 1559,
+        "sha256": "6a55872bb6092a2b67048daa4b14ddbbb1784c0e054811ab457156f60952cc3c"
+      },
+      "candidate": {
+        "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017-avdparser\\runtime-safe-candidate.json",
+        "bytes": 3718,
+        "sha256": "d4bc15bdd43fc451c0f41ebc2b4eaad3f29c03a948b7f9f75746f7b5ec6ef81d"
+      },
+      "proof": {
+        "path": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017-avdparser\\runtime-proof.json",
+        "bytes": 72785,
+        "sha256": "2e53c30a6e4d518d50338928a2e9e85467e78c1e4d8e9e37b600672e3a663ba6"
+      },
+      "proofFileCount": 300,
+      "proofMismatches": 0,
+      "historicalFilesRewritten": false,
+      "boundary": "Exact release+16 fresh install completed; UI merged semantics caused harness refusal; cold reopen was not tested; prior debug data was intentionally removed, not migrated."
+    }
+  ],
+  "proofPath": "V:\\GitProjects\\ExVPN\\.private\\android-shorebird-base-build16-20261017-mergedui\\runtime-proof.json",
+  "productSourceCommit": "e707d942c5bfd01075ba57f512b6aabec954980f",
+  "rootReview": {
+    "manifestRecordsVerified": 368,
+    "hashMismatches": 0,
+    "visualScreenshotsInspected": 2,
+    "publicScreenshot": "docs/evidence/android-shorebird16-versions.png",
+    "nativeConfigurationProven": false
+  }
+}

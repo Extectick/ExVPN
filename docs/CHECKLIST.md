@@ -217,6 +217,16 @@ PID, netId и временем в querylog. VPN не запускался; пр�
 - [ ] **EXVPN-E6-002** — Реализовать signed manifest Ed25519 и SHA-256 файлов данных. Зависимость: E6-001. Критерий: неверная подпись/хеш, несовместимость, выход пути, обрыв и нехватка места отклоняются до активации.
 - [ ] **EXVPN-E6-003** — Добавить staging, атомарную активацию и последний рабочий набор. Зависимость: E6-002. Критерий: обновление не прерывает активный VPN; сбой на каждом шаге сохраняет работоспособность; rollback новой подписанной ревизией проверен.
 - [ ] **EXVPN-E6-004** — Подключить Shorebird и включить обязательную подпись патчей. Зависимость: доступ к сервису/ключам и E6-001. Критерий: реальный release → signed patch → update → rollback Android/Windows, каналы изолированы; native change требует полного выпуска.
+  Runtime +16, 2026-10-17: Android API30 показал версии/base/beta до и после
+  настоящего cold reopen за 76,980 с; подписанный APK, UID/dataDir и настройки
+  ОС проверены. [Отчёт](evidence/android-shorebird-base16-runtime.json),
+  [снимок](evidence/android-shorebird16-versions.png).
+  Windows upgrade +13 → +16 прошёл, но первый переход к версиям дал timeout,
+  UI исчез без сохранённого exit code; причина и updater остаются открытыми.
+  [Отчёт Windows](evidence/windows-shorebird-base16-first-attempts.json).
+  Надпись base сама по себе не доказывает успешную native-конфигурацию:
+  current/next C API допускает `0` при ошибке чтения. E6 не закрыт.
+  Код базы: [e707d94](https://github.com/Extectick/ExVPN/commit/e707d942c5bfd01075ba57f512b6aabec954980f); проверка SDK: [c227570](https://github.com/Extectick/ExVPN/commit/c2275700c0b849bba47c468c06e1412ddb1993a7).
   Подготовка +16, 2026-10-17: локальные раздельные Android/patch signing keys,
   строгая updater policy, pinned dry-run wrapper без cloud publication и
   runtime-specific notices/seal/audit. Настоящие Shorebird базы собраны с

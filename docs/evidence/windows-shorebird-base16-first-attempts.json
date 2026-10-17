@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "status": "REFUSED",
+  "scope": "Ordinary Windows Shorebird base16 upgrade and local updater UI in owned Sandbox",
+  "computerUse": false,
+  "product": {
+    "baseVersion": "0.1.0+16",
+    "development": true,
+    "installerSha256": "6fdeb9899dc0878e88ea9c1d88ab2588658e4b3b4ecea2a0e140efad5adcc87e",
+    "uiSha256": "3ee65db567cccc7c5a18c10b02776a832e7d46d4093c668cd4563f6f26c30135",
+    "serviceSha256": "3582d238cf50419fc43c596b539c99a374effe19c99d3382e9aac68ef3626e72",
+    "auditSha256": "7acba435e59cc7a0416a0977ea8df8c99d6491c803f03378fe65ce51c3545688",
+    "engineBytesBound": true,
+    "stableReleaseClaim": false
+  },
+  "attempts": [
+    {
+      "runId": "f54a9c89-8b01-4c28-818c-8639ca5914be",
+      "verdict": "REFUSED",
+      "operationOutcome": "NOT_STARTED",
+      "reason": "QA baseline expected 14 preserved backups as total; prior maintenance had added 5 verified backups",
+      "installerStarted": false,
+      "uiStarted": false,
+      "coordinatorElapsedMs": 67959,
+      "cleanup": "NOT_STARTED",
+      "notRun": [
+        "upgrade",
+        "first-local-read",
+        "first-graceful-exit",
+        "cold-local-read",
+        "cold-graceful-exit",
+        "final-baseline"
+      ],
+      "sealSha256": "a6aa51d543f43d06a1cedbb6200d174bf073ac1475697e125793c1778372f281",
+      "summarySha256": "25066073a5c4ff12761e188edfc253ee052d69bc33021edf9132a93554a656a6",
+      "postcheckSha256": "c5a4ec02d2121b2948dd163a487b3c6a32e149a4ccb18aef01dd8731ffb0a9a4"
+    },
+    {
+      "runId": "a8f735cf-d02b-41fd-bab9-2721ac0423ee",
+      "verdict": "REFUSED",
+      "sealSha256": "b1e1778c3c424e3c967aa9fd54024ce56073e003ca4ee5e74a8eb46ebf4d8e35",
+      "proofSha256": "15f226a5a3bd1bc749f46fa7cf945c261719d18fd5b122bebd1581e661e18391",
+      "coordinatorStartedUtc": "2026-10-17T09:24:02.556318Z",
+      "coordinatorFinishedUtc": "2026-10-17T09:28:04.4632783Z",
+      "coordinatorStopwatchElapsedMs": 241901,
+      "coordinatorTimingScope": "Includes preflight, upgrade, UI steps and original cleanup attempt; excludes later read-only diagnosis and independent cleanup",
+      "upgrade": {
+        "fromBuild": 13,
+        "toBuild": 16,
+        "status": "PASS",
+        "exitCode": 0,
+        "operationQuiescent": true,
+        "exactPayloadOwnerScmBindingVerified": true,
+        "oldBackupsPreserved": true,
+        "receiptSha256": "7b5f4952374464966b9219d0ae9e64ec60efe038e1a4e61664599e65c3715674"
+      },
+      "ui": {
+        "ordinaryLaunch": "PASS",
+        "settings": "PASS",
+        "updatesStep": "REFUSED",
+        "failure": "step_child_timeout",
+        "stepChildDeadlineMs": 15000,
+        "stepChildExited": true,
+        "uiForceStopped": false,
+        "postBindingPassed": true,
+        "updatesActionOutcome": "UNKNOWN: no final step receipt",
+        "localUpdaterAvailability": "NOT_PROVEN",
+        "basePatch": "NOT_PROVEN",
+        "nextPatch": "NOT_PROVEN",
+        "betaTrackRuntime": "NOT_PROVEN",
+        "gracefulExit": "NOT_PROVEN",
+        "coldReopen": "NOT_TESTED",
+        "uiAbsentAtCleanupWaiter": true,
+        "uiExitCode": null,
+        "uiCrashProven": false,
+        "failureModule": null,
+        "nativeExceptionCode": null,
+        "supervisorSha256": "db6eddd70c0be1e8bd48523c644363dc986f927860000683a9a1546ff431a882",
+        "settingsReceiptSha256": "dcdf88473c4df93fe96c8340223af0549678dece5fc0c7518291a4ec7f0b2fc6",
+        "waiterReceiptSha256": "9ecb58ed7ce16295198a601fae559dfff408c877f7121c61348878a37f9c8d6e"
+      },
+      "originalCleanup": {
+        "status": "REFUSED",
+        "error": "host_exit_waiter_not_ready",
+        "elapsedMs": 7903,
+        "receiptUnmodified": true
+      },
+      "summarySha256": "9e3850db60c5f616eb73e0dbbfa32b30d42ac09e1b9e1934057d2a2f2ba66e8e",
+      "notRun": [
+        "first-local-read",
+        "first-graceful-exit",
+        "cold-local-read",
+        "cold-graceful-exit",
+        "final-baseline"
+      ]
+    }
+  ],
+  "lineageCorrection": {
+    "newImmutableInputs": true,
+    "changedFiles": [
+      "actor.ps1",
+      "native-readonly.ps1",
+      "plan.json"
+    ],
+    "otherRuntimeSourcesNormalizedIdentical": 16,
+    "oldPreservedCount": 14,
+    "newMaintenanceCount": 5,
+    "initialTotalCount": 19,
+    "initialCanonicalInventorySha256": "f73636cf9ccf40c04661453827d32b89718112e36a2a12608b723bc8aad5444c",
+    "fieldsBound": [
+      "path",
+      "stateSha256",
+      "build",
+      "filesSha256"
+    ],
+    "fixtureChecksPS5": 26,
+    "fixtureChecksPS7": 26,
+    "allPassed": true,
+    "diffSha256": "e413de9b407d03fc34c558abdb5657fcdf7d73a47f9eadc4988468c3f79bcbe5"
+  },
+  "readOnlyDiagnosis": {
+    "currentUiProcesses": 0,
+    "targetProcessState": "absent",
+    "applicationEventIds": [
+      1000,
+      1001,
+      1002,
+      1026
+    ],
+    "eventWindowUtc": {
+      "fromUtc": "2026-10-17T09:27:10Z",
+      "toUtc": "2026-10-17T09:29:10Z"
+    },
+    "matchingEvents": 0,
+    "absenceOfEventsDoesNotProveNoCrash": true,
+    "eventsReceiptSha256": "4aac735b874cba15be76334f9905365c61e76831dd0585fd680d2ed22e0c620a",
+    "stateReceiptSha256": "c0654ce8946191bb8f69b318184e8d77b98ca1fa117b0c3b4a6e433b5f4632f7",
+    "status": "PASS",
+    "installerAbsent": true,
+    "ownedProtectedArtifactsBeforeCleanup": 5
+  },
+  "independentCleanup": {
+    "status": "PASS",
+    "hostElapsedMs": 55824,
+    "guestElapsedMs": 52240,
+    "ownedProtectedReceiptCount": 5,
+    "archiveHashesVerified": true,
+    "ownedProtectedRootRemoved": true,
+    "installerActions": 0,
+    "uiActions": 0,
+    "hostReceiptSha256": "43cc394beefe34cb5e9beb538031a1becc0cb7bf3ef90031f97ea6981abce73e",
+    "actorReceiptSha256": "aa1ce949503e909a64479c00249918d184a04dba630c5cb4ffc2bca42a5a9847",
+    "doesNotReplaceOriginalCleanupVerdict": true
+  },
+  "finalState": {
+    "installedBuild": 16,
+    "installStateSha256": "801106b87c07ddc0ab0201e3cb5dc0cfa7b93691db37c181383e24785f432070",
+    "exactUiServicePayloadVerified": true,
+    "sameOwner": true,
+    "productionScmBinding": true,
+    "serviceRunning": true,
+    "uiAbsent": true,
+    "guardArmed": false,
+    "tunPresent": false,
+    "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+    "networkMatchesBaseline": true,
+    "storageFiles": 0,
+    "storageMatchesBaseline": true,
+    "oldBackupsPreserved": 19,
+    "newUpgradeBackups": 1,
+    "totalBackups": 20,
+    "backupInventorySha256": "44e69176e8012a3a132cad1c95791982223bda742e2544fb751121f38e48acd5"
+  },
+  "boundaries": {
+    "cloudCheckInvoked": false,
+    "cloudDownloadInvoked": false,
+    "vpnActions": 0,
+    "fixtureStarted": false,
+    "hostNetworkChanged": false,
+    "uiForceStopped": false,
+    "automaticRetry": false,
+    "newDiagnosticRuntimeStarted": false,
+    "trayGestureAcceptance": "NOT_TESTED",
+    "patchDownloadSignatureRollback": "NOT_TESTED"
+  },
+  "screenshots": [],
+  "screenshotLimitation": "UI process was already absent at failure diagnosis; no replacement UI launch was performed for screenshots",
+  "privateEvidence": {
+    "manifestPath": ".private/windows-shorebird-evidence-a8f735cf/private-evidence-manifest.json",
+    "manifestSha256": "d7347473fabeb105490c91df8f6b9adedd780d639cdf9a12391b1064be1fcd87",
+    "recordCount": 112,
+    "verifiedHashMismatches": 0
+  },
+  "remaining": [
+    "Determine why owned UI disappeared and why the Updates semantic child timed out; current receipts contain no actual UI exitCode",
+    "Verify actual local updater availability, current base, no pending patch and beta on the installed +16",
+    "Verify ordinary graceful exit and true cold reopen",
+    "Cloud release, signed patch delivery, verification and rollback remain untested"
+  ],
+  "productSourceCommit": "e707d942c5bfd01075ba57f512b6aabec954980f",
+  "rootReview": {
+    "manifestRecordsVerified": 112,
+    "hashMismatches": 0,
+    "receiptInterpretation": "Upgrade passed; updater step unresolved. Original refused cleanup and later independent cleanup remain separate."
+  }
+}

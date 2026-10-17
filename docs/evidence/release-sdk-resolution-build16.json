@@ -108,6 +108,7 @@
   },
   "officialSdkPolicy": "https://developer.android.com/tools/variables#android_home",
   "date": "2026-10-17",
-  "recordingState": "working tree; commit pending",
-  "originalProofDirectory": "artifacts/qa/release-sdk-resolution-03d5b569305943d9b2641bc7cc701a33"
+  "originalProofDirectory": "artifacts/qa/release-sdk-resolution-03d5b569305943d9b2641bc7cc701a33",
+  "sourceCommit": "c2275700c0b849bba47c468c06e1412ddb1993a7",
+  "recordedInCommit": "c2275700c0b849bba47c468c06e1412ddb1993a7"
 }
