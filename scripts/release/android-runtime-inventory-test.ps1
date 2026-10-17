@@ -16,6 +16,11 @@ function Reject([scriptblock]$Action) {
     try { & $Action | Out-Null } catch { $failed=$true }
     Check $failed
 }
+function RejectCode([scriptblock]$Action,[string]$Expected) {
+    $actual=$null
+    try { & $Action | Out-Null } catch { $actual=$_.Exception.Message }
+    Check ($actual -ceq $Expected)
+}
 function Clone($Value) { $Value | ConvertTo-Json -Depth 60 | ConvertFrom-Json -AsHashtable }
 function FixtureFile([string]$Relative,[string]$Role) {
     $path=Join-Path $root $Relative
@@ -86,16 +91,46 @@ Check $true
 [void](FixtureFile 'membership/source/new-build-logic.gradle.kts' 'source')
 Reject { Assert-AndroidInventoryTreeUnchanged $membership }
 Reject { Assert-AndroidInventoryPath $report.components[1].artifacts[0].file @((Join-Path $root 'other')) }
-$cache=Join-Path $root 'cache'
-$module=FixtureFile "cache/modules-2/files-2.1/io.flutter/flutter_embedding_debug/1.0.0-$engine/$('c'*40)/flutter_embedding_debug-1.0.0-$engine.module" 'unused'
+function ModuleCacheFile([string]$CacheName,[string]$Content,[string]$DirectoryKey='') {
+    $bytes=[Text.Encoding]::UTF8.GetBytes($Content)
+    $sha1=[Convert]::ToHexString([Security.Cryptography.SHA1]::HashData($bytes)).ToLowerInvariant()
+    if (!$DirectoryKey) { $DirectoryKey=$sha1.TrimStart('0') }
+    $file=FixtureFile "$CacheName/modules-2/files-2.1/io.flutter/flutter_embedding_debug/1.0.0-$engine/$DirectoryKey/flutter_embedding_debug-1.0.0-$engine.module" 'unused'
+    [IO.File]::WriteAllBytes($file.file,$bytes)
+    @{file=$file.file;sha1=$sha1;key=$DirectoryKey;cache=Join-Path $root $CacheName}
+}
+$module=ModuleCacheFile 'cache' 'synthetic module metadata ordinary'
+Check ($module.sha1.Length -eq 40 -and !$module.sha1.StartsWith('0'))
+$cache=$module.cache
 $copy=Clone $report
 Add-AndroidInventoryModuleMetadata $copy @($cache)
 Check (@($copy.components[1].metadata).Count -eq 2)
 [void](Assert-AndroidInventoryGraph $copy 'debug' $engine -ArtifactRoots @($root) -VerifyBytes)
 Check $true
-$other=FixtureFile "cache/modules-2/files-2.1/io.flutter/flutter_embedding_debug/1.0.0-$engine/$('d'*40)/flutter_embedding_debug-1.0.0-$engine.module" 'unused'
-[IO.File]::WriteAllText($other.file,'different candidate')
-Reject { Add-AndroidInventoryModuleMetadata (Clone $report) @($cache) }
+# Actual SHA1 starts with two zeroes; Gradle 9.3.1 strips both from the directory.
+$short=ModuleCacheFile 'short-key-cache' 'synthetic module metadata 34'
+Check ($short.sha1 -ceq '0071bf34724589bdbb8cc2996a6ca993e3b9cf0d' -and $short.key.Length -eq 38)
+$copy=Clone $report
+Add-AndroidInventoryModuleMetadata $copy @($short.cache)
+Check (@($copy.components[1].metadata).Count -eq 2)
+[void](Assert-AndroidInventoryGraph $copy 'debug' $engine -ArtifactRoots @($root) -VerifyBytes)
+Check $true
+[IO.File]::WriteAllText($short.file,'changed bytes under the old cache key')
+RejectCode { Add-AndroidInventoryModuleMetadata (Clone $report) @($short.cache) } 'android_inventory_cache_key_mismatch'
+foreach ($badKey in @('0',('0'*40),'not-hex',$module.key.ToUpperInvariant(),$short.sha1)) {
+    $bad=ModuleCacheFile ('invalid-key-'+[guid]::NewGuid().ToString('N')) 'synthetic module metadata 34' $badKey
+    RejectCode { Add-AndroidInventoryModuleMetadata (Clone $report) @($bad.cache) } 'android_inventory_cache_layout_invalid'
+}
+foreach ($wrongKey in @(('c'*40),'c')) {
+    $bad=ModuleCacheFile ('mismatch-key-'+[guid]::NewGuid().ToString('N')) 'synthetic module metadata ordinary' $wrongKey
+    RejectCode { Add-AndroidInventoryModuleMetadata (Clone $report) @($bad.cache) } 'android_inventory_cache_key_mismatch'
+}
+$duplicate=ModuleCacheFile 'duplicate-cache' 'synthetic module metadata ordinary'
+$copy=Clone $report
+Add-AndroidInventoryModuleMetadata $copy @($cache,$duplicate.cache)
+Check (@($copy.components[1].metadata).Count -eq 2)
+[void](ModuleCacheFile 'cache' 'different candidate')
+RejectCode { Add-AndroidInventoryModuleMetadata (Clone $report) @($cache) } 'android_inventory_module_ambiguous'
 
 $gradleCases=@()
 if ($WithGradleFixture) {

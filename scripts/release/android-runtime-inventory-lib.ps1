@@ -163,15 +163,33 @@ function Add-AndroidInventoryModuleMetadata($Report, [string[]]$CacheDirectories
             $versionPath=Join-Path $cache "modules-2/files-2.1/$($node.group)/$($node.name)/$($node.version)"
             if (!(Test-Path -LiteralPath $versionPath -PathType Container)) { continue }
             foreach ($hashDirectory in Get-ChildItem -LiteralPath $versionPath -Directory) {
-                if ($hashDirectory.Name -cnotmatch '^[a-f0-9]{40}$') { throw 'android_inventory_cache_layout_invalid' }
+                # Pinned Gradle 9.3.1 GroupedAndNamedUniqueFileStore strips all
+                # leading SHA1 zeroes for its cache directory. Its all-zero
+                # input has no valid key; reject that and other noncanonical names.
+                if ($hashDirectory.Name -cnotmatch '^[1-9a-f][a-f0-9]{0,39}$') { throw 'android_inventory_cache_layout_invalid' }
                 $path=Join-Path $hashDirectory.FullName ($node.name+'-'+$node.version+'.module')
                 if (!(Test-Path -LiteralPath $path -PathType Leaf)) { continue }
                 $path=Assert-AndroidInventoryPath $path @($cache)
                 $file=Get-Item -LiteralPath $path
-                if ($file.Length -gt 8MB) { throw 'android_inventory_metadata_too_large' }
-                $hash=Get-AndroidInventoryHash $path
+                # Both hashes describe the same bounded bytes. Hold a read-only
+                # file handle while reading so a cache writer cannot replace them.
+                $stream=[IO.File]::Open($path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+                try {
+                    if ($stream.Length -gt 8MB) { throw 'android_inventory_metadata_too_large' }
+                    $bytes=[byte[]]::new([int]$stream.Length)
+                    $offset=0
+                    while ($offset -lt $bytes.Length) {
+                        $read=$stream.Read($bytes,$offset,$bytes.Length-$offset)
+                        if ($read -eq 0) { throw 'android_inventory_artifact_changed' }
+                        $offset+=$read
+                    }
+                    if ($stream.ReadByte() -ne -1) { throw 'android_inventory_artifact_changed' }
+                } finally { $stream.Dispose() }
+                $sha1=[Convert]::ToHexString([Security.Cryptography.SHA1]::HashData($bytes)).ToLowerInvariant()
+                if ($sha1.TrimStart('0') -cne $hashDirectory.Name) { throw 'android_inventory_cache_key_mismatch' }
+                $hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
                 if (!$found.ContainsKey($hash)) {
-                    $found.Add($hash,[ordered]@{file=$path;name=$file.Name;role='selected-component-module-candidate';size=$file.Length;sha256=$hash})
+                    $found.Add($hash,[ordered]@{file=$path;name=$file.Name;role='selected-component-module-candidate';size=$bytes.Length;sha256=$hash})
                 }
             }
         }
