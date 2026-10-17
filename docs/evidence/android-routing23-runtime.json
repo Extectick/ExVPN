@@ -1,0 +1,188 @@
+{
+  "schema": 1,
+  "capturedUtc": "2026-10-17T23:20:52.2560446Z",
+  "platform": "Android emulator API30 x86_64",
+  "apkVersion": "0.1.2+23",
+  "apkSha256": "e3515a21a87f3c7cb363827a4ff39f6902b77f6eba8a6cfdcbb967dca6a88c4b",
+  "sourceCommit": "5da3ea7511eb2bfdb82557648560adf470a09d8b",
+  "releaseSigned": true,
+  "debuggable": false,
+  "matrix": [
+    {
+      "mode": "disabled",
+      "probe": "protected",
+      "selected": false,
+      "connected": {
+        "success": true,
+        "httpStatus": 200,
+        "error": null,
+        "vpnTransport": true,
+        "uid": 10167,
+        "durationMs": 336
+      },
+      "fixtureUploadDelta": 570,
+      "fixtureDownloadDelta": 1061,
+      "outage": {
+        "success": false,
+        "httpStatus": null,
+        "error": "network",
+        "vpnTransport": true,
+        "uid": 10167,
+        "durationMs": 2050
+      }
+    },
+    {
+      "mode": "disabled",
+      "probe": "excluded",
+      "selected": true,
+      "connected": {
+        "success": true,
+        "httpStatus": 200,
+        "error": null,
+        "vpnTransport": true,
+        "uid": 10168,
+        "durationMs": 295
+      },
+      "fixtureUploadDelta": 570,
+      "fixtureDownloadDelta": 1061,
+      "outage": {
+        "success": false,
+        "httpStatus": null,
+        "error": "network",
+        "vpnTransport": true,
+        "uid": 10168,
+        "durationMs": 2027
+      }
+    },
+    {
+      "mode": "exclude",
+      "probe": "protected",
+      "selected": false,
+      "connected": {
+        "success": true,
+        "httpStatus": 200,
+        "error": null,
+        "vpnTransport": true,
+        "uid": 10167,
+        "durationMs": 374
+      },
+      "fixtureUploadDelta": 570,
+      "fixtureDownloadDelta": 1060,
+      "outage": {
+        "success": false,
+        "httpStatus": null,
+        "error": "network",
+        "vpnTransport": true,
+        "uid": 10167,
+        "durationMs": 2052
+      }
+    },
+    {
+      "mode": "exclude",
+      "probe": "excluded",
+      "selected": true,
+      "connected": {
+        "success": true,
+        "httpStatus": 200,
+        "error": null,
+        "vpnTransport": true,
+        "uid": 10168,
+        "durationMs": 675
+      },
+      "fixtureUploadDelta": 0,
+      "fixtureDownloadDelta": 0,
+      "outage": {
+        "success": true,
+        "httpStatus": 200,
+        "error": null,
+        "vpnTransport": true,
+        "uid": 10168,
+        "durationMs": 255
+      }
+    },
+    {
+      "mode": "include",
+      "probe": "protected",
+      "selected": false,
+      "connected": {
+        "success": true,
+        "httpStatus": 200,
+        "error": null,
+        "vpnTransport": true,
+        "uid": 10167,
+        "durationMs": 386
+      },
+      "fixtureUploadDelta": 570,
+      "fixtureDownloadDelta": 1057,
+      "outage": {
+        "success": false,
+        "httpStatus": null,
+        "error": "network",
+        "vpnTransport": true,
+        "uid": 10167,
+        "durationMs": 2051
+      }
+    },
+    {
+      "mode": "include",
+      "probe": "excluded",
+      "selected": true,
+      "connected": {
+        "success": true,
+        "httpStatus": 200,
+        "error": null,
+        "vpnTransport": true,
+        "uid": 10168,
+        "durationMs": 535
+      },
+      "fixtureUploadDelta": 570,
+      "fixtureDownloadDelta": 1059,
+      "outage": {
+        "success": false,
+        "httpStatus": null,
+        "error": "network",
+        "vpnTransport": true,
+        "uid": 10168,
+        "durationMs": 2052
+      }
+    }
+  ],
+  "includeRegression": {
+    "status": "failed",
+    "persistedMode": "include",
+    "persistedSelectedUid": 10168,
+    "unselectedUid": 10167,
+    "observed": "Both UIDs used the VPN and both failed during controlled fixture outage.",
+    "cause": "Legacy owner confirmation rejected known unselected UIDs; under include the fail-closed fallback sent them through VPN.",
+    "fixVerification": "Pending replacement APK 0.1.3+24"
+  },
+  "ui": {
+    "pinnedHeaderOnScroll": true,
+    "filteredProbeRows": 2,
+    "disabledRetainsSelection": true,
+    "clearCancelPreservesSelection": true,
+    "clearConfirmChangesDraft": true,
+    "abandonedDraftNotPersisted": true,
+    "nativePackageIconsVisible": true,
+    "sameSheetFilterRoundTrip": true,
+    "nativeIconSource": "PackageManager application icon rendered as 64x64 PNG",
+    "cache": "Dart per-sheet cache; native cache metrics not exposed",
+    "screenshot": "android-api30-exclusions-native-icons.png"
+  },
+  "failedControlsRetained": [
+    "Intermittent direct gstatic health failure before VPN and after disabled disconnect.",
+    "First excluded direct trace4 after disabled disconnect failed; subsequent fresh trace4 for both UIDs passed.",
+    "Protected gstatic health under exclude failed; numeric TLS primary check passed.",
+    "Legacy UI helper refused missing phase text without an action; fresh semantic button plus independent native gates used.",
+    "Unique selector refused duplicate synthetic include profile during repeat preparation; no connect occurred."
+  ],
+  "scope": [
+    "Synthetic owned local VLESS fixture in a separate host process; two independent application UIDs.",
+    "All traffic remained captured by Android VPN, including direct-policy traffic.",
+    "Fixture counters are aggregate inbound deltas, not per-UID packet attribution.",
+    "Primary routing comparison uses fixed IPv4 TLS endpoint; this does not establish IPv6, DNS-leak, physical-device or lockdown acceptance.",
+    "Original emulator-5564 and host VPN/network settings unchanged.",
+    "No latest-server/cancel-during-connecting runtime acceptance claimed."
+  ],
+  "metadataLimitation": "Old APK displayed core exvpn.4 although JNI binding was exvpn.5; source corrected later."
+}

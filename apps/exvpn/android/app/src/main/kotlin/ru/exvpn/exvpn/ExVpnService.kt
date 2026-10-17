@@ -148,7 +148,7 @@ class ExVpnService : VpnService() {
         val uids = mutableSetOf<Int>()
         for (name in packages) {
             val uid = packageManager.getApplicationInfo(name, 0).uid
-            if (uid < 10000 || uid == applicationInfo.uid) throw IllegalArgumentException("invalid_exclusion")
+            if (!ApplicationOwnerConfirmation.isApplicationUID(uid) || uid == applicationInfo.uid) throw IllegalArgumentException("invalid_exclusion")
             // A shared UID is only safe when every package sharing it was explicitly selected.
             val owners = packageManager.getPackagesForUid(uid)?.toSet() ?: emptySet()
             if (owners.isEmpty() || !packages.containsAll(owners)) throw IllegalArgumentException("shared_uid_requires_all_packages")
@@ -262,17 +262,17 @@ class ExVpnService : VpnService() {
         catch (_: Exception) { false }
     }
 
-    /** Only an unambiguous currently selected package UID may become direct. */
+    /** Confirm the exact tuple owner; native code applies the routing selection. */
     fun connectionOwner(protocol: Int, localIP: String, localPort: Int, remoteIP: String, remotePort: Int): Int {
         if (stopping) return -1
+        val current = request ?: return -1
         return try {
             val uid = connectivity.getConnectionOwnerUid(protocol,
                 InetSocketAddress(InetAddresses.parseNumericAddress(localIP), localPort),
                 InetSocketAddress(InetAddresses.parseNumericAddress(remoteIP), remotePort))
-            if (uid !in resolvedUIDs) -1 else {
-                val packages = packageManager.getPackagesForUid(uid)?.toSet() ?: emptySet()
-                if (packages.isNotEmpty() && request?.packages?.containsAll(packages) == true) uid else -1
-            }
+            val packages = packageManager.getPackagesForUid(uid)?.toSet() ?: emptySet()
+            if (stopping || request !== current) -1 else ApplicationOwnerConfirmation.confirm(
+                uid, applicationInfo.uid, packages, current.routingMode, current.packages, resolvedUIDs)
         } catch (_: Exception) { -1 }
     }
 

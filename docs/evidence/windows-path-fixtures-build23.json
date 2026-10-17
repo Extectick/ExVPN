@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "utc": "2026-10-17T22:56:19.6110102Z",
-  "source": "working tree; commit pending",
+  "source": "8d8ceee235066a7f7cdae3fe0c4f0684388a1839",
   "ciRun": 39076459772,
   "ciFailureLog": "artifacts/qa/ci-build23-windows.log",
   "realShortAliasUsed": true,

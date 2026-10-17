@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "recordedUtc": "2026-10-17T22:50:16.9472066Z",
+  "sourceCommit": "8d8ceee235066a7f7cdae3fe0c4f0684388a1839",
+  "result": "BLOCKED_EXTERNAL_BASELINE",
+  "threeModeMatrixPassed": false,
+  "coordinatorStartedOnFinalAttempt": false,
+  "hostNetworkChanged": false,
+  "guestDnsSetup": "Explicit guest-only resolver before baseline after HNS DNS timeout",
+  "failedAttemptsPreserved": 4,
+  "attempts": [
+    {"stage": "baseline", "observation": "HNS DNS timeout before TUN", "cleanupPassed": true},
+    {"stage": "local fixture", "observation": "Baseline passed; process-global socket guard rejected in-process fixture", "cleanupPassed": true},
+    {"stage": "baseline", "observation": "Intermittent pre-TUN HTTPS timeouts after fixture was isolated", "cleanupPassed": true},
+    {"stage": "baseline", "observation": "Repeated numeric and health HTTPS timeouts before coordinator/TUN", "tunStarted": false}
+  ],
+  "qaHarnessChange": "Owned VLESS fixture isolated in a SYSTEM child process with the same protected App-ID, bounded stdio and kill-on-job-close lifetime; no production guard exception added",
+  "qaHarnessChecksPassed": ["fresh unit tests", "go vet", "pinned isolated build"],
+  "hostObservation": "Happ TUN was up with a preferred default route; host HTTPS passed while Sandbox HTTPS failed",
+  "inference": "Possible HNS/host VPN interaction; not established without a controlled comparison",
+  "pendingAction": "User was asked to temporarily disable Happ; no permission or confirmation received at recording time",
+  "coverageLimits": ["Not installed SCM/IPC acceptance", "No distinct remote egress proof", "IPv6 and crash persistence not tested", "Three-mode runtime matrix remains open"]
+}

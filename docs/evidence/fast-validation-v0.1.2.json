@@ -2,17 +2,17 @@
   "schemaVersion": 1,
   "mode": "Full",
   "scope": "behavioral checks only; excludes builds and real VPN/security/release acceptance",
-  "startedAt": "2026-10-17T22:32:55.2563584+00:00",
-  "endedAt": "2026-10-17T22:34:24.6595109+00:00",
-  "durationSeconds": 89.4,
+  "startedAt": "2026-10-18T05:57:18.2042023+07:00",
+  "endedAt": "2026-10-18T05:58:54.9165291+07:00",
+  "durationSeconds": 96.71,
   "status": "passed",
-  "sourceFingerprintBefore": "d95333717a0ac50df91730a912b2997ded4b351e33e1392727f3007dc0fa2dad",
-  "sourceFingerprintAfter": "d95333717a0ac50df91730a912b2997ded4b351e33e1392727f3007dc0fa2dad",
+  "sourceFingerprintBefore": "c1ee059e3ac63d8e7e02323d8e781eff95081eb4ca20ab7e2c26720fc2594aed",
+  "sourceFingerprintAfter": "c1ee059e3ac63d8e7e02323d8e781eff95081eb4ca20ab7e2c26720fc2594aed",
   "sourceUnchanged": true,
   "toolchain": {
-    "go": "1.27.2",
     "dart": "3.13.5",
-    "flutter": "abaf9c523780a608bd46686fd5e53740a07077f8"
+    "flutter": "abaf9c523780a608bd46686fd5e53740a07077f8",
+    "go": "1.27.2"
   },
   "changedFileCount": 0,
   "selectedLanes": [
@@ -54,7 +54,7 @@
       "lane": "android",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 7.67,
+      "durationSeconds": 7.58,
       "cachedGoPackages": 0,
       "log": "android.log"
     },
@@ -62,7 +62,7 @@
       "lane": "app",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 34.39,
+      "durationSeconds": 36.23,
       "cachedGoPackages": 0,
       "log": "app.log"
     },
@@ -70,7 +70,7 @@
       "lane": "appupdater",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 6.02,
+      "durationSeconds": 5.84,
       "cachedGoPackages": 0,
       "log": "appupdater.log"
     },
@@ -78,7 +78,7 @@
       "lane": "ci",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 40.85,
+      "durationSeconds": 43.33,
       "cachedGoPackages": 0,
       "log": "ci.log"
     },
@@ -86,7 +86,7 @@
       "lane": "core",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 25.74,
+      "durationSeconds": 26.43,
       "cachedGoPackages": 0,
       "log": "core.log"
     },
@@ -94,7 +94,7 @@
       "lane": "domain",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 6.79,
+      "durationSeconds": 13.24,
       "cachedGoPackages": 0,
       "log": "domain.log"
     },
@@ -102,7 +102,7 @@
       "lane": "installer",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 7.2,
+      "durationSeconds": 7.37,
       "cachedGoPackages": 0,
       "log": "installer.log"
     },
@@ -110,7 +110,7 @@
       "lane": "scripts",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 71.38,
+      "durationSeconds": 69.81,
       "cachedGoPackages": 0,
       "log": "scripts.log"
     },
@@ -118,7 +118,7 @@
       "lane": "state",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 6.59,
+      "durationSeconds": 6.37,
       "cachedGoPackages": 0,
       "log": "state.log"
     },
@@ -126,7 +126,7 @@
       "lane": "updates",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 9.3,
+      "durationSeconds": 14.93,
       "cachedGoPackages": 0,
       "log": "updates.log"
     },
@@ -134,7 +134,7 @@
       "lane": "windows",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 11.64,
+      "durationSeconds": 15.21,
       "cachedGoPackages": 0,
       "log": "windows.log"
     },
@@ -142,7 +142,7 @@
       "lane": "xray",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 11.01,
+      "durationSeconds": 11.31,
       "cachedGoPackages": 0,
       "log": "xray.log"
     }
@@ -155,6 +155,6 @@
     "signed release and upgrade acceptance"
   ],
   "applicationVersion": "0.1.2+23",
-  "sourceState": "working tree; implementation commit pending",
-  "scopeNote": "Before subsequent QA fixture-process isolation; product source unchanged. Final QA-source validation remains separate."
+  "sourceCommit": "8d8ceee235066a7f7cdae3fe0c4f0684388a1839",
+  "scopeNote": "Final unchanged-source Full verification of the release-tag commit; build and runtime acceptance are recorded separately."
 }

@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "kotlinCompiler": "2.4.0",
+  "jvmTarget": 17,
+  "junit": "4.13.2",
+  "tests": 12,
+  "apkOrJniBuilt": false,
+  "emulatorTouched": false,
+  "reason": "Include confirmed unselected owners plus per-user appId range, self/system/SDK-sandbox/isolated/shared/unknown fail-closed"
+}
