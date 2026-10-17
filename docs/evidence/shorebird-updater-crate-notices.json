@@ -1,0 +1,221 @@
+{
+  "schema": 1,
+  "status": "SOURCE_NOTICE_CANDIDATE_REVIEW_REQUIRED",
+  "sourceFiles": [
+    {
+      "path": "scripts/release/shorebird-updater-notices-crates.ps1",
+      "sha256": "78c7ad80f4a9408320c60b9ad3aeef587b94831b049a72d35807e8de9b929225",
+      "size": 17232
+    },
+    {
+      "path": "scripts/release/shorebird-updater-notices-prepare.ps1",
+      "sha256": "b5df282ffad0345d9e1e8f653d3ca616cfe1539b3385f6ec87de0bb4ea932d04",
+      "size": 9115
+    },
+    {
+      "path": "scripts/release/shorebird-updater-notices-test.ps1",
+      "sha256": "82480de77274288226d5c318c5059acb586325054df694389685b100a10c56d3",
+      "size": 9991
+    },
+    {
+      "path": "scripts/release/shorebird-updater-notices-crates.lock.json",
+      "sha256": "60089d1c2c264863ec57ae1fd71cf60a85561c293f6bbbb7d404f6e3a196461a",
+      "size": 61228
+    },
+    {
+      "path": "scripts/release/licenses/shorebird-updater-runtime-b940084d7eb6a299eb4bfeb8e34901bc051e7ac4/Cargo.lock",
+      "sha256": "53d9ccff0c906de434b65af90d5c30063894b940fc839261f1fb06ef2e69e3d3",
+      "size": 9822
+    },
+    {
+      "path": "scripts/release/licenses/shorebird-updater-runtime-b940084d7eb6a299eb4bfeb8e34901bc051e7ac4/.gitattributes",
+      "sha256": "351fe7239736a0a375f2d335aff1a59eaa31a482740d8fc16138378e3334bbe5",
+      "size": 55
+    },
+    {
+      "path": "scripts/release/test-notice-inputs.ps1",
+      "sha256": "ea01555179b6d558f637a09d4df4983e5b0db4539c0487a718d746d04261b278",
+      "size": 58829
+    }
+  ],
+  "updaterRevision": "70ff1e336798474e39586d3f5ac2ca386ef32d9e",
+  "rustSourceRevision": "b940084d7eb6a299eb4bfeb8e34901bc051e7ac4",
+  "pinSha256": "60089d1c2c264863ec57ae1fd71cf60a85561c293f6bbbb7d404f6e3a196461a",
+  "archiveCount": 282,
+  "updaterWorkspaceCrates": 257,
+  "rustLibraryCrates": 30,
+  "distinctCrates": 282,
+  "noticeFiles": 507,
+  "noticeBytes": 2669607.0,
+  "acquisition": {
+    "elapsedSeconds": 80.389,
+    "networkBytes": 35915353,
+    "verifiedArchives": 282,
+    "maxParallel": 4,
+    "automaticRetries": 0,
+    "reportSha256": "50abd540abb3d9179d1597125225b98b02c28d133b6d858c4182c7e963d15f01"
+  },
+  "offline": {
+    "elapsedSeconds": 15.809,
+    "networkBytes": 0,
+    "verifiedArchives": 282,
+    "collectorInputsUnchanged": true,
+    "reportSha256": "829d93039ecbb391d2cf671516ec4e346bcba9974ed7c300251bd29a2e4c9458"
+  },
+  "tests": {
+    "crateChecks": 43,
+    "existingNoticeChecks": 166,
+    "logSha256": "26e0ed03d54041f9a5633a25b85793cea851844f20599c42d2fdd14259e3b3e3",
+    "powerShellParse": "PASS",
+    "diffCheck": "PASS"
+  },
+  "missingNoticeText": [
+    {
+      "name": "bidiff",
+      "version": "1.0.0",
+      "scopes": [
+        "updater-workspace"
+      ],
+      "licenseExpression": "Apache-2.0 OR MIT"
+    },
+    {
+      "name": "bipatch",
+      "version": "1.0.0",
+      "scopes": [
+        "updater-workspace"
+      ],
+      "licenseExpression": "Apache-2.0 OR MIT"
+    },
+    {
+      "name": "comde",
+      "version": "0.3.1",
+      "scopes": [
+        "updater-workspace"
+      ],
+      "licenseExpression": "Apache-2.0 OR MIT"
+    },
+    {
+      "name": "delegate",
+      "version": "0.12.0",
+      "scopes": [
+        "updater-workspace"
+      ],
+      "licenseExpression": "MIT OR Apache-2.0"
+    },
+    {
+      "name": "fortanix-sgx-abi",
+      "version": "0.6.1",
+      "scopes": [
+        "rust-library"
+      ],
+      "licenseExpression": "MPL-2.0"
+    },
+    {
+      "name": "sacabase",
+      "version": "2.0.0",
+      "scopes": [
+        "updater-workspace"
+      ],
+      "licenseExpression": "MIT"
+    },
+    {
+      "name": "sacapart",
+      "version": "2.0.0",
+      "scopes": [
+        "updater-workspace"
+      ],
+      "licenseExpression": "MIT"
+    },
+    {
+      "name": "vex-sdk",
+      "version": "0.27.1",
+      "scopes": [
+        "rust-library"
+      ],
+      "licenseExpression": "MIT"
+    },
+    {
+      "name": "wasip1",
+      "version": "1.0.0",
+      "scopes": [
+        "rust-library"
+      ],
+      "licenseExpression": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
+    },
+    {
+      "name": "wasip2",
+      "version": "1.0.2+wasi-0.2.9",
+      "scopes": [
+        "updater-workspace"
+      ],
+      "licenseExpression": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
+    },
+    {
+      "name": "wasip3",
+      "version": "0.4.0+wasi-0.3.0-rc-2026-01-06",
+      "scopes": [
+        "updater-workspace"
+      ],
+      "licenseExpression": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
+    },
+    {
+      "name": "wasm-encoder",
+      "version": "0.244.0",
+      "scopes": [
+        "updater-workspace"
+      ],
+      "licenseExpression": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
+    },
+    {
+      "name": "wasmparser",
+      "version": "0.244.0",
+      "scopes": [
+        "updater-workspace"
+      ],
+      "licenseExpression": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
+    },
+    {
+      "name": "wit-component",
+      "version": "0.244.0",
+      "scopes": [
+        "updater-workspace"
+      ],
+      "licenseExpression": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
+    },
+    {
+      "name": "wit-parser",
+      "version": "0.244.0",
+      "scopes": [
+        "updater-workspace"
+      ],
+      "licenseExpression": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
+    }
+  ],
+  "reviewedLicenseClosure": false,
+  "completeLicenseCoverage": false,
+  "rustStandardLibraryAggregatePresent": false,
+  "publisherBuildInputsAttested": false,
+  "exactLinkedMembership": false,
+  "productionNoticeCollectorIntegrated": false,
+  "aggregateReleaseGatesChanged": false,
+  "productBuilds": 0,
+  "cargoInvocations": 0,
+  "guestActions": 0,
+  "preservedFailure": {
+    "kind": "PowerShell Math.Min selected Int32 for 4GiB bound",
+    "fixed": "Explicit Int64 in production remaining-budget function",
+    "regressionChecks": 3,
+    "reportSha256": "333343566108810d22fa6c93ded1fa6aff4b604c1d1ff3a3cd094dee756fe30b",
+    "logSha256": "7d21a8e4a9f76d49d9f753ec81434f35be4122f4fe591c9f689dcf24872782c4"
+  },
+  "evidenceManifestSha256": "3bf42effc8e0db599a12552a4de4420993286fd7b74410538900d0aafd46e113",
+  "evidenceFileCount": 2438,
+  "rootVerification": {
+    "date": "2026-10-17",
+    "sourceFiles": 7,
+    "evidenceFiles": 2438,
+    "mismatches": 0,
+    "sourceState": "committed"
+  },
+  "sourceCommit": "7cad456ab1fc2226b059356d7bee152170a0e01b"
+}

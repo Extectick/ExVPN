@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "checks": 192,
+  "durationMs": 878,
+  "fixtures": "Synthetic records and XML only",
+  "adbInvoked": false,
+  "emulatorStarted": false,
+  "productOrHelperApkChanged": false,
+  "baselineEvidenceModified": false,
+  "gitDiffCheck": "PASS",
+  "files": [
+    {
+      "path": "scripts/qa/android-lifecycle-tools.ps1",
+      "bytes": 26473,
+      "sha256": "da8c8a8aeb9d93337629c7511b6f5b7c145901b7ede9df920b31c07fa7a0bb9a"
+    },
+    {
+      "path": "scripts/qa/test-android-lifecycle-tools.ps1",
+      "bytes": 23303,
+      "sha256": "faebb0d10827fca253048fec1a31c70044bc068d977c05226988b83abcf023e5"
+    }
+  ],
+  "stdoutSha256": "66005d318f1638def98edafa05406e60e54f0f289317704f9aa431a39c2228e5",
+  "actualReadOnlyReplay": {
+    "status": "PASS",
+    "count": 3,
+    "independentUidMetadataSha256": "12a9209cffe2974d76f24cea61c6ae20b798df53e78dad0f6ba83d721cd64e43",
+    "uidPublished": false,
+    "originalInputsUnchanged": true,
+    "stages": [
+      {
+        "stage": "baseline",
+        "status": "PASS",
+        "inputFile": "baseline-interfaces.stdout.txt",
+        "sha256": "d157dafd4048a665e7e50385d196acf3bdd8e620ccc39f7907a6aa363b1b9a78",
+        "vpnCount": 0,
+        "ownerUidMatched": false,
+        "activeVpnNetworkAbsent": true
+      },
+      {
+        "stage": "connected",
+        "status": "PASS",
+        "inputFile": "connected-interfaces.stdout.txt",
+        "sha256": "36a464126b60d342ba1c244e181c5a3f7e4c75ec521f1aa2c0199e9d668e9e2f",
+        "vpnCount": 1,
+        "ownerUidMatched": true,
+        "activeVpnNetworkAbsent": false
+      },
+      {
+        "stage": "restored",
+        "status": "PASS",
+        "inputFile": "cleanup-interfaces.stdout.txt",
+        "sha256": "d5188386d2f83f1c590c05470eed93a575a68ff23b7fd01cbc44d557b22585e1",
+        "vpnCount": 0,
+        "ownerUidMatched": false,
+        "activeVpnNetworkAbsent": true
+      }
+    ]
+  },
+  "limitations": [
+    "Only offline focused validation of the shared helper; equivalent private mechanisms have separate runtime evidence.",
+    "Connectivity observations and consent tap receipts do not prove tunnel traffic.",
+    "No shared provider runner or new emulator acceptance in this patch."
+  ],
+  "sourceCommit": "f3b7471224f797f82b5e54082a064d46b6a5d2e4",
+  "independentEvidenceVerification": {
+    "date": "2026-10-17",
+    "verifiedBy": "root",
+    "proofSha256": "8653dcd95f0b3ab51032d7c1e9b36a3da8c26d0b2c51815d46ba212c509a5608",
+    "sourceFiles": 2,
+    "actualInputFiles": 4,
+    "fixtureLogHashMatched": true,
+    "hashAndLengthMismatches": 0
+  }
+}

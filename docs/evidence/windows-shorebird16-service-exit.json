@@ -1,0 +1,291 @@
+{
+  "schema": 1,
+  "appVersion": "0.1.0+16",
+  "status": "REFUSED; unexpected service termination observed during Disconnect; independent restoration PASS",
+  "scope": "one selected provider node, ordinary installed Windows UI, no alternate node; controlled disposable Sandbox",
+  "artifact": {
+    "build": 16,
+    "development": true,
+    "releaseSigned": false,
+    "installerSha256": "6fdeb9899dc0878e88ea9c1d88ab2588658e4b3b4ecea2a0e140efad5adcc87e",
+    "ordinaryUiSha256": "3ee65db567cccc7c5a18c10b02776a832e7d46d4093c668cd4563f6f26c30135",
+    "serviceSha256": "3582d238cf50419fc43c596b539c99a374effe19c99d3382e9aac68ef3626e72",
+    "serviceBuildVcs": "48abfe205e4f5dbff3a7be995b9271e544738604",
+    "serviceBuildVcsModified": true,
+    "productConsumedFingerprint": "504c05aad982c8e2db1a898fda8cdc835aecd0bc6004039c2670b88fd7d5b2bc",
+    "xrayVersion": "v1.260327.1-exvpn.4",
+    "xrayChecksum": "h1:GVK3CNV0df7huIKSKGgF1VCiXIzEdZWv0W7JjeBWeq0=",
+    "probeSha256": "43f1825d369e60d40ce2623bd3736f3b37d4dd75a96ac576a86a418fb09f082e"
+  },
+  "privacy": {
+    "rawProfilesTrafficTreesAndEventsPrivate": true,
+    "screenshots": [],
+    "visualLayoutTested": false
+  },
+  "hostNetworkChanged": false,
+  "cloudCheckInvoked": false,
+  "cloudDownloadInvoked": false,
+  "attempts": [
+    {
+      "runId": "52833cfb-0fe8-43db-ab83-f961840586a2",
+      "status": "REFUSED",
+      "coordinatorCleanup": "REFUSED",
+      "hostCoordinatorElapsedMs": 246258,
+      "classification": "QA UTF-8 context read failure before Connect",
+      "actualConnectActionIssued": false,
+      "actualDisconnectActionIssued": false,
+      "importSelectionPassed": true,
+      "vpnVerdict": "NOT_TESTED",
+      "cause": "UTF-8 JSON without BOM was read as legacy codepage by PowerShell 5.1; exact selected label changed",
+      "notRun": [
+        "connected-https-dns",
+        "adapter-traffic-and-egress",
+        "disconnect-restore",
+        "owned-group-cleanup",
+        "network-graceful-exit"
+      ],
+      "summary": {
+        "path": ".private/windows-lifecycle-results/52833cfb-0fe8-43db-ab83-f961840586a2/host-summary.json",
+        "sha256": "742e88ef766502021deab6fdf6af91195c8a40bd8d6a8d19234238f97a9ceab2"
+      },
+      "encodingProof": {
+        "path": ".private/windows-lifecycle-results/52833cfb-0fe8-43db-ab83-f961840586a2/encoding-readonly.json",
+        "sha256": "26c9e979e730c763b5b7d7e58ad378328934fb098ff4da50c85fb728c4781957"
+      },
+      "independentCleanup": {
+        "status": "PASS",
+        "elapsedMs": 78332,
+        "normalUiExitCode": 0,
+        "receipt": {
+          "path": ".private/windows-lifecycle-results/52833cfb-0fe8-43db-ab83-f961840586a2/independent-cleanup.json",
+          "sha256": "85ed8c6a9c3397ac2953f6cd7080021e57fbc3116debcac02fb242f29e47a0f7"
+        }
+      }
+    },
+    {
+      "runId": "b99b5c40-227f-4e73-9892-612a032a2e7e",
+      "status": "REFUSED",
+      "coordinatorCleanup": "REFUSED",
+      "hostCoordinatorElapsedMs": 324413,
+      "originalUnknownGuest": true,
+      "sourceSeal": {
+        "path": ".private/windows-network-inputs/b99b5c40-227f-4e73-9892-612a032a2e7e/seal.json",
+        "sha256": "155da62dfb3b2792694c12cfdd20ba30e40c5820df941a023eeb34603672984d"
+      },
+      "invoke": {
+        "path": ".private/windows-network-inputs/b99b5c40-227f-4e73-9892-612a032a2e7e/invoke.ps1",
+        "sha256": "1a1399b3939400afc756e7a61e6e17a2025b29683ade72ba7d16174351072989"
+      },
+      "proof": {
+        "path": ".private/windows-network-inputs/b99b5c40-227f-4e73-9892-612a032a2e7e/proof.json",
+        "sha256": "08596a42ab40bcda8199fddc4bac04662d3064f10ca741cfbc9b1523e128e38b"
+      },
+      "utf8Fix": {
+        "runtimeDelta": [
+          "step.ps1 reads context with explicit UTF-8",
+          "run-step.ps1 reads context with explicit UTF-8"
+        ],
+        "checksPerShell": 132,
+        "powershellVersions": [
+          "5.1",
+          "7"
+        ],
+        "bothPassed": true,
+        "diff": {
+          "path": ".private/windows-network-inputs/b99b5c40-227f-4e73-9892-612a032a2e7e/normalized-diff.patch",
+          "sha256": "3680b1cb6c04c6ecb78d69f8cb47509d7afdaf08b850bde430aa0d05312cc8c4"
+        }
+      },
+      "baseline": {
+        "status": "PASS",
+        "payloadExact": true,
+        "sameOwnerProductionBinding": true,
+        "storageFiles": 0,
+        "backups": 20,
+        "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85"
+      },
+      "directBaseline": {
+        "numericHttps": 200,
+        "domainHttps": 204,
+        "independentUserOwnedProbe": true,
+        "sameOwnerSid": true,
+        "launcherAdminEnabled": true,
+        "integrityLevelMeasured": false
+      },
+      "import": {
+        "stepsPassed": 7,
+        "exactSelectedProfileObserved": true,
+        "selectedObservationActionIssued": false,
+        "profileSource": "same saved node4; neutral fragment only",
+        "transport": "VLESS/XHTTP/REALITY"
+      },
+      "connect": {
+        "status": "PASS",
+        "actionIssued": true,
+        "elapsedMs": 2573,
+        "wfpObserved": true,
+        "tunObserved": true
+      },
+      "firstRefusal": {
+        "code": "network_exclusion_policy_changed",
+        "classification": "QA compared nondeterministic DPAPI ciphertext hash",
+        "sameRegistryNamesTypeLengthAcl": true,
+        "beforeCipherSha256": "a75b1663289a701c84e4b028094e5b0ccf153dfd2ce28c5b57a1797598b2ac38",
+        "afterCipherSha256": "e7df97f8da2cb6f1c5f9f6dcf0bf3b74bdff9287cc5e9256c6e34d6669302780",
+        "currentPolicy": {
+          "version": 1,
+          "ownerMatches": true,
+          "pathCount": 0,
+          "normalizedSha256": "f61f608a9cdec66fb651baedc17fe5592fbe48cee601683a9e31929d331c3245"
+        },
+        "beforeSemanticSnapshotCaptured": false,
+        "semanticBeforeAfterEqualityClaimed": false,
+        "providerSocketQueryReached": false
+      },
+      "disconnect": {
+        "status": "UNKNOWN",
+        "oneActionCallObserved": true,
+        "actionReturnedObserved": true,
+        "readbackCompleted": false,
+        "supervisor": "REFUSED",
+        "supervisorError": "step_child_timeout",
+        "childExited": true,
+        "postBindingPassed": false,
+        "stages": [
+          {
+            "stage": "compile_begin",
+            "elapsedMs": 5526,
+            "utc": "2026-10-17T12:18:26.8394826Z"
+          },
+          {
+            "stage": "compile_end",
+            "elapsedMs": 10301,
+            "utc": "2026-10-17T12:18:31.6139965Z"
+          },
+          {
+            "stage": "session_begin",
+            "elapsedMs": 11252,
+            "utc": "2026-10-17T12:18:32.5650665Z"
+          },
+          {
+            "stage": "session_ready",
+            "elapsedMs": 11921,
+            "utc": "2026-10-17T12:18:33.234482Z"
+          },
+          {
+            "stage": "tap_begin",
+            "elapsedMs": 14593,
+            "utc": "2026-10-17T12:18:35.9069859Z"
+          },
+          {
+            "stage": "action_call",
+            "elapsedMs": 15493,
+            "utc": "2026-10-17T12:18:36.8064471Z"
+          },
+          {
+            "stage": "action_returned",
+            "elapsedMs": 15809,
+            "utc": "2026-10-17T12:18:37.1227413Z"
+          },
+          {
+            "stage": "tap_disposed",
+            "elapsedMs": 17229,
+            "utc": "2026-10-17T12:18:38.5423399Z"
+          },
+          {
+            "stage": "readback_begin",
+            "elapsedMs": 17537,
+            "utc": "2026-10-17T12:18:38.8503972Z"
+          }
+        ],
+        "receipt": {
+          "path": ".private/windows-lifecycle-results/b99b5c40-227f-4e73-9892-612a032a2e7e/supervisor-009.json",
+          "sha256": "117e61f2cc472592526e342b810e723b23877553b1cdcdee76128bb403e09751"
+        }
+      },
+      "productFinding": {
+        "summary": "Service terminated unexpectedly during Disconnect",
+        "systemEventId": 7034,
+        "eventUtc": "2026-10-17T12:18:37.3407949Z",
+        "serviceState": "Stopped",
+        "servicePid": 0,
+        "scmWin32ExitCode": 1067,
+        "serviceSpecificExitCode": 0,
+        "actualProcessExitCodeCaptured": false,
+        "application1000or1001Count": 0,
+        "werExvpnReportCount": 0,
+        "panicStackCaptured": false,
+        "rootCause": "NOT_DETERMINED",
+        "tunRaceProven": false,
+        "receipt": {
+          "path": ".private/windows-lifecycle-results/b99b5c40-227f-4e73-9892-612a032a2e7e/independent-crash-policy.json",
+          "sha256": "88a76372f4d79afdcc8363f72710d6fe797e586eeda747dbf84309dae76877e8"
+        }
+      },
+      "notRun": [
+        "connected-https-dns",
+        "adapter-traffic-and-egress",
+        "disconnect-restore",
+        "owned-group-cleanup",
+        "network-graceful-exit"
+      ],
+      "vpnVerdict": "NOT_PROVEN",
+      "httpsThroughVpn": "NOT_RUN",
+      "changedEgress": "NOT_RUN",
+      "explicitTunDns": "NOT_RUN",
+      "adapterTrafficCounters": "NOT_RUN",
+      "summary": {
+        "path": ".private/windows-lifecycle-results/b99b5c40-227f-4e73-9892-612a032a2e7e/host-summary.json",
+        "sha256": "5a572cbd8f0a8a6d139fcdce2117906ba502d91cc767177f1dd42c2ad30cda32"
+      },
+      "independentRestoration": {
+        "status": "PASS",
+        "elapsedMs": 101554,
+        "startServiceCalls": 1,
+        "repeatConnectCalls": 0,
+        "repeatDisconnectCalls": 0,
+        "sameExactPayload": true,
+        "sameOwnerProductionCommand": true,
+        "serviceState": "Running",
+        "serviceGenerationChanged": true,
+        "normalUiExitCode": 0,
+        "ownedGroupRemoved": true,
+        "storageFiles": 0,
+        "guardArmed": false,
+        "tunnelPresent": false,
+        "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+        "backupCount": 20,
+        "backupInventorySha256": "44e69176e8012a3a132cad1c95791982223bda742e2544fb751121f38e48acd5",
+        "protectedReceiptsArchivedAndRemoved": 2,
+        "policyCiphertextPreservedAfterCrashRead": true,
+        "clearsOriginalFailure": false,
+        "receipt": {
+          "path": ".private/windows-lifecycle-results/b99b5c40-227f-4e73-9892-612a032a2e7e/independent-restoration.json",
+          "sha256": "bf04cfe895a44bfef532650a2936de640ac48380eb2f7491f576ac614b9d24c2"
+        }
+      }
+    }
+  ],
+  "limits": {
+    "ipv6": "NOT_TESTED",
+    "dnsLeak": "NOT_TESTED",
+    "exclusions": "NOT_TESTED",
+    "crashProtection": "NOT_TESTED",
+    "otaNativeConfig": "NOT_PROVEN",
+    "trayGesture": "injected owned callback then actual menu and Flutter confirmation",
+    "unelevatedAcceptance": "NOT_CLAIMED",
+    "adapterCountersAreNotCoreIpcStats": true
+  },
+  "evidenceManifest": {
+    "path": ".private/windows-network-evidence-b99b5c40/private-evidence-manifest.json",
+    "sha256": "3dbb5b394df571a6d21cd8bc8fa58a360ba6979f2fb6fc5ae788a257b404138a"
+  },
+  "evidenceFiles": 489,
+  "evidenceVerified": 489,
+  "coordinatorVerification": {
+    "date": "2026-10-17",
+    "files": 489,
+    "mismatches": 0,
+    "sourceCandidateSha256": "7d7239fafc3ac1b8d02291800835f508d45a84bf13bf15b51520e58effa0e2af"
+  }
+}

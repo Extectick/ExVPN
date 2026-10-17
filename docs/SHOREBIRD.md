@@ -163,6 +163,11 @@ Android RSA-3072 PKCS12 и RSA-4096 для подписи Shorebird-патчей
 защищённое резервирование и проверка восстановления. Windows Authenticode
 certificate пока не подготовлен.
 
+Для переносимого backup подготовлен локальный
+[Export/Verify/Restore инструмент](SIGNING_BACKUP.md): стандартные PKCS#12 и
+зашифрованный PKCS#8, проверка доверенных публичных идентичностей, восстановление
+только в новый каталог. Реальные ключи этим инструментом ещё не экспортированы.
+
 Gradle требует все четыре signing-параметра вместе; частичная конфигурация
 запрещена, скрытого debug-signing для release нет. Новая Android release
 идентичность отличается от прежних debug APK: их обновление поверх без
@@ -258,6 +263,32 @@ graceful exit и cold reopen не проверены. Это не доказат
 не было. [Результат наблюдения](evidence/windows-shorebird-base16-continuous-owner.json).
 Скриншот не снимался; эти данные не являются визуальной приёмкой layout.
 
+Последующие отдельные проверки +16, 2026-10-17:
+
+- Существующий Windows UI завершился штатно с наблюдаемым кодом 0.
+  Дальнейшая передача команды стенда получила sharing violation до запуска
+  нового UI; весь тот прогон остался REFUSED. [Исходный частичный результат](evidence/windows-shorebird-base16-exit-partial.json).
+- Новый single-generation прогон за **227,199 с** прошёл cold reopen,
+  Settings → Versions, чтение base/beta и обычный Exit с подтверждением,
+  удерживаемым process handle и кодом 0. Cleanup PASS: собственные receipts
+  удалены, payload/служба/сеть/storage/20 backups сохранены. Меню открывалось
+  адресным tray callback; настоящий жест Shell и layout не проверялись.
+  [Результат Windows](evidence/windows-shorebird-base16-cold-exit.json).
+- Тот же подписанный Android APK выполнил реальный VLESS/XHTTP/REALITY цикл
+  за **107,256 с**: независимый UID подтвердил HTTPS200/204, VPN transport
+  и смену внешнего IPv4. После обычного Disconnect исходный IP восстановился,
+  service/активная VPN network отсутствовали, собственная группа удалена.
+  Настройки ОС сохранены; выданное системное согласие на VPN оставлено.
+  Гость остановлен после сетевой очистки; равенство private storage bytes
+  не утверждается. [Android VPN](evidence/android-shorebird-provider-build16.json),
+  [подключённый экран](evidence/android-shorebird16-provider-connected.png).
+
+Root независимо сверил соответственно **85, 130 и 453** файла доказательств:
+хеши и размеры совпали. Старые отказы не заменены успешными результатами.
+Это проверки неизменных пакетов из [e707d94](https://github.com/Extectick/ExVPN/commit/e707d942c5bfd01075ba57f512b6aabec954980f),
+без cloud release/patch. Android IPv6, DNS leaks, exclusions/fault/lockdown
+в последнем прогоне не проверялись; физическое устройство и E1/E6 открыты.
+
 Даже успешное отображение «Базовый выпуск» подтверждает лишь локальное
 поведение UI. Native-функции current/next закреплённого updater возвращают
 `0` и при внутренней ошибке чтения; наличие FFI-символов не доказывает успешную
@@ -266,6 +297,14 @@ graceful exit и cold reopen не проверены. Это не доказат
 [Закреплённый C API](https://github.com/shorebirdtech/updater/blob/70ff1e336798474e39586d3f5ac2ca386ef32d9e/library/src/c_api/dart.rs#L65).
 
 ## Оставшаяся интеграция
+
+Для native updater отдельно сохранён exact Cargo.lock inventory:
+257 registry crates и 3 workspace nodes. Это консервативный исходный набор,
+а не список доказанно слинкованных зависимостей. Все три engine +16 содержат
+один Rust source marker; подходящий source найден, установленный локальный
+Rust другой версии для notices не использован. Полные crate notices и Rust
+runtime aggregate остаются открытыми.
+[Source inventory и границы](evidence/shorebird-updater-source-inventory.json).
 
 Проект ExVPN привязан, доступ и локальные ключи подготовлены. Облачные релизы
 и патчи ещё не созданы. Обычные development APK/Windows-пакеты ExVPN

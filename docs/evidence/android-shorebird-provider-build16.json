@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS_REAL_PROVIDER_IPV4_HTTPS",
+  "date": "2026-10-17",
+  "scope": "Signed Shorebird base +16: ordinary UI to Android VpnService, one stored real provider profile, ordinary independent UID HTTPS and external IPv4 change, normal Disconnect and direct restoration.",
+  "artifact": {
+    "versionName": "0.1.0",
+    "versionCode": 16,
+    "apkSha256": "9401f733a242a7258f69345e40bd4ca66a7300d8160d2416ce82f5b9438018da",
+    "signerCertificateSha256": "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093",
+    "nonDebug": true,
+    "core": "26.10.10-exvpn.4",
+    "installedBytesMatched": true,
+    "helperSha256": "6c6ced3231d41a69e6ad67fb034fdd3e1c9c3910995b82f964ce710418667b66",
+    "installedHelperMatched": true,
+    "engineBindingMethod": "verified_ndk_strip",
+    "rawSdkBytesMatched": false,
+    "engineBytesBound": true,
+    "sourceRelation": "Immutable audited APK and frozen QA inputs; current checkout changes are not claimed to correspond to this APK."
+  },
+  "environment": {
+    "api": 30,
+    "abi": "x86_64",
+    "dedicatedPrivateEmulator": true,
+    "physicalDevice": false,
+    "originalOtherEmulatorActions": 0,
+    "computerUseActions": 0,
+    "hostNetworkChanges": 0,
+    "newInstalls": 0,
+    "uninstalls": 0,
+    "appClears": 0,
+    "cloudOtaActions": 0,
+    "rootOrSuCalls": 0
+  },
+  "provider": {
+    "profileCount": 1,
+    "protocol": "VLESS",
+    "transport": "XHTTP",
+    "security": "REALITY",
+    "privateStoredSourceUsed": true,
+    "subscriptionUrlRefreshes": 0,
+    "reusedPreviouslyVerifiedQaGroup": true,
+    "selectedProfileConfirmed": true,
+    "privateStoredBytesCompared": false
+  },
+  "connection": {
+    "mechanism": "instrumentation_semantics_v1",
+    "connectCommands": 1,
+    "systemPermissionDialogVerified": true,
+    "systemPermissionPositiveTaps": 1,
+    "freshTreeDerivedPermissionAction": true,
+    "servicePresent": true,
+    "activeVpnTunCount": 1,
+    "ownerUidMatchedToInstalledPackage": true,
+    "observer": "dumpsys_connectivity",
+    "ordinaryIndependentProbeUid": true,
+    "sameProbeUidAllPhases": true,
+    "activeVpnUiAutomatorCalls": 0,
+    "noUnknownActionRetry": true
+  },
+  "phases": {
+    "baseline": {
+      "status": "PASS",
+      "traceHttpStatus": 200,
+      "healthHttpStatus": 204,
+      "vpnTransport": false,
+      "publicIpFamily": 4,
+      "ordinaryIndependentUid": true,
+      "endpointTlsVerificationDisabled": false
+    },
+    "connected": {
+      "status": "PASS",
+      "traceHttpStatus": 200,
+      "healthHttpStatus": 204,
+      "vpnTransport": true,
+      "publicIpFamily": 4,
+      "ordinaryIndependentUid": true,
+      "endpointTlsVerificationDisabled": false
+    },
+    "restored": {
+      "status": "PASS",
+      "traceHttpStatus": 200,
+      "healthHttpStatus": 204,
+      "vpnTransport": false,
+      "publicIpFamily": 4,
+      "ordinaryIndependentUid": true,
+      "endpointTlsVerificationDisabled": false
+    }
+  },
+  "externalIpv4": {
+    "sameTrace4EndpointAllPhases": true,
+    "addressHashesRecordedPrivately": true,
+    "changedThroughVpn": true,
+    "restoredToOriginal": true,
+    "addressesNotPublished": true
+  },
+  "cleanup": {
+    "normalDisconnect": true,
+    "serviceAbsent": true,
+    "activeVpnNetworkAbsent": true,
+    "directHttpsAndOriginalIpRestored": true,
+    "onlyOwnedGroupRemoved": true,
+    "emptyHomeRestored": true,
+    "trackedAlwaysOnLockdownAndPrivateDnsSettingsUnchanged": true,
+    "packageUidDataDirectoryAndApkUnchanged": true,
+    "privateStorageBytesCompared": false,
+    "vpnConsentGrantIntentionallyRetained": true,
+    "guestShutdown": true,
+    "forcedOwnedGuestShutdown": true,
+    "forcedShutdownAfterNormalVpnTeardownAndRestoration": true,
+    "otherEmulatorIdentitiesPreserved": true,
+    "watchdogCompleted": true
+  },
+  "timing": {
+    "startedAtUtc": "2026-10-17T11:14:24.1579043Z",
+    "finishedAtUtc": "2026-10-17T11:16:11.4164731Z",
+    "bootMs": 35407,
+    "totalMs": 107256,
+    "cleanupMs": 19251,
+    "totalLimitSeconds": 480,
+    "cleanupLimitSeconds": 90
+  },
+  "inputs": {
+    "freezeSha256": "bf4ab66644c33429801a741b67028ff6fcc5a34e889133dceb73cedc883fa4f2",
+    "count": 43,
+    "unchanged": true
+  },
+  "previousAttempts": [
+    {
+      "status": "INDETERMINATE",
+      "classification": "QA_SETUP_REFUSAL_BEFORE_APPLICATION_WRITES",
+      "candidateSha256": "c46f495f80b6548e87f3651156600c7cc3fa8c599d0158bbb6624d569da61d76",
+      "proofManifestSha256": "20809f57af18f13c31255836ed60e761da2ff76c3cdac58d2195204edb865664",
+      "outcomeNotOverwritten": true
+    },
+    {
+      "status": "INDETERMINATE",
+      "classification": "QA_SYSTEM_CONSENT_SELECTOR_REFUSAL",
+      "candidateSha256": "f826d2c974a384805daf6b5aec01ec64e21289c6b7e095b381bf50387812ef60",
+      "proofManifestSha256": "46e526b500e607d29074663bdf3dda17d4a3f63e49237fee5388fbb646a39a8b",
+      "outcomeNotOverwritten": true
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "android-shorebird16-provider-connected.png",
+      "sha256": "c8ee502dc271f1c89fb02f8362c0f18758fc2a294bb1a0731c1f5a5b5cf9b329",
+      "bytes": 376156,
+      "visuallyInspected": true,
+      "providerNamesReplaced": true,
+      "credentialsOrEndpointVisible": false
+    },
+    {
+      "name": "android-shorebird16-provider-restored.png",
+      "sha256": "90e1e8fae88a13ea69c0c5d8681b3f30055ac36c390e15a0ec9ca64b7cbfb739",
+      "bytes": 274465,
+      "visuallyInspected": true,
+      "providerNamesReplaced": true,
+      "credentialsOrEndpointVisible": false
+    }
+  ],
+  "limitations": [
+    "One real VLESS/XHTTP/REALITY profile only; current result is not a complete protocol matrix.",
+    "IPv6, separate DNS leak checks, exclusions, server outage, process crash and lockdown were not tested in this run.",
+    "Physical Android acceptance and complete E1 remain open.",
+    "ConnectivityService active VPN network absence is not a complete enumeration of kernel interfaces.",
+    "Installed APK identity and logical empty-state restoration do not prove private storage byte equality.",
+    "This is not Shorebird OTA download, update, cloud release or native configuration acceptance.",
+    "The existing release/distribution audit blockers are not cleared by this runtime test."
+  ],
+  "packageSourceCommit": "e707d942c5bfd01075ba57f512b6aabec954980f",
+  "independentEvidenceVerification": {
+    "date": "2026-10-17",
+    "candidateSha256": "a43a5bea890154cd448a6fdea64a62b7b848e26fe51169a789d4159e95464a53",
+    "manifestSha256": "583965b45d9e4eeae3d47fed20ddf7807eb58d80582e073a1bdfe6de53792656",
+    "files": 453,
+    "hashAndLengthMismatches": 0,
+    "verifiedBy": "root"
+  }
+}

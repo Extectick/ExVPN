@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "networkAttempt": {
+    "schemaVersion": 1,
+    "gate": "E1-009",
+    "status": "INDETERMINATE",
+    "attempt": "android-dns-listener-build16-20261017-a2-stream",
+    "failureCode": "qa_exclusion_inventory_incomplete",
+    "phaseReached": "exclusion_inventory_before_connect",
+    "startedAtUtc": "2026-10-17T12:16:50.8787777Z",
+    "finishedAtUtc": "2026-10-17T12:21:27.4464646Z",
+    "durationMs": 276541,
+    "bootMs": 36599,
+    "product": {
+      "versionCode": 16,
+      "core": "26.10.10-exvpn.4",
+      "apkSha256": "9401f733a242a7258f69345e40bd4ca66a7300d8160d2416ce82f5b9438018da",
+      "installedApkMatched": true,
+      "ordinaryDistinctAppAndRequesterUids": true,
+      "productModified": false,
+      "installed": false
+    },
+    "setup": {
+      "initialVpnServiceAbsent": true,
+      "initialVpnNetworkAbsent": true,
+      "querylogAvailable": true,
+      "logcatReady": true,
+      "logcatReadinessMechanism": "logcat_epoch_stream_v1",
+      "markerObserved": true,
+      "confirmedAdvancingTimestampCount": 4,
+      "fixtureStarted": true,
+      "fixtureCore": "26.10.10-exvpn.3",
+      "fixtureSha256": "79c2886d9178781ea47c053d9c1d2e8d4a2bf36e162bc78099c347898d5d540b",
+      "syntheticQaGroupCreated": true,
+      "exclusionEnableToggleIssued": false
+    },
+    "phases": {
+      "direct": "NOT_TESTED",
+      "connected": "NOT_TESTED",
+      "serverFault": "NOT_TESTED",
+      "restored": "NOT_TESTED"
+    },
+    "dns": {
+      "strictContinuousDnsGate": null,
+      "attribution": "NOT_TESTED",
+      "noLeakAcceptance": "NOT_TESTED",
+      "packetCaptureStarted": false,
+      "additiveListenerStarted": false,
+      "listenerQueueRejected": null,
+      "packetCount": null
+    },
+    "diagnosis": {
+      "classification": "qa_inventory_traversal_refusal",
+      "twoInitialViewportsIdentical": true,
+      "initialProtectedRowVisible": false,
+      "initialExcludedRowVisible": true,
+      "initialExcludedRowChecked": false,
+      "laterCleanupBothRequesterRowsVisible": true,
+      "laterCleanupExcludedChecked": false,
+      "noProductFailureProven": true,
+      "detailsSha256": "fd8b2739135d6813f1ca2cf845900a49800030872e573926e3a11385c8c078a3"
+    },
+    "cleanup": {
+      "complete": false,
+      "uiDisconnectedObserved": true,
+      "syntheticGroupRemoved": false,
+      "syntheticGroupRetained": true,
+      "exclusionPersistedRestorationConfirmed": false,
+      "postSettingsReadbackConfirmed": false,
+      "postNativeReadbackConfirmed": false,
+      "fixtureStopped": true,
+      "logcatStopped": true,
+      "watchdogTriggered": true,
+      "watchdogReason": "deadline",
+      "watchdogOwnedStopConfirmed": true,
+      "forcedOwnedGuestShutdown": true,
+      "ownedGuestAbsent": true,
+      "originalDeviceIdentitiesPreserved": true,
+      "cleanupDeadlineSeconds": 120,
+      "cleanupDeadlineReached": true
+    },
+    "evidence": {
+      "freezeSha256": "cf05018c376c6c2e0a86fd100b14fcebda13872de5f7636d938c11c39a82e7c1",
+      "frozenInputCount": 46,
+      "frozenInputsUnchanged": true,
+      "runtimeReceiptSha256": "a9c0b68f349ea1a9a481c1941f1c6b1659a68d342239c5ce6bd3e7f39bab80ee",
+      "watchdogReceiptSha256": "8e4d793b78900cdde000d0bfde88d76f395d367b8b3e37d9a6a4614eb0f912e4",
+      "readinessFixtureProofSha256": "5b44a6b0b6ed32a033177e0ecf84b5e83c6b7b021171b303f49545370221665f",
+      "priorAttemptCandidateSha256": "74151e4ae310ecc0bb054b9f6c9682bd48e46098761d8790b4284271f1e70748",
+      "priorAttemptProofSha256": "da31aa423505fa173990868bd1b4026aae3dd9e30fb481eaa645eb5021898395"
+    },
+    "limitations": [
+      "No Connect, HTTPS, DNS nonce, packet capture or additive listener phase ran.",
+      "A retained synthetic QA group and unconfirmed final policy/settings readback require cleanup; stateRestored is not claimed.",
+      "The first unchanged viewport was treated as list end; the protected row was not visible yet.",
+      "The synthetic fixture shares host egress and would not prove a different public IPv4.",
+      "IPv6, DNS leakage, lockdown, exclusions and physical Android acceptance remain open.",
+      "Historical attempts remain immutable."
+    ]
+  },
+  "independentCleanup": {
+    "schemaVersion": 1,
+    "status": "PASS",
+    "mode": "cleanup_only",
+    "attempt": "android-dns-listener-build16-20261017-a2-cleanup",
+    "previousNetworkOutcome": "INDETERMINATE",
+    "previousOutcomeUnchanged": true,
+    "previousCandidateSha256": "8cf3e7a2a7c6640ae3c3076f902a9c95a6caf6be018e49529c531d9e48b59d9c",
+    "previousProofSha256": "ec0f99218f20c4e13ce31c489ec42c6bdef70dfbe1e567bcafcb369371dcbd75",
+    "startedAtUtc": "2026-10-17T12:29:15.7022742Z",
+    "finishedAtUtc": "2026-10-17T12:30:37.6102698Z",
+    "durationMs": 81903,
+    "bootMs": 34321,
+    "nonBootDurationUpperBoundMs": 47582,
+    "shutdownMs": 4174,
+    "product": {
+      "versionCode": 16,
+      "apkSha256": "9401f733a242a7258f69345e40bd4ca66a7300d8160d2416ce82f5b9438018da",
+      "installedApkMatched": true,
+      "installedOrChanged": false
+    },
+    "actions": {
+      "connectAttempted": false,
+      "networkProbeAttempted": false,
+      "captureStarted": false,
+      "listenerStarted": false,
+      "policyToggleAttempted": false,
+      "savePolicyAttempted": false,
+      "addressedRequesterViewportsMaximum": 2,
+      "addressedScrollMaximum": 1
+    },
+    "cleanup": {
+      "groupRemoved": true,
+      "noGroupsRemain": true,
+      "excludedRequesterUncheckedObserved": true,
+      "protectedRequesterUncheckedObserved": true,
+      "fullInstalledApplicationInventoryClaimed": false,
+      "osSettingsMatchedPriorBaseline": true,
+      "initialVpnServiceAbsent": true,
+      "finalVpnServiceAbsent": true,
+      "initialVpnNetworkAbsent": true,
+      "finalVpnNetworkAbsent": true,
+      "priorOwnedFixtureStopped": true,
+      "ownedGuestShutdown": true,
+      "forcedOwnedGuestShutdown": true,
+      "originalDeviceIdentitiesPreserved": true,
+      "watchdogCompleted": true,
+      "sealedInputsUnchanged": true
+    },
+    "proof": {
+      "freezeSha256": "f21030d7a358cfc98e730aae19475e0ce296ccaf719c48600593d585c4b1d4a4",
+      "runtimeReceiptSha256": "fd73080caaf6918d45ad293d1a49f08dd3c89e6e0cc0bd8859a565264938f5aa"
+    },
+    "limitations": [
+      "Cleanup is a separate run and does not change either preceding network INDETERMINATE result.",
+      "Only the two QA requester rows were inspected; no full exclusion inventory claim.",
+      "No HTTPS, DNS, VPN, kill-switch, IPv6 or physical-device acceptance was performed."
+    ]
+  },
+  "coordinatorVerification": {
+    "attemptFiles": 471,
+    "cleanupFiles": 255,
+    "mismatches": 0,
+    "attemptManifestSha256": "ec0f99218f20c4e13ce31c489ec42c6bdef70dfbe1e567bcafcb369371dcbd75",
+    "cleanupManifestSha256": "9a8dbe52c0c4bcbc2b9d512013e9a94c6c1b0e20b8dd672dbbe506b9a7aa506d",
+    "cleanupCandidateSha256": "407b80d227c9c68facb754574f89187055099570a1c12e6473017bce52a8ba98"
+  }
+}

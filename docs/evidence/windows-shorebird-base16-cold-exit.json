@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "runId": "f3120091-2dc1-413d-bd95-0373c33d56e2",
+  "status": "PASS",
+  "scope": "ordinary installed Windows +16 cold local updater screen and normal application Exit",
+  "source": {
+    "sealSha256": "87613b023a8cf387a9ef7e51c599e785df790b273a54ef1f617fdb4719ce6f7b",
+    "hostSha256": "1b7af7a028692f899ab6329213e56d593a3b280ec6ec63558d539a7340a8b7d9",
+    "proofSha256": "9ad4c6405c68e007d75d1207698a8b74dbc605f4952f47d0b714d10d6b4353d5",
+    "sourceCount": 17,
+    "fixtureChecksEach": 118,
+    "fixtureRuntimes": [
+      "PowerShell5.1",
+      "PowerShell7"
+    ],
+    "diffSha256": "617ae3524d6aa277f7f47a5f537651b06408f875f09eed58cbfa82038beca029"
+  },
+  "artifacts": {
+    "build": 16,
+    "installerSha256": "6fdeb9899dc0878e88ea9c1d88ab2588658e4b3b4ecea2a0e140efad5adcc87e",
+    "uiSha256": "3ee65db567cccc7c5a18c10b02776a832e7d46d4093c668cd4563f6f26c30135",
+    "serviceSha256": "3582d238cf50419fc43c596b539c99a374effe19c99d3382e9aac68ef3626e72",
+    "auditSha256": "7acba435e59cc7a0416a0977ea8df8c99d6491c803f03378fe65ce51c3545688"
+  },
+  "runtime": {
+    "status": "PASS",
+    "coordinatorStartedUtc": "2026-10-17T11:16:16.5106429Z",
+    "coordinatorFinishedUtc": "2026-10-17T11:20:03.7141499Z",
+    "coordinatorElapsedMs": 227199,
+    "elapsedScope": "host coordinator including preflight, baseline, UI actions, owner completion and final cleanup",
+    "actionsMaximumSeconds": 300,
+    "cleanupMaximumSeconds": 120,
+    "steps": [
+      {
+        "sequence": 1,
+        "step": "settings",
+        "status": "PASS",
+        "actionIssued": true,
+        "elapsedMs": 582,
+        "freshCaptureFailures": 0,
+        "receiptSha256": "ee7129de0d5b8a63177ae2c803afd277395cf37e60fcb59efb1a1d42905758cf"
+      },
+      {
+        "sequence": 2,
+        "step": "updates",
+        "status": "PASS",
+        "actionIssued": true,
+        "elapsedMs": 597,
+        "freshCaptureFailures": 0,
+        "receiptSha256": "b053e8f4f7fa2ff6008f10f262d5d17c403a9723177890388230b8ce12481aad"
+      },
+      {
+        "sequence": 3,
+        "step": "local-read",
+        "status": "PASS",
+        "actionIssued": false,
+        "elapsedMs": 248,
+        "freshCaptureFailures": 0,
+        "receiptSha256": "31d1f821a151452a3e006f6dbe6f911870c6025eb8d72080e70aa91acec08d10"
+      },
+      {
+        "sequence": 4,
+        "step": "open-exit-menu",
+        "status": "PASS",
+        "actionIssued": true,
+        "elapsedMs": 140,
+        "freshCaptureFailures": 0,
+        "receiptSha256": "f5122721be125cd41369873bd42426be4fc162d727a45c1944f1c77a3fcca2c6"
+      },
+      {
+        "sequence": 5,
+        "step": "choose-exit-menu",
+        "status": "PASS",
+        "actionIssued": true,
+        "elapsedMs": 322,
+        "freshCaptureFailures": 0,
+        "receiptSha256": "e581452b177e782449cf79a23129cbef6d2cb43e06a392cda184116c9b8044a3"
+      },
+      {
+        "sequence": 6,
+        "step": "exit-confirm",
+        "status": "PASS",
+        "actionIssued": true,
+        "elapsedMs": 457,
+        "freshCaptureFailures": 0,
+        "receiptSha256": "c22a427f51ba3d38b743f94f311414f604b6831854a8fdfc0130fecd03056790"
+      }
+    ],
+    "uiLaunchCount": 1,
+    "coldReopen": "PASS",
+    "actualHeldExitCode": 0,
+    "heldOwnerTerminal": "OBSERVED",
+    "heldOwnerElapsedMs": 92901,
+    "normalExitChainCompleted": true,
+    "notRun": []
+  },
+  "localScreen": {
+    "status": "PASS",
+    "labels": [
+      {
+        "text": "Версии и обновления",
+        "role": 20,
+        "state": 3145728
+      },
+      {
+        "text": "Приложение\nExVPN 0.1.0",
+        "role": 41,
+        "state": 3145728
+      },
+      {
+        "text": "Сборка\n16",
+        "role": 41,
+        "state": 3145728
+      },
+      {
+        "text": "Dart-патч\nБазовый выпуск",
+        "role": 41,
+        "state": 3145728
+      },
+      {
+        "text": "Обновления интерфейса\nКанал Dart-патчей: beta\nИсправления интерфейса загружаются отдельно. Ядро VPN и системные компоненты требуют полного обновления приложения.",
+        "role": 20,
+        "state": 3145728
+      },
+      {
+        "text": "Проверить Dart-патчи",
+        "role": 43,
+        "state": 3145728
+      }
+    ],
+    "checkButtonEnabled": true,
+    "checkButtonInvoked": false,
+    "displayedBaseRelease": true,
+    "displayedBetaChannel": true,
+    "nativeUpdaterConfiguration": "NOT_PROVEN",
+    "nativeCurrentPatchRead": "NOT_PROVEN",
+    "nativeNextPatchRead": "NOT_PROVEN",
+    "limitation": "The native updater can return zero on a read error; displayed base release alone does not prove updater configuration or native current/next API results."
+  },
+  "cleanup": {
+    "status": "PASS",
+    "previousRunId": "c01cb434-94e4-4b98-8a82-bb337aaaf479",
+    "previousExactArchivedAndRemovedReceipts": 2,
+    "currentExactArchivedAndRemovedReceipts": 2,
+    "uiAbsent": true,
+    "ownerExited": true,
+    "sameInstalledState": true,
+    "installedStateSha256": "801106b87c07ddc0ab0201e3cb5dc0cfa7b93691db37c181383e24785f432070",
+    "sameProductionOwner": true,
+    "sameProductionServiceGeneration": true,
+    "serviceRunning": true,
+    "exactPayloadAndProductionBinding": true,
+    "networkUnchanged": true,
+    "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+    "guardArmed": false,
+    "tunPresent": false,
+    "storageUnchanged": true,
+    "storageFileCount": 0,
+    "backupCount": 20,
+    "backupInventoryUnchanged": true,
+    "backupInventorySha256": "44e69176e8012a3a132cad1c95791982223bda742e2544fb751121f38e48acd5",
+    "receiptSha256": "8d664fad5aceb88275aea31bb9761655cb13443ac99b5051a1442fc99706c063",
+    "elapsedMs": 57567
+  },
+  "boundaries": {
+    "trayActivation": "injected callback to exact owned runner; native menu action and Flutter confirmation verified",
+    "realShellTrayGesture": "NOT_TESTED",
+    "screenLayout": "NOT_TESTED",
+    "forceUiTermination": false,
+    "cloudCheck": false,
+    "cloudDownload": false,
+    "vpnActions": 0,
+    "installationActions": 0,
+    "hostNetworkChanges": false,
+    "current16VpnTraffic": "NOT_RUN",
+    "otaApplication": "NOT_RUN",
+    "stableRelease": "NOT_CLAIMED"
+  },
+  "screenshots": [],
+  "predecessor": {
+    "runId": "c01cb434-94e4-4b98-8a82-bb337aaaf479",
+    "originalVerdictPreserved": "REFUSED",
+    "candidateSha256": "5dbbfc007df8b5d1fc118f95482e946e19f99dbfa008200965fa4024568513e7"
+  },
+  "privateEvidence": {
+    "path": ".private/windows-shorebird-evidence-f3120091/private-evidence-manifest.json",
+    "sha256": "6b1fab07755ef7ef264188be872aa8924596ffe32e0accbc46f600c29f7806f5",
+    "fileCount": 130
+  },
+  "packageSourceCommit": "e707d942c5bfd01075ba57f512b6aabec954980f",
+  "independentEvidenceVerification": {
+    "date": "2026-10-17",
+    "candidateSha256": "fd3a8b52a95eb418e08ec7bb74b3de10db34356c46dbcfbfbc179c0926d4fa57",
+    "manifestSha256": "6b1fab07755ef7ef264188be872aa8924596ffe32e0accbc46f600c29f7806f5",
+    "files": 130,
+    "hashAndLengthMismatches": 0,
+    "verifiedBy": "root"
+  }
+}

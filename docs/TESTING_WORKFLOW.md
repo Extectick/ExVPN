@@ -10,6 +10,28 @@ pwsh -NoProfile -File scripts/qa/run-fast-validation.ps1 -Changed
 pwsh -NoProfile -File scripts/qa/run-fast-validation.ps1 -Full
 ```
 
+2026-10-17: в общий `android-lifecycle-tools.ps1` перенесены наблюдение
+ConnectivityService и обработка системного VPN-разрешения. **192 focused
+checks PASS**; новый parser также прочитал сохранённые реальные +16 состояния
+0 → 1 VPN с подтверждённым владельцем → 0. Неполный вывод не считается
+отсутствием VPN. Consent требует принятой команды Connect, точного свежего
+системного диалога и выполняет один tap; неизвестный результат не повторяется.
+Это общие helper-функции для следующих runners, без нового запуска эмулятора.
+[Доказательство](evidence/android-common-observers.json),
+[исходники](https://github.com/Extectick/ExVPN/commit/f3b7471224f797f82b5e54082a064d46b6a5d2e4).
+
+Общий прогон после этих helpers и собственных updater notices — **11/11 PASS
+за 160,59 с**, исходники не менялись, Go result cache выключен.
+[Отчёт](evidence/fast-validation-updater-notices.json). Последующий collector
+транзитивных лицензий требует отдельного итогового прогона.
+
+После standalone crate collector и signing backup tool итоговый Full —
+**11/11 PASS за 459,07 с**, source unchanged, Go result cache выключен.
+Backup tool дополнительно прошёл 18 локальных проверок на синтетических ключах;
+он не входит в CI и требует PowerShell 7.6/.NET 10. Это измерение конкретного
+прогона, не контролируемое сравнение производительности.
+[Отчёт](evidence/fast-validation-release-preparation.json).
+
 Команда сама выбирает затронутые наборы тестов, запускает до трёх независимых
 процессов и записывает длительности, exit codes и итог в
 `artifacts/qa/fast-<timestamp>-<id>/summary.json`. Рядом лежит отдельный `.log`

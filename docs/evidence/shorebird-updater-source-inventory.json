@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "status": "SOURCE_LOCK_INVENTORY_READY_NOTICE_COVERAGE_INCOMPLETE",
+  "updaterRevision": "70ff1e336798474e39586d3f5ac2ca386ef32d9e",
+  "updaterCargoLockSha256": "5c189f184ccf4cd52ed8bda705fddfc187ae393a3906dea3aa722823a01f62b1",
+  "rustSourceRevisionObservedInThreeEngines": "b940084d7eb6a299eb4bfeb8e34901bc051e7ac4",
+  "rustSourceVersion": "1.99.0",
+  "counts": {
+    "updaterWorkspaceNodes": 260,
+    "updaterRegistryCrates": 257,
+    "updaterProductionRootedUnfilteredRegistryClosure": 167,
+    "updaterProductionAndBuildRootedUnfilteredRegistryClosure": 193,
+    "rustLibrarySourceNodes": 49,
+    "rustLibraryRegistryCrates": 30,
+    "distinctRegistryCoordinatesAcrossBothSupersets": 282,
+    "verifiedCrateArchiveLicenseCoverage": 0
+  },
+  "claims": {
+    "exactLinkedCodeInventory": false,
+    "engineCargoLockUseAttested": false,
+    "rustCompilerToolchainAttested": false,
+    "allRuntimeNoticesPresent": false,
+    "rustInstalledOrUpdated": false,
+    "builds": 0,
+    "guestActions": 0,
+    "cloudActions": 0
+  },
+  "nextImplementation": "Separate source-pinned native updater MIT/Apache component; reviewed full crate-superset bundle and exact Rust runtime notice aggregate remain subsequent steps.",
+  "preservedBlockers": [
+    "Full Rust/updater notice coverage incomplete",
+    "Published engine source-lock/compiler build attestation unavailable",
+    "No exact final linker membership claim"
+  ],
+  "verifiedSavedProofFiles": 74,
+  "evidence": [
+    {
+      "file": "summary.json",
+      "sha256": "73bbea3258736d64e14f8b8df850c933c7ad5ed6e8ba1b1cb44ef3480d5a8a8c",
+      "bytes": 1804
+    },
+    {
+      "file": "updater-crate-inventory.json",
+      "sha256": "6ab2a15b9840e899bf554c717974e461a3c437cd72dcf6c323f2faf43fd621ba",
+      "bytes": 194641
+    },
+    {
+      "file": "rust-runtime-source-inventory.json",
+      "sha256": "df3fe44ca122e8017082365252c129df2246ceb4ad09d86e39931250e03efdde",
+      "bytes": 28250
+    },
+    {
+      "file": "registry-crates.csv",
+      "sha256": "7d654d26016ebead321af38ffabe230fa244a0409b9e866dc8943aeb94c29853",
+      "bytes": 64197
+    },
+    {
+      "file": "engine-rust-source-observation.json",
+      "sha256": "1204743e398fad362b0cc0582d8d2761fc29baf19ba6712b9e971935f6d04a7e",
+      "bytes": 914
+    },
+    {
+      "file": "available-notice-texts.json",
+      "sha256": "af60a38d4a7ebb255351cdaaffab181b7c785f041a69e7b214f8eceffa5a8dde",
+      "bytes": 1281
+    },
+    {
+      "file": "next-patch.md",
+      "sha256": "a8db152c55d550cf8d1a7c32d0202b3585b3534dd015ff67b2cc2de773561f70",
+      "bytes": 7975
+    },
+    {
+      "file": "proof.json",
+      "sha256": "340d6d2c2fa76c960734be163ad3a57d2c17a4ab133bd9dfb41467e98ea06b5e",
+      "bytes": 12154
+    }
+  ],
+  "independentEvidenceVerification": {
+    "date": "2026-10-17",
+    "verifiedBy": "root",
+    "files": 77,
+    "hashAndLengthMismatches": 0,
+    "manifestSha256": "e5a2d32abbd84047d4fdf9c16c1f8686d80b75d845e6edd75a8420bfb7f2e4f1"
+  }
+}

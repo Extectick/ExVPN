@@ -24,6 +24,37 @@
 
 ## Что собирается
 
+Дополнение 2026-10-17: Shorebird-сборки получают отдельный
+компонент native updater с полными `LICENSE-APACHE` и `LICENSE-MIT`.
+Точный updater commit связывается с закреплённым engine через committed DEPS;
+Cargo.lock и оба текста проверяются по SHA-256, размеру и Git blob до и после
+копирования. Ordinary Flutter не получает этот компонент. Это provenance
+собственных notices updater, а не полнота crate/Rust runtime или подтверждение
+фактической линковки. [Код 110a39b](https://github.com/Extectick/ExVPN/commit/110a39b1d155411a2382b8d40fe16028c0ed99d3),
+[Full 11/11, 160,59 с](evidence/fast-validation-updater-notices.json).
+Существующие пакеты +16 не изменялись.
+[Pin](../scripts/release/shorebird-updater-notices.lock.json).
+
+Отдельный `shorebird-updater-notices-prepare.ps1` готовит candidate из 282
+закреплённых crate-архивов. По умолчанию работает без сети; `-Acquire` явно
+разрешает загрузку точных archives с проверкой SHA-256, лимитами объёма,
+времени и четырьмя параллельными запросами. Cargo/build scripts не запускаются.
+Пути/ссылки/неправильные типы записей tar отклоняются; cache и output только
+в `.private/` или `artifacts/`. Output должен быть новым.
+
+```powershell
+./scripts/release/shorebird-updater-notices-prepare.ps1 `
+  -CacheDirectory .private/updater-crates-cache `
+  -OutputDirectory artifacts/notices/updater-candidate-01 -Acquire
+```
+
+Фактический результат: 507 файлов из 282 проверенных архивов; повтор без сети
+занял 15,809 с. У 15 crates отсутствуют самостоятельные тексты лицензий.
+Даже у остальных вложенные/vendor notices требуют проверки. Это консервативный
+набор исходников из двух Cargo.lock, не доказанный состав слинкованного binary.
+Candidate не добавляется в production collector; `completeLicenseCoverage`
+остаётся false. [Доказательства](evidence/shorebird-updater-crate-notices.json).
+
 - SHA-256 каждого native binary, версия Go и фактически включённые модули из
   `go version -m -json`. Внешние replace без отдельной проверки отклоняются.
   Входы задаются явно: глобальная папка последней сборки больше не выбирается

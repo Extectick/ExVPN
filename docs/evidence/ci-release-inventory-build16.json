@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "sourceCommit": "05313dec1666c60ac02fed77852f74eca0b15958",
+  "implementationCommit": "7c5357baa9da66a1438d54b80f35d693dc1af7f4",
+  "runId": 39027899156,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/39027899156",
+  "status": "completed",
+  "conclusion": "success",
+  "runtime": "ordinary Flutter",
+  "jobs": [
+    {
+      "name": "Windows",
+      "conclusion": "success",
+      "startedUtc": "2026-10-17T11:13:57Z",
+      "completedUtc": "2026-10-17T11:22:18Z",
+      "durationSeconds": 501.0,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39027899156/job/117382409017",
+      "validationAndBuild": "success"
+    },
+    {
+      "name": "Android",
+      "conclusion": "success",
+      "startedUtc": "2026-10-17T11:13:58Z",
+      "completedUtc": "2026-10-17T11:30:56Z",
+      "durationSeconds": 1018.0,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39027899156/job/117382409168",
+      "validationAndBuild": "success"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 12099313494,
+      "name": "exvpn-android-debug-05313dec1666c60ac02fed77852f74eca0b15958",
+      "bytes": 100145579,
+      "digest": "sha256:7f3b3185e466be671e335b63e5655c89c2ac16d6a4e338f77f8275ff4ec25bee",
+      "expiredAtObservation": false
+    },
+    {
+      "id": 12098994436,
+      "name": "exvpn-windows-debug-05313dec1666c60ac02fed77852f74eca0b15958",
+      "bytes": 72366467,
+      "digest": "sha256:61fb963ac5c3cd04762e391a324f1bcf4fbae4294bcecd1cd467b485c7e2c662",
+      "expiredAtObservation": false
+    }
+  ],
+  "metadataSha256": "4b6e6cf166e3852e6c3007f8c41f797530f9d270ba0fe5e96cb31640e7809248",
+  "artifactMetadataSha256": "f35c630e6ae1e2c4ea6ba5a0b571ea8772a5407800c0c71add5da4518cf61fbc",
+  "runLogSha256": "219aa3cf449055dd94e3a5ac248499cb8174ef2790e065fe10becd53b19e446e",
+  "limitations": [
+    "Ordinary Flutter development CI artifacts; not Shorebird OTA or signed distribution acceptance.",
+    "Archive digests from GitHub metadata; uploaded archives were not downloaded in this verification.",
+    "Immutable local Shorebird +16 APK/AAB/Windows bases were not rebuilt or replaced.",
+    "Subsequent Android QA helper and native updater notice changes need their own validation."
+  ]
+}

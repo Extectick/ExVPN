@@ -30,6 +30,17 @@
 
 ## E1 — Технический прототип и обязательный gate
 
+Прогресс +16, 2026-10-17: неизменный подписанный Shorebird APK в API30
+эмуляторе провёл один VLESS/XHTTP/REALITY профиль через настоящий VpnService.
+Независимый UID подтвердил HTTPS200/204, VPN transport и другой внешний IPv4;
+обычный Disconnect восстановил исходный выход. Собственная группа удалена,
+системные настройки сохранены, исходный другой эмулятор не затронут.
+107,256 с; root сверил 453 файла, 0 расхождений.
+[Отчёт](evidence/android-shorebird-provider-build16.json),
+[экран](evidence/android-shorebird16-provider-connected.png).
+IPv6/DNS leaks/exclusions/fault в этом запуске не проверены; E1 остаётся открыт.
+Код APK: [e707d94](https://github.com/Extectick/ExVPN/commit/e707d942c5bfd01075ba57f512b6aabec954980f).
+
 Дополнение EXVPN-E1-009, 2026-10-17: отдельный additive DNS listener control
 прошёл за 73,495 с; один synthetic DNS API call сопоставлен с точным full nonce,
 UID/netId и callback time. PID подтверждён отдельно querylog/live observations,
@@ -65,6 +76,13 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   Дополнение 2026-10-17, Android +9/API30: закрытие Activity сохранило HTTPS через VPN; после выключения/возврата Wi-Fi и mobile data HTTPS восстановился за 3509 мс. После reboot эмулятора Always-on подключился до открытия UI. Авария процесса сохранила lockdown, но автоматический перезапуск не произошёл в трёх наблюдениях; ручное подключение восстановило HTTPS. Диагностика указывает на удаление записи службы при обработке смерти VPN Binder в Android 11; универсальное исправление не заявляется. Исходные системные настройки восстановлены. [Доказательства](evidence/android-lifecycle-build9.json), [разбор и ограничения](ANDROID_VALIDATION.md). Физическое устройство, sleep/resume и полная IPv6/DNS матрица остаются открытыми. Проверенный APK: [f5901bc](https://github.com/Extectick/ExVPN/commit/f5901bc7d0b61d22f555bc760cbfcb5e3c85de81); production-код при lifecycle QA не менялся.
   Дополнение 2026-10-16: Flutter integration test без Computer Use выбрал исключение в UI и проверил реальные HTTPS-процессы. При остановке fixture защищаемый процесс блокируется, исключённый получает HTTP 200. Hard kill установленной LocalSystem SCM-службы блокирует оба; рестарт сохраняет blocked, явное отключение восстанавливает HTTPS. WFP observer подтвердил guard после аварии; итоговые route/DNS hashes совпали с исходными. Смена сети, reboot/sleep, полная IPv6/DNS матрица и физический Android остаются открытыми. [Отчёт](evidence/windows-scm-failure-smoke.json), исходники [1575305](https://github.com/Extectick/ExVPN/commit/1575305923c37b9c1f41721d6b07ad11fe133824).
 - [ ] **EXVPN-E1-009** — Проверить DNS/IPv4/IPv6 и исключения с холодным DNS-кешем. Зависимости: E1-006–008. Критерий: нет незаявленного прямого DNS/IPv6, неизвестный владелец не получает direct; ограничения исключений в аварии описаны.
+  Дополнение 2026-10-17, Android +16: новый DNS attribution сценарий остановлен
+  до Connect на обходе списка исключений (`qa_exclusion_inventory_incomplete`);
+  HTTPS/DNS/capture не запускались. Отдельная очистка за 81,903 с удалила
+  тестовую группу, подтвердила оба QA-приложения без исключений, исходные
+  настройки и отсутствие VPN; собственный AVD остановлен. Root сверил 471 + 255
+  файлов, расхождений нет. [Попытка и отдельная очистка](evidence/android-shorebird16-dns-attempt.json).
+  Рабочее дерево; commit ожидается. Пункт остаётся открытым.
   Дополнение 2026-10-17: новый Android +13 сценарий завершил четыре фазы за
   369,283 с. При обрыве защищённый HTTPS/DNS отказал, исключённый HTTPS прошёл;
   Disconnect восстановил исходный выход. Непрерывный интервал содержит 9 UDP53
@@ -111,8 +129,8 @@ PID, netId и временем в querylog. VPN не запускался; пр�
 
 ## E2 — Дизайн
 
-- [ ] **EXVPN-E2-001** — Подготовить Product Design brief и три изображения-концепции главного экрана/белки. Критерий: графит/янтарь, большая кнопка сверху по центру, список серверов снизу; варианты доступны для сравнения. Прогресс: три исходные концепции и последующие редакции сохранены в `design/concepts`; пользователь прямо разрешил реализацию выбранного UI до завершения E1. Системная и визуальная приёмка от этого не закрываются.
-- [ ] **EXVPN-E2-002** — Зафиксировать выбранный пользователем визуальный эталон. Зависимость: E2-001. Критерий: записан выбор, tokens темы, типографика, размеры и формы; нет самовольной замены направления. Последний выбор 2026-10-16: `design/concepts/approved-close-wordmark.png`, маленькая контурная белка и близкий белый ExVPN; предыдущая увеличенная белка больше не текущий эталон. Сохранены обновление слева от плюса, группы подписок, отсутствие точек и CTA только при нуле подписок. Токены исходников записаны в `design/README.md`; итоговая сверка работающего UI/скриншотов ещё требуется.
+- [x] **EXVPN-E2-001** — Подготовить Product Design brief и три изображения-концепции главного экрана/белки. Критерий: графит/янтарь, большая кнопка сверху по центру, список серверов снизу; варианты доступны для сравнения. Проверка 2026-10-17: все три сохранённых исходных изображения открыты и просмотрены, brief и ссылки доступны в [design/README.md](../design/README.md). Созданы в [47a9847](https://github.com/Extectick/ExVPN/commit/47a9847cfeac19492c77b7bd3442cf06221a4bc7). Пользователь прямо разрешил реализацию выбранного UI до завершения E1. Системная и визуальная приёмка работающего приложения учитывается в E2-003/005.
+- [x] **EXVPN-E2-002** — Зафиксировать выбранный пользователем визуальный эталон. Зависимость: E2-001. Критерий: записан выбор, tokens темы, типографика, размеры и формы; нет самовольной замены направления. Проверка записи 2026-10-17: последний выбор 2026-10-16 сохранён в [approved-close-wordmark.png](../design/concepts/approved-close-wordmark.png), маленькая контурная белка и близкий белый ExVPN. Сохранены обновление слева от плюса, группы подписок, отсутствие точек и CTA только при нуле подписок. Токены исходников записаны в [design/README.md](../design/README.md); источник [47a9847](https://github.com/Extectick/ExVPN/commit/47a9847cfeac19492c77b7bd3442cf06221a4bc7). Итоговая сверка работающего UI относится к E2-005 и остаётся открытой.
 - [ ] **EXVPN-E2-003** — Проработать светлую тему, разрешения, пустой список и все состояния VPN. Зависимость: E2-002. Критерий: карты Android/Windows, читаемые ошибки, поддержка клавиатуры/доступности, честное отображение OS lockdown.
 - [ ] **EXVPN-E2-005** — Реализовать выбранный Flutter UI и проверить его как отдельный стенд. Зависимость: явное поручение пользователя 2026-10-16; native VPN-приёмка остаётся в E1/E4/E5. Критерий: исходники, рабочие тёмная/светлая темы, группы/выбор, импорт/обновление/удаление, пустое состояние, узкая/широкая ширина и обезличенные скриншоты; нет ложного `connected`. Прогресс: `apps/exvpn`, `packages/exvpn_client_state`; 15 widget-тестов пройдены по отчёту проверки, финальные дополнительные проверки кнопки и визуальные снимки ещё выполняются. Итоговое доказательство должно быть сохранено в `design/design-qa.md` и `design/screenshots/`; до его оформления пункт открыт. исходники: [47a9847](https://github.com/Extectick/ExVPN/commit/47a9847cfeac19492c77b7bd3442cf06221a4bc7).
 
@@ -186,6 +204,14 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   Дополнение 2026-10-17: durable policy и неизвестное состояние при storage error реализованы; полная повторная проверка +4 на настоящей LocalSystem SCM-службе сохранила выбранное исключение и guard после аварии. Go tests/vet, 20 Flutter tests/analyze прошли. [Отчёт](evidence/windows-policy-build4.json), [c3061b4](https://github.com/Extectick/ExVPN/commit/c3061b489608cc37b767479436a2bac16f0b5a73).
   Прогресс 2026-10-16: Go SCM-служба и C++ Flutter adapter реализованы; x64 service build и unprivileged named-pipe roundtrip/отказ чужому executable пройдены. Установлены VS C++/CMake/Windows SDK/ATL; полный Flutter debug build прошёл. Реализована классификация владельца соединения собственным адаптером: неоднозначный UDP не становится исключением, TCP проверяет полный tuple. На хосте служба/драйвер не установлены. В Sandbox после исправления WFP DWORD результата подтверждены установка LocalSystem-службы, Running, права и restart; Сквозная проверка UI↔SCM/TUN выполнена позднее отдельным QA entry point (см. E1-007); ordinary-user token и вся матрица E5 остаются открытыми. Исходники: [b2f4e42](https://github.com/Extectick/ExVPN/commit/b2f4e427075af5f5592904f0f6fdbdc82755af54).
 - [ ] **EXVPN-E5-002** — Реализовать TUN, DNS, маршруты, persistent WFP и исключения. Зависимость: E5-001. Критерий: тесты аварий и утечек пройдены; фильтры блокируют после падения процесса службы.
+  Дополнение 2026-10-17, Windows +16: обычный Connect создал TUN/WFP, но
+  до независимого HTTPS сценарий отказал на сравнении DPAPI ciphertext.
+  При однократном обычном Disconnect служба неожиданно завершилась (7034,
+  SCM 1067); действительный process exit code/stack не захвачены, причина
+  неизвестна. Отдельное восстановление PASS за 101,554 с: служба Running,
+  штатный UI exit 0, нет TUN/WFP/подписок, сеть и 20 backups сохранены.
+  Root сверил 489 файлов. [Доказательства и ограничения](evidence/windows-shorebird16-service-exit.json).
+  Рабочее дерево; commit ожидается. Сбой не считается исправленным.
   Дополнение 2026-10-17: persistence исключений после аварии теперь подтверждена в +4; все семь прежних протокольных сценариев и SCM fault run прошли повторно. Остальные границы E1/E5 сохраняются. [Отчёт](evidence/windows-policy-build4.json), [снимок](evidence/windows-policy-after-crash-build4.png), [c3061b4](https://github.com/Extectick/ExVPN/commit/c3061b489608cc37b767479436a2bac16f0b5a73).
   Дополнение 2026-10-16: проверка аварии теперь выполнена и на установленной SCM-службе через production Flutter bridge. Выбор точного executable в UI, одновременные probes, обрыв сервера, hard kill SCM, restart и явное восстановление прошли. Полная приёмка не закрыта: ordinary-user token, отдельный egress IP, UDP/IPv6/DNS leak capture и persistence исключений после аварии требуют продолжения. [Методика](WINDOWS_AUTOMATED_QA.md), [1575305](https://github.com/Extectick/ExVPN/commit/1575305923c37b9c1f41721d6b07ad11fe133824).
   Прогресс hostname DNS 2026-10-16: реализован DoH endpoint bootstrap под временными WFP-разрешениями после persistent guard, до TUN; original hostname/SNI/Host сохранены. Unit/config/lease/SDK tests и реальный отдельный Sandbox WFP/DoH smoke прошли: независимый executable блокируется, посторонние IP/port блокируются, закрытие разрешения сохраняет guard, disarm восстанавливает HTTPS. Сквозной hostname VPN через SCM, packet capture, TTL/network-change и bootstrap crash открыты. [Детали](WINDOWS_DNS_BOOTSTRAP.md), [результат](evidence/windows-bootstrap-smoke.json), исходники [713b1a0](https://github.com/Extectick/ExVPN/commit/713b1a0ebb990e7b32a32e7544385fbc793bdc84).
@@ -217,6 +243,15 @@ PID, netId и временем в querylog. VPN не запускался; пр�
 - [ ] **EXVPN-E6-002** — Реализовать signed manifest Ed25519 и SHA-256 файлов данных. Зависимость: E6-001. Критерий: неверная подпись/хеш, несовместимость, выход пути, обрыв и нехватка места отклоняются до активации.
 - [ ] **EXVPN-E6-003** — Добавить staging, атомарную активацию и последний рабочий набор. Зависимость: E6-002. Критерий: обновление не прерывает активный VPN; сбой на каждом шаге сохраняет работоспособность; rollback новой подписанной ревизией проверен.
 - [ ] **EXVPN-E6-004** — Подключить Shorebird и включить обязательную подпись патчей. Зависимость: доступ к сервису/ключам и E6-001. Критерий: реальный release → signed patch → update → rollback Android/Windows, каналы изолированы; native change требует полного выпуска.
+  Дополнение 2026-10-17: Windows +16 прошёл отдельный cold reopen → versions
+  → normal Exit с фактическим кодом 0 за 227,199 с. Cleanup PASS, payload,
+  сеть, служба, storage и 20 backups сохранены. Root сверил 130 файлов.
+  [Доказательства](evidence/windows-shorebird-base16-cold-exit.json).
+  Предыдущий частичный exit PASS/следующий cold NOT_RUN остаётся REFUSED
+  из-за sharing violation команды стенда; 85 файлов сверены отдельно.
+  [Прежний отказ](evidence/windows-shorebird-base16-exit-partial.json).
+  Native updater/configuration и облачный signed patch/rollback не доказаны.
+  Код пакета: [e707d94](https://github.com/Extectick/ExVPN/commit/e707d942c5bfd01075ba57f512b6aabec954980f).
   Runtime +16, 2026-10-17: Android API30 показал версии/base/beta до и после
   настоящего cold reopen за 76,980 с; подписанный APK, UID/dataDir и настройки
   ОС проверены. [Отчёт](evidence/android-shorebird-base16-runtime.json),
@@ -299,6 +334,11 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   Предварительная локальная проверка 2026-10-17: 92 selector/graph/JUnit fixtures PASS; точный Android helper в чистом source archive прошёл 8/8 за 43,13 с, SDK/dependency caches общие. Независимый review не оставил замечаний. [Доказательство](evidence/ci-build-impact-build11.json), [правила и docs-only граница](CI.md). Исходники [9d035ae](https://github.com/Extectick/ExVPN/commit/9d035aee717604dafa31e0b2818b3767bfac0efe). Этот локальный результат сам по себе не закрывал фактический GitHub QA-only gate.
 
 - [x] **EXVPN-E7-005** — Ускорить локальную проверку и разделить разработку между агентами. Зависимость: E1 toolchain, E7-001. Критерий: одна команда выбирает тесты с учётом зависимостей, параллельно запускает готовые Dart/Flutter/Go runners, сохраняет результаты и не скрывает ошибки/изменения исходников; итоговый полный быстрый прогон проходит после завершения записи агентами. Системная приёмка остаётся отдельной.
+  2026-10-17: Android observer и system-consent guards перенесены в общий
+  QA helper. 192 focused checks PASS, read-only replay трёх настоящих +16
+  dumps совпал с исходным результатом; продукт/эмулятор не изменялись.
+  [Проверки](evidence/android-common-observers.json),
+  [код](https://github.com/Extectick/ExVPN/commit/f3b7471224f797f82b5e54082a064d46b6a5d2e4).
   Дополнение +15, 2026-10-17: **11/11 за 121,65 с**, 493 Dart/Flutter-теста,
   Go result cache отключён; source fingerprint совпал. [Отчёт](evidence/fast-validation-shorebird-build15.json),
   исходники [30af3e6](https://github.com/Extectick/ExVPN/commit/30af3e6619e13e5b9ceeca9d540b578fa9ac8696).
@@ -358,6 +398,13 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   Дополнение +10: итоговый `-Full` на [924493a](https://github.com/Extectick/ExVPN/commit/924493a511547bb2b4c93262ab93df82fe127479) — **37,77 с**, девять наборов PASS, fresh Go tests, fingerprint совпал; добавлены 23+41+29 release-tooling fixtures и Windows lifetime/reconnect tests. [Отчёт](evidence/fast-validation-build10.json). Native Windows/Android QA и сборки выполнялись независимыми владельцами; docs-only push больше не отменяет native CI ([84489a2](https://github.com/Extectick/ExVPN/commit/84489a2)). Полная системная приёмка не сокращена.
 
 - [x] **EXVPN-E7-001** — Настроить CI для анализа, тестов и Android/Windows сборок. Зависимость: E0 GitHub, E1 toolchain. Критерий: clean checkout проходит pipeline; secrets не включены в job output; версии и lock-файлы воспроизводимы.
+  2026-10-17: после AAB inspector и full engine notices обе полные jobs
+  [39027899156](https://github.com/Extectick/ExVPN/actions/runs/39027899156) прошли:
+  Windows 501 с, Android 1018 с; development artifacts выгружены.
+  [Отчёт](evidence/ci-release-inventory-build16.json),
+  [код](https://github.com/Extectick/ExVPN/commit/7c5357baa9da66a1438d54b80f35d693dc1af7f4).
+  Это ordinary Flutter CI; последующие QA/notices edits и Shorebird OTA
+  требуют своих проверок.
   2026-10-17, +16: полный [run 39024609151](https://github.com/Extectick/ExVPN/actions/runs/39024609151)
   на [37b65b5](https://github.com/Extectick/ExVPN/commit/37b65b5085a6617c5a1996214fcdea3627b7c8e6)
   прошёл Android (17:19) и Windows (6:20), включая сборки и development artifacts.
@@ -376,6 +423,43 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   CI +10: [run 38969281066](https://github.com/Extectick/ExVPN/actions/runs/38969281066) на [924493a](https://github.com/Extectick/ExVPN/commit/924493a511547bb2b4c93262ab93df82fe127479) — **SUCCESS**, Windows 7:56, Android 14:50; tests/build/upload прошли. [Отчёт](evidence/ci-build10.json). Docs-only push не запустил дубликат и не отменил сборку. Это development artifacts, не подписанная beta.
   CI +11, 2026-10-17: [run 38979241913](https://github.com/Extectick/ExVPN/actions/runs/38979241913) на [292d3dc](https://github.com/Extectick/ExVPN/commit/292d3dc05f1b694a26ca9e2cb30953850e5b8373) — **SUCCESS**, Windows 9:11, Android 18:48; tests/build/upload прошли. [Отчёт](evidence/ci-build11.json). Это проверка данного commit; последующие QA/CI-изменения и системная приёмка имеют отдельные результаты.
 - [ ] **EXVPN-E7-002** — Подготовить лицензии/SBOM, подпись и артефакты beta. Зависимости: E4–E6, доступ к ключам. Критерий: APK и Windows installer подписаны; полный комплект уведомлений соответствует бинарникам; исходники MPL доступны.
+  2026-10-17: пользователь уточнил страну издателя — Казахстан, частный
+  разработчик. [Варианты Authenticode](WINDOWS_SIGNING_OPTIONS.md) сравнивают
+  Certum OSS/Standard, SSL.com IV/eSigner, SignPath и ограничения Microsoft.
+  Покупок/заявок нет; выдача сертификата ещё не подтверждена.
+  Затем пользователь отложил выбор платной подписи; Windows остаётся development.
+  2026-10-17: collector получил обе собственные
+  лицензии native updater с exact DEPS/Cargo.lock binding. По отчёту агента
+  166 notice +72 audit +44 Android checks PASS; отдельные stdout этих прогонов
+  не сохранены. Actual copy branch для обоих SDK сохранил два точных текста;
+  root сверил 16 файлов исходников/доказательств. [Отчёт](evidence/shorebird-updater-own-notices.json).
+  [Код 110a39b](https://github.com/Extectick/ExVPN/commit/110a39b1d155411a2382b8d40fe16028c0ed99d3).
+  [Общий Full](evidence/fast-validation-updater-notices.json): 11/11 PASS
+  за 160,59 с, source fingerprint неизменен, Go result cache выключен.
+  Crate/Rust closure, переупаковка и E7-002 остаются открытыми.
+  2026-10-17: отдельный collector проверил 282 точных crate-архива и собрал
+  507 полных файлов уведомлений. Первый сбор: 80,389 с / 35,9 MB;
+  повтор без сети: 15,809 с, inputs unchanged. 43 focused +166 existing
+  checks PASS, root сверил 7 исходников и 2438 файлов доказательств.
+  У 15 crates нет standalone license texts; nested/vendor coverage и Rust
+  aggregate не подтверждены. Candidate не включён в production notices,
+  release gate не менялся. [Отчёт](evidence/shorebird-updater-crate-notices.json).
+  [Код 7cad456](https://github.com/Extectick/ExVPN/commit/7cad456).
+  [Итоговый Full](evidence/fast-validation-release-preparation.json):
+  11/11 PASS за 459,07 с, source unchanged, Go result cache выключен.
+  2026-10-17: подготовлен [инструмент резервирования](SIGNING_BACKUP.md)
+  Android/Shorebird ключей. Реальный backup и восстановление в другой
+  Windows-идентичности ещё не выполнены; требование остаётся открытым.
+  18 synthetic checks PASS, Java keytool подтвердил alias; независимое review
+  закрыто после исправления повторного чтения при Restore.
+  [Код ed5c656](https://github.com/Extectick/ExVPN/commit/ed5c656),
+  [проверки](evidence/signing-backup-tool.json).
+  2026-10-17: для updater закреплён source-lock inventory из 257 registry
+  crates и 3 workspace nodes. Это исходный набор, не доказанная итоговая
+  линковка; archive licenses ещё не проверены. Rust source marker во всех
+  трёх engine совпал, но compiler/build provenance им не подтверждается.
+  Root сверил 77 файлов, 0 расхождений.
+  [Исследование и оставшиеся пробелы](evidence/shorebird-updater-source-inventory.json).
   2026-10-17: добавлен готовый offline AAB inspector — 52 GAV, 48 точных
   AAR/JAR совпадений, четыре записи без digest явно оставлены unbound;
   проверка заняла около трёх секунд, Gradle не запускался. Отдельно исправлена

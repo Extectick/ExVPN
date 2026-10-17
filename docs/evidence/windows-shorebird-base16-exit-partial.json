@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "runId": "c01cb434-94e4-4b98-8a82-bb337aaaf479",
+  "status": "REFUSED",
+  "scope": "ordinary installed Windows +16 local UI Exit and planned cold reopen",
+  "source": {
+    "sealSha256": "72bdd426d23fffbe10fc29709969a5ae668733f883cb7b0b1c72cc85f24e37a0",
+    "hostSha256": "a1cda7af188893a81db43c4bb6287325c437f145ec68cf18d0f03589515d9921",
+    "proofSha256": "23469d240a8746989ddb23838d2b29c851691cab2b9c5c1d085c478aefeb6d05"
+  },
+  "artifacts": {
+    "uiSha256": "3ee65db567cccc7c5a18c10b02776a832e7d46d4093c668cd4563f6f26c30135",
+    "installerSha256": "6fdeb9899dc0878e88ea9c1d88ab2588658e4b3b4ecea2a0e140efad5adcc87e",
+    "build": 16
+  },
+  "runtime": {
+    "coordinatorElapsedMs": 191941,
+    "coordinatorStartedUtc": "2026-10-17T11:00:08.9048573Z",
+    "coordinatorFinishedUtc": "2026-10-17T11:03:20.8498449Z",
+    "steps": [
+      {
+        "step": "observe-exit-menu",
+        "status": "PASS",
+        "actionIssued": false,
+        "elapsedMs": 128,
+        "receiptSha256": "08e8d93887f5c349952cf549b673deb226cd2f5335066a7098016b9dab75d7d8"
+      },
+      {
+        "step": "choose-exit-menu",
+        "status": "PASS",
+        "actionIssued": true,
+        "elapsedMs": 490,
+        "receiptSha256": "bceeea94570f5eebdf7d197872cd1fb22cbc648c7e1ba06a895970bff1cf45d6"
+      },
+      {
+        "step": "exit-confirm",
+        "status": "PASS",
+        "actionIssued": true,
+        "elapsedMs": 493,
+        "receiptSha256": "2fa49324802c5bbf96e70e84a75c34141528165df2f04eb66900927c5c6fec22"
+      }
+    ],
+    "existingUiExit": {
+      "status": "PASS",
+      "heldGenerationExited": true,
+      "exitCode": 0,
+      "observerElapsedMs": 49675,
+      "receiptSha256": "9ea66190bdd47afe4275b061aa23e76818a418d86080a4ae941eb79af4372aa5"
+    },
+    "previousReceiptCleanup": {
+      "status": "PASS",
+      "exactArchivedAndRemovedCount": 2,
+      "receiptSha256": "3f99d6e75fb9a2ff3c22e5a8130ae621e85d2189af5bded34f07d6dfda2a1839"
+    },
+    "coldLaunch": "NOT_STARTED",
+    "coldLocalRead": "NOT_RUN",
+    "coldGracefulExit": "NOT_RUN",
+    "failure": {
+      "classification": "QA_COMMAND_PUBLICATION_SHARING_VIOLATION",
+      "operation": "rename owner-next pending file",
+      "source": "invoke.ps1:63",
+      "commandPublished": false,
+      "exactLockOwner": "NOT_IDENTIFIED",
+      "ownerTerminal": "REFUSED owner_next_deadline",
+      "ownerElapsedMs": 229335
+    }
+  },
+  "coordinatorCleanup": {
+    "status": "REFUSED",
+    "reason": "finally attempted CreateNew of already-existing pending command; new protected receipt cleanup not reached"
+  },
+  "readOnlyPostcheck": {
+    "status": "PASS",
+    "uiAbsent": true,
+    "observerAbsent": true,
+    "previousReceiptRootAbsent": true,
+    "exactCurrentPayloadAndBinding": true,
+    "installedStateSha256": "801106b87c07ddc0ab0201e3cb5dc0cfa7b93691db37c181383e24785f432070",
+    "networkSha256": "55a53117dd30ae23883c886ddde6a5cc47151c2ac179ff42e0f1344bdd693f85",
+    "guardArmed": false,
+    "tunPresent": false,
+    "storageFileCount": 0,
+    "backupCount": 20,
+    "backupInventorySha256": "44e69176e8012a3a132cad1c95791982223bda742e2544fb751121f38e48acd5",
+    "remainingOwnedQaReceipts": 2,
+    "receiptSha256": "fa995a82f3963aa826f7b79d72b283bbc032168cd4bc3ab1278828e4c8e1917c"
+  },
+  "boundaries": {
+    "menuAlreadyOpenObservedWithoutNewCallback": true,
+    "realShellTrayGesture": "NOT_TESTED",
+    "screenLayout": "NOT_TESTED",
+    "cloudCheck": false,
+    "cloudDownload": false,
+    "vpnActions": 0,
+    "installationActions": 0,
+    "forceUiTermination": false,
+    "hostNetworkChanges": false,
+    "nativeUpdaterConfig": "NOT_PROVEN",
+    "currentPatchNativeApi": "NOT_PROVEN",
+    "nextPatchNativeApi": "NOT_PROVEN"
+  },
+  "screenshots": [],
+  "privateEvidence": {
+    "path": ".private/windows-shorebird-evidence-c01cb434/private-evidence-manifest.json",
+    "sha256": "d7192d762b732a47f5078587022f095ee04422e3a00dedcca0dfb8f986f248c9",
+    "fileCount": 85
+  },
+  "packageSourceCommit": "e707d942c5bfd01075ba57f512b6aabec954980f",
+  "independentEvidenceVerification": {
+    "date": "2026-10-17",
+    "candidateSha256": "5dbbfc007df8b5d1fc118f95482e946e19f99dbfa008200965fa4024568513e7",
+    "manifestSha256": "d7192d762b732a47f5078587022f095ee04422e3a00dedcca0dfb8f986f248c9",
+    "files": 85,
+    "hashAndLengthMismatches": 0,
+    "verifiedBy": "root"
+  }
+}

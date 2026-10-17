@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "status": "PASS",
+  "checks": 18,
+  "syntheticKeysOnly": true,
+  "realSigningKeysRead": false,
+  "javaAliasVerified": true,
+  "logSha256": "3c72255d12ed64f7d0c73318a074c9ee24a502d9af7c29384bf86c20078a5d1b",
+  "sourceState": "committed",
+  "sourceFiles": [
+    {
+      "path": "scripts/release/SigningBackup.cs",
+      "sha256": "67cdebbe15ee5f60c2f2c5e1614541e84707e3b663dfd9b3278e24196fb11c2b",
+      "size": 10919
+    },
+    {
+      "path": "scripts/release/signing-backup.ps1",
+      "sha256": "282c4de6ea8df6034add4671900d1a2b6da4bf39579b4082e186b49dec4eb6d3",
+      "size": 4533
+    },
+    {
+      "path": "scripts/release/test-signing-backup.ps1",
+      "sha256": "b82fae73f67cb9d9ec64d3aeecc6786fc596e4d1571187553fc1a8ce44ea4fa9",
+      "size": 7989
+    }
+  ],
+  "review": "Independent review found Restore reread race; restored bytes now use verified snapshots.",
+  "limits": [
+    "Local Windows PowerShell7.6/.NET10 tool; separate from CI/client runtime.",
+    "No real backup or cross-machine restore performed.",
+    "Restored-key APK signing/upgrade remains unverified."
+  ],
+  "sourceCommit": "ed5c656429739bef16c64ce75114d55bcd5e682a"
+}

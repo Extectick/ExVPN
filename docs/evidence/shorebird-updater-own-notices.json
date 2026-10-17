@@ -1,0 +1,201 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "scope": "Native updater root notice component only",
+  "runtimeSelection": "shorebird",
+  "updaterRevision": "70ff1e336798474e39586d3f5ac2ca386ef32d9e",
+  "sourceFiles": [
+    {
+      "path": "scripts/release/shorebird-updater-notices.ps1",
+      "sha256": "5bb5f10e324d795ba6323c8b4a96eaa7a1d8ab4733c31aa2841c36e4afb55c33",
+      "size": 8374
+    },
+    {
+      "path": "scripts/release/shorebird-updater-notices.lock.json",
+      "sha256": "f43262aef368a69891d62f8f8e271c86f3968fc19fb986a6e0ac1ec334bfb55e",
+      "size": 1136
+    },
+    {
+      "path": "scripts/release/collect-notices.ps1",
+      "sha256": "d6fb6ca86bab77d59625ec1a348e269ef0b43d65a6fb7083c9d383760588bfe6",
+      "size": 14434
+    },
+    {
+      "path": "scripts/release/test-notice-inputs.ps1",
+      "sha256": "38babc54e062cdbdf6b0413a950110b833dd6c5103c6eaea7c8d9e7005b1b8ec",
+      "size": 58685
+    },
+    {
+      "path": "scripts/release/licenses/shorebird-updater-70ff1e336798474e39586d3f5ac2ca386ef32d9e/.gitattributes",
+      "sha256": "50960ffeb5df884765f643ecba44baa4168aa1ce2493dc3e123793cbd3214b15",
+      "size": 84
+    },
+    {
+      "path": "scripts/release/licenses/shorebird-updater-70ff1e336798474e39586d3f5ac2ca386ef32d9e/Cargo.lock",
+      "sha256": "5c189f184ccf4cd52ed8bda705fddfc187ae393a3906dea3aa722823a01f62b1",
+      "size": 61390
+    },
+    {
+      "path": "scripts/release/licenses/shorebird-updater-70ff1e336798474e39586d3f5ac2ca386ef32d9e/LICENSE-APACHE",
+      "sha256": "95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc",
+      "size": 9722
+    },
+    {
+      "path": "scripts/release/licenses/shorebird-updater-70ff1e336798474e39586d3f5ac2ca386ef32d9e/LICENSE-MIT",
+      "sha256": "1847e0e0698142ed4347c1441a9fa81c8fbddd44b1d8bbcd5e3647f991759d7f",
+      "size": 1035
+    }
+  ],
+  "evidenceFiles": [
+    {
+      "path": "attempt1-failure.json",
+      "sha256": "63828f927658c1422f061b46eb79d197e166276cffa0ac0dcc3e924980364245",
+      "size": 398
+    },
+    {
+      "path": "attempt2/actual.json",
+      "sha256": "cb41fdbb18b8eaa9d461cbac1ecce4e61b595ed3cc35244b62fb0b8766ee020c",
+      "size": 1555
+    },
+    {
+      "path": "attempt2/android/17d832c526d919bb90ea4042/LICENSE-APACHE",
+      "sha256": "95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc",
+      "size": 9722
+    },
+    {
+      "path": "attempt2/android/17d832c526d919bb90ea4042/LICENSE-MIT",
+      "sha256": "1847e0e0698142ed4347c1441a9fa81c8fbddd44b1d8bbcd5e3647f991759d7f",
+      "size": 1035
+    },
+    {
+      "path": "attempt2/android/component.json",
+      "sha256": "461a5ce7618d679c65828f0cf75249a4875ac986b0f06179d7b689b514229089",
+      "size": 3157
+    },
+    {
+      "path": "attempt2/windows/17d832c526d919bb90ea4042/LICENSE-APACHE",
+      "sha256": "95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc",
+      "size": 9722
+    },
+    {
+      "path": "attempt2/windows/17d832c526d919bb90ea4042/LICENSE-MIT",
+      "sha256": "1847e0e0698142ed4347c1441a9fa81c8fbddd44b1d8bbcd5e3647f991759d7f",
+      "size": 1035
+    },
+    {
+      "path": "attempt2/windows/component.json",
+      "sha256": "4424954faf679efb7e099a483dcde2970150dc471782050c03e86722fd5ac5d7",
+      "size": 3157
+    }
+  ],
+  "validation": {
+    "tests": [
+      {
+        "entrypoint": "scripts/release/test-notice-inputs.ps1",
+        "checks": 166,
+        "exitCode": 0
+      },
+      {
+        "entrypoint": "scripts/release/test-artifact-audit.ps1",
+        "checks": 72,
+        "exitCode": 0
+      },
+      {
+        "entrypoint": "scripts/release/test-android-notices.ps1",
+        "checks": 44,
+        "exitCode": 0
+      }
+    ],
+    "testEvidence": "Previously observed tool outputs; standalone test logs were not persisted",
+    "diffCheck": "PASS",
+    "newRunsForThisReport": 0,
+    "actualCollectorCopy": {
+      "schema": 1,
+      "status": "PASS",
+      "scope": "Read-only selected SDK/source validation and actual collector copy branch only",
+      "observations": [
+        {
+          "target": "Windows",
+          "status": "PASS",
+          "componentCount": 1,
+          "noticeCount": 2,
+          "componentSha256": "4424954faf679efb7e099a483dcde2970150dc471782050c03e86722fd5ac5d7",
+          "notices": [
+            {
+              "path": "17d832c526d919bb90ea4042/LICENSE-APACHE",
+              "sha256": "95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc"
+            },
+            {
+              "path": "17d832c526d919bb90ea4042/LICENSE-MIT",
+              "sha256": "1847e0e0698142ed4347c1441a9fa81c8fbddd44b1d8bbcd5e3647f991759d7f"
+            }
+          ],
+          "binaryDependencyClosureVerified": false,
+          "completeLicenseCoverage": false
+        },
+        {
+          "target": "Android",
+          "status": "PASS",
+          "componentCount": 1,
+          "noticeCount": 2,
+          "componentSha256": "461a5ce7618d679c65828f0cf75249a4875ac986b0f06179d7b689b514229089",
+          "notices": [
+            {
+              "path": "17d832c526d919bb90ea4042/LICENSE-APACHE",
+              "sha256": "95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc"
+            },
+            {
+              "path": "17d832c526d919bb90ea4042/LICENSE-MIT",
+              "sha256": "1847e0e0698142ed4347c1441a9fa81c8fbddd44b1d8bbcd5e3647f991759d7f"
+            }
+          ],
+          "binaryDependencyClosureVerified": false,
+          "completeLicenseCoverage": false
+        }
+      ],
+      "builds": 0,
+      "downloads": 0,
+      "guestActions": 0,
+      "oldArtifactModified": false
+    }
+  },
+  "canonicalDeps": {
+    "sha256": "04550f6b0aa057484ae23ec20b534f37ea8f31ee73de5560466374848a5225be",
+    "size": 38967,
+    "gitBlob": "5116806ab44d74bcbed41d53b910636a29b8c67a",
+    "readMethod": "git cat-file blob stdout without Trim; SHA256 and length over preserved UTF8 bytes",
+    "acceptedCheckoutForms": [
+      "exact LF",
+      "exact canonical LF converted to CRLF"
+    ]
+  },
+  "historicalFailure": {
+    "path": "attempt1-failure.json",
+    "reason": "Initial raw checkout DEPS guard rejected clean CRLF checkout; committed LF binding and exact checkout-form checks replaced it",
+    "preserved": true
+  },
+  "boundaries": {
+    "completeReleaseNotices": false,
+    "binaryDependencyClosureVerified": false,
+    "completeLicenseCoverage": false,
+    "crateNoticesVerified": false,
+    "rustRuntimeNoticesComplete": false,
+    "aggregateReleaseGatesChanged": false,
+    "builds": 0,
+    "downloads": 0,
+    "guestActions": 0,
+    "oldArtifactsModified": false,
+    "fullValidationRun": false
+  },
+  "sourceFrozen": true,
+  "sourceState": "committed",
+  "independentVerification": {
+    "verifiedBy": "root",
+    "proofSha256": "3f9e2f7087463ee2b3c26243c14fd830baf0bc117f194b64ff20ae03a51883fa",
+    "mismatches": 0,
+    "date": "2026-10-17",
+    "files": 16
+  },
+  "sourceCommit": "110a39b1d155411a2382b8d40fe16028c0ed99d3",
+  "aggregateValidation": "fast-validation-updater-notices.json"
+}
