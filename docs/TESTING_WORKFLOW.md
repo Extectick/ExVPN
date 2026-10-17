@@ -1,5 +1,11 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+Проверка +17 после остановки source writers, 2026-10-17: **11/11 PASS за
+125,52 с**, Go result cache отключён, source fingerprint неизменен.
+Включены новый поиск исключений и Windows session lifecycle `exvpn.5`.
+[Отчёт](evidence/fast-validation-build17.json). Сборка и runtime-проверки
+новых пакетов выполняются отдельно; время этого прогона не является SLA.
+
 Из корня проекта в PowerShell 7:
 
 ```powershell

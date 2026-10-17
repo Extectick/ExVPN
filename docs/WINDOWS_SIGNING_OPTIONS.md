@@ -26,7 +26,7 @@
 [Microsoft eligibility](https://learn.microsoft.com/en-us/azure/artifact-signing/quickstart),
 [Microsoft цена](https://azure.microsoft.com/en-us/products/artifact-signing).
 
-Рекомендуемый следующий шаг — подтвердить Certum OSS/SimplySign для заявителя
+После возобновления выбора подписи следующий шаг — подтвердить Certum OSS/SimplySign для заявителя
 из Казахстана и бесплатного ExVPN. Если планируется коммерческое распространение,
 сравнить Certum Standard и SSL.com IV/eSigner. Лицензию Apache-2.0 менять не нужно;
 ограничение OSS-сертификата относится к использованию именно этого продукта

@@ -1,0 +1,178 @@
+{
+  "schema": 1,
+  "date": "2026-10-17",
+  "status": "EXACT_SOURCE_NOTICE_SUPPLEMENT_CANDIDATE_REVIEW_REQUIRED",
+  "scope": "Full source notice texts for the exact checksum-pinned source crate superset. Source graph evidence only; no publisher build-input or post-link membership attestation.",
+  "network": {
+    "requestCount": 60,
+    "bytes": 3217599,
+    "acquisitionSeconds": 42.852,
+    "limits": {
+      "requests": 96,
+      "networkBytes": 33554432,
+      "seconds": 240,
+      "parallel": 4
+    },
+    "automaticRetries": 0,
+    "canonicalRedirectsFollowed": 1
+  },
+  "counts": {
+    "inputCrates": 15,
+    "eligibleSourceNoticeSupplements": 11,
+    "unresolvedCrates": 4,
+    "eligibleSourceNoticeFiles": 14
+  },
+  "claims": {
+    "fullCrateNoticeCoverage": false,
+    "nestedOrVendoredCoverageReviewed": false,
+    "rustStandardLibraryAggregatePresent": false,
+    "publisherBuildInputsAttested": false,
+    "exactLinkedMembership": false,
+    "releaseReady": false
+  },
+  "remaining": [
+    "comde: original exact repository/commit API returned 404; no alternative repository or moving revision substituted.",
+    "sacabase and sacapart: exact manifests found, but no root/ancestor/per-crate full license text; sibling-crate texts are retained as evidence and not applied.",
+    "vex-sdk: archive reports dirty=true. Exact commit manifest is version 0.27.1-test.2; archive original is 0.27.1. Full MIT text retained, not accepted as a byte-identical source supplement.",
+    "Rust b940084d7eb6a299eb4bfeb8e34901bc051e7ac4: exact standard-library COPYRIGHT-library.html aggregate still absent; existing other-version aggregate cannot substitute.",
+    "Full source-file copyright and nested vendored notice closure of the original 282-crate superset remains separate from these 11 full-text supplements."
+  ],
+  "components": [
+    {
+      "name": "bidiff",
+      "version": "1.0.0",
+      "archiveSha256": "ae58bd32799998ad11ed44ebd9f440a129352883ca082a836d073d8e15d8a9be",
+      "sourceNoticeSupplementCandidate": true,
+      "fullLicenseCoverage": false,
+      "issues": []
+    },
+    {
+      "name": "bipatch",
+      "version": "1.0.0",
+      "archiveSha256": "2f9d63c1d134f28c2ca5f677dddf1a2254ae443f01238eeb960ee5b8b9352257",
+      "sourceNoticeSupplementCandidate": true,
+      "fullLicenseCoverage": false,
+      "issues": []
+    },
+    {
+      "name": "comde",
+      "version": "0.3.1",
+      "archiveSha256": "dc2c1a68754476eb6cc8be9a1501cdb0731891b77f53c21fc9b95cc6cb6e7772",
+      "sourceNoticeSupplementCandidate": false,
+      "fullLicenseCoverage": false,
+      "issues": [
+        "exact_repository_commit_unavailable_http_404"
+      ]
+    },
+    {
+      "name": "delegate",
+      "version": "0.12.0",
+      "archiveSha256": "4e018fccbeeb50ff26562ece792ed06659b9c2dae79ece77c4456bb10d9bf79b",
+      "sourceNoticeSupplementCandidate": true,
+      "fullLicenseCoverage": false,
+      "issues": []
+    },
+    {
+      "name": "fortanix-sgx-abi",
+      "version": "0.6.1",
+      "archiveSha256": "5efc85edd5b83e8394f4371dd0da6859dff63dd387dab8568fece6af4cde6f84",
+      "sourceNoticeSupplementCandidate": true,
+      "fullLicenseCoverage": false,
+      "issues": []
+    },
+    {
+      "name": "sacabase",
+      "version": "2.0.0",
+      "archiveSha256": "9883fc3d6ce3d78bb54d908602f8bc1f7b5f983afe601dabe083009d86267a84",
+      "sourceNoticeSupplementCandidate": false,
+      "fullLicenseCoverage": false,
+      "issues": [
+        "no_root_ancestor_or_crate_license_text"
+      ]
+    },
+    {
+      "name": "sacapart",
+      "version": "2.0.0",
+      "archiveSha256": "35d1b03f7f300330cd30da84fea80f64c1d20558c39dc04efbcba7ce52023971",
+      "sourceNoticeSupplementCandidate": false,
+      "fullLicenseCoverage": false,
+      "issues": [
+        "no_root_ancestor_or_crate_license_text"
+      ]
+    },
+    {
+      "name": "vex-sdk",
+      "version": "0.27.1",
+      "archiveSha256": "79e5fe15afde1305478b35e2cb717fff59f485428534cf49cfdbfa4723379bf6",
+      "sourceNoticeSupplementCandidate": false,
+      "fullLicenseCoverage": false,
+      "issues": [
+        "archive_original_manifest_not_exactly_matched",
+        "archive_vcs_dirty_true"
+      ]
+    },
+    {
+      "name": "wasip1",
+      "version": "1.0.0",
+      "archiveSha256": "b5e26842486624357dbeb8f0381cf1fb42f022291fd787d4a816768fec8cc760",
+      "sourceNoticeSupplementCandidate": true,
+      "fullLicenseCoverage": false,
+      "issues": []
+    },
+    {
+      "name": "wasip2",
+      "version": "1.0.2+wasi-0.2.9",
+      "archiveSha256": "9517f9239f02c069db75e65f174b3da828fe5f5b945c4dd26bd25d89c03ebcf5",
+      "sourceNoticeSupplementCandidate": true,
+      "fullLicenseCoverage": false,
+      "issues": []
+    },
+    {
+      "name": "wasip3",
+      "version": "0.4.0+wasi-0.3.0-rc-2026-01-06",
+      "archiveSha256": "5428f8bf88ea5ddc08faddef2ac4a67e390b88186c703ce6dbd955e1c145aca5",
+      "sourceNoticeSupplementCandidate": true,
+      "fullLicenseCoverage": false,
+      "issues": []
+    },
+    {
+      "name": "wasm-encoder",
+      "version": "0.244.0",
+      "archiveSha256": "990065f2fe63003fe337b932cfb5e3b80e0b4d0f5ff650e6985b1048f62c8319",
+      "sourceNoticeSupplementCandidate": true,
+      "fullLicenseCoverage": false,
+      "issues": []
+    },
+    {
+      "name": "wasmparser",
+      "version": "0.244.0",
+      "archiveSha256": "47b807c72e1bac69382b3a6fb3dbe8ea4c0ed87ff5629b8685ae6b9a611028fe",
+      "sourceNoticeSupplementCandidate": true,
+      "fullLicenseCoverage": false,
+      "issues": []
+    },
+    {
+      "name": "wit-component",
+      "version": "0.244.0",
+      "archiveSha256": "9d66ea20e9553b30172b5e831994e35fbde2d165325bec84fc43dbf6f4eb9cb2",
+      "sourceNoticeSupplementCandidate": true,
+      "fullLicenseCoverage": false,
+      "issues": []
+    },
+    {
+      "name": "wit-parser",
+      "version": "0.244.0",
+      "archiveSha256": "ecc8ac4bc1dc3381b7f59c34f00b67e18f910c2c0f50015669dde7def656a736",
+      "sourceNoticeSupplementCandidate": true,
+      "fullLicenseCoverage": false,
+      "issues": []
+    }
+  ],
+  "coordinatorVerification": {
+    "files": 94,
+    "mismatches": 0,
+    "candidateSha256": "4b513b5d813f42d4bf7e20977cf132ae7c0c003e29ba4e20c42a451c285c584f",
+    "manifestSha256": "58ae497986fd1eaef9acb39d36552a426367337cdcc6e31e4fcebf719b15f3ce"
+  },
+  "productionIntegration": false
+}

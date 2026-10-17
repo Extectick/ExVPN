@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "scope": "exclusion search and global selected count",
+  "sourceFrozen": true,
+  "testCommand": "flutter test --no-pub test/exclusions_search_test.dart test/exclusions_recovery_test.dart",
+  "testsPassed": 10,
+  "newTests": 8,
+  "existingRecoveryTests": 2,
+  "analyzerCommand": "dart analyze lib/src/exclusions_sheet.dart test/exclusions_search_test.dart test/exclusions_recovery_test.dart",
+  "analyzer": "No issues found",
+  "exitCode": 0,
+  "logProvenance": "Exact stdout chunks delivered by exec session 60489, extracted into focused/analyze logs after completion; no additional test run",
+  "diffCheck": "PASS",
+  "earlierAttempt": "Phone keyboard regression found 80px overflow; final layout scrolls content and preserves fixed Save. Final phone test scrolls to hitTestable result, taps checkbox and Save, and verifies full native write.",
+  "androidRuntime": "NOT_RUN",
+  "windowsRuntime": "NOT_RUN",
+  "nextRuntime": "Await immutable +17 package and root handoff",
+  "files": [
+    {
+      "path": "apps/exvpn/lib/src/exclusions_sheet.dart",
+      "bytes": 9010,
+      "sha256": "844a2c6e025887490e9d5b0e534cb8b635e67820e95b6f410f9b0a9e9ed2fad8"
+    },
+    {
+      "path": "apps/exvpn/test/exclusions_search_test.dart",
+      "bytes": 10139,
+      "sha256": "d5c890f8f22f504cdd60246f7abb7f5143a13b5691ade6e3f9303d2a98ba3602"
+    },
+    {
+      "path": "apps/exvpn/test/exclusions_recovery_test.dart",
+      "bytes": 3087,
+      "sha256": "3c6c989fdd94034363e0437422f138baf74ad3447b91c5620cab167149a2ac3a"
+    },
+    {
+      "path": "artifacts/qa/android-exclusions-search-build17-20261017/focused.log",
+      "bytes": 1471,
+      "sha256": "993405350502c0412282d05a17c13f123c87bba9497c2ecb13651f246f678d44"
+    },
+    {
+      "path": "artifacts/qa/android-exclusions-search-build17-20261017/analyze.log",
+      "bytes": 112,
+      "sha256": "96dd17a402fa602173b771adae3341c986afdf7ac099fb83c9fcad25fb95cbf7"
+    }
+  ],
+  "coordinatorVerification": {
+    "files": 5,
+    "mismatches": 0,
+    "date": "2026-10-17"
+  },
+  "sourceCommit": "464c0a5881f022ca467c10823058e4ac6c73b3b3"
+}

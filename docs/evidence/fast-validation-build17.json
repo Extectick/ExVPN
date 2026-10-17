@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "status": "PASS",
+  "sourceCommits": [
+    "464c0a5881f022ca467c10823058e4ac6c73b3b3",
+    "d9444db3684997294e6174573287e56f951f8faf"
+  ],
+  "summarySha256": "503f136b995c9742c38b9ff4bf7848c24571d811fe5188bde6144866b8358d97",
+  "full": {
+    "schemaVersion": 1,
+    "mode": "Full",
+    "scope": "behavioral checks only; excludes builds and real VPN/security/release acceptance",
+    "startedAt": "2026-10-17T20:07:16.2491061+07:00",
+    "endedAt": "2026-10-17T20:09:21.7712514+07:00",
+    "durationSeconds": 125.52,
+    "status": "passed",
+    "sourceFingerprintBefore": "6a4e4c705341a3b3061bb167e77aec5d6c7e87d78f06a45d8774bc3e06148ef9",
+    "sourceFingerprintAfter": "6a4e4c705341a3b3061bb167e77aec5d6c7e87d78f06a45d8774bc3e06148ef9",
+    "sourceUnchanged": true,
+    "toolchain": {
+      "flutter": "abaf9c523780a608bd46686fd5e53740a07077f8",
+      "go": "1.27.2",
+      "dart": "3.13.5"
+    },
+    "changedFileCount": 0,
+    "selectedLanes": [
+      "domain",
+      "state",
+      "updates",
+      "app",
+      "core",
+      "android",
+      "windows",
+      "xray",
+      "installer",
+      "scripts",
+      "ci"
+    ],
+    "executionOrder": [
+      "scripts",
+      "ci",
+      "app",
+      "core",
+      "xray",
+      "android",
+      "windows",
+      "updates",
+      "domain",
+      "state",
+      "installer"
+    ],
+    "selectionReasons": [
+      "full behavioral suite requested"
+    ],
+    "goResultCacheAllowed": false,
+    "maxParallel": 3,
+    "testConcurrency": 2,
+    "lanes": [
+      {
+        "lane": "android",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 12.0,
+        "cachedGoPackages": 0,
+        "log": "android.log"
+      },
+      {
+        "lane": "app",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 57.04,
+        "cachedGoPackages": 0,
+        "log": "app.log"
+      },
+      {
+        "lane": "ci",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 66.68,
+        "cachedGoPackages": 0,
+        "log": "ci.log"
+      },
+      {
+        "lane": "core",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 31.09,
+        "cachedGoPackages": 0,
+        "log": "core.log"
+      },
+      {
+        "lane": "domain",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 8.18,
+        "cachedGoPackages": 0,
+        "log": "domain.log"
+      },
+      {
+        "lane": "installer",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 8.52,
+        "cachedGoPackages": 0,
+        "log": "installer.log"
+      },
+      {
+        "lane": "scripts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 108.38,
+        "cachedGoPackages": 0,
+        "log": "scripts.log"
+      },
+      {
+        "lane": "state",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 7.12,
+        "cachedGoPackages": 0,
+        "log": "state.log"
+      },
+      {
+        "lane": "updates",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 12.07,
+        "cachedGoPackages": 0,
+        "log": "updates.log"
+      },
+      {
+        "lane": "windows",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 13.19,
+        "cachedGoPackages": 0,
+        "log": "windows.log"
+      },
+      {
+        "lane": "xray",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 18.61,
+        "cachedGoPackages": 0,
+        "log": "xray.log"
+      }
+    ],
+    "failure": null,
+    "requiredNextGates": [
+      "Android JNI/APK and JVM tests",
+      "Windows native/UI build",
+      "isolated VPN/IPv4/IPv6/DNS/fault acceptance",
+      "signed release and upgrade acceptance"
+    ]
+  },
+  "limitations": [
+    "No native package or device acceptance in this run.",
+    "Separate runtime checks must bind the new build17 bytes."
+  ]
+}

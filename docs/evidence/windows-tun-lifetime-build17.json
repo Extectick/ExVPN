@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "status": "SCOPED_SOURCE_FIX_VALIDATED",
+  "sourceCommit": "d9444db3684997294e6174573287e56f951f8faf",
+  "module": {
+    "name": "github.com/xtls/xray-core",
+    "upstreamCommit": "701af60772cda123492f86e383e1fdba066614a9",
+    "version": "v1.260327.1-exvpn.5",
+    "sum": "h1:qiJ43pz/0NfWNLPgT1ZT6Z2r0EbX+zIuTntRaAc++1o=",
+    "goModSum": "h1:YAACF9L/Pu1GznixHOBtrBqVcE95nhFjgU+gIEdWKlo=",
+    "patchSha256": "de9d1e0407b1228cbc4043560ddee9af352f7ead5a32f42a265d33aaf5fa2191",
+    "lockSha256": "032dd7d396fa1476a3e2be1de3e53f2ff3cd807a9efe11333b19889bee7bf9cd",
+    "zipSha256": "4c96a9e3cbcfc5457d5d05a07e8fc406090460ecf16c6d3a50bbf711332c3cc5"
+  },
+  "sourceFiles": [
+    {
+      "path": "proxy/tun/tun_windows.go",
+      "sha256": "c9733b0340973edacefaaf4c0030eb7ce5dfef210e18dfbad0788ae1265a77ac",
+      "bytes": 18950
+    },
+    {
+      "path": "proxy/tun/tun_windows_session.go",
+      "sha256": "2b3f3b9b5b1f0823bd7ed1a9259bec69701805bb723045aa539508c592f4039a",
+      "bytes": 5054
+    },
+    {
+      "path": "proxy/tun/exvpn_windows_session_test.go",
+      "sha256": "30fecb1e80aeaf85ba2d6fb19e13662478634feb70b1b3e7e9b0c08e82403158",
+      "bytes": 14222
+    }
+  ],
+  "behavior": [
+    "Retirement rejects new native operations before waking blocked waits.",
+    "ReadPacket copies into the existing gVisor buffer and releases the native receive range before its operation lease ends.",
+    "Close drains native receives, releases, sends and waits before End; repeated Close returns a stable result.",
+    "Wake failure or the bounded five-second drain timeout returns an error and retains live native handles."
+  ],
+  "validation": {
+    "red": {
+      "test": "TestExVPNWindowsTunPacketOutlivesClose",
+      "baselineVersion": "v1.260327.1-exvpn.4",
+      "expectedExitCode": 1,
+      "observed": "End=1 Release=1 ReleaseAfterEnd=true",
+      "durationSeconds": 0.063,
+      "actualProductionReadAndCloseMethods": true,
+      "adapterCreated": false
+    },
+    "finalRace": {
+      "command": "go test -mod=readonly -p=2 -parallel=2 -race -count=10 -timeout=90s -run '^TestExVPNWindows' ./proxy/tun",
+      "exitCode": 0,
+      "packageDurationSeconds": 1.43,
+      "topLevelTestCount": 9,
+      "tests": [
+        "TestExVPNWindowsTunPacketOutlivesClose",
+        "TestExVPNWindowsSessionCloseJoinsNativeOperations",
+        "TestExVPNWindowsSessionCloseFailureRetainsLiveHandles",
+        "TestExVPNWindowsSessionConcurrentCloseAndRetiredIO",
+        "TestExVPNWindowsTunClosePreservesRetirementFailure",
+        "TestExVPNWindowsSessionIndependentOwnerAndWaitFailure",
+        "TestExVPNWindowsSessionQueueAndInvalidData",
+        "TestExVPNWindowsSessionActualEventCancellation",
+        "TestExVPNWindowsSessionConcurrentReadWriteClose"
+      ]
+    },
+    "lifecycle": {
+      "command": "go test -mod=readonly -p=2 -parallel=2 -count=1 -timeout=3m -run '^TestExVPN' ./transport/internet ./transport/internet/grpc ./transport/internet/splithttp ./app/proxyman/outbound ./proxy/tun",
+      "exitCode": 0,
+      "packageCount": 5
+    },
+    "vet": {
+      "exitCode": 0,
+      "packageCount": 5,
+      "stdout": "empty",
+      "rawTranscriptRetained": false
+    },
+    "patchFixtures": {
+      "command": "pwsh -NoProfile -File scripts/core/test-xray-patch.ps1",
+      "exitCode": 0,
+      "checks": 61,
+      "allStreamsLogRetained": true
+    },
+    "reconstruction": {
+      "command": "scripts/core/prepare-xray-patch.ps1 -Offline",
+      "exitCode": 0,
+      "expectedModuleSumMatched": true,
+      "finalThreeZipSourceHashesMatched": true
+    },
+    "windowsCompileOnly": {
+      "command": "go test -mod=readonly -p=2 -run '^$' ./...",
+      "directory": "native/windows",
+      "exitCode": 0,
+      "testExecutionExcluded": true,
+      "networkDependencyResolution": false
+    },
+    "independentReview": {
+      "reviewer": "/root/encryption_dart_tests",
+      "result": "PASS",
+      "actionableFindings": 0,
+      "sourceHashesMatched": true
+    },
+    "diffCheck": {
+      "otherFilesStandardPassed": true,
+      "patchContextWhitespaceExceptionOnly": true
+    }
+  },
+  "boundaries": {
+    "b99ServiceFailureRootCauseEstablished": false,
+    "newServiceBinaryBuilt": false,
+    "realTunDeviceUsed": false,
+    "hostNetworkChanged": false,
+    "guestRuntimeRun": false,
+    "stableReleaseReadinessEstablished": false,
+    "note": "The deterministic source-lifetime defect is independent of the unexplained prior service exit. Existing runtime acceptance and release gates remain open."
+  },
+  "sourceCommitContainsRootBuild17VersionChange": true,
+  "preparedAtUtc": "2026-10-17T13:06:17.3910779Z",
+  "coordinatorVerification": {
+    "date": "2026-10-17",
+    "files": 31,
+    "mismatches": 0,
+    "manifestSha256": "87fa04cec6b9921a4f385487c5a8ae514428051572409ad41a0e1d207ff1d7a1"
+  }
+}
