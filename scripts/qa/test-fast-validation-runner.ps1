@@ -6,6 +6,41 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'fast-validation-plan.ps1')
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+# Exercise the real scripts/ci dispatch with only suite execution replaced.
+# The union must contain each former suite/PowerShell host pair exactly once.
+$dispatchAst = [Management.Automation.Language.Parser]::ParseFile(
+    (Join-Path $PSScriptRoot 'run-fast-validation-lane.ps1'), [ref]$null, [ref]$null)
+$switches = @($dispatchAst.FindAll({ param($node) $node -is [Management.Automation.Language.SwitchStatementAst] }, $true))
+if ($switches.Count -ne 1) { throw 'Lane dispatch switch is not unique.' }
+$dispatchSuites = [Collections.Generic.List[object]]::new()
+function Invoke-ScriptCheck([string]$RelativePath, [switch]$LegacyPowerShell) {
+    $dispatchSuites.Add([pscustomobject]@{ lane=$Lane; suite=$RelativePath; hostVersion=$(if ($LegacyPowerShell) { '5.1' } else { '7' }) })
+}
+foreach ($Lane in @('scripts', 'ci')) { & ([ScriptBlock]::Create($switches[0].Extent.Text)) }
+$expectedSuites = @(
+    'scripts/qa/test-fast-validation-plan.ps1|7',
+    'scripts/qa/test-fast-validation-runner.ps1|7',
+    'scripts/qa/android-https-probe/test.ps1|7',
+    'scripts/qa/test-android-lifecycle-tools.ps1|7',
+    'scripts/qa/android-dns-capture/test.ps1|7',
+    'scripts/qa/test-windows-transport-lifecycle.ps1|7',
+    'scripts/qa/test-windows-subscriptions.ps1|7',
+    'scripts/qa/test-windows-subscriptions.ps1|5.1',
+    'scripts/qa/test-teardown-qa.ps1|7',
+    'scripts/qa/test-teardown-qa.ps1|5.1',
+    'scripts/ci/test-build-impact.ps1|7',
+    'scripts/release/test-notice-inputs.ps1|7',
+    'scripts/release/test-artifact-audit.ps1|7',
+    'scripts/release/test-android-notices.ps1|7',
+    'scripts/release/android-runtime-inventory-test.ps1|7',
+    'scripts/core/test-xray-patch.ps1|7'
+)
+$actualSuites = @($dispatchSuites | ForEach-Object { $_.suite + '|' + $_.hostVersion })
+$ciSuites = @($dispatchSuites | Where-Object lane -CEQ 'ci')
+if ((($actualSuites | Sort-Object) -join ',') -cne (($expectedSuites | Sort-Object) -join ',') -or
+    $actualSuites.Count -ne 16 -or $ciSuites.Count -ne 1 -or $ciSuites[0].suite -cne 'scripts/ci/test-build-impact.ps1') {
+    throw 'Scripts/CI partition lost, duplicated or substituted a required suite or PowerShell host.'
+}
 $fixture = Join-Path $repository ('artifacts/qa/runner-fixture-' + [Guid]::NewGuid().ToString('N'))
 foreach ($directory in @('scripts/qa', 'scripts/bootstrap', 'scripts/ci', 'apps/exvpn/lib', 'native/core', 'native/android', 'native/windows')) {
     New-Item -ItemType Directory -Path (Join-Path $fixture $directory) -Force | Out-Null
@@ -45,6 +80,7 @@ $worker = Join-Path $fixture 'scripts/qa/run-fast-validation-lane.ps1'
 Set-Content -LiteralPath $worker -Value @'
 param([string]$Lane, [switch]$FreshGoTests, [int]$TestConcurrency, [switch]$OnlineDependencies)
 if ($Lane -eq 'android') { Write-Host 'Intentional child failure fixture.'; exit 7 }
+if ($Lane -eq 'ci') { Write-Host 'Intentional CI selector child failure fixture.'; exit 9 }
 exit 0
 '@
 $shell = Join-Path $PSHOME 'pwsh.exe'
@@ -56,12 +92,13 @@ $reportPath = Get-ChildItem -LiteralPath (Join-Path $fixture 'artifacts/qa') -Di
 $report = Get-Content -LiteralPath (Join-Path $reportPath 'summary.json') -Raw | ConvertFrom-Json
 Assert-CompleteLaneResults $report
 $dispatch = @([regex]::Matches((Get-Content -LiteralPath (Join-Path $fixture 'failure-run.log') -Raw), '(?m)^\[([a-z]+)\] started\s*$') | ForEach-Object { $_.Groups[1].Value })
-if (($dispatch -join ',') -cne ($report.executionOrder -join ',') -or ($dispatch[0..2] -join ',') -cne 'scripts,app,core') {
+if (($dispatch -join ',') -cne ($report.executionOrder -join ',') -or ($dispatch[0..3] -join ',') -cne 'scripts,ci,app,core') {
     throw 'Real coordinator did not dispatch the complete planned order.'
 }
 $failed = @($report.lanes | Where-Object status -eq 'failed')
-if ($report.status -ne 'failed' -or $failed.Count -ne 1 -or
-    $failed[0].lane -ne 'android' -or $failed[0].exitCode -ne 7 -or !$report.sourceUnchanged) {
+if ($report.status -ne 'failed' -or $failed.Count -ne 2 -or
+    @($failed | Where-Object { $_.lane -ceq 'android' -and $_.exitCode -eq 7 }).Count -ne 1 -or
+    @($failed | Where-Object { $_.lane -ceq 'ci' -and $_.exitCode -eq 9 }).Count -ne 1 -or !$report.sourceUnchanged) {
     throw 'Coordinator lost a child result or failed for an unrelated reason.'
 }
 
@@ -83,4 +120,4 @@ if ($report.status -ne 'source-changed-during-run' -or $report.sourceUnchanged -
     @($report.lanes | Where-Object status -ne 'passed').Count) {
     throw 'Coordinator did not distinguish source drift from child failure.'
 }
-Write-Host "Fast-validation runner: child exit 7 and concurrent source edit both rejected; all $($expectedLanes.Count) selected child results preserved exactly once."
+Write-Host "Fast-validation runner: all 16 scripts/CI suites retained; Android/CI child exits 7/9 and concurrent source edit rejected; all $($expectedLanes.Count) selected child results preserved exactly once."

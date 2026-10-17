@@ -13,10 +13,17 @@ function Assert-Lanes([string[]]$Paths, [string[]]$Expected) {
     if (($actual -join ',') -cne ($Expected -join ',')) {
         throw "Unexpected selected lanes: $($actual -join ','); expected $($Expected -join ',')."
     }
+    if ('scripts' -cin $actual -and @($actual | Where-Object { $_ -ceq 'ci' }).Count -ne 1) {
+        throw 'Scripts selection omitted or duplicated its former CI selector suite.'
+    }
     $script:checks++
 }
 
 $all = @(Get-FastValidationLaneNames)
+if (($all -join ',') -cne 'domain,state,updates,app,core,android,windows,xray,installer,scripts,ci') {
+    throw 'The CI split changed the original lane set.'
+}
+$checks++
 Assert-Lanes @() @()
 Assert-Lanes @('docs/PLAN.md', 'design/concepts/approved.png', 'README.md') @()
 Assert-Lanes @('docs/evidence/synthetic-report.json', 'docs/evidence/nested/another-report.json') @()
@@ -39,6 +46,8 @@ Assert-Lanes @('apps/exvpn/windows/runner/main.cpp') @('app', 'windows', 'instal
 Assert-Lanes @('scripts/bootstrap/toolchain.lock.json') $all
 Assert-Lanes @('.github/workflows/verify.yml') $all
 Assert-Lanes @('scripts/qa/new-helper.ps1') $all
+Assert-Lanes @('scripts/ci/test-build-impact.ps1') $all
+Assert-Lanes @('scripts/qa/new-helper.ps1', 'scripts/ci/test-build-impact.ps1', 'scripts/qa/new-helper.ps1') $all
 Assert-Lanes @('new-package/lib/new.dart') $all
 Assert-Lanes @('docs/not-documentation.ps1') $all
 Assert-Lanes @('AGENTS.md') $all
@@ -56,7 +65,7 @@ foreach ($mask in 0..((1 -shl $all.Count) - 1)) {
 }
 $checks++
 $fullOrder = @((Get-FastValidationPlan -Full).executionOrder)
-if (($fullOrder[0..2] -join ',') -cne 'scripts,app,core') { throw 'Long independent suites no longer start first.' }
+if (($fullOrder[0..3] -join ',') -cne 'scripts,ci,app,core') { throw 'Long independent suites no longer start first.' }
 if (((Get-FastValidationPlan -ChangedPaths @('packages/exvpn_updates/lib/updater.dart')).executionOrder -join ',') -cne 'app,updates') { throw 'Partial scheduling changed its selected subset or priority.' }
 $checks++
 foreach ($invalid in @(@('app','app'), @('unknown'), @('App'))) {

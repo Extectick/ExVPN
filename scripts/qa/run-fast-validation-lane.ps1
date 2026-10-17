@@ -2,7 +2,7 @@
 #requires -Version 7.0
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)][ValidateSet('domain', 'state', 'updates', 'app', 'core', 'android', 'windows', 'xray', 'installer', 'scripts')][string]$Lane,
+    [Parameter(Mandatory)][ValidateSet('domain', 'state', 'updates', 'app', 'core', 'android', 'windows', 'xray', 'installer', 'scripts', 'ci')][string]$Lane,
     [switch]$FreshGoTests,
     [ValidateRange(1, 16)][int]$TestConcurrency = 2,
     [switch]$OnlineDependencies
@@ -19,6 +19,34 @@ $flutter = Join-Path $repository '.tools/flutter/bin/flutter.bat'
 function Invoke-Check([string]$Executable, [string[]]$Arguments) {
     & $Executable @Arguments
     if ($LASTEXITCODE -ne 0) { throw "Lane $Lane command failed with exit code $LASTEXITCODE." }
+}
+
+function Invoke-ScriptCheck([string]$RelativePath, [switch]$LegacyPowerShell) {
+    $timer = [Diagnostics.Stopwatch]::StartNew()
+    $passed = $false
+    try {
+        $script = Join-Path $repository $RelativePath
+        if ($LegacyPowerShell) {
+            Invoke-Check (Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe') @(
+                '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', $script
+            )
+        } else {
+            & $script
+            if (!$?) { throw "QA suite failed: $RelativePath" }
+        }
+        $passed = $true
+    } finally {
+        $timer.Stop()
+        # No arguments, fixture contents or private paths enter this record.
+        # The coordinator already retains this lane's log, including failures.
+        $timing = [ordered]@{
+            suite = $RelativePath
+            powershell = $(if ($LegacyPowerShell) { '5.1' } else { '7' })
+            passed = $passed
+            elapsedMilliseconds = $timer.ElapsedMilliseconds
+        }
+        Write-Output ('EXVPN_SUITE_TIMING ' + ($timing | ConvertTo-Json -Compress))
+    }
 }
 
 switch ($Lane) {
@@ -62,6 +90,12 @@ switch ($Lane) {
         )
         break
     }
+    'ci' {
+        # This suite owns a unique temporary Git fixture and process-local
+        # GitHub environment. It shares no mutable fixture with scripts.
+        Invoke-ScriptCheck 'scripts/ci/test-build-impact.ps1'
+        break
+    }
     'scripts' {
         foreach ($directory in @('scripts', 'native')) {
             foreach ($file in Get-ChildItem -LiteralPath (Join-Path $repository $directory) -Recurse -File -Filter '*.ps1') {
@@ -70,42 +104,21 @@ switch ($Lane) {
                 if ($errors.Count) { throw "PowerShell parse failure in $($file.Name)." }
             }
         }
-        & (Join-Path $PSScriptRoot 'test-fast-validation-plan.ps1')
-        if (!$?) { throw 'Validation planner regression failed.' }
-        & (Join-Path $PSScriptRoot 'test-fast-validation-runner.ps1')
-        if (!$?) { throw 'Validation coordinator regression failed.' }
-        & (Join-Path $PSScriptRoot 'android-https-probe/test.ps1')
-        if (!$?) { throw 'Android QA probe parser regression failed.' }
-        & (Join-Path $PSScriptRoot 'test-android-lifecycle-tools.ps1')
-        if (!$?) { throw 'Android lifecycle QA helper regression failed.' }
-        & (Join-Path $PSScriptRoot 'android-dns-capture/test.ps1')
-        if (!$?) { throw 'Offline Android DNS capture regression failed.' }
-        & (Join-Path $PSScriptRoot 'test-windows-transport-lifecycle.ps1')
-        if (!$?) { throw 'Windows transport lifecycle QA helper regression failed.' }
-        & (Join-Path $PSScriptRoot 'test-windows-subscriptions.ps1')
-        if (!$?) { throw 'Windows subscription QA helper regression failed.' }
-        Invoke-Check (Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe') @(
-            '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
-            (Join-Path $PSScriptRoot 'test-windows-subscriptions.ps1')
-        )
-        & (Join-Path $PSScriptRoot 'test-teardown-qa.ps1')
-        if (!$?) { throw 'Windows teardown QA helper regression failed.' }
-        Invoke-Check (Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe') @(
-            '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
-            (Join-Path $PSScriptRoot 'test-teardown-qa.ps1')
-        )
-        & (Join-Path $repository 'scripts/ci/test-build-impact.ps1')
-        if (!$?) { throw 'CI native build-impact regression failed.' }
-        & (Join-Path $repository 'scripts/release/test-notice-inputs.ps1')
-        if (!$?) { throw 'Release notice input regression failed.' }
-        & (Join-Path $repository 'scripts/release/test-artifact-audit.ps1')
-        if (!$?) { throw 'Release artifact audit regression failed.' }
-        & (Join-Path $repository 'scripts/release/test-android-notices.ps1')
-        if (!$?) { throw 'Android notice snapshot regression failed.' }
-        & (Join-Path $repository 'scripts/release/android-runtime-inventory-test.ps1')
-        if (!$?) { throw 'Android runtime inventory regression failed.' }
-        & (Join-Path $repository 'scripts/core/test-xray-patch.ps1')
-        if (!$?) { throw 'Pinned Xray source reconstruction regression failed.' }
+        Invoke-ScriptCheck 'scripts/qa/test-fast-validation-plan.ps1'
+        Invoke-ScriptCheck 'scripts/qa/test-fast-validation-runner.ps1'
+        Invoke-ScriptCheck 'scripts/qa/android-https-probe/test.ps1'
+        Invoke-ScriptCheck 'scripts/qa/test-android-lifecycle-tools.ps1'
+        Invoke-ScriptCheck 'scripts/qa/android-dns-capture/test.ps1'
+        Invoke-ScriptCheck 'scripts/qa/test-windows-transport-lifecycle.ps1'
+        Invoke-ScriptCheck 'scripts/qa/test-windows-subscriptions.ps1'
+        Invoke-ScriptCheck 'scripts/qa/test-windows-subscriptions.ps1' -LegacyPowerShell
+        Invoke-ScriptCheck 'scripts/qa/test-teardown-qa.ps1'
+        Invoke-ScriptCheck 'scripts/qa/test-teardown-qa.ps1' -LegacyPowerShell
+        Invoke-ScriptCheck 'scripts/release/test-notice-inputs.ps1'
+        Invoke-ScriptCheck 'scripts/release/test-artifact-audit.ps1'
+        Invoke-ScriptCheck 'scripts/release/test-android-notices.ps1'
+        Invoke-ScriptCheck 'scripts/release/android-runtime-inventory-test.ps1'
+        Invoke-ScriptCheck 'scripts/core/test-xray-patch.ps1'
         break
     }
 }

@@ -4,7 +4,7 @@
 Set-StrictMode -Version Latest
 
 function Get-FastValidationLaneNames {
-    @('domain', 'state', 'updates', 'app', 'core', 'android', 'windows', 'xray', 'installer', 'scripts')
+    @('domain', 'state', 'updates', 'app', 'core', 'android', 'windows', 'xray', 'installer', 'scripts', 'ci')
 }
 
 function Get-FastValidationExecutionOrder {
@@ -12,7 +12,7 @@ function Get-FastValidationExecutionOrder {
     # Start long independent suites first so the scripts lane does not become
     # the tail of Full. This is scheduling only: never add or remove a suite.
     # Priorities use observed local durations, not mutable cached test results.
-    $priority = @('scripts', 'app', 'core', 'xray', 'android', 'windows', 'updates', 'domain', 'state', 'installer')
+    $priority = @('scripts', 'ci', 'app', 'core', 'xray', 'android', 'windows', 'updates', 'domain', 'state', 'installer')
     $selected = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     foreach ($lane in $Lanes) {
         if ($lane -cnotin $priority -or !$selected.Add($lane)) {
@@ -38,6 +38,9 @@ function Get-FastValidationPlan {
         android = @('app')
         windows = @('app', 'installer')
         xray = @('core')
+        # CI selector fixtures were formerly part of scripts. Selecting that
+        # lane must still execute its complete original suite after the split.
+        scripts = @('ci')
     }
     if ($Full) {
         foreach ($lane in $all) { $pending.Enqueue($lane) }
