@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "sourceHead": "648e2e2887e3954fd046444c94ffd9e12a22e152",
+  "sourceState": "working tree with suite timing instrumentation",
+  "summary": {
+    "schemaVersion": 1,
+    "mode": "Full",
+    "scope": "behavioral checks only; excludes builds and real VPN/security/release acceptance",
+    "startedAt": "2026-10-17T12:28:34.4793008+07:00",
+    "endedAt": "2026-10-17T12:30:04.385006+07:00",
+    "durationSeconds": 89.9,
+    "status": "passed",
+    "sourceFingerprintBefore": "1ed204ea24ede1e80e6ad29126f23b2925dc3304eed859c40915ac3db85ba8a9",
+    "sourceFingerprintAfter": "1ed204ea24ede1e80e6ad29126f23b2925dc3304eed859c40915ac3db85ba8a9",
+    "sourceUnchanged": true,
+    "toolchain": {
+      "dart": "3.13.5",
+      "go": "1.27.2",
+      "flutter": "abaf9c523780a608bd46686fd5e53740a07077f8"
+    },
+    "changedFileCount": 0,
+    "selectedLanes": [
+      "domain",
+      "state",
+      "updates",
+      "app",
+      "core",
+      "android",
+      "windows",
+      "xray",
+      "installer",
+      "scripts"
+    ],
+    "executionOrder": [
+      "scripts",
+      "app",
+      "core",
+      "xray",
+      "android",
+      "windows",
+      "updates",
+      "domain",
+      "state",
+      "installer"
+    ],
+    "selectionReasons": [
+      "full behavioral suite requested"
+    ],
+    "goResultCacheAllowed": false,
+    "maxParallel": 3,
+    "testConcurrency": 2,
+    "lanes": [
+      {
+        "lane": "android",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 7.35,
+        "cachedGoPackages": 0,
+        "log": "android.log"
+      },
+      {
+        "lane": "app",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 26.03,
+        "cachedGoPackages": 0,
+        "log": "app.log"
+      },
+      {
+        "lane": "core",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 20.61,
+        "cachedGoPackages": 0,
+        "log": "core.log"
+      },
+      {
+        "lane": "domain",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 6.44,
+        "cachedGoPackages": 0,
+        "log": "domain.log"
+      },
+      {
+        "lane": "installer",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 7.27,
+        "cachedGoPackages": 0,
+        "log": "installer.log"
+      },
+      {
+        "lane": "scripts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 84.31,
+        "cachedGoPackages": 0,
+        "log": "scripts.log"
+      },
+      {
+        "lane": "state",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 6.47,
+        "cachedGoPackages": 0,
+        "log": "state.log"
+      },
+      {
+        "lane": "updates",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 9.6,
+        "cachedGoPackages": 0,
+        "log": "updates.log"
+      },
+      {
+        "lane": "windows",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 9.86,
+        "cachedGoPackages": 0,
+        "log": "windows.log"
+      },
+      {
+        "lane": "xray",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 10.84,
+        "cachedGoPackages": 0,
+        "log": "xray.log"
+      }
+    ],
+    "failure": null,
+    "requiredNextGates": [
+      "Android JNI/APK and JVM tests",
+      "Windows native/UI build",
+      "isolated VPN/IPv4/IPv6/DNS/fault acceptance",
+      "signed release and upgrade acceptance"
+    ]
+  },
+  "scriptSuiteTimings": [
+    {
+      "suite": "scripts/qa/test-fast-validation-plan.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 3036
+    },
+    {
+      "suite": "scripts/qa/test-fast-validation-runner.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 8239
+    },
+    {
+      "suite": "scripts/qa/android-https-probe/test.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 3528
+    },
+    {
+      "suite": "scripts/qa/test-android-lifecycle-tools.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 166
+    },
+    {
+      "suite": "scripts/qa/android-dns-capture/test.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 2827
+    },
+    {
+      "suite": "scripts/qa/test-windows-transport-lifecycle.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 2284
+    },
+    {
+      "suite": "scripts/qa/test-windows-subscriptions.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 578
+    },
+    {
+      "suite": "scripts/qa/test-windows-subscriptions.ps1",
+      "powershell": "5.1",
+      "passed": true,
+      "elapsedMilliseconds": 1748
+    },
+    {
+      "suite": "scripts/qa/test-teardown-qa.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 194
+    },
+    {
+      "suite": "scripts/qa/test-teardown-qa.ps1",
+      "powershell": "5.1",
+      "passed": true,
+      "elapsedMilliseconds": 1183
+    },
+    {
+      "suite": "scripts/ci/test-build-impact.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 35173
+    },
+    {
+      "suite": "scripts/release/test-notice-inputs.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 155
+    },
+    {
+      "suite": "scripts/release/test-artifact-audit.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 3422
+    },
+    {
+      "suite": "scripts/release/test-android-notices.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 4689
+    },
+    {
+      "suite": "scripts/release/android-runtime-inventory-test.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 1796
+    },
+    {
+      "suite": "scripts/core/test-xray-patch.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 11091
+    }
+  ],
+  "scope": "All original suites, order and PowerShell hosts preserved; measured existing sequential critical path. No VPN, build or release acceptance."
+}

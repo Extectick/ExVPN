@@ -206,6 +206,13 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   Предварительная локальная проверка 2026-10-17: 92 selector/graph/JUnit fixtures PASS; точный Android helper в чистом source archive прошёл 8/8 за 43,13 с, SDK/dependency caches общие. Независимый review не оставил замечаний. [Доказательство](evidence/ci-build-impact-build11.json), [правила и docs-only граница](CI.md). Исходники [9d035ae](https://github.com/Extectick/ExVPN/commit/9d035aee717604dafa31e0b2818b3767bfac0efe). Этот локальный результат сам по себе не закрывал фактический GitHub QA-only gate.
 
 - [x] **EXVPN-E7-005** — Ускорить локальную проверку и разделить разработку между агентами. Зависимость: E1 toolchain, E7-001. Критерий: одна команда выбирает тесты с учётом зависимостей, параллельно запускает готовые Dart/Flutter/Go runners, сохраняет результаты и не скрывает ошибки/изменения исходников; итоговый полный быстрый прогон проходит после завершения записи агентами. Системная приёмка остаётся отдельной.
+  Дополнение 2026-10-17: измерены все 16 служебных наборов; CI fixtures вынесены
+  в независимую очередь существующего runner. Итоговый Full после freeze —
+  **11/11 за 82,03 с**, fingerprint совпал, Go result cache отключён. Прежние
+  suite/host пары сохранены ровно один раз; 37 planner checks, 2048 комбинаций,
+  отказы Android/CI и source drift прошли. Android, Windows и runner/review
+  выполнялись разными владельцами. [Отчёт](evidence/fast-validation-ci-lane-build14.json),
+  исходники [db17725](https://github.com/Extectick/ExVPN/commit/db177258de41ae050f131cb0a4c38689ba5e748e).
   Последний Full, 2026-10-17: **115,59 с, 10/10 PASS**, source fingerprint совпал,
   Go result cache отключён. 448 Dart/Flutter tests, 52 Java UI-сценария,
   81 Android lifecycle, 129 metadata и 72 artifact audit fixtures PASS.

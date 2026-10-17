@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "status": "REQUESTER_ATTRIBUTION_UNAVAILABLE_VIA_TESTED_SHELL_ENTRY",
+  "operation": "read_only_service_inventory",
+  "runtimeStatus": "INVENTORY_COMPLETED_REQUIRES_OFFLINE_REVIEW",
+  "durationMs": 40563,
+  "api": 30,
+  "maximumDurationMs": 120000,
+  "priorCapability": {
+    "resultSha256": "41d88ce1f35b0f4dd053ca2f31002bb59b9dd241e68e65b1d29b73cd6f9df2ee",
+    "diagnosisSha256": "866d3b4d6088ec91047d2c22845cf9a023cc91752e81d82fefa6cb7656c57de7",
+    "adbExitCode": 0,
+    "exitZeroIsCapabilityProof": false,
+    "error": "Can't find service: dnsresolver"
+  },
+  "inventory": {
+    "dumpableServices": 178,
+    "dnsresolver": {
+      "binderListed": true,
+      "interfaceReturned": false,
+      "dumpableListed": false,
+      "requestedDump": "SERVICE_NOT_FOUND"
+    },
+    "networkStack": {
+      "interfaceReturned": true,
+      "binderListed": true,
+      "dnsProbeRowsAtObservation": 0,
+      "dumpableListed": true,
+      "requesterUidPidRows": 0,
+      "dumpBytes": 920,
+      "validationLogSectionPresent": true
+    },
+    "netd": {
+      "binderListed": true,
+      "exactError": "Can't find service: netd",
+      "interfaceReturned": false,
+      "dumpableListed": false,
+      "requestedDump": "SERVICE_NOT_FOUND"
+    },
+    "binderServices": 187
+  },
+  "supportedReadOnlyObservation": "network_stack dump, without demonstrated per-request requester identity",
+  "attribution": "NOT_TESTED",
+  "newDnsNoLeakProof": "NOT_TESTED",
+  "previousDnsResult": "INDETERMINATE_UNCHANGED",
+  "cleanup": {
+    "frozenInputsUnchanged": true,
+    "ownedGuestAbsent": true,
+    "forcedOnlyOwnedProcesses": true,
+    "ownedPortsAbsent": true,
+    "normalConsoleKillAttempted": true,
+    "watchdogCompleted": true,
+    "originalProcessIdentitiesPreserved": true,
+    "serviceAbsentBeforeReads": true
+  },
+  "offlineComparison": {
+    "aospNetworkStackRevision": "d5c8bd813d5cf6b317541ee5cb8db3cb9ff83966",
+    "aospDnsResolverRevision": "0ea40d43672581b950271d17cbd202d38f2e9b33",
+    "sourceShowsQuerylogDumpCapability": true,
+    "requesterRecordSource": "DnsQueryLog.cpp:69-83",
+    "networkMonitorSource": "NetworkMonitor.java:554-568,707-719",
+    "imageBinaryEquivalenceVerified": false,
+    "querylogSource": "DnsResolverService.cpp:98-112",
+    "exactReasonListedServicesNotDumpable": "UNDETERMINED",
+    "domainNameOwnerInferenceUsed": false
+  },
+  "scope": {
+    "fullAttributionDriverExecuted": false,
+    "packageInstall": false,
+    "settingsOrDebugChanges": false,
+    "appLaunch": false,
+    "networkProbes": false,
+    "fixture": false,
+    "capture": false,
+    "root": false,
+    "vpnConnect": false,
+    "original5564Action": "none"
+  },
+  "conclusion": "The selected ordinary-shell querylog mechanism is not available through the tested entry. NetworkStack logs alone do not establish protected, excluded or OS requester ownership. Stop attribution runtime until a supported requester observer is demonstrated.",
+  "proofManifestSha256": "84e0485131126aa82e48042945c367a92689192396e66f02b38c38d7c53875ab",
+  "runtimeResultSha256": "d79862085ca2cea6b02d5b817b3e2279893f5687e83ae9cfc52b6632257ba0e7",
+  "offlineFixtures": 9,
+  "observedAtUtc": "2026-10-17T05:21:41.0170818Z"
+}

@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "status": "CAPABILITY_BLOCKED",
+  "originalStatus": "INDETERMINATE_CAPABILITY",
+  "originalSafeResultSha256": "41d88ce1f35b0f4dd053ca2f31002bb59b9dd241e68e65b1d29b73cd6f9df2ee",
+  "operation": "read_only_dns_uid_capability",
+  "mechanism": "aosp_querylog_networkmonitor_v1",
+  "durationMs": 39306,
+  "overallBoundMs": 120000,
+  "querylog": {
+    "status": "SERVICE_NOT_FOUND",
+    "stdoutBytes": 0,
+    "commandCompleted": true,
+    "requesterUidPidTimeAvailable": false,
+    "rootCauseEstablished": "The requested dumpsys service entry was unavailable on this image during this attempt.",
+    "stderrBytes": 33,
+    "serviceName": "dnsresolver",
+    "exactSafeError": "Can't find service: dnsresolver",
+    "stderrSha256": "459958220a3990c956db1d63f4e333d65866e95339f2cdd3fd2b72045e59ef98",
+    "argument": "querylog"
+  },
+  "networkMonitorDump": "NOT_EXECUTED_EARLY_GUARD",
+  "networkMonitorLogcat": "NOT_EXECUTED_EARLY_GUARD",
+  "positiveRequesterControls": "NOT_TESTED",
+  "dnsPacketAttribution": "NOT_TESTED",
+  "vpnDnsNoLeak": "NOT_TESTED",
+  "serviceAbsentBeforeReads": true,
+  "cleanup": {
+    "originalProcessIdentitiesPreserved": true,
+    "watchdogCompleted": true,
+    "forcedOnlyOwnedProcesses": true,
+    "ownedGuestAbsent": true,
+    "inputFreezeUnchanged": true,
+    "normalConsoleKillAttempted": true,
+    "ownedPortsAbsent": true
+  },
+  "scope": {
+    "appLaunched": false,
+    "fixture": false,
+    "capture": false,
+    "networkProbes": false,
+    "policyOrSettingsWrite": false,
+    "followupRuntimeExecuted": false,
+    "packageInstall": false,
+    "original5564Action": "none",
+    "connect": false
+  },
+  "limitations": [
+    "This is an entry-point availability check, not proof that every possible API lacks DNS attribution.",
+    "The previous DNS result remains INDETERMINATE; no owner was assigned from hostnames.",
+    "Prepared full driver remains REVIEW_REQUIRED and was not executed."
+  ],
+  "proofManifestSha256": "b8649ba45a3599d024137ddd8530e841a3eb3045049defab80e057b9d47b9d1c",
+  "observedAtUtc": "2026-10-17T05:16:17.0376064Z"
+}

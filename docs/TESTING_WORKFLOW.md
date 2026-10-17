@@ -1,5 +1,21 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+Последний прогон после разделения очереди, 2026-10-17: **11/11 за 82,03 с**,
+source fingerprint неизменен, Go result cache отключён. Все прежние 16 пар
+«проверка/PowerShell host» сохранены; `test-build-impact.ps1` выполняется в
+отдельной `ci` lane под тем же общим лимитом трёх процессов. До разделения
+измеренный Full занимал 89,90 с, из них 35,173 с — этот набор. Это наблюдения
+на текущем компьютере при возможной разной нагрузке, не универсальный benchmark.
+[Замер каждого набора](evidence/fast-validation-suite-timing-build14.json),
+[Full после разделения](evidence/fast-validation-ci-lane-build14.json).
+
+37 проверок планировщика, все 2048 комбинаций выбранных lanes и реальный
+coordinator с отказами дочерних Android/CI процессов подтверждают сохранность
+выбора и обработки ошибок. Когда выбирается `scripts`, добавляется `ci`;
+повторного выполнения перенесённого набора нет. Тайм-ауты, проверка изменения
+исходников и отдельные native/runtime gates сохраняются.
+[Исходники db17725](https://github.com/Extectick/ExVPN/commit/db177258de41ae050f131cb0a4c38689ba5e748e).
+
 После добавления непрерывных DNS-интервалов, 2026-10-17: **10/10 за 86,60 с**,
 source fingerprint неизменен, Go result cache отключён. Четыре новые offline
 регрессии прошли вместе с остальным набором. Повторный разбор сохранённого +13
@@ -7,6 +23,11 @@ PCAP воспроизвёл шесть открытых DNS-пакетов до 
 новый VPN-сеанс не запускался. [Full](evidence/fast-validation-continuous-dns-build14.json),
 [reparse](evidence/android-dns-continuous-parser-build13.json),
 [исходники](https://github.com/Extectick/ExVPN/commit/b27b685).
+
+После этого CI также завершил обе полные native lanes: Windows 7 мин 34 с,
+Android 15 мин 41 с. Это отдельное доказательство сборок, а не длительность
+локального быстрого цикла или приёмка VPN.
+[CI evidence](evidence/ci-continuous-dns-build14.json).
 
 Прогон **+14 после source freeze**, 2026-10-17: **10/10 наборов за 96,93 с**,
 465 Dart/Flutter tests, Go/installer/QA checks PASS; Go result cache отключён,
@@ -39,6 +60,9 @@ pwsh -NoProfile -File scripts/qa/run-fast-validation.ps1 -Changed
 `artifacts/qa/fast-<timestamp>-<id>/summary.json`. Рядом лежит отдельный `.log`
 каждого набора. Любая ошибка, timeout или изменение исходников во время прогона
 даёт ненулевой exit code; успешные остальные наборы не скрывают отказ.
+В `scripts.log` и `ci.log` строки `EXVPN_SUITE_TIMING` дополнительно содержат
+время каждого служебного набора, версию PowerShell и результат; приватные
+аргументы или содержимое fixtures в эти строки не входят.
 
 Это быстрые поведенческие проверки: анализ Dart/Flutter, unit/widget tests,
 Go unit/loopback tests и файловые сценарии установщика с mock SCM/ACL. Они не

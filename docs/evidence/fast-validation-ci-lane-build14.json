@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 1,
+  "sourceState": "committed; code matches final Full run",
+  "sourceBase": "648e2e2887e3954fd046444c94ffd9e12a22e152",
+  "summary": {
+    "schemaVersion": 1,
+    "mode": "Full",
+    "scope": "behavioral checks only; excludes builds and real VPN/security/release acceptance",
+    "startedAt": "2026-10-17T12:35:23.7835275+07:00",
+    "endedAt": "2026-10-17T12:36:45.8132961+07:00",
+    "durationSeconds": 82.03,
+    "status": "passed",
+    "sourceFingerprintBefore": "3cdc01dd3c9dc6143c1aa4dd0e5b9e6dd24a858e1ddc39bd0ad2c460e3d42d44",
+    "sourceFingerprintAfter": "3cdc01dd3c9dc6143c1aa4dd0e5b9e6dd24a858e1ddc39bd0ad2c460e3d42d44",
+    "sourceUnchanged": true,
+    "toolchain": {
+      "go": "1.27.2",
+      "flutter": "abaf9c523780a608bd46686fd5e53740a07077f8",
+      "dart": "3.13.5"
+    },
+    "changedFileCount": 0,
+    "selectedLanes": [
+      "domain",
+      "state",
+      "updates",
+      "app",
+      "core",
+      "android",
+      "windows",
+      "xray",
+      "installer",
+      "scripts",
+      "ci"
+    ],
+    "executionOrder": [
+      "scripts",
+      "ci",
+      "app",
+      "core",
+      "xray",
+      "android",
+      "windows",
+      "updates",
+      "domain",
+      "state",
+      "installer"
+    ],
+    "selectionReasons": [
+      "full behavioral suite requested"
+    ],
+    "goResultCacheAllowed": false,
+    "maxParallel": 3,
+    "testConcurrency": 2,
+    "lanes": [
+      {
+        "lane": "android",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 14.45,
+        "cachedGoPackages": 0,
+        "log": "android.log"
+      },
+      {
+        "lane": "app",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 25.86,
+        "cachedGoPackages": 0,
+        "log": "app.log"
+      },
+      {
+        "lane": "ci",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 37.76,
+        "cachedGoPackages": 0,
+        "log": "ci.log"
+      },
+      {
+        "lane": "core",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 22.29,
+        "cachedGoPackages": 0,
+        "log": "core.log"
+      },
+      {
+        "lane": "domain",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 6.12,
+        "cachedGoPackages": 0,
+        "log": "domain.log"
+      },
+      {
+        "lane": "installer",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 6.94,
+        "cachedGoPackages": 0,
+        "log": "installer.log"
+      },
+      {
+        "lane": "scripts",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 60.71,
+        "cachedGoPackages": 0,
+        "log": "scripts.log"
+      },
+      {
+        "lane": "state",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 5.76,
+        "cachedGoPackages": 0,
+        "log": "state.log"
+      },
+      {
+        "lane": "updates",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 8.44,
+        "cachedGoPackages": 0,
+        "log": "updates.log"
+      },
+      {
+        "lane": "windows",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 19.52,
+        "cachedGoPackages": 0,
+        "log": "windows.log"
+      },
+      {
+        "lane": "xray",
+        "status": "passed",
+        "exitCode": 0,
+        "durationSeconds": 10.61,
+        "cachedGoPackages": 0,
+        "log": "xray.log"
+      }
+    ],
+    "failure": null,
+    "requiredNextGates": [
+      "Android JNI/APK and JVM tests",
+      "Windows native/UI build",
+      "isolated VPN/IPv4/IPv6/DNS/fault acceptance",
+      "signed release and upgrade acceptance"
+    ]
+  },
+  "scriptSuiteTimings": [
+    {
+      "suite": "scripts/qa/test-fast-validation-plan.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 2104
+    },
+    {
+      "suite": "scripts/qa/test-fast-validation-runner.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 8438
+    },
+    {
+      "suite": "scripts/qa/android-https-probe/test.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 3297
+    },
+    {
+      "suite": "scripts/qa/test-android-lifecycle-tools.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 146
+    },
+    {
+      "suite": "scripts/qa/android-dns-capture/test.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 2756
+    },
+    {
+      "suite": "scripts/qa/test-windows-transport-lifecycle.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 2213
+    },
+    {
+      "suite": "scripts/qa/test-windows-subscriptions.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 567
+    },
+    {
+      "suite": "scripts/qa/test-windows-subscriptions.ps1",
+      "powershell": "5.1",
+      "passed": true,
+      "elapsedMilliseconds": 1853
+    },
+    {
+      "suite": "scripts/qa/test-teardown-qa.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 65
+    },
+    {
+      "suite": "scripts/qa/test-teardown-qa.ps1",
+      "powershell": "5.1",
+      "passed": true,
+      "elapsedMilliseconds": 1340
+    },
+    {
+      "suite": "scripts/release/test-notice-inputs.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 146
+    },
+    {
+      "suite": "scripts/release/test-artifact-audit.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 3450
+    },
+    {
+      "suite": "scripts/release/test-android-notices.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 5827
+    },
+    {
+      "suite": "scripts/release/android-runtime-inventory-test.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 1730
+    },
+    {
+      "suite": "scripts/core/test-xray-patch.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 22608
+    },
+    {
+      "suite": "scripts/ci/test-build-impact.ps1",
+      "powershell": "7",
+      "passed": true,
+      "elapsedMilliseconds": 33487
+    }
+  ],
+  "originalSuiteHostPairs": 16,
+  "scope": "Same production checks and scripts suite/host pairs; new CI lane uses existing scheduler. No native/VPN acceptance.",
+  "comparison": {
+    "beforeSeconds": 89.9,
+    "afterSeconds": 82.03,
+    "beforeReport": "fast-validation-suite-timing-build14.json",
+    "observedReductionSeconds": 7.87,
+    "controlledBenchmark": false,
+    "note": "Local observations at different moments; guest and system load may differ. Planner/coordinator regression coverage also increased."
+  },
+  "sourceCommit": "db177258de41ae050f131cb0a4c38689ba5e748e"
+}

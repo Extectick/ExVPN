@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "analysis": "offline_primary_source_comparison",
+  "image": {
+    "revision": 16,
+    "source": "installed SDK build.prop",
+    "flavor": "sdk_gphone_x86_64-userdebug",
+    "tag": "google_apis",
+    "buildType": "userdebug",
+    "api": 30,
+    "guestDebuggablePropertyCaptured": false,
+    "sha256": "beaeee04d595c9775faab0dc9797c0e507b9f56168529da7f388e829338401fc",
+    "abi": "x86_64"
+  },
+  "previousOrdinaryShell": {
+    "uid": 2000,
+    "selinuxContext": "u:r:shell:s0",
+    "source": "saved baseline and fault controls"
+  },
+  "mostLikelyCause": "SELinux shell service_manager find restriction, not absent Binder registration",
+  "confidence": "Strong source/observation match; no runtime AVC was captured",
+  "networkMonitor": {
+    "netdSystemPermissionAllowsPhysicalNetwork": true,
+    "privateDnsBypassIsNotSufficientAloneToProveVpnBypass": true,
+    "priorPacketsAttributed": false,
+    "canUseExplicitUnderlyingNetwork": true
+  },
+  "recommendedObserver": "Preinstalled userdebug su 0 for only the read-only querylog subprocess; validate uid0 and su context first",
+  "comparison": {
+    "adbRoot": "Changes service.adb.root and restarts daemon, unnecessary for this narrower observer",
+    "su0": "Ephemeral observer child privilege; ADB daemon and app/probe UIDs stay ordinary",
+    "appPolicyOrTrustChangeRequired": false,
+    "setenforceOrRemountRequired": false
+  },
+  "sources": [
+    {
+      "lines": "115-134",
+      "sha256": "9817f8d2d3accfe68e33d09e1bb10cde544ea97f36126c994bc86a9e3347b254",
+      "url": "https://android.googlesource.com/platform/system/sepolicy/+/d0e936ce557427037fb1fcb013c24e425ac37b8d/public/shell.te#115",
+      "file": "shell.te",
+      "topic": "Shell list versus find"
+    },
+    {
+      "lines": "113-135",
+      "sha256": "119555f4a5af5404ea5eb397e603e0dd30007ec70de4e85f0a3b7ca9b330c248",
+      "url": "https://android.googlesource.com/platform/frameworks/native/+/fa13239bda4a96e9abbdcdafdf5ed902aeb07f84/cmds/servicemanager/Access.cpp#113",
+      "file": "Access.cpp",
+      "topic": "SELinux access check"
+    },
+    {
+      "lines": "130-153",
+      "sha256": "db6e090b67319a7ed7432ba93c6012cbb19198786c7a69115352b6e21bcdebe0",
+      "url": "https://android.googlesource.com/platform/frameworks/native/+/fa13239bda4a96e9abbdcdafdf5ed902aeb07f84/cmds/servicemanager/ServiceManager.cpp#130",
+      "file": "ServiceManager.cpp",
+      "topic": "Denied lookup becomes null"
+    },
+    {
+      "lines": "121-130",
+      "sha256": "d8bf1d0343dcd54afa2399b2c727c953c4449ff74b41d1db7924cef446292d31",
+      "url": "https://android.googlesource.com/platform/frameworks/native/+/fa13239bda4a96e9abbdcdafdf5ed902aeb07f84/cmds/service/service.cpp#121",
+      "file": "service.cpp",
+      "topic": "Service listing accepts missing binder"
+    },
+    {
+      "lines": "234-243,334-337",
+      "sha256": "34f99a0b34267b095f708bd8bc177f2167a10bdf344dd4af781864406382d761",
+      "url": "https://android.googlesource.com/platform/frameworks/native/+/fa13239bda4a96e9abbdcdafdf5ed902aeb07f84/cmds/dumpsys/dumpsys.cpp#234",
+      "file": "dumpsys.cpp",
+      "topic": "dumpsys hides inaccessible services"
+    },
+    {
+      "lines": "1-4,19-22",
+      "sha256": "9598d174761a29aaff8ec2c91a7bbf52e3bef2151d521d6c72fc3e2628f22134",
+      "url": "https://android.googlesource.com/platform/system/sepolicy/+/d0e936ce557427037fb1fcb013c24e425ac37b8d/private/su.te#1",
+      "file": "su.te",
+      "topic": "Per-command userdebug su observer"
+    },
+    {
+      "lines": "84-130",
+      "sha256": "f82a9b9a20a66687b5c3493125c5960cace2626c4c220185c70e568834bd07d8",
+      "url": "https://android.googlesource.com/platform/system/extras/+/8524862f32a1a7d6023659fb38e9e51d4a8c6dea/su/su.cpp#84",
+      "file": "su.cpp",
+      "topic": "Stock su accepts shell and selects uid"
+    },
+    {
+      "lines": "30-55",
+      "sha256": "9bc64e5b719b21cd64f631b694f27062ce810635d9a6567b6b70f8796d06df8e",
+      "url": "https://android.googlesource.com/platform/system/core/+/a790490ec973cd1799384a367da59d0200591c0a/adb/daemon/restart_service.cpp#30",
+      "file": "adb-restart-service.cpp",
+      "topic": "adb root changes property and restarts daemon"
+    },
+    {
+      "lines": "567-568,1740-1744,2372-2376",
+      "sha256": "db8d25890e12f672f566f29cd36929504cb150bbf34ebf84f0caca722f1056fe",
+      "url": "https://android.googlesource.com/platform/packages/modules/NetworkStack/+/d5c8bd813d5cf6b317541ee5cb8db3cb9ff83966/src/com/android/server/connectivity/NetworkMonitor.java#567",
+      "file": "NetworkMonitor.java",
+      "topic": "NetworkMonitor uses explicit monitored network"
+    },
+    {
+      "lines": "205-249,773-797",
+      "sha256": "27af7a23893be9cabf450c87ab40246d5dc051c8f805141707c384c923708793",
+      "url": "https://android.googlesource.com/platform/system/netd/+/4e0a5f13fc1018d0d5f60616c32b863277937134/server/NetworkController.cpp#205",
+      "file": "NetworkController.cpp",
+      "topic": "DNS explicit network and system network access"
+    }
+  ],
+  "noNewCapture": true,
+  "noPacketOwnerClaim": true
+}

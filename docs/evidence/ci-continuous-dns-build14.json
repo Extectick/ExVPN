@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "headSha": "648e2e2887e3954fd046444c94ffd9e12a22e152",
+  "runId": 39004750926,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/39004750926",
+  "status": "completed",
+  "conclusion": "success",
+  "createdAt": "2026-10-17T05:01:45Z",
+  "updatedAt": "2026-10-17T05:17:31Z",
+  "jobs": [
+    {
+      "name": "Windows",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T05:01:49Z",
+      "completedAt": "2026-10-17T05:09:23Z",
+      "durationSeconds": 454,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39004750926/job/117314811047",
+      "nativeArtifactUploaded": true
+    },
+    {
+      "name": "Android",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T05:01:49Z",
+      "completedAt": "2026-10-17T05:17:30Z",
+      "durationSeconds": 941,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39004750926/job/117314811134",
+      "nativeArtifactUploaded": true
+    }
+  ],
+  "scope": "Both native CI lanes passed after continuous DNS parser changes. Build success does not establish DNS attribution, installed Windows tray behavior or release readiness."
+}

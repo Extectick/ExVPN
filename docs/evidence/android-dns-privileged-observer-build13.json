@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "status": "HEADER_ACCESS_CONFIRMED_REQUESTER_RECORDS_UNCONFIRMED",
+  "originalStatus": "INDETERMINATE_CAPABILITY",
+  "originalFailure": "qa_capability_driver_error",
+  "originalStatusUnchanged": true,
+  "durationMs": 44040,
+  "maximumDurationMs": 120000,
+  "operation": "one_read_only_per_command_su_observer",
+  "findings": {
+    "observerRootIdentity": {
+      "confirmed": true,
+      "uid": 0,
+      "selinuxContext": "u:r:su:s0"
+    },
+    "harnessFailure": {
+      "sourceNotChangedOrRetried": true,
+      "errorId": "VariableNotWritable",
+      "guestOrProductFailure": false,
+      "stage": "assignment_after_read_only_shell_identity_command",
+      "variable": "ShellId",
+      "sameFailureReproducedOffline": true
+    },
+    "ordinaryShellAfter": {
+      "parsedOffline": true,
+      "confirmedBySavedCommand": true,
+      "uid": 2000,
+      "sha256": "66698d79e6dfbd3dc67f6e00cb60e67937f470d4b4a70fab1605229a12f53111",
+      "selinuxContext": "u:r:shell:s0"
+    },
+    "querylog": {
+      "uidPidRecordSchemaConfirmed": false,
+      "stderrBytes": 0,
+      "headerConfirmed": true,
+      "sha256": "21acd07243237b89fbf701e1868819339ea6775ae45acf1aa0ce130e8e4a4124",
+      "records": 0,
+      "bytes": 38,
+      "positiveRequesterControls": "NOT_TESTED"
+    }
+  },
+  "scope": {
+    "setenforce": false,
+    "packageInstall": false,
+    "original5564Action": "none",
+    "probes": false,
+    "appLaunch": false,
+    "settingsOrDebugWrites": false,
+    "adbRoot": false,
+    "remount": false,
+    "capture": false,
+    "vpnConnection": false,
+    "fullAttributionRun": false
+  },
+  "cleanup": {
+    "ownedPortsAbsent": true,
+    "ownedGuestAbsent": true,
+    "serviceAbsentBeforeQuery": true,
+    "frozenInputsUnchanged": true,
+    "originalIdentitiesPreserved": true,
+    "forcedOnlyOwnedProcesses": true,
+    "normalConsoleKillAttempted": true,
+    "watchdogCompleted": true
+  },
+  "proofManifestSha256": "f654bbfd93aad8b2f50334264e0c7f8bb1ba85817b0214bd0bc868f36ede339f",
+  "originalResultSha256": "e05540da3429b0023756b7a4439677c342f9f7fd0f120835c14cfe34706611db",
+  "sourceFindingsSha256": "acf5cb1ddf4c25805f9bce7c27ef907c481a629632b1656e8f820f3b1732c611",
+  "nextStep": "One positive uncached DNS requester control would still be required before any outage attribution. No such control was performed in this attempt.",
+  "previousDnsResult": "INDETERMINATE_UNCHANGED"
+}
