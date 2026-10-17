@@ -181,6 +181,16 @@ $sdkMissing = Join-Path $fixture 'SDK resolution/missing'
 New-Item -ItemType Directory -Path $sdkHome,$sdkLegacy,$sdkDefault -Force | Out-Null
 $sdkNotDirectory = Join-Path $fixture 'SDK resolution/file'
 [IO.File]::WriteAllText($sdkNotDirectory, 'not an SDK directory')
+$sdkAlias = Join-Path $fixture 'SDK resolution/home alias'
+$sdkEquivalentAlias = Join-Path $fixture 'SDK resolution/equivalent alias'
+$sdkDifferentAlias = Join-Path $fixture 'SDK resolution/different alias'
+$sdkAliasChain = Join-Path $fixture 'SDK resolution/alias chain'
+$sdkLinkedAncestor = Join-Path $fixture 'linked SDK parent'
+New-Item -ItemType Junction -Path $sdkAlias -Target $sdkHome | Out-Null
+New-Item -ItemType Junction -Path $sdkEquivalentAlias -Target $sdkHome | Out-Null
+New-Item -ItemType Junction -Path $sdkDifferentAlias -Target $sdkLegacy | Out-Null
+New-Item -ItemType Junction -Path $sdkAliasChain -Target $sdkAlias | Out-Null
+New-Item -ItemType Junction -Path $sdkLinkedAncestor -Target (Split-Path $sdkHome) | Out-Null
 $sdkEnvironmentBefore = @{}
 foreach ($name in @('ANDROID_HOME','ANDROID_SDK_ROOT','LOCALAPPDATA')) { $sdkEnvironmentBefore[$name] = [Environment]::GetEnvironmentVariable($name, 'Process') }
 try {
@@ -195,6 +205,20 @@ try {
     Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath ' ' } 'android_sdk_path_invalid'
     $env:ANDROID_SDK_ROOT=Join-Path $sdkHome './'
     if ((Get-ReleaseAndroidSdkPath) -cne $sdkHome) { throw 'Equivalent environment SDK paths conflicted.' }; $checks++
+    if ((Get-ReleaseAndroidSdkPath $sdkAlias) -cne $sdkHome) { throw 'Root SDK alias did not return the physical directory.' }; $checks++
+    $env:ANDROID_HOME=$sdkAlias; $env:ANDROID_SDK_ROOT=$sdkEquivalentAlias
+    if ((Get-ReleaseAndroidSdkPath) -cne $sdkHome) { throw 'Equivalent SDK aliases conflicted.' }; $checks++
+    $env:ANDROID_SDK_ROOT=$sdkHome
+    if ((Get-ReleaseAndroidSdkPath) -cne $sdkHome) { throw 'Alias and physical SDK paths conflicted.' }; $checks++
+    $env:ANDROID_SDK_ROOT=$sdkDifferentAlias
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath } 'android_sdk_environment_conflict'
+    if ((Get-ReleaseAndroidSdkPath $sdkAlias) -cne $sdkHome) { throw 'Explicit SDK alias did not override conflicting environment.' }; $checks++
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath $sdkAliasChain } 'linked_input_not_allowed'
+    Assert-RuntimeRefused { Get-ReleaseAndroidSdkPath (Join-Path $sdkLinkedAncestor 'home with spaces') } 'linked_input_not_allowed'
+    # The general audit policy remains strict even for the accepted SDK alias.
+    Assert-RuntimeRefused { Assert-AuditNoLinks $sdkAlias } 'linked_input_not_allowed'
+    if ($env:ANDROID_HOME -cne $sdkAlias -or $env:ANDROID_SDK_ROOT -cne $sdkDifferentAlias) { throw 'SDK alias resolution changed the process environment.' }; $checks++
+    $env:ANDROID_HOME=$sdkHome
     [Environment]::SetEnvironmentVariable('ANDROID_SDK_ROOT', $null, 'Process')
     if ((Get-ReleaseAndroidSdkPath) -cne $sdkHome) { throw 'ANDROID_HOME did not override the local default.' }; $checks++
     $env:ANDROID_HOME=$sdkMissing
@@ -328,11 +352,13 @@ $stripPinRelative='scripts/release/android-engine-transform.lock.json'
 $stripPinPath=Join-Path $runtimeFixture $stripPinRelative
 New-Item -ItemType Directory -Path (Split-Path $stripPinPath) -Force | Out-Null
 $stripSdk=Join-Path $runtimeFixture 'android-sdk'
+$stripSdkAlias=Join-Path $runtimeFixture 'android-sdk-alias'
 $stripNdk=Join-Path $stripSdk 'ndk/28.2.13676358'
 $stripToolPath=Join-Path $stripNdk 'toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-strip.exe'
 $stripPropsPath=Join-Path $stripNdk 'source.properties'
 Write-RuntimeFixture $stripToolPath 'synthetic strip, never executed'
 Write-RuntimeFixture $stripPropsPath "Pkg.Desc = Android NDK`nPkg.Revision = 28.2.13676358`n"
+New-Item -ItemType Junction -Path $stripSdkAlias -Target $stripSdk | Out-Null
 $stripPin=Get-Content (Join-Path $PSScriptRoot 'android-engine-transform.lock.json') -Raw | ConvertFrom-Json -AsHashtable
 $stripPin.tool.sha256=Get-AuditSha256 $stripToolPath; $stripPin.tool.size=(Get-Item $stripToolPath).Length
 $stripPin.sourceProperties.sha256=Get-AuditSha256 $stripPropsPath; $stripPin.sourceProperties.size=(Get-Item $stripPropsPath).Length
@@ -357,6 +383,16 @@ try {
         $script:stripInvocations -ne 2 -or @($transformed.engineBinaries | Where-Object { $_.sdkBytesMatched -or !$_.transformation.outputBytesMatched -or !$_.transformation.recalculated }).Count -ne 0 -or
         ($transformed | ConvertTo-Json -Depth 20) -match [regex]::Escape($runtimeFixture)) { throw 'Actual transform evidence was missing, overstated, or leaked paths.' }
     $checks++
+    $viaSdkAlias=Get-ReleaseAndroidPackagedFlutterEvidence $shorebird $stripFiles $runtimeFixture -AndroidSdkPath $stripSdkAlias
+    Assert-ReleaseFlutterRuntimeEvidence $viaSdkAlias $transformed
+    $resolvedAliasTool=Get-ReleaseAndroidStripTool $runtimeFixture $stripSdkAlias
+    if ($resolvedAliasTool.SdkRoot -cne $stripSdk -or $resolvedAliasTool.Executable -cne $stripToolPath) { throw 'SDK alias leaked into the pinned executable path.' }; $checks++
+    $nestedLinkSdk=Join-Path $runtimeFixture 'nested-link-sdk'
+    New-Item -ItemType Directory -Path $nestedLinkSdk | Out-Null
+    New-Item -ItemType Junction -Path (Join-Path $nestedLinkSdk 'ndk') -Target (Join-Path $stripSdk 'ndk') | Out-Null
+    $callsBefore=$script:stripInvocations
+    Assert-RuntimeRefused { Get-ReleaseAndroidPackagedFlutterEvidence $shorebird $stripFiles $runtimeFixture -AndroidSdkPath $nestedLinkSdk } 'linked_input_not_allowed'
+    if ($script:stripInvocations -ne $callsBefore) { throw 'Linked NDK input reached execution.' }; $checks++
     # Regression for the actual CI caller: its SDK is supplied by ANDROID_HOME,
     # while LOCALAPPDATA has no SDK. No explicit path or native binary is used.
     $sdkEnvironmentBefore=@{}
@@ -395,6 +431,7 @@ try {
     $callsBefore=$script:stripInvocations
     Write-RuntimeFixture $stripToolPath 'tampered before execution'
     Assert-RuntimeRefused { Get-ReleaseAndroidPackagedFlutterEvidence $shorebird $stripFiles $runtimeFixture -AndroidSdkPath $stripSdk } 'flutter_runtime_strip_tool_mismatch'
+    Assert-RuntimeRefused { Get-ReleaseAndroidPackagedFlutterEvidence $shorebird $stripFiles $runtimeFixture -AndroidSdkPath $stripSdkAlias } 'flutter_runtime_strip_tool_mismatch'
     if ($script:stripInvocations -ne $callsBefore) { throw 'Unpinned strip executable was invoked.' }; $checks++
     Write-RuntimeFixture $stripToolPath 'synthetic strip, never executed'
     Write-RuntimeFixture $stripPropsPath "Pkg.Revision = 27.0.0`n"

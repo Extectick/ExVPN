@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "status": "FOCUSED_CHECKS_PASS",
+  "ci": {
+    "runId": 39022959765,
+    "head": "ada44900d78a3f6a8dc2a33cab511e03208cc9e6",
+    "androidJobId": 117368266396,
+    "androidConclusion": "failure",
+    "windowsConclusion": "success",
+    "failure": "linked_input_not_allowed",
+    "failureStage": "post_build_packaged_flutter_checker",
+    "apkBuilt": true,
+    "rawJobLogSha256": "60719570399d5e9babceecfd352e0cb8ef4e465b5d1e1f05c93bd0cab21aba2f",
+    "imageTag": "win25-vs2026/20261007.264",
+    "imageSourceUrl": "https://github.com/actions/runner-images/blob/win25-vs2026/20261007.264/images/windows/scripts/build/Install-AndroidSDK.ps1",
+    "imageSourceGitBlob": "853fa25e01caf81ac86ed3b333c9fe3048c52f7e",
+    "imageSourceSha256": "9a4db3f31b0b4b2755ab7012d2ce45cedc6953958891d6db431d90f35a7953d7",
+    "imageSourceRelevantLines": [
+      8,
+      13,
+      84,
+      157,
+      158
+    ]
+  },
+  "regression": {
+    "redCode": "linked_input_not_allowed",
+    "redProofSha256": "b2a7ea802d1d64de17a7b59960df837b0309782db101c8bc602a6bbe5d966d8c",
+    "green": {
+      "junctionMatches": true,
+      "symbolicLinkMatches": true,
+      "hash": "b765db8429fa95431d9f0358bd8d8a5eb3f9dcfea3e77f5ccf945868f5c3ee1e"
+    },
+    "greenProofSha256": "0d22249ff5202873f64a5361c693e4f8133902da498010e39e26fff468f41890"
+  },
+  "contract": [
+    "single_root_directory_symlink_or_junction_to_existing_local_absolute_target",
+    "no_linked_ancestors_targets_or_nested_NDK_inputs",
+    "canonical_physical_environment_comparison",
+    "no_fallback_or_environment_mutation",
+    "unchanged_exact_NDK_tool_sourceProperties_and_transform_pins"
+  ],
+  "tests": [
+    {
+      "name": "notice-inputs",
+      "checks": 119,
+      "elapsedSeconds": 7.575,
+      "status": "PASS",
+      "logSha256": "087d711d7025e3db97b0fa140c6ed03265a1aa7debecffef934d6df6b47b0fad"
+    },
+    {
+      "name": "artifact-audit",
+      "checks": 72,
+      "elapsedSeconds": 5.167,
+      "status": "PASS",
+      "logSha256": "8b28f86e741c13bf264859f1e8a27def3a58c2e54fbe5f80dd3326e40f473f8d"
+    },
+    {
+      "name": "android-notices",
+      "checks": 44,
+      "elapsedSeconds": 9.628,
+      "status": "PASS",
+      "logSha256": "623e665623d2736dbd124ddd16bea14551914125cd722689780e0f117dad0a2c"
+    },
+    {
+      "name": "android-inventory",
+      "checks": 157,
+      "elapsedSeconds": 4.284,
+      "status": "PASS",
+      "logSha256": "8deefd6defe4782458adeaa3f4b45003943e988862d0711a347bfe7cfd703ee7"
+    }
+  ],
+  "readOnlyActualToolIdentity": {
+    "method": "ndk_llvm_strip",
+    "pin": {
+      "path": "scripts/release/android-engine-transform.lock.json",
+      "sha256": "ea18d008fdafb1bab62cb48670e9daf2a6311e8dee7b2b71775f054c7303cbbb"
+    },
+    "ndkVersion": "28.2.13676358",
+    "host": "windows-x86_64",
+    "tool": {
+      "path": "toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-strip.exe",
+      "sha256": "2d411db64e0b45508775e9e8fd436fb6e0af814a9dfbf8aea8fc37ce436c435c",
+      "size": 5914720
+    },
+    "sourceProperties": {
+      "path": "source.properties",
+      "sha256": "c00aa236fdb205e9be9edd9e2169763e48aca52735efff4e16f34205d49783b5",
+      "size": 108
+    },
+    "arguments": [
+      "--strip-unneeded",
+      "-o",
+      "output",
+      "input"
+    ]
+  },
+  "sourceFiles": [
+    {
+      "path": "scripts/release/flutter-runtime-inputs.ps1",
+      "sha256": "b765db8429fa95431d9f0358bd8d8a5eb3f9dcfea3e77f5ccf945868f5c3ee1e"
+    },
+    {
+      "path": "scripts/release/test-notice-inputs.ps1",
+      "sha256": "2dbdf0b6ec1839e25ee21feaaba8ac38adf1a4578d42f6439d9a71646cb051d7"
+    }
+  ],
+  "parsers": [
+    {
+      "path": "scripts/release/flutter-runtime-inputs.ps1",
+      "errors": 0
+    },
+    {
+      "path": "scripts/release/test-notice-inputs.ps1",
+      "errors": 0
+    }
+  ],
+  "diffCheck": "PASS",
+  "boundaries": {
+    "newBuilds": 0,
+    "ciRunsStarted": 0,
+    "guestOperations": 0,
+    "nativeToolExecutions": 0,
+    "changedPins": false,
+    "remoteFixVerified": false,
+    "historicalFailuresPreserved": true
+  },
+  "date": "2026-10-17",
+  "originalProof": "artifacts/qa/release-sdk-root-alias-79738d7677034400a2fc02e69d77f5a6/proof.json",
+  "originalProofSha256": "e541ace8279217eb9d64b7161193d04bedda1d63091d5a2793b7294311f292ff",
+  "rootReview": "Two-file change reviewed; both source hashes verified; runner SDK alias resolved without weakening nested input or exact transform checks.",
+  "sourceState": "working tree; commit pending"
+}

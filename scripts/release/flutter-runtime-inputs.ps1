@@ -169,38 +169,59 @@ function Assert-ReleaseFlutterNotices($Inventory, $Runtime) {
     }
 }
 
+function Resolve-ReleaseAndroidSdkDirectory([string]$Path) {
+    if ([string]::IsNullOrWhiteSpace($Path) -or ![IO.Path]::IsPathFullyQualified($Path)) { throw 'android_sdk_path_invalid' }
+    try { $selected = [IO.Path]::TrimEndingDirectorySeparator([IO.Path]::GetFullPath($Path)) }
+    catch { throw 'android_sdk_path_invalid' }
+    if (!(Test-Path -LiteralPath $selected -PathType Container)) { throw 'android_sdk_directory_missing' }
+    $item = Get-Item -LiteralPath $selected -Force
+    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        # Hosted Windows runners expose the SDK through one directory alias.
+        # Resolve only that root; ancestors, the target and all pinned NDK
+        # inputs retain the ordinary no-links policy. Never execute via alias.
+        Assert-AuditNoLinks ([IO.Path]::GetDirectoryName($selected))
+        $targets = @($item.Target)
+        if ($item.LinkType -cnotin @('SymbolicLink','Junction') -or $targets.Count -ne 1 -or
+            $targets[0] -isnot [string] -or $targets[0] -cnotmatch '^[A-Za-z]:[\\/]') { throw 'android_sdk_alias_invalid' }
+        try {
+            $targetPath = [IO.Path]::TrimEndingDirectorySeparator([IO.Path]::GetFullPath($targets[0]))
+            $target = $item.ResolveLinkTarget($false)
+        } catch { throw 'android_sdk_alias_invalid' }
+        if ($target -isnot [IO.DirectoryInfo] -or
+            ![IO.Path]::TrimEndingDirectorySeparator($target.FullName).Equals($targetPath, [StringComparison]::OrdinalIgnoreCase)) { throw 'android_sdk_alias_invalid' }
+        if (!(Test-Path -LiteralPath $targetPath -PathType Container)) { throw 'android_sdk_directory_missing' }
+        Assert-AuditNoLinks $targetPath
+        $selected = $targetPath
+    }
+    Assert-AuditNoLinks $selected
+    $selected
+}
+
 function Get-ReleaseAndroidSdkPath([string]$AndroidSdkPath = '') {
     # ANDROID_HOME is the Android-supported SDK location. SDK_ROOT is retained
     # for older callers, but conflicting environment roots must not silently
     # select a different installation. An explicit path overrides both.
-    $canonical = {
-        param([string]$Path)
-        if ([string]::IsNullOrWhiteSpace($Path) -or ![IO.Path]::IsPathFullyQualified($Path)) { throw 'android_sdk_path_invalid' }
-        try { [IO.Path]::TrimEndingDirectorySeparator([IO.Path]::GetFullPath($Path)) }
-        catch { throw 'android_sdk_path_invalid' }
-    }
-    if ($AndroidSdkPath.Length) { $selected = & $canonical $AndroidSdkPath }
+    if ($AndroidSdkPath.Length) { $selected = Resolve-ReleaseAndroidSdkDirectory $AndroidSdkPath }
     else {
         $androidHome = [Environment]::GetEnvironmentVariable('ANDROID_HOME', 'Process')
         $sdkRoot = [Environment]::GetEnvironmentVariable('ANDROID_SDK_ROOT', 'Process')
         if ($androidHome) {
-            $selected = & $canonical $androidHome
+            $selected = Resolve-ReleaseAndroidSdkDirectory $androidHome
             if ($sdkRoot) {
-                $legacy = & $canonical $sdkRoot
+                $legacy = Resolve-ReleaseAndroidSdkDirectory $sdkRoot
                 $comparison = if ($IsWindows) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
                 if (!$selected.Equals($legacy, $comparison)) { throw 'android_sdk_environment_conflict' }
             }
-        } elseif ($sdkRoot) { $selected = & $canonical $sdkRoot }
+        } elseif ($sdkRoot) { $selected = Resolve-ReleaseAndroidSdkDirectory $sdkRoot }
         else {
             $localAppData = [Environment]::GetEnvironmentVariable('LOCALAPPDATA', 'Process')
             if (!$localAppData) { throw 'android_sdk_path_unavailable' }
-            $selected = Join-Path (& $canonical $localAppData) 'Android/Sdk'
+            if ([string]::IsNullOrWhiteSpace($localAppData) -or ![IO.Path]::IsPathFullyQualified($localAppData)) { throw 'android_sdk_path_invalid' }
+            $selected = Resolve-ReleaseAndroidSdkDirectory (Join-Path $localAppData 'Android/Sdk')
         }
     }
-    # Do not fall back after a selected path is missing, invalid or linked.
-    if (!(Test-Path -LiteralPath $selected -PathType Container)) { throw 'android_sdk_directory_missing' }
-    Assert-AuditNoLinks $selected
-    [IO.Path]::GetFullPath($selected)
+    # Do not fall back after a selected SDK or its physical target is invalid.
+    $selected
 }
 
 function Get-ReleasePackagedFlutterEvidence($Runtime, $Files, [switch]$RequireByteMatch) {

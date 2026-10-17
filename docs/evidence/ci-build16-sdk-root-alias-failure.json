@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "appVersion": "0.1.0+16",
+  "sourceCommit": "ada44900d78a3f6a8dc2a33cab511e03208cc9e6",
+  "status": "completed",
+  "conclusion": "failure",
+  "runId": 39022959765,
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/39022959765",
+  "jobs": [
+    {
+      "name": "Android",
+      "conclusion": "failure",
+      "startedUtc": "2026-10-17T09:55:43Z",
+      "finishedUtc": "2026-10-17T10:12:46Z",
+      "durationSeconds": 1023,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39022959765/job/117368266396"
+    },
+    {
+      "name": "Windows",
+      "conclusion": "success",
+      "startedUtc": "2026-10-17T09:55:43Z",
+      "finishedUtc": "2026-10-17T10:04:26Z",
+      "durationSeconds": 523,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39022959765/job/117368266576"
+    }
+  ],
+  "androidFailure": {
+    "stage": "Post-build APK runtime provenance verification",
+    "error": "linked_input_not_allowed",
+    "reason": "Runner ANDROID_HOME is a directory symlink to the installed Android SDK; the selected root alias was rejected before checking NDK inputs",
+    "gradleTestsAndBuild": "PASS",
+    "logSha256": "60719570399d5e9babceecfd352e0cb8ef4e465b5d1e1f05c93bd0cab21aba2f",
+    "runnerImageTag": "win25-vs2026/20261007.264",
+    "runnerSdkInstallScriptSha256": "9a4db3f31b0b4b2755ab7012d2ce45cedc6953958891d6db431d90f35a7953d7",
+    "fixedRun": "pending"
+  },
+  "limitations": [
+    "Original failed result is retained. A later run must verify the root alias correction.",
+    "Ordinary Flutter CI builds do not verify Shorebird native OTA or VPN system acceptance."
+  ]
+}
