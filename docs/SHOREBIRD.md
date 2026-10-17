@@ -6,7 +6,8 @@
 штатный `shorebird init --display-name ExVPN` создал один проект **ExVPN**.
 `apps/exvpn/shorebird.yaml` содержит публичный app ID и `auto_update: false`;
 ключи и учётные данные в репозиторий не добавлены. Повторный `doctor --json`
-прошёл **6/6 validators**, все пять URL доступны. [Доказательство](evidence/shorebird-project-doctor.json).
+прошёл **6/6 validators**, все пять URL доступны; тот же результат подтверждён
+из основного `V:/GitProjects/ExVPN/apps/exvpn`. [Доказательство](evidence/shorebird-project-doctor.json).
 Первая попытка init в новой рабочей копии остановилась до создания проекта из-за
 отсутствующих ignored Gradle wrapper files; использованы точные локальные копии
 wrapper закреплённого проекта. APK ради init не пересобирался.
@@ -41,6 +42,11 @@ updater. Подготовленный патч применяется тольк
 текстом. Реальный adapter на обычном Flutter test engine подтвердил unavailable.
 Эти проверки не заменяют release → signed patch → restart → rollback на
 Android/Windows. Работа с публичным Shorebird runtime ещё не проверена.
+
+После интеграции в основное рабочее дерево полный быстрый прогон прошёл
+**11/11 наборов за 121,65 с**, включая **493 Dart/Flutter-теста** и Go-проверки
+без result cache. Отпечаток исходников до/после совпал. Независимый review
+16 файлов клиента не выявил замечаний. [Результаты +15](evidence/fast-validation-shorebird-build15.json).
 
 ## Установка для пользователя, 2026-10-17
 

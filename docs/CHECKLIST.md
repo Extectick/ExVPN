@@ -30,6 +30,11 @@
 
 ## E1 — Технический прототип и обязательный gate
 
+Диагностика EXVPN-E1-009, 2026-10-17: два ограниченных запуска отдельного
+Android API30 AVD не дождались завершения загрузки ОС. DNS observer не
+запускался, разрешение и UID callback не проверены. Обе очистки PASS;
+прежний DNS gate остаётся INDETERMINATE. [Доказательства](evidence/android-dns-listener-preflight.json).
+
 Диагностика EXVPN-E1-009, 2026-10-17: отдельный Android DNS requester control
 PASS за 59,230 с — один вызов обычного приложения сопоставлен с UID, наблюдаемым
 PID, netId и временем в querylog. VPN не запускался; прежние DNS-пакеты остаются
@@ -184,6 +189,12 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   Дополнение 2026-10-16: build +3 различает потерю транспорта и guard после рестарта службы, показывает действие «Отключить». Повторный Flutter/SCM fault run подтвердил коды и тексты на работающем UI; сетевые проверки/cleanup прошли. 18 релевантных tests и analyze пройдены. [Отчёт +3](evidence/windows-scm-failure-build3.json), [скриншот](evidence/windows-scm-restarted-build3.png), исходники [e22a748](https://github.com/Extectick/ExVPN/commit/e22a748dd1fde206dd4fed8208e93b329636b652).
   Дополнение 2026-10-16: реальный Flutter UI импортировал семь узлов, выбрал строки, подключил/отключил каждый через native service. [Снимок XHTTP](evidence/windows-flutter-sandbox-xhttp.png) снят с работающего RenderRepaintBoundary, не из web demo. Трей, DPI, системный IME и полный reconnect этой проверкой не закрываются. Исходники [625a875](https://github.com/Extectick/ExVPN/commit/625a875).
 - [ ] **EXVPN-E5-004** — Подготовить NSIS upgrade/uninstall и восстановление сети. Зависимости: E5-001–003. Критерий: чистая установка, upgrade, неудачный upgrade и uninstall не оставляют чужие/повреждённые DNS, маршруты, фильтры; чужие правила сохраняются.
+  Дополнение 2026-10-17: настоящий NSIS rollback **+13 → +12** и recovery
+  **+12 → +13** прошли с проверкой полного payload и восстановления сети.
+  Первый запуск остановился на несовместимом QA token owner, второй — на
+  ошибке совместного чтения журнала стенда. Independent HTTPS/DNS и locked-file
+  upgrade/uninstall в этих попытках не достигнуты. Исходные REFUSED сохранены;
+  финальная очистка PASS, прежние backups не изменены. [Частичный отчёт](evidence/windows-maintenance-build13-partial.json).
   Дополнение 2026-10-17: upgrade **+4 → +5** прошёл exit 0; после отдельного storage recovery run encrypted baseline, production binding, маршруты/DNS восстановлены, guard/TUN отсутствуют. [Отчёт](evidence/windows-policy-recovery-build5.json), [fd08979](https://github.com/Extectick/ExVPN/commit/fd089794723f1db0ede022e01804b4026e90de80).
   Дополнение 2026-10-17: NSIS upgrade **+3 → +4** с обновлением service binary прошёл exit 0. QA Refresh принимает новый бинарник только по защищённому installed manifest при сохранённых owner SID/production binding; обходов IPC ACL нет. После fault run сеть восстановлена. [Отчёт](evidence/windows-policy-build4.json), [c3061b4](https://github.com/Extectick/ExVPN/commit/c3061b489608cc37b767479436a2bac16f0b5a73).
   Дополнение 2026-10-16: NSIS upgrade **+2 → +3** завершился exit 0; owner SID и service binary сохранены. После повторного теста отказов служба Running с production client path, TUN/guard отсутствуют, route/DNS hashes совпали. [Обезличенный отчёт](evidence/windows-scm-failure-build3.json), стенд [f83ab84](https://github.com/Extectick/ExVPN/commit/f83ab845515d7f9a0208422d06458de2076c6d9c).
@@ -203,9 +214,11 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   check/download, реальные current/next patch, обработка rollback/ошибок и
   неизменяемый подпиской build track. Автоматического перезапуска VPN нет.
   [Контракт](SHOREBIRD.md), [doctor](evidence/shorebird-project-doctor.json).
-  SDK/controller/widget проверки пройдены; signed release/patch/rollback и
-  изоляция каналов на устройствах пока не подтверждены. Рабочее дерево;
-  commit ожидается.
+  Full: **11/11 за 121,65 с**, **493 Dart/Flutter-теста**, Go без result cache;
+  fingerprint совпал. [Проверки +15](evidence/fast-validation-shorebird-build15.json).
+  Signed release/patch/rollback и
+  изоляция каналов на устройствах пока не подтверждены. Исходники:
+  [30af3e6](https://github.com/Extectick/ExVPN/commit/30af3e6619e13e5b9ceeca9d540b578fa9ac8696).
   Дополнение 2026-10-17: CLI 1.6.129 добавлен в user PATH; на прежнем commit
   исправлены branch/upstream для doctor и путь к тому же JBR 21.0.6.
   Doctor: 5/6 validators PASS, пять URL доступны; остаётся конфигурация проекта.
@@ -239,6 +252,10 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   Предварительная локальная проверка 2026-10-17: 92 selector/graph/JUnit fixtures PASS; точный Android helper в чистом source archive прошёл 8/8 за 43,13 с, SDK/dependency caches общие. Независимый review не оставил замечаний. [Доказательство](evidence/ci-build-impact-build11.json), [правила и docs-only граница](CI.md). Исходники [9d035ae](https://github.com/Extectick/ExVPN/commit/9d035aee717604dafa31e0b2818b3767bfac0efe). Этот локальный результат сам по себе не закрывал фактический GitHub QA-only gate.
 
 - [x] **EXVPN-E7-005** — Ускорить локальную проверку и разделить разработку между агентами. Зависимость: E1 toolchain, E7-001. Критерий: одна команда выбирает тесты с учётом зависимостей, параллельно запускает готовые Dart/Flutter/Go runners, сохраняет результаты и не скрывает ошибки/изменения исходников; итоговый полный быстрый прогон проходит после завершения записи агентами. Системная приёмка остаётся отдельной.
+  Дополнение +15, 2026-10-17: **11/11 за 121,65 с**, 493 Dart/Flutter-теста,
+  Go result cache отключён; source fingerprint совпал. [Отчёт](evidence/fast-validation-shorebird-build15.json),
+  исходники [30af3e6](https://github.com/Extectick/ExVPN/commit/30af3e6619e13e5b9ceeca9d540b578fa9ac8696).
+  Это измерение полного прогона, не сравнение ускорения при одинаковой нагрузке.
   Дополнение 2026-10-17: измерены все 16 служебных наборов; CI fixtures вынесены
   в независимую очередь существующего runner. Итоговый Full после freeze —
   **11/11 за 82,03 с**, fingerprint совпал, Go result cache отключён. Прежние

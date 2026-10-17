@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "task": "EXVPN-E1-009",
+  "status": "INDETERMINATE_CAPABILITY",
+  "target": "Separate owned Android API30 x86_64 emulator; original emulator untouched",
+  "attempts": [
+    {
+      "id": "control-ownerfix",
+      "status": "INDETERMINATE_CAPABILITY",
+      "startedAtUtc": "2026-10-17T07:35:05.4128137Z",
+      "durationMs": 80561,
+      "failureCode": "qa_capability_boot_deadline",
+      "bounds": {
+        "totalSeconds": 120,
+        "bootSeconds": 60,
+        "observerSelfDeadlineSeconds": 60,
+        "withinTotalBound": true
+      },
+      "phases": {
+        "hostOwnershipAndWatchdog": "PASS",
+        "guestBoot": "NOT_READY",
+        "vpnServicePreflight": "NOT_REACHED",
+        "observerRegistration": "NOT_TESTED",
+        "networkStackPermission": "NOT_TESTED",
+        "listenerFullHostnameAndUid": "NOT_TESTED",
+        "ordinaryUidPositiveControl": "NOT_TESTED",
+        "guestCleanup": "PASS"
+      },
+      "actualActions": {
+        "ordinaryDnsNonceInvocations": 0,
+        "observerStarted": false,
+        "observerStaged": false,
+        "vpnConnections": 0,
+        "uiActions": 0,
+        "apkInstalls": 0,
+        "captures": 0,
+        "osSettingsChanges": 0,
+        "adbRootRemountSetenforce": 0,
+        "hostNetworkTrustChanges": 0,
+        "systemListenerChanges": 0
+      },
+      "cleanup": {
+        "guestStopped": true,
+        "normalConsoleShutdownRequested": true,
+        "forcedOwnedGuestShutdown": true,
+        "processGenerationHandleGuard": true,
+        "allOwnedProcessStates": "absent",
+        "watchdogCompleted": true,
+        "listenerCleanup": "NOT_REQUIRED_NOT_STARTED",
+        "remoteStagingCleanup": "NOT_REQUIRED_NOT_STAGED",
+        "originalIdentitiesPreserved": true,
+        "settingsAndProtectedStoreReadback": "NOT_REACHED"
+      },
+      "buildAndOffline": {
+        "nativeBuild": "PASS",
+        "target": "x86_64-linux-android30",
+        "ndk": "27.1.12297006",
+        "aidlBuildTools": "35.0.0",
+        "aidlVersion": 1,
+        "nativePolicy": "PASS",
+        "listenerFixtures": 49,
+        "ownerFixtures": 25,
+        "nativeBinarySha256": "2c8f16eecdc29d05954fb864ccddf4e25c5a3cc73f8f2de5186d3a8d6db67e6d",
+        "consumedInputs": 50,
+        "inputsUnchanged": true,
+        "inputSealSha256": "f7d2833c0a2343f15fc2ebd7ecf887bc7a668df160dcd10165f13c992e23f9ad",
+        "independentReview": "PASS"
+      },
+      "candidateSha256": "4d93aca098aecd56e6743b61eb928db1009a035e67c15fc2a6d2188b47e9c994",
+      "privateProofManifestSha256": "bda7dbd19dd065edd8ddec758551975ae77bd8af85d4ca4a8788d5f9e2c520ec",
+      "privateFilesVerified": 356
+    },
+    {
+      "id": "control-180s",
+      "status": "INDETERMINATE_CAPABILITY",
+      "startedAtUtc": "2026-10-17T07:45:33.7504437Z",
+      "durationMs": 109788,
+      "failureCode": "qa_capability_boot_deadline",
+      "bounds": {
+        "totalSeconds": 180,
+        "bootSeconds": 90,
+        "controlSeconds": 60,
+        "cleanupSeconds": 30,
+        "observerSelfDeadlineSeconds": 60,
+        "withinTotalBound": true,
+        "measuredCleanupMs": 13081.436,
+        "withinCleanupBound": true
+      },
+      "phases": {
+        "hostOwnershipAndWatchdog": "PASS",
+        "guestBoot": "NOT_READY",
+        "vpnServicePreflight": "NOT_REACHED",
+        "observerRegistration": "NOT_TESTED",
+        "networkStackPermission": "NOT_TESTED",
+        "listenerFullHostnameAndUid": "NOT_TESTED",
+        "ordinaryUidPositiveControl": "NOT_TESTED",
+        "guestCleanup": "PASS"
+      },
+      "actualActions": {
+        "ordinaryDnsNonceInvocations": 0,
+        "observerStarted": false,
+        "observerStaged": false,
+        "vpnConnections": 0,
+        "uiActions": 0,
+        "apkInstalls": 0,
+        "captures": 0,
+        "osSettingsChanges": 0,
+        "adbRootRemountSetenforce": 0,
+        "hostNetworkTrustChanges": 0,
+        "systemListenerChanges": 0
+      },
+      "cleanup": {
+        "guestStopped": true,
+        "normalConsoleShutdownRequested": true,
+        "forcedOwnedGuestShutdown": true,
+        "processGenerationHandleGuard": true,
+        "allOwnedProcessStates": "absent",
+        "watchdogCompleted": true,
+        "listenerCleanup": "NOT_REQUIRED_NOT_STARTED",
+        "remoteStagingCleanup": "NOT_REQUIRED_NOT_STAGED",
+        "originalIdentitiesPreserved": true,
+        "settingsAndProtectedStoreReadback": "NOT_REACHED"
+      },
+      "buildAndOffline": {
+        "nativeBuild": "PASS",
+        "target": "x86_64-linux-android30",
+        "ndk": "27.1.12297006",
+        "aidlBuildTools": "35.0.0",
+        "aidlVersion": 1,
+        "nativePolicy": "PASS",
+        "listenerFixtures": 49,
+        "ownerFixtures": 25,
+        "nativeBinarySha256": "2c8f16eecdc29d05954fb864ccddf4e25c5a3cc73f8f2de5186d3a8d6db67e6d",
+        "consumedInputs": 53,
+        "inputsUnchanged": true,
+        "inputSealSha256": "e7dc6bcc40061ea128c95d795074268edee3f861424142aa8fa82a2b481ff212",
+        "independentReview": "PASS",
+        "deadlineAstChecks": 8,
+        "previousListenerAndOwnerFixturesReusedForUnchangedInputs": true
+      },
+      "candidateSha256": "88ac57a981b7b5a0b5f01d90208e80dfd3ca8221c64c35deda1c064981321043",
+      "privateProofManifestSha256": "273f348d23d41002a669f38ce856c339ce47e57b898aa44f0dfcc9a6827339be",
+      "privateFilesVerified": 432
+    }
+  ],
+  "coordinatorVerification": {
+    "allPrivateProofFilesVerified": true,
+    "mismatches": 0
+  },
+  "limitations": [
+    "No observer registration, permission or hostname/requester-UID callback test was reached.",
+    "No new VPN traffic, IPv6 or physical-device acceptance.",
+    "Earlier continuous DNS result remains INDETERMINATE and strict gate false.",
+    "Boot cause not established by these attempts; subsequent read-only diagnosis is separate."
+  ]
+}

@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "kind": "windows-maintenance-bounded-evidence",
+  "date": "2026-10-17",
+  "status": "PARTIAL_REFUSED",
+  "task": "EXVPN-E5-004",
+  "productVersion": "0.1.0+13",
+  "ownedDisposableSandbox": true,
+  "computerUse": false,
+  "hostNetworkChanged": false,
+  "artifacts": [
+    {
+      "uiSha256": "2d64a954e8a1d964dc426f688d90fdd0de525e03e92aac2931603084c1161984",
+      "build": 12,
+      "serviceSha256": "5c37eb78c2b0eca734b59983c45d6a72f494ea4bb89c7eec19e4137ee26b621b",
+      "installerSha256": "9fe1fb1de8f40002d7f4e7c8f7a92379e237c133c21db2409fe514f73974990a"
+    },
+    {
+      "uiSha256": "e7299a563e2b81d41f334ec6d8f612971c18a58f8fd826323036503d1ba66299",
+      "build": 13,
+      "serviceSha256": "3582d238cf50419fc43c596b539c99a374effe19c99d3382e9aac68ef3626e72",
+      "installerSha256": "fea39fdfa7e228dec3c9906f27e560912361ffaccd09f9111028a91450c68215"
+    }
+  ],
+  "attempts": [
+    {
+      "runId": "2ae68bba-9693-4b0c-9719-4732b897f0ca",
+      "verdict": "REFUSED",
+      "classification": "QA setup token-owner rejection",
+      "basis": "Observed SYSTEM TokenOwner conflicts with exact NSIS Administrators owner guard before staging/extraction/package.ps1",
+      "installerExitCodes": [
+        2,
+        2
+      ],
+      "productRollbackTested": false,
+      "uiActions": 0,
+      "vpnConnects": 0,
+      "sourceSealSha256": "30c08047b3b9caf62af4ee519c66ecb92d4cb61255660a055a390f8668d94434",
+      "hostSummarySha256": "9abd981ca3100e8d0f3295b6a6eeab1b1adc49578888adb6b1c99888d2f499d8",
+      "originalCoordinatorCleanupPassed": false,
+      "separateOwnedCleanup": {
+        "status": "PASS",
+        "separateFromOriginalCoordinator": true,
+        "originalCoordinatorCleanupPassed": false,
+        "installedBuild": 13,
+        "stateHashUnchanged": true,
+        "sameServicePid": true,
+        "networkHashUnchanged": true,
+        "guardArmed": false,
+        "tunnelPresent": false,
+        "oldBackupsUnchanged": true,
+        "ownedSentinelRemoved": true,
+        "ownedFilesRemoved": 11,
+        "fixture": "owned_stopped",
+        "storageFiles": 0
+      },
+      "timing": {
+        "hostCoordinatorMs": 92842,
+        "coordinatorCleanupMs": 9727,
+        "laterOwnedCleanupMs": 38571
+      },
+      "cleanupReportSha256": "3b3f89a4e9398ddbacd93fc627cdca7de90f0abd75168abc3d9f3bdbc268ad73"
+    },
+    {
+      "runId": "4f4b2739-321e-4ed7-ae33-74be961ee64e",
+      "verdict": "REFUSED",
+      "classification": "QA live fixture-log reader sharing violation",
+      "sourceSealSha256": "d33a34965c19977db01ddc6a4a469261660397bfe070df034ac17f3ee12c802d",
+      "hostSummarySha256": "3a6637ba91702444744a336ef5f8d669e175687746d88c51814cb7dade2d9c2b",
+      "rollback": {
+        "status": "PASS",
+        "fromBuild": 13,
+        "toBuild": 12,
+        "installerExitCode": 0,
+        "installerQuiescent": true,
+        "completeInstalledPayloadVerified": true,
+        "networkRestored": true,
+        "oldBackupsUnchanged": true,
+        "reportSha256": "8f77f6eb1a4a54bc4c6f07eea2a70c8245647db75e48d513e3670bf4aad6257e"
+      },
+      "ordinaryUi": {
+        "status": "PASS",
+        "completedSteps": 8,
+        "importAndExactSelectionVerified": true,
+        "connectCommandCompleted": true,
+        "inputContract": "Targeted printable ASCII WM_CHAR; not keyboard/IME acceptance"
+      },
+      "connectedObservation": {
+        "status": "NATIVE_ONLY",
+        "guardArmed": true,
+        "tunnelPresent": true,
+        "serviceOwnedEstablishedConnections": 1,
+        "independentHttps": "NOT_RUN",
+        "independentDns": "NOT_RUN",
+        "hostCounterGate": "REFUSED_BEFORE_BASELINE",
+        "vpnTrafficAcceptancePassed": false,
+        "reportSha256": "0ae97ad7b9884b49fa816e099f61a033f36a8940cc464db7829786e30777532d"
+      },
+      "remainingMatrix": {
+        "lockedFileUpgrade": "NOT_RUN",
+        "successfulUpgradeMainPhase": "NOT_RUN",
+        "lockedFileUninstall": "NOT_RUN",
+        "stoppedAndLatchedUninstall": "NOT_RUN"
+      },
+      "recovery": {
+        "status": "PASS",
+        "via": "Reviewed explicit maintenance recovery and exact +13 installer",
+        "finalBuild": 13,
+        "completeInstalledPayloadVerified": true,
+        "networkRestored": true,
+        "reportSha256": "3cc58b8acb28a21ce3c6dfecd0a0a8155da91910882fc20e3c7a65c73331bcc3"
+      },
+      "cleanup": {
+        "status": "PASS",
+        "coordinatorCleanupPassed": true,
+        "serviceState": "Running",
+        "productionBindingVerified": true,
+        "ownerSame": true,
+        "installedStateSha256": "0d1f61f3fca27753f246ffefb2bada17d0b90ce54107f662f6ad79464bfcfc80",
+        "installedStateChangedAsExpected": true,
+        "newServicePidExpected": true,
+        "networkHashUnchanged": true,
+        "guardArmed": false,
+        "tunnelPresent": false,
+        "oldBackupCount": 12,
+        "oldBackupsUnchanged": true,
+        "sentinelRemoved": true,
+        "ownedProtectedFilesRemoved": 13,
+        "fixture": "owned_stopped",
+        "ownedUi": "closed_or_not_started",
+        "storageFileCount": 0,
+        "cleanupReportSha256": "638ffb3e09e9940778914b312de45e1d54d7e4d356b2ebf6930ee34c200f1a61",
+        "storageReportSha256": "d3be3560d10b2cae648d59aefbf2cb2d494214dd4de49741056b893f9e9adaf5"
+      },
+      "timing": {
+        "hostCoordinatorElapsedMs": 474017,
+        "hostFinallyElapsedMs": 153563,
+        "guestRollbackElapsedMs": 98147,
+        "guestRecoveryElapsedMs": 91417,
+        "guestCleanupElapsedMs": 44814,
+        "scope": "Host stopwatch includes WSB orchestration and finally. Guest phase stopwatches are separate scopes; not a shared clock interval."
+      }
+    }
+  ],
+  "liveReaderCorrection": {
+    "status": "FOCUSED_TESTS_PASS_RUNTIME_NOT_RUN",
+    "candidateHostSha256": "db9535c2d1c67ca59fa02339445bcef2466d2b79e48406ffe07864edf251d25e",
+    "testSha256": "7e2c9d1f2549976149261c248f46131545e74dbe60e0cc31cc6b4b8d20a7a84a",
+    "proofSha256": "953b25cdeb95ee4b70c93b213350fcead4fcd7343a1c05785652c93a77c7f404",
+    "maximumBytes": 4194304,
+    "sharing": "ReadWrite",
+    "deleteSharing": false,
+    "completeLfRecordsOnly": true,
+    "checks": [
+      {
+        "resultSha256": "9bc735e4269b73c1534a810550f3aadd107b54f4af95c8bc0731e2ad54c6ac19",
+        "checks": 17,
+        "powershell": "5.1.26100.9711"
+      },
+      {
+        "resultSha256": "c021dc836d70dfd8fc2241bed59edaca671d3c248227bc71e127de5d850b00ec",
+        "checks": 17,
+        "powershell": "7.6.7"
+      }
+    ],
+    "realOpenWriterRegression": true
+  },
+  "limitations": [
+    "Both original REFUSED verdicts and their raw outputs are retained.",
+    "The first attempt was a QA setup refusal, not a product rollback test.",
+    "The second verified real rollback and native tunnel state but did not reach independent HTTPS/DNS or failure-injection/uninstall acceptance.",
+    "The live-reader correction has only host fixtures; no subsequent matrix has run.",
+    "The installed +13 development package is not a stable signed release."
+  ],
+  "privateEvidence": {
+    "manifestSha256": "0bf2d0309d64309d0e246fe283bd3c4eb53a84ed7ed4a4549c7c5ccf923b9ec6",
+    "fileCount": 206,
+    "privateSummarySha256": "e3c49bfc030fcfc803572c284897dae59e8de58714348e3dab00514e114483f6"
+  }
+}

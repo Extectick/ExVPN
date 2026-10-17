@@ -3,6 +3,16 @@
   "checkedAtUtc": "2026-10-17T07:35:35.7676576Z",
   "status": "PASS",
   "scope": "CLI authentication, project initialization and doctor; no release or patch",
+  "mainWorkspaceVerification": {
+    "completedAtUtc": "2026-10-17T07:51:53Z",
+    "workspace": "V:/GitProjects/ExVPN/apps/exvpn",
+    "exitCode": 0,
+    "status": "success",
+    "validatorsPassed": 6,
+    "validatorsTotal": 6,
+    "reachableUrls": 5,
+    "rawReportSha256": "babe13b12b1771cfabd9735a1623afc0fe9e1164455f878678cfb7d99ee3e0c4"
+  },
   "account": {
     "authenticated": true,
     "plan": "free"
@@ -79,6 +89,8 @@
       "reachable": true
     }
   ],
+  "sourceCommit": "30af3e6619e13e5b9ceeca9d540b578fa9ac8696",
+  "sourceHashBasis": "UTF-8 source content with CRLF normalized to LF; checkout line endings may differ",
   "sources": [
     {
       "path": "apps/exvpn/shorebird.yaml",
@@ -86,7 +98,7 @@
     },
     {
       "path": "scripts/bootstrap/shorebird.lock.json",
-      "sha256": "93bebdbf5644d5c25386f60dafb456f01fe6add3be09a427e93afe7d447ae3e7"
+      "sha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305"
     }
   ],
   "privateEvidence": [
@@ -124,6 +136,10 @@
     },
     {
       "name": "doctor-project-private.json",
+      "sha256": "babe13b12b1771cfabd9735a1623afc0fe9e1164455f878678cfb7d99ee3e0c4"
+    },
+    {
+      "name": "doctor-main-private.json",
       "sha256": "babe13b12b1771cfabd9735a1623afc0fe9e1164455f878678cfb7d99ee3e0c4"
     }
   ],

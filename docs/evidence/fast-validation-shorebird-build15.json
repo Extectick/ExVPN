@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "date": "2026-10-17",
+  "appVersion": "0.1.0+15",
+  "sourceCommit": "30af3e6619e13e5b9ceeca9d540b578fa9ac8696",
+  "scope": "Full behavioral checks after Shorebird client integration in V:/GitProjects/ExVPN; not native build or signed patch acceptance",
+  "startedAt": "2026-10-17T14:48:05.2823531+07:00",
+  "endedAt": "2026-10-17T14:50:06.9387488+07:00",
+  "durationSeconds": 121.65,
+  "maxParallel": 3,
+  "testConcurrency": 2,
+  "sourceUnchanged": true,
+  "sourceFingerprintBefore": "f229f25c1c16a4874448c0eec52792e433344107f5705c8ae619b2a42f7856d4",
+  "sourceFingerprintAfter": "f229f25c1c16a4874448c0eec52792e433344107f5705c8ae619b2a42f7856d4",
+  "goResultCacheAllowed": false,
+  "lanes": [
+    {
+      "lane": "android",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 14.29,
+      "cachedGoPackages": 0,
+      "log": "android.log"
+    },
+    {
+      "lane": "app",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 59.07,
+      "cachedGoPackages": 0,
+      "log": "app.log"
+    },
+    {
+      "lane": "ci",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 58.85,
+      "cachedGoPackages": 0,
+      "log": "ci.log"
+    },
+    {
+      "lane": "core",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 27.55,
+      "cachedGoPackages": 0,
+      "log": "core.log"
+    },
+    {
+      "lane": "domain",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 7.97,
+      "cachedGoPackages": 0,
+      "log": "domain.log"
+    },
+    {
+      "lane": "installer",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 9.58,
+      "cachedGoPackages": 0,
+      "log": "installer.log"
+    },
+    {
+      "lane": "scripts",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 104.28,
+      "cachedGoPackages": 0,
+      "log": "scripts.log"
+    },
+    {
+      "lane": "state",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 7.56,
+      "cachedGoPackages": 0,
+      "log": "state.log"
+    },
+    {
+      "lane": "updates",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 12.7,
+      "cachedGoPackages": 0,
+      "log": "updates.log"
+    },
+    {
+      "lane": "windows",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 12.3,
+      "cachedGoPackages": 0,
+      "log": "windows.log"
+    },
+    {
+      "lane": "xray",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 15.68,
+      "cachedGoPackages": 0,
+      "log": "xray.log"
+    }
+  ],
+  "dartFlutterTests": {
+    "domain": 192,
+    "state": 57,
+    "updates": 31,
+    "app": 213,
+    "total": 493
+  },
+  "reportPath": "artifacts/qa/fast-20261017-074805-d8f8c439/summary.json",
+  "reportSha256": "c0de477d8961d84d95fb5c76a1e5f62f93092fb9d7f11463a16f5f768c92ca4f",
+  "logs": [
+    {
+      "file": "android.log",
+      "sha256": "8696fbc93b977f09f81f9daf9f41d1b213fd5c314fd6d65afea40dc9d6a5737b"
+    },
+    {
+      "file": "app.log",
+      "sha256": "b96071412672a05025d4800a16b58aa517efc064e6e55a8eb676b427029e5053"
+    },
+    {
+      "file": "ci.log",
+      "sha256": "5c9fe1d0fd5f46123eb63f50e3c43d7ff62b3fbcc399bc7944cf9888cf6d733c"
+    },
+    {
+      "file": "core.log",
+      "sha256": "78ae8a7eb4a72222bb58ea81670d46acc95a5be5b7fa205cf7337db7a9638026"
+    },
+    {
+      "file": "domain.log",
+      "sha256": "ff94e0d30d46612c794844e73000b821b8626266907e6aaf10d00d5d3e038e3e"
+    },
+    {
+      "file": "installer.log",
+      "sha256": "7cdb63234b9ff8dcae1fb51be26d2eab23969e699fc0a6e33f17e8e7d81785e2"
+    },
+    {
+      "file": "scripts.log",
+      "sha256": "3be0412021f92fb3e422ab5c2a155681e5b4483bdada685748fea6002554f892"
+    },
+    {
+      "file": "state.log",
+      "sha256": "c4c9c229c731874abd3ad5e6070b928c45c932df22a6abfbf4b3f78ba91561a9"
+    },
+    {
+      "file": "updates.log",
+      "sha256": "221cb9c6efdba49f0bfe4ad63133302d24a9930e2bf97db9c8c257e714965e2d"
+    },
+    {
+      "file": "windows.log",
+      "sha256": "748f7def6fc1e0ed9211726a6c58719103d6805d68e0b9a8873ebc343154524e"
+    },
+    {
+      "file": "xray.log",
+      "sha256": "4784f6edd53d00796c4480297c642e8e757f64c7a5a6eb3153888db5afaf997e"
+    }
+  ],
+  "review": {
+    "status": "no actionable findings",
+    "scope": "16 app source/test/config/lock files",
+    "independent": true
+  },
+  "limitations": [
+    "28 new controller/SDK/widget tests; ordinary Flutter availability check is not a Shorebird release check",
+    "Signed release -> patch -> restart -> rollback and channel isolation remain unverified",
+    "Windows maintenance and Android DNS attribution use separate immutable artifacts and runtime evidence",
+    "Observed duration is not a controlled speedup comparison with earlier runs"
+  ]
+}
