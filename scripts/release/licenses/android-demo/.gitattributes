@@ -1,1 +1,2 @@
-* -text
+# Preserve upstream license bytes, including original whitespace.
+* -text -whitespace
