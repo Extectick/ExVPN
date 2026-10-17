@@ -1,0 +1,221 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-17T01:29:34.482Z",
+  "repository": "Extectick/ExVPN",
+  "runId": 38989410227,
+  "runUrl": "https://github.com/Extectick/ExVPN/actions/runs/38989410227",
+  "head": "dfaf4ad5fb83a0ae3d8606a2189187803e713042",
+  "event": "push",
+  "attempt": 1,
+  "status": "completed",
+  "conclusion": "success",
+  "cacheAction": {
+    "version": "6.1.0",
+    "commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
+  },
+  "jobs": [
+    {
+      "id": 117268202380,
+      "target": "Windows",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T01:06:19Z",
+      "completedAt": "2026-10-17T01:18:56Z",
+      "durationSeconds": 757,
+      "selector": {
+        "reason": "full_production_or_unknown_path",
+        "skipNativeBuild": false,
+        "evidence": "2026-10-17T01:06:34.4992248Z Native build decision: full_production_or_unknown_path; skip_native_build=false. All check suites remain required.",
+        "source": "Actual selector step; later synthetic fixture decisions excluded."
+      },
+      "bootstrap": {
+        "name": "Install repository-pinned Flutter and Go",
+        "conclusion": "success",
+        "durationSeconds": 36
+      },
+      "verification": {
+        "name": "Analyze, test, and build",
+        "conclusion": "success",
+        "durationSeconds": 624
+      },
+      "caches": [
+        {
+          "kind": "sdkArchives",
+          "key": "exvpn-sdk-archives-v1-Windows-X64-19d08e116dd0740d4d567324bca4a860f5b9618da4fdc7030070c13783820a48",
+          "exactKeyHit": false,
+          "restore": "miss",
+          "restoreEvidence": "2026-10-17T01:06:35.2989316Z Cache not found for input keys: exvpn-sdk-archives-v1-Windows-X64-19d08e116dd0740d4d567324bca4a860f5b9618da4fdc7030070c13783820a48",
+          "restoreStep": {
+            "name": "Cache pinned SDK archives",
+            "conclusion": "success",
+            "durationSeconds": 1
+          },
+          "save": "saved",
+          "saveEvidence": "2026-10-17T01:18:52.4429643Z Cache saved with key: exvpn-sdk-archives-v1-Windows-X64-19d08e116dd0740d4d567324bca4a860f5b9618da4fdc7030070c13783820a48",
+          "saveStep": {
+            "name": "Post Cache pinned SDK archives",
+            "conclusion": "success",
+            "durationSeconds": 48
+          }
+        },
+        {
+          "kind": "go",
+          "key": "exvpn-go-v1-Windows-X64-Windows-7247a84b79d6e6e09c54be23c5ac422b3875b2880234b5c3c146667458c9836c",
+          "exactKeyHit": false,
+          "restore": "miss",
+          "restoreEvidence": "2026-10-17T01:07:12.0048418Z Cache not found for input keys: exvpn-go-v1-Windows-X64-Windows-7247a84b79d6e6e09c54be23c5ac422b3875b2880234b5c3c146667458c9836c",
+          "restoreStep": {
+            "name": "Cache verified Go dependencies and compiler outputs",
+            "conclusion": "success",
+            "durationSeconds": 1
+          },
+          "save": "saved",
+          "saveEvidence": "2026-10-17T01:18:04.6740142Z Cache saved with key: exvpn-go-v1-Windows-X64-Windows-7247a84b79d6e6e09c54be23c5ac422b3875b2880234b5c3c146667458c9836c",
+          "saveStep": {
+            "name": "Post Cache verified Go dependencies and compiler outputs",
+            "conclusion": "success",
+            "durationSeconds": 13
+          }
+        },
+        {
+          "kind": "pub",
+          "key": "exvpn-pub-v1-Windows-X64-0d71dbeccba3bb39a0f84ecb861f60d84c45375631b8596e0d4edd5ab9feb14a",
+          "exactKeyHit": false,
+          "restore": "miss",
+          "restoreEvidence": "2026-10-17T01:07:12.6493214Z Cache not found for input keys: exvpn-pub-v1-Windows-X64-0d71dbeccba3bb39a0f84ecb861f60d84c45375631b8596e0d4edd5ab9feb14a",
+          "restoreStep": {
+            "name": "Cache locked Pub packages",
+            "conclusion": "success",
+            "durationSeconds": 0
+          },
+          "save": "saved",
+          "saveEvidence": "2026-10-17T01:17:51.6704595Z Cache saved with key: exvpn-pub-v1-Windows-X64-0d71dbeccba3bb39a0f84ecb861f60d84c45375631b8596e0d4edd5ab9feb14a",
+          "saveStep": {
+            "name": "Post Cache locked Pub packages",
+            "conclusion": "success",
+            "durationSeconds": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": 117268202622,
+      "target": "Android",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T01:06:19Z",
+      "completedAt": "2026-10-17T01:26:58Z",
+      "durationSeconds": 1239,
+      "selector": {
+        "reason": "full_production_or_unknown_path",
+        "skipNativeBuild": false,
+        "evidence": "2026-10-17T01:06:32.2667893Z Native build decision: full_production_or_unknown_path; skip_native_build=false. All check suites remain required.",
+        "source": "Actual selector step; later synthetic fixture decisions excluded."
+      },
+      "bootstrap": {
+        "name": "Install repository-pinned Flutter and Go",
+        "conclusion": "success",
+        "durationSeconds": 36
+      },
+      "verification": {
+        "name": "Analyze, test, and build",
+        "conclusion": "success",
+        "durationSeconds": 960
+      },
+      "caches": [
+        {
+          "kind": "sdkArchives",
+          "key": "exvpn-sdk-archives-v1-Windows-X64-19d08e116dd0740d4d567324bca4a860f5b9618da4fdc7030070c13783820a48",
+          "exactKeyHit": false,
+          "restore": "miss",
+          "restoreEvidence": "2026-10-17T01:06:32.9377096Z Cache not found for input keys: exvpn-sdk-archives-v1-Windows-X64-19d08e116dd0740d4d567324bca4a860f5b9618da4fdc7030070c13783820a48",
+          "restoreStep": {
+            "name": "Cache pinned SDK archives",
+            "conclusion": "success",
+            "durationSeconds": 0
+          },
+          "save": "reservation_conflict",
+          "saveEvidence": "2026-10-17T01:26:44.3641355Z Failed to save: Unable to reserve cache with key exvpn-sdk-archives-v1-Windows-X64-19d08e116dd0740d4d567324bca4a860f5b9618da4fdc7030070c13783820a48, another job may be creating this cache.",
+          "saveStep": {
+            "name": "Post Cache pinned SDK archives",
+            "conclusion": "success",
+            "durationSeconds": 50
+          }
+        },
+        {
+          "kind": "go",
+          "key": "exvpn-go-v1-Windows-X64-Android-7247a84b79d6e6e09c54be23c5ac422b3875b2880234b5c3c146667458c9836c",
+          "exactKeyHit": false,
+          "restore": "miss",
+          "restoreEvidence": "2026-10-17T01:07:09.1550666Z Cache not found for input keys: exvpn-go-v1-Windows-X64-Android-7247a84b79d6e6e09c54be23c5ac422b3875b2880234b5c3c146667458c9836c",
+          "restoreStep": {
+            "name": "Cache verified Go dependencies and compiler outputs",
+            "conclusion": "success",
+            "durationSeconds": 1
+          },
+          "save": "saved",
+          "saveEvidence": "2026-10-17T01:25:54.2493843Z Cache saved with key: exvpn-go-v1-Windows-X64-Android-7247a84b79d6e6e09c54be23c5ac422b3875b2880234b5c3c146667458c9836c",
+          "saveStep": {
+            "name": "Post Cache verified Go dependencies and compiler outputs",
+            "conclusion": "success",
+            "durationSeconds": 53
+          }
+        },
+        {
+          "kind": "pub",
+          "key": "exvpn-pub-v1-Windows-X64-0d71dbeccba3bb39a0f84ecb861f60d84c45375631b8596e0d4edd5ab9feb14a",
+          "exactKeyHit": false,
+          "restore": "miss",
+          "restoreEvidence": "2026-10-17T01:07:09.7152118Z Cache not found for input keys: exvpn-pub-v1-Windows-X64-0d71dbeccba3bb39a0f84ecb861f60d84c45375631b8596e0d4edd5ab9feb14a",
+          "restoreStep": {
+            "name": "Cache locked Pub packages",
+            "conclusion": "success",
+            "durationSeconds": 0
+          },
+          "save": "reservation_conflict",
+          "saveEvidence": "2026-10-17T01:25:01.3294223Z Failed to save: Unable to reserve cache with key exvpn-pub-v1-Windows-X64-0d71dbeccba3bb39a0f84ecb861f60d84c45375631b8596e0d4edd5ab9feb14a, another job may be creating this cache.",
+          "saveStep": {
+            "name": "Post Cache locked Pub packages",
+            "conclusion": "success",
+            "durationSeconds": 16
+          }
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 12085380605,
+      "name": "exvpn-android-debug-dfaf4ad5fb83a0ae3d8606a2189187803e713042",
+      "sizeBytes": 99830305,
+      "digest": "sha256:d5eff93c3ba43317f61b74c3dc619b254cd5c2d7141d058fbf83909cccebaf73",
+      "createdAt": "2026-10-17T01:24:45Z",
+      "expiresAt": "2026-10-24T01:24:36Z",
+      "expired": false,
+      "head": "dfaf4ad5fb83a0ae3d8606a2189187803e713042"
+    },
+    {
+      "id": 12084359092,
+      "name": "exvpn-windows-debug-dfaf4ad5fb83a0ae3d8606a2189187803e713042",
+      "sizeBytes": 72122107,
+      "digest": "sha256:23400c62fa4de259dd735966b02b2820c39aec3bf5031629997edc51ea45ded8",
+      "createdAt": "2026-10-17T01:17:43Z",
+      "expiresAt": "2026-10-24T01:17:36Z",
+      "expired": false,
+      "head": "dfaf4ad5fb83a0ae3d8606a2189187803e713042"
+    }
+  ],
+  "summary": {
+    "restoreAttempts": 6,
+    "exactKeyHits": 0,
+    "misses": 6,
+    "uniqueKeysSaved": 4,
+    "sharedKeyReservationConflicts": 2,
+    "sharedKeyNote": "Windows successfully saved the same SDK and Pub keys before Android attempted to reserve them; Android post-step success does not mean it saved those keys.",
+    "measuredSpeedup": false
+  },
+  "limitations": [
+    "First cold run of new cache keys; no cache-hit acceleration demonstrated.",
+    "Full build branch only; real QA-only workflow branch remains to be verified on a subsequent push.",
+    "Development CI APK/Windows bundle only; artifact presence is not release signing, runtime VPN acceptance, or stable-release readiness.",
+    "Artifact digests are GitHub archive metadata; artifacts were not downloaded or installed by this observer."
+  ]
+}

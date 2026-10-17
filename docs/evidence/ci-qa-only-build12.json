@@ -1,0 +1,388 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-17T01:44:44.019Z",
+  "repository": "Extectick/ExVPN",
+  "runId": 38991041038,
+  "runUrl": "https://github.com/Extectick/ExVPN/actions/runs/38991041038",
+  "head": "8b24160fd06dff2daff1651da20c769804cb1da6",
+  "event": "push",
+  "attempt": 1,
+  "status": "completed",
+  "conclusion": "success",
+  "cacheAction": {
+    "version": "6.1.0",
+    "commit": "55cc8345863c7cc4c66a329aec7e433d2d1c52a9"
+  },
+  "jobs": [
+    {
+      "id": 117273289048,
+      "target": "Android",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T01:29:02Z",
+      "completedAt": "2026-10-17T01:41:55Z",
+      "durationSeconds": 773,
+      "selector": {
+        "reason": "qa_only_verified_push",
+        "skipNativeBuild": true,
+        "evidence": "2026-10-17T01:29:14.8563147Z Native build decision: qa_only_verified_push; skip_native_build=true. All check suites remain required.",
+        "revalidationEvidence": "2026-10-17T01:31:23.9953888Z Native build selection rechecked: qa_only_verified_push; skip=True.",
+        "source": "Actual selector step and verify revalidation; later synthetic fixture decisions excluded."
+      },
+      "bootstrap": {
+        "name": "Install repository-pinned Flutter and Go",
+        "conclusion": "success",
+        "durationSeconds": 27
+      },
+      "caches": [
+        {
+          "kind": "sdkArchives",
+          "key": "exvpn-sdk-archives-v1-Windows-X64-19d08e116dd0740d4d567324bca4a860f5b9618da4fdc7030070c13783820a48",
+          "exactKeyHit": true,
+          "restore": "hit",
+          "restoreEvidence": "2026-10-17T01:29:33.7823867Z Cache restored from key: exvpn-sdk-archives-v1-Windows-X64-19d08e116dd0740d4d567324bca4a860f5b9618da4fdc7030070c13783820a48",
+          "restoreStep": {
+            "name": "Cache pinned SDK archives",
+            "conclusion": "success",
+            "durationSeconds": 19
+          },
+          "save": "skipped_primary_key_hit",
+          "saveEvidence": "2026-10-17T01:41:49.9626019Z Cache hit occurred on the primary key exvpn-sdk-archives-v1-Windows-X64-19d08e116dd0740d4d567324bca4a860f5b9618da4fdc7030070c13783820a48, not saving cache.",
+          "saveStep": {
+            "name": "Post Cache pinned SDK archives",
+            "conclusion": "success",
+            "durationSeconds": 0
+          }
+        },
+        {
+          "kind": "go",
+          "key": "exvpn-go-v1-Windows-X64-Android-7247a84b79d6e6e09c54be23c5ac422b3875b2880234b5c3c146667458c9836c",
+          "exactKeyHit": true,
+          "restore": "hit",
+          "restoreEvidence": "2026-10-17T01:30:16.1875698Z Cache restored from key: exvpn-go-v1-Windows-X64-Android-7247a84b79d6e6e09c54be23c5ac422b3875b2880234b5c3c146667458c9836c",
+          "restoreStep": {
+            "name": "Cache verified Go dependencies and compiler outputs",
+            "conclusion": "success",
+            "durationSeconds": 16
+          },
+          "save": "skipped_primary_key_hit",
+          "saveEvidence": "2026-10-17T01:41:49.6455360Z Cache hit occurred on the primary key exvpn-go-v1-Windows-X64-Android-7247a84b79d6e6e09c54be23c5ac422b3875b2880234b5c3c146667458c9836c, not saving cache.",
+          "saveStep": {
+            "name": "Post Cache verified Go dependencies and compiler outputs",
+            "conclusion": "success",
+            "durationSeconds": 0
+          }
+        },
+        {
+          "kind": "pub",
+          "key": "exvpn-pub-v1-Windows-X64-0d71dbeccba3bb39a0f84ecb861f60d84c45375631b8596e0d4edd5ab9feb14a",
+          "exactKeyHit": true,
+          "restore": "hit",
+          "restoreEvidence": "2026-10-17T01:30:24.9591339Z Cache restored from key: exvpn-pub-v1-Windows-X64-0d71dbeccba3bb39a0f84ecb861f60d84c45375631b8596e0d4edd5ab9feb14a",
+          "restoreStep": {
+            "name": "Cache locked Pub packages",
+            "conclusion": "success",
+            "durationSeconds": 8
+          },
+          "save": "skipped_primary_key_hit",
+          "saveEvidence": "2026-10-17T01:41:49.3359828Z Cache hit occurred on the primary key exvpn-pub-v1-Windows-X64-0d71dbeccba3bb39a0f84ecb861f60d84c45375631b8596e0d4edd5ab9feb14a, not saving cache.",
+          "saveStep": {
+            "name": "Post Cache locked Pub packages",
+            "conclusion": "success",
+            "durationSeconds": 3
+          }
+        }
+      ],
+      "checks": {
+        "analyzeSuitesPassed": 4,
+        "dartAndFlutterTestsPassed": [
+          192,
+          46,
+          31,
+          156
+        ],
+        "nativeGoPackageSuccesses": [
+          {
+            "package": "github.com/Extectick/ExVPN/native/core",
+            "evidence": "2026-10-17T01:34:00.5530604Z ok  \tgithub.com/Extectick/ExVPN/native/core\t13.782s"
+          },
+          {
+            "package": "github.com/Extectick/ExVPN/native/android",
+            "evidence": "2026-10-17T01:34:08.5818535Z ok  \tgithub.com/Extectick/ExVPN/native/android\t0.131s"
+          },
+          {
+            "package": "github.com/Extectick/ExVPN/native/android/cmd/qa-server",
+            "evidence": "2026-10-17T01:34:08.5891647Z ok  \tgithub.com/Extectick/ExVPN/native/android/cmd/qa-server\t0.138s"
+          },
+          {
+            "package": "github.com/Extectick/ExVPN/native/windows",
+            "evidence": "2026-10-17T01:34:16.7386736Z ok  \tgithub.com/Extectick/ExVPN/native/windows\t2.500s"
+          },
+          {
+            "package": "github.com/Extectick/ExVPN/native/windows/cmd/qa-desktop",
+            "evidence": "2026-10-17T01:34:16.7388685Z ok  \tgithub.com/Extectick/ExVPN/native/windows/cmd/qa-desktop\t0.027s"
+          },
+          {
+            "package": "github.com/Extectick/ExVPN/native/windows/cmd/qa-teardown",
+            "evidence": "2026-10-17T01:34:16.7394018Z ok  \tgithub.com/Extectick/ExVPN/native/windows/cmd/qa-teardown\t0.112s"
+          },
+          {
+            "package": "github.com/xtls/xray-core/transport/internet",
+            "evidence": "2026-10-17T01:34:20.6857241Z ok  \tgithub.com/xtls/xray-core/transport/internet\t0.099s"
+          },
+          {
+            "package": "github.com/xtls/xray-core/transport/internet/grpc",
+            "evidence": "2026-10-17T01:34:23.0028615Z ok  \tgithub.com/xtls/xray-core/transport/internet/grpc\t1.864s"
+          },
+          {
+            "package": "github.com/xtls/xray-core/transport/internet/splithttp",
+            "evidence": "2026-10-17T01:34:23.0029487Z ok  \tgithub.com/xtls/xray-core/transport/internet/splithttp\t0.792s"
+          },
+          {
+            "package": "github.com/xtls/xray-core/app/proxyman/outbound",
+            "evidence": "2026-10-17T01:34:23.0030308Z ok  \tgithub.com/xtls/xray-core/app/proxyman/outbound\t0.081s"
+          }
+        ],
+        "lifecycle": {
+          "race": false,
+          "count": 1,
+          "evidence": "2026-10-17T01:34:24.0356589Z Pinned Xray lifecycle tests passed (race=False, count=1). Loopback only; no host networking changes."
+        },
+        "selectorFixtures": 131,
+        "teardownFixturesPerShell": 22,
+        "verificationStep": {
+          "name": "Analyze, test, and build",
+          "conclusion": "success",
+          "durationSeconds": 624
+        },
+        "note": "Successful verification step includes all declared readonly module verification, vet, parser, notice, packaging-fixture, and applicable installer/Java checks; cached compiler outputs do not replace Go -count=1 tests."
+      },
+      "nativePackaging": {
+        "skipped": true,
+        "evidence": "2026-10-17T01:41:44.0223253Z ExVPN Android checks completed for a verified QA-only push. Native APK/EXE packaging was skipped: no new native build proof or build artifacts are supplied."
+      },
+      "uploads": [
+        {
+          "name": "Upload Android development APK",
+          "conclusion": "skipped",
+          "durationSeconds": 0
+        },
+        {
+          "name": "Upload Windows development bundle",
+          "conclusion": "skipped",
+          "durationSeconds": 0
+        }
+      ],
+      "androidJvm": {
+        "tests": 8,
+        "taskGraphCount": 143,
+        "durationSeconds": 326.32,
+        "evidence": "2026-10-17T01:41:44.0211836Z Android JVM checks passed: 8 tests; 143 tasks; 326.32 seconds. No APK/AAB or ExVPN JNI was built.",
+        "freshReportsValidated": true,
+        "preexistingReportsRejected": true,
+        "rerunTasks": true,
+        "gradleBuildCache": false,
+        "junitFailures": 0,
+        "junitErrors": 0,
+        "junitSkipped": 0,
+        "apkAabExvpnJniCount": 0,
+        "packageSnapshotAbsent": true,
+        "evidenceMethod": "Success emitted only after build-impact-android-tests.ps1 requires absent reports, runs explicit :app:testDebugUnitTest with --rerun-tasks --no-build-cache, validates newly produced JUnit XML counters/testcases, and rechecks absence of native packages/snapshots.",
+        "rawXmlDownloaded": false
+      }
+    },
+    {
+      "id": 117273289266,
+      "target": "Windows",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T01:29:02Z",
+      "completedAt": "2026-10-17T01:35:16Z",
+      "durationSeconds": 374,
+      "selector": {
+        "reason": "qa_only_verified_push",
+        "skipNativeBuild": true,
+        "evidence": "2026-10-17T01:29:15.3842599Z Native build decision: qa_only_verified_push; skip_native_build=true. All check suites remain required.",
+        "revalidationEvidence": "2026-10-17T01:30:28.1954642Z Native build selection rechecked: qa_only_verified_push; skip=True.",
+        "source": "Actual selector step and verify revalidation; later synthetic fixture decisions excluded."
+      },
+      "bootstrap": {
+        "name": "Install repository-pinned Flutter and Go",
+        "conclusion": "success",
+        "durationSeconds": 26
+      },
+      "caches": [
+        {
+          "kind": "sdkArchives",
+          "key": "exvpn-sdk-archives-v1-Windows-X64-19d08e116dd0740d4d567324bca4a860f5b9618da4fdc7030070c13783820a48",
+          "exactKeyHit": true,
+          "restore": "hit",
+          "restoreEvidence": "2026-10-17T01:29:37.5271134Z Cache restored from key: exvpn-sdk-archives-v1-Windows-X64-19d08e116dd0740d4d567324bca4a860f5b9618da4fdc7030070c13783820a48",
+          "restoreStep": {
+            "name": "Cache pinned SDK archives",
+            "conclusion": "success",
+            "durationSeconds": 22
+          },
+          "save": "skipped_primary_key_hit",
+          "saveEvidence": "2026-10-17T01:35:12.0746089Z Cache hit occurred on the primary key exvpn-sdk-archives-v1-Windows-X64-19d08e116dd0740d4d567324bca4a860f5b9618da4fdc7030070c13783820a48, not saving cache.",
+          "saveStep": {
+            "name": "Post Cache pinned SDK archives",
+            "conclusion": "success",
+            "durationSeconds": 1
+          }
+        },
+        {
+          "kind": "go",
+          "key": "exvpn-go-v1-Windows-X64-Windows-7247a84b79d6e6e09c54be23c5ac422b3875b2880234b5c3c146667458c9836c",
+          "exactKeyHit": true,
+          "restore": "hit",
+          "restoreEvidence": "2026-10-17T01:30:18.4091536Z Cache restored from key: exvpn-go-v1-Windows-X64-Windows-7247a84b79d6e6e09c54be23c5ac422b3875b2880234b5c3c146667458c9836c",
+          "restoreStep": {
+            "name": "Cache verified Go dependencies and compiler outputs",
+            "conclusion": "success",
+            "durationSeconds": 15
+          },
+          "save": "skipped_primary_key_hit",
+          "saveEvidence": "2026-10-17T01:35:11.7909031Z Cache hit occurred on the primary key exvpn-go-v1-Windows-X64-Windows-7247a84b79d6e6e09c54be23c5ac422b3875b2880234b5c3c146667458c9836c, not saving cache.",
+          "saveStep": {
+            "name": "Post Cache verified Go dependencies and compiler outputs",
+            "conclusion": "success",
+            "durationSeconds": 0
+          }
+        },
+        {
+          "kind": "pub",
+          "key": "exvpn-pub-v1-Windows-X64-0d71dbeccba3bb39a0f84ecb861f60d84c45375631b8596e0d4edd5ab9feb14a",
+          "exactKeyHit": true,
+          "restore": "hit",
+          "restoreEvidence": "2026-10-17T01:30:27.1507160Z Cache restored from key: exvpn-pub-v1-Windows-X64-0d71dbeccba3bb39a0f84ecb861f60d84c45375631b8596e0d4edd5ab9feb14a",
+          "restoreStep": {
+            "name": "Cache locked Pub packages",
+            "conclusion": "success",
+            "durationSeconds": 9
+          },
+          "save": "skipped_primary_key_hit",
+          "saveEvidence": "2026-10-17T01:35:11.4687970Z Cache hit occurred on the primary key exvpn-pub-v1-Windows-X64-0d71dbeccba3bb39a0f84ecb861f60d84c45375631b8596e0d4edd5ab9feb14a, not saving cache.",
+          "saveStep": {
+            "name": "Post Cache locked Pub packages",
+            "conclusion": "success",
+            "durationSeconds": 0
+          }
+        }
+      ],
+      "checks": {
+        "analyzeSuitesPassed": 4,
+        "dartAndFlutterTestsPassed": [
+          192,
+          46,
+          31,
+          156
+        ],
+        "nativeGoPackageSuccesses": [
+          {
+            "package": "github.com/Extectick/ExVPN/native/core",
+            "evidence": "2026-10-17T01:33:08.9318834Z ok  \tgithub.com/Extectick/ExVPN/native/core\t18.751s"
+          },
+          {
+            "package": "github.com/Extectick/ExVPN/native/android",
+            "evidence": "2026-10-17T01:33:14.6972427Z ok  \tgithub.com/Extectick/ExVPN/native/android\t0.221s"
+          },
+          {
+            "package": "github.com/Extectick/ExVPN/native/android/cmd/qa-server",
+            "evidence": "2026-10-17T01:33:14.7476805Z ok  \tgithub.com/Extectick/ExVPN/native/android/cmd/qa-server\t0.281s"
+          },
+          {
+            "package": "github.com/Extectick/ExVPN/native/windows",
+            "evidence": "2026-10-17T01:33:26.2382986Z ok  \tgithub.com/Extectick/ExVPN/native/windows\t5.257s"
+          },
+          {
+            "package": "github.com/Extectick/ExVPN/native/windows/cmd/qa-desktop",
+            "evidence": "2026-10-17T01:33:26.2385151Z ok  \tgithub.com/Extectick/ExVPN/native/windows/cmd/qa-desktop\t0.023s"
+          },
+          {
+            "package": "github.com/Extectick/ExVPN/native/windows/cmd/qa-teardown",
+            "evidence": "2026-10-17T01:33:26.2390919Z ok  \tgithub.com/Extectick/ExVPN/native/windows/cmd/qa-teardown\t0.107s"
+          },
+          {
+            "package": "github.com/xtls/xray-core/transport/internet",
+            "evidence": "2026-10-17T01:33:44.5873119Z ok  \tgithub.com/xtls/xray-core/transport/internet\t1.154s"
+          },
+          {
+            "package": "github.com/xtls/xray-core/transport/internet/grpc",
+            "evidence": "2026-10-17T01:33:47.0365836Z ok  \tgithub.com/xtls/xray-core/transport/internet/grpc\t2.985s"
+          },
+          {
+            "package": "github.com/xtls/xray-core/transport/internet/splithttp",
+            "evidence": "2026-10-17T01:33:48.5885783Z ok  \tgithub.com/xtls/xray-core/transport/internet/splithttp\t2.085s"
+          },
+          {
+            "package": "github.com/xtls/xray-core/app/proxyman/outbound",
+            "evidence": "2026-10-17T01:33:49.7003457Z ok  \tgithub.com/xtls/xray-core/app/proxyman/outbound\t1.100s"
+          }
+        ],
+        "lifecycle": {
+          "race": true,
+          "count": 1,
+          "evidence": "2026-10-17T01:33:50.6082582Z Pinned Xray lifecycle tests passed (race=True, count=1). Loopback only; no host networking changes."
+        },
+        "selectorFixtures": 131,
+        "teardownFixturesPerShell": 22,
+        "verificationStep": {
+          "name": "Analyze, test, and build",
+          "conclusion": "success",
+          "durationSeconds": 284
+        },
+        "note": "Successful verification step includes all declared readonly module verification, vet, parser, notice, packaging-fixture, and applicable installer/Java checks; cached compiler outputs do not replace Go -count=1 tests."
+      },
+      "nativePackaging": {
+        "skipped": true,
+        "evidence": "2026-10-17T01:35:11.1491260Z ExVPN Windows checks completed for a verified QA-only push. Native APK/EXE packaging was skipped: no new native build proof or build artifacts are supplied."
+      },
+      "uploads": [
+        {
+          "name": "Upload Android development APK",
+          "conclusion": "skipped",
+          "durationSeconds": 0
+        },
+        {
+          "name": "Upload Windows development bundle",
+          "conclusion": "skipped",
+          "durationSeconds": 0
+        }
+      ]
+    }
+  ],
+  "artifacts": {
+    "restEndpoint": "https://api.github.com/repos/Extectick/ExVPN/actions/runs/38991041038/artifacts",
+    "total_count": 0,
+    "artifacts": []
+  },
+  "summary": {
+    "realQaOnlyPushVerified": true,
+    "allDeclaredCheckSuitesSucceeded": true,
+    "restoreAttempts": 6,
+    "exactKeyHits": 6,
+    "misses": 0,
+    "saves": 0,
+    "nativePackagingSkipped": true,
+    "nativeUploadStepsSkipped": 4,
+    "nativeArtifactCount": 0
+  },
+  "comparison": {
+    "fullRunId": 38989410227,
+    "fullRunHead": "dfaf4ad5fb83a0ae3d8606a2189187803e713042",
+    "fullRunDurationSeconds": {
+      "Windows": 757,
+      "Android": 1239
+    },
+    "qaOnlyRunDurationSeconds": {
+      "Windows": 374,
+      "Android": 773
+    },
+    "controlledSpeedupMeasurement": false,
+    "note": "Different workflow scopes: prior cold full run built native packages; this warm QA-only run preserved checks and skipped native packaging. Durations are observations, not an isolated cache speedup factor."
+  },
+  "limitations": [
+    "This run intentionally supplies no new APK/EXE build proof or release artifacts.",
+    "JUnit XML was validated inside CI by the committed helper; the observer read its successful result, not downloaded raw XML.",
+    "CI success does not replace Android physical-device or installed Windows VPN runtime acceptance."
+  ]
+}

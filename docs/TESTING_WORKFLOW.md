@@ -120,6 +120,12 @@ pull request и ручной запуск требуют обе JNI ABI, APK/JVM
 UI/service build. Только подтверждённый QA-only push может пропустить native
 packaging, сохранив JVM и остальные проверки; такой run не даёт новых APK/EXE.
 [Правила выбора и граница docs-only trigger](CI.md).
+
+Фактический QA-only run 2026-10-17 прошёл обе платформы: Windows **6 мин 14 с**,
+Android **12 мин 53 с**, 6/6 точных cache hits, 8 свежих JVM tests и 0 artifacts.
+[Отчёт](evidence/ci-qa-only-build12.json). Полная ветка со сборками также
+прошла отдельно; разные объёмы workflow не являются сравнительным benchmark.
+
 Нативные функции, Kotlin/C++, TUN, IPv4/IPv6/DNS,
 исключения, crash/lockdown, обновление, удаление и подпись не закрываются быстрым
 прогоном. Для них используются [Windows CLI Sandbox](WINDOWS_AUTOMATED_QA.md),

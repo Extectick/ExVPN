@@ -30,7 +30,9 @@ lock-файлы, notices, неизвестный путь, удаление/пе
 controller, зависимости и toolchain по-прежнему требуют native-сборки.
 **131** selector/graph/JUnit fixtures прошли, включая смешанный push,
 удаление, переименование и изменение product-кода с последующим откатом.
-Фактический QA-only run на GitHub остаётся незакрытым критерием E7-006.
+Фактический QA-only run на GitHub подтвердил этот путь на обеих платформах;
+результаты [run 38991041038](https://github.com/Extectick/ExVPN/actions/runs/38991041038)
+приведены ниже и закрывают критерий E7-006.
 
 Граница фильтра событий: GitHub применяет `paths-ignore` к конечному diff до
 запуска selector. Поэтому push, чей конечный diff содержит только документы,
@@ -53,8 +55,8 @@ NDK28 для штатных Flutter dependencies сохраняются; NDK27 �
 Первый helper-прогон отказался засчитать JUnit XML из-за PowerShell adapter
 collision атрибута `name`; исправление покрыто реалистичным fixture.
 [Доказательство, hashes и ограничения](evidence/ci-build-impact-build11.json).
-Проверка QA-only ветки на холодном GitHub runner пока не выполнена; локальное
-время нельзя выдавать за измеренное ускорение CI.
+Этот локальный прогон использовал готовые зависимости; его время не является
+измерением ускорения CI. Фактический GitHub run подтверждён отдельно ниже.
 
 Полная ветка нового selector подтверждена в [run 38982631039](https://github.com/Extectick/ExVPN/actions/runs/38982631039)
 на [2b9bd54](https://github.com/Extectick/ExVPN/commit/2b9bd5408edde6bf5cb14ad956ac077632558218):
@@ -62,7 +64,8 @@ collision атрибута `name`; исправление покрыто реа�
 Windows завершился за **9 мин 55 с**, Android — за **17 мин 26 с**; проверки,
 сборки и выгрузка development artifacts прошли. Это ожидаемое поведение для
 изменений самих CI scripts. [Обезличенное доказательство](evidence/ci-acceleration-build11.json).
-Запуск не подтверждает пропуск native-сборки на QA-only push и не закрывает E7-006.
+Этот запуск проверял полную ветку; пропуск native-сборки подтверждён отдельным
+QA-only run ниже.
 
 Скрипт `scripts/ci/verify.ps1 -Target Checks|Android|Windows` проверяет точные
 Flutter/Go pins, lock-файлы Dart, анализ, все unit/widget/loopback-тесты,
@@ -95,7 +98,30 @@ Windows runtime-проверка закрытия соединений ведё�
 
 Нет fallback `restore-keys`, cross-OS archive, Gradle cache, приватных данных,
 готовых пакетов или signing keys. Лимиты/оплата GitHub не менялись. Первый run
-может быть cold miss; измеренного cache-hit ускорения пока нет.
+может быть cold miss; точные cache hits подтверждены следующим QA-only run.
+
+Первый полный [run 38989410227](https://github.com/Extectick/ExVPN/actions/runs/38989410227)
+на [dfaf4ad](https://github.com/Extectick/ExVPN/commit/dfaf4ad5fb83a0ae3d8606a2189187803e713042)
+подтвердил +12: Windows **12 мин 37 с**, Android **20 мин 39 с**, обе сборки и
+development artifacts успешны. Все шесть restore были **MISS**; сохранены
+четыре уникальных ключа. Android не сохранил уже записанные Windows общие
+SDK/Pub ключи: reservation conflict не выдаётся за собственное сохранение.
+[Точные результаты, cache evidence и artifact digests](evidence/ci-build12-cold-cache.json).
+Этот холодный run сам по себе не измеряет ускорение.
+
+Следующий [run 38991041038](https://github.com/Extectick/ExVPN/actions/runs/38991041038)
+на [8b24160](https://github.com/Extectick/ExVPN/commit/8b24160fd06dff2daff1651da20c769804cb1da6)
+прошёл QA-only путь: **Windows — 6 мин 14 с, Android — 12 мин 53 с**.
+В обоих jobs фактический selector и повторная проверка дали
+`qa_only_verified_push`, `skip_native_build=true`. Все шесть restore получили
+точный cache hit; анализ, unit/widget/Go и применимые platform checks сохранены.
+Android helper проверил graph из 143 задач, выполнил **8 свежих JVM tests**
+за 326,32 с с принудительным повтором и без build cache, затем подтвердил
+отсутствие APK/AAB/`libexvpn.so` и package snapshot. Оба upload-шага в обоих
+jobs пропущены, REST API вернул **0 artifacts**.
+[Обезличенное доказательство](evidence/ci-qa-only-build12.json).
+Это другой объём workflow с прогретыми зависимостями; сравнение с полным
+холодным run не является контролируемым коэффициентом ускорения кеша.
 
 Flutter и Go скачиваются с официальных URL с SHA-256 из toolchain lock.
 Android packages: API36, build-tools36.0.0, NDK27.1.12297006 для собственного
