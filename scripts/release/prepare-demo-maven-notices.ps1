@@ -111,7 +111,7 @@ if (!$ResolvedGraph -or !$ArtifactPath -or !$OutputDirectory) { throw 'demo_mave
 $licenseRoot = Join-Path $PSScriptRoot 'licenses/android-demo'
 $policyPath = Join-Path $licenseRoot 'inventory.json'
 # This immutable snapshot is deliberately independent of stable audit policy.
-if ((Get-DemoMavenHash $policyPath) -cne '66771fc7f82f166e2ecaa8d11786dc78612d570a4ac796a70fe97a697dd1f6b4') {
+if ((Get-DemoMavenHash $policyPath) -cne 'e2564888a8b905a8cab6ac1b2ec3f58b9fc0367c6c20154ce3046e67e7393983') {
     throw 'demo_maven_license_policy_changed'
 }
 $policy = Get-Content -LiteralPath $policyPath -Raw | ConvertFrom-Json -AsHashtable

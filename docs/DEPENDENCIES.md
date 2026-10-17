@@ -135,7 +135,7 @@ URL/размер/SHA-256 в `scripts/windows/msvc-runtime-ci.lock.json`.
 Установщик сохраняет полные Microsoft terms и предлагает отдельные условия
 для этих компонентов. VSIX и dumpbin не включаются в релиз.
 
-Android Maven supplement: 65 закреплённых компонентов, 60 полных текстов;
+Android Maven supplement: 66 закреплённых компонентов, 61 полный текст;
 точные POM/artifact hashes и provenance в
 `scripts/release/licenses/android-demo/inventory.json`. Состав консервативно
 шире release-графа; same-build observer проверяет фактически выбранные входы.

@@ -1164,6 +1164,30 @@
       }
     },
     {
+      "id": "maven:com.google.guava:listenablefuture:1.0",
+      "pom": {
+        "size": 2226,
+        "sha256": "53873caf26bc1ed8a567ea6c939ab2aaa3f47a5e32d5cade95ddf5080d23238a"
+      },
+      "artifacts": [
+        {
+          "name": "listenablefuture-1.0.jar",
+          "size": 3149,
+          "sha256": "e4ad7607e5c0477c6f890ef26a49cb8d1bb4dffb650bab4502afee64644e3069"
+        }
+      ],
+      "declaredLicenseNames": [],
+      "texts": [
+        "texts/389058c3f218900023ec93288f2b3ec410e83e3e7f0e616e0724103067047953.txt",
+        "texts/cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30.txt"
+      ],
+      "source": {
+        "url": "https://repo.maven.apache.org/maven2/com/google/guava/listenablefuture/1.0/listenablefuture-1.0-sources.jar",
+        "sha256": "3d1bd8d4a39b293612a40e547ec51d9ce34fa638d7adeae83871cdbe2923b161",
+        "size": 4021
+      }
+    },
+    {
       "id": "maven:com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava",
       "pom": {
         "size": 2278,
@@ -1804,6 +1828,19 @@
           "component": "maven:androidx.lifecycle:lifecycle-livedata:2.7.0",
           "sourceArchiveUrl": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-livedata/2.7.0/lifecycle-livedata-2.7.0-sources.jar",
           "sourceArchiveSha256": "e1cd9061e43922cd9715feafb518d3a3d1c649a177a7b5ef71e6d0b4491609ad"
+        }
+      ]
+    },
+    {
+      "path": "texts/389058c3f218900023ec93288f2b3ec410e83e3e7f0e616e0724103067047953.txt",
+      "size": 790,
+      "sha256": "389058c3f218900023ec93288f2b3ec410e83e3e7f0e616e0724103067047953",
+      "title": "maven:com.google.guava:listenablefuture:1.0 source legal comment",
+      "provenance": [
+        {
+          "component": "maven:com.google.guava:listenablefuture:1.0",
+          "sourceArchiveUrl": "https://repo.maven.apache.org/maven2/com/google/guava/listenablefuture/1.0/listenablefuture-1.0-sources.jar",
+          "sourceArchiveSha256": "3d1bd8d4a39b293612a40e547ec51d9ce34fa638d7adeae83871cdbe2923b161"
         }
       ]
     },
@@ -2463,6 +2500,6 @@
     "flutterEngine": "Covered by the separately verified ordinary Flutter engine notice bundle, not these Maven supplements.",
     "metadataOnly": "BOM and variant-only components can have no binary artifacts.",
     "sourceAvailability": "Exact source archive URLs are public upstream links; source archives are not included.",
-    "scope": "All non-Flutter pinned debug-seed dependencies are included conservatively. Release selection is checked separately using the same assembleRelease invocation."
+    "scope": "All non-Flutter pinned debug-seed dependencies plus listenablefuture:1.0 observed in the same-build release graph are included conservatively. Release selection is checked separately using the same assembleRelease invocation."
   }
 }

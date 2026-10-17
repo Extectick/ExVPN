@@ -30,10 +30,16 @@ function FixtureFile([string]$Name,[string]$Content) {
 $realRoot=Join-Path $PSScriptRoot 'licenses/android-demo'
 $realPolicy=Get-Content -LiteralPath (Join-Path $realRoot 'inventory.json') -Raw | ConvertFrom-Json -AsHashtable
 Assert-DemoMavenTexts $realPolicy $realRoot
-Check ($realPolicy.components.Count -eq 65) 'overinclusive_count'
-Check ($realPolicy.files.Count -eq 60) 'fulltext_count'
+Check ($realPolicy.components.Count -eq 66) 'overinclusive_count'
+Check ($realPolicy.files.Count -eq 61) 'fulltext_count'
 Check (@($realPolicy.files | Where-Object title -Like '*Protocol Buffers*').Count -eq 1) 'shaded_protobuf_notice'
 Check (@($realPolicy.files | Where-Object title -Like '*Checker Framework*').Count -eq 1) 'checker_notice'
+$releaseFuture=@($realPolicy.components | Where-Object id -CEQ 'maven:com.google.guava:listenablefuture:1.0')
+Check ($releaseFuture.Count -eq 1 -and $releaseFuture[0].pom.sha256 -ceq '53873caf26bc1ed8a567ea6c939ab2aaa3f47a5e32d5cade95ddf5080d23238a' -and
+    $releaseFuture[0].artifacts[0].sha256 -ceq 'e4ad7607e5c0477c6f890ef26a49cb8d1bb4dffb650bab4502afee64644e3069') 'actual_release_future_exact_bytes'
+Check (@($realPolicy.components | Where-Object id -CEQ 'maven:com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava').Count -eq 1) 'empty_conflict_variant_retained_separately'
+$futureText=(@($releaseFuture[0].texts | ForEach-Object { [IO.File]::ReadAllText((Join-Path $realRoot $_)) }) -join "`n")
+Check ($futureText.Contains('Copyright (C) 2007 The Guava Authors') -and $futureText.Contains('TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION')) 'release_future_copyright_and_full_apache_text'
 $pom=FixtureFile 'library-1.0.pom' '<project><artifactId>library</artifactId><version>1.0</version></project>'
 $jar=FixtureFile 'library-1.0.jar' 'synthetic artifact bytes'
 $engine='deb287481e3ce9468f3434937ced4240a70539ca'

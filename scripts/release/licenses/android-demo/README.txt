@@ -8,7 +8,8 @@ build inputs, not the final set of classes retained by R8.
 license-inventory.json maps exact coordinates, binary/POM hashes, and source
 archive provenance to full texts in texts/. The text collection is deliberately
 overinclusive: it retains all 65 non-Flutter components of the existing pinned
-input inventory, including development components which a release can omit.
+input inventory, including development components which a release can omit,
+plus listenablefuture:1.0 from the actual release graph (66 components total).
 A license's inclusion does not apply it to unrelated code. The original
 copyright/license comments are preserved verbatim; Apache 2.0 is supplied in
 full, together with embedded notices, EPL, BSD and MIT texts where applicable.
