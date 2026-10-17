@@ -1,0 +1,422 @@
+Verbatim legal comments from the exact Maven source archive.
+The referenced full license texts are distributed alongside this file.
+
+Source entries: com/google/crypto/tink/subtle/Base64.java
+/*
+ * Copyright (C) 2010 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: com/google/crypto/tink/internal/JsonParser.java
+/*
+ * Copyright 2011 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: com/google/crypto/tink/aead/internal/Poly1305.java
+/**
+ * Poly1305 one-time MAC based on RFC 7539.
+ *
+ * <p>This is not an implementation of the MAC interface on purpose and it is not equivalent to
+ * HMAC.
+ *
+ * <p>The implementation is based on poly1305 implementation by Andrew Moon
+ * (https://github.com/floodyberry/poly1305-donna) and released as public domain.
+ */
+
+Source entries: com/google/crypto/tink/streamingaead/AesCtrHmacStreamingKeyManager.java, com/google/crypto/tink/streamingaead/AesGcmHkdfStreamingKeyManager.java
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// //////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/Aead.java, com/google/crypto/tink/BinaryKeysetReader.java, com/google/crypto/tink/BinaryKeysetWriter.java, com/google/crypto/tink/Catalogue.java, com/google/crypto/tink/CleartextKeysetHandle.java, com/google/crypto/tink/Config.java, com/google/crypto/tink/CryptoFormat.java, com/google/crypto/tink/DeterministicAead.java, com/google/crypto/tink/HybridDecrypt.java, com/google/crypto/tink/HybridEncrypt.java, com/google/crypto/tink/JsonKeysetReader.java, com/google/crypto/tink/JsonKeysetWriter.java, com/google/crypto/tink/KeyManager.java, com/google/crypto/tink/KeysetManager.java, com/google/crypto/tink/KeysetReader.java, com/google/crypto/tink/KeysetWriter.java, com/google/crypto/tink/KmsClient.java, com/google/crypto/tink/KmsClients.java, com/google/crypto/tink/Mac.java, com/google/crypto/tink/NoSecretKeysetHandle.java, com/google/crypto/tink/PrivateKeyManager.java, com/google/crypto/tink/PublicKeySign.java, com/google/crypto/tink/PublicKeyVerify.java, com/google/crypto/tink/StreamingAead.java, com/google/crypto/tink/aead/AeadConfig.java, com/google/crypto/tink/aead/AeadFactory.java, com/google/crypto/tink/aead/AeadKeyTemplates.java, com/google/crypto/tink/aead/AesCtrHmacAeadKeyManager.java, com/google/crypto/tink/aead/AesEaxKeyManager.java, com/google/crypto/tink/aead/AesGcmKeyManager.java, com/google/crypto/tink/aead/ChaCha20Poly1305KeyManager.java, com/google/crypto/tink/aead/KmsAeadKeyManager.java, com/google/crypto/tink/aead/KmsEnvelopeAead.java, com/google/crypto/tink/aead/KmsEnvelopeAeadKeyManager.java, com/google/crypto/tink/aead/XChaCha20Poly1305KeyManager.java, com/google/crypto/tink/annotations/Alpha.java, com/google/crypto/tink/config/TinkConfig.java, com/google/crypto/tink/daead/AesSivKeyManager.java, com/google/crypto/tink/daead/DeterministicAeadConfig.java, com/google/crypto/tink/daead/DeterministicAeadFactory.java, com/google/crypto/tink/daead/DeterministicAeadKeyTemplates.java, com/google/crypto/tink/hybrid/HybridConfig.java, com/google/crypto/tink/hybrid/HybridDecryptConfig.java, com/google/crypto/tink/hybrid/HybridDecryptFactory.java, com/google/crypto/tink/hybrid/HybridEncryptConfig.java, com/google/crypto/tink/hybrid/HybridEncryptFactory.java, com/google/crypto/tink/hybrid/HybridKeyTemplates.java, com/google/crypto/tink/integration/android/AndroidKeysetManager.java, com/google/crypto/tink/integration/android/AndroidKeystoreAesGcm.java, com/google/crypto/tink/integration/android/AndroidKeystoreKmsClient.java, com/google/crypto/tink/integration/android/SharedPrefKeysetReader.java, com/google/crypto/tink/integration/android/SharedPrefKeysetWriter.java, com/google/crypto/tink/internal/Curve25519.java, com/google/crypto/tink/internal/Ed25519Constants.java, com/google/crypto/tink/internal/EllipticCurvesUtil.java, com/google/crypto/tink/internal/Field25519.java, com/google/crypto/tink/mac/AesCmacKeyManager.java, com/google/crypto/tink/mac/MacConfig.java, com/google/crypto/tink/mac/MacFactory.java, com/google/crypto/tink/mac/internal/AesUtil.java, com/google/crypto/tink/prf/HmacPrfKeyManager.java, com/google/crypto/tink/signature/EcdsaSignKeyManager.java, com/google/crypto/tink/signature/EcdsaVerifyKeyManager.java, com/google/crypto/tink/signature/Ed25519PrivateKeyManager.java, com/google/crypto/tink/signature/Ed25519PublicKeyManager.java, com/google/crypto/tink/signature/PublicKeySignConfig.java, com/google/crypto/tink/signature/PublicKeySignFactory.java, com/google/crypto/tink/signature/PublicKeyVerifyConfig.java, com/google/crypto/tink/signature/PublicKeyVerifyFactory.java, com/google/crypto/tink/signature/SignatureConfig.java, com/google/crypto/tink/streamingaead/StreamingAeadConfig.java, com/google/crypto/tink/streamingaead/StreamingAeadFactory.java, com/google/crypto/tink/streamingaead/StreamingAeadKeyTemplates.java, com/google/crypto/tink/subtle/AesCtrHmacStreaming.java, com/google/crypto/tink/subtle/AesCtrJceCipher.java, com/google/crypto/tink/subtle/AesGcmHkdfStreaming.java, com/google/crypto/tink/subtle/AesGcmJce.java, com/google/crypto/tink/subtle/Bytes.java, com/google/crypto/tink/subtle/ChaCha20.java, com/google/crypto/tink/subtle/ChaCha20Poly1305.java, com/google/crypto/tink/subtle/EciesAeadHkdfHybridDecrypt.java, com/google/crypto/tink/subtle/EciesAeadHkdfHybridEncrypt.java, com/google/crypto/tink/subtle/EciesHkdfRecipientKem.java, com/google/crypto/tink/subtle/EciesHkdfSenderKem.java, com/google/crypto/tink/subtle/Ed25519Sign.java, com/google/crypto/tink/subtle/Ed25519Verify.java, com/google/crypto/tink/subtle/EllipticCurves.java, com/google/crypto/tink/subtle/EncryptThenAuthenticate.java, com/google/crypto/tink/subtle/EngineWrapper.java, com/google/crypto/tink/subtle/Hex.java, com/google/crypto/tink/subtle/Hkdf.java, com/google/crypto/tink/subtle/IndCpaCipher.java, com/google/crypto/tink/subtle/NonceBasedStreamingAead.java, com/google/crypto/tink/subtle/PemKeyType.java, com/google/crypto/tink/subtle/PrfHmacJce.java, com/google/crypto/tink/subtle/Random.java, com/google/crypto/tink/subtle/RewindableReadableByteChannel.java, com/google/crypto/tink/subtle/StreamSegmentDecrypter.java, com/google/crypto/tink/subtle/StreamSegmentEncrypter.java, com/google/crypto/tink/subtle/StreamingAeadDecryptingChannel.java, com/google/crypto/tink/subtle/StreamingAeadDecryptingStream.java, com/google/crypto/tink/subtle/StreamingAeadEncryptingChannel.java, com/google/crypto/tink/subtle/StreamingAeadEncryptingStream.java, com/google/crypto/tink/subtle/StreamingAeadSeekableDecryptingChannel.java, com/google/crypto/tink/subtle/SubtleUtil.java, com/google/crypto/tink/subtle/Validators.java, com/google/crypto/tink/subtle/X25519.java, com/google/crypto/tink/util/Bytes.java
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/Util.java
+// Copyright 2017 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// //////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/KeysetHandle.java, com/google/crypto/tink/PemKeyType.java, com/google/crypto/tink/Registry.java, com/google/crypto/tink/aead/AeadWrapper.java, com/google/crypto/tink/aead/AesGcmSivKeyManager.java, com/google/crypto/tink/aead/internal/AesGcmSiv.java, com/google/crypto/tink/aead/internal/WrappedAead.java, com/google/crypto/tink/aead/subtle/AesGcmSiv.java, com/google/crypto/tink/daead/DeterministicAeadWrapper.java, com/google/crypto/tink/daead/internal/WrappedDeterministicAead.java, com/google/crypto/tink/hybrid/EciesAeadHkdfPrivateKeyManager.java, com/google/crypto/tink/hybrid/EciesAeadHkdfPublicKeyManager.java, com/google/crypto/tink/hybrid/HybridDecryptWrapper.java, com/google/crypto/tink/hybrid/HybridEncryptWrapper.java, com/google/crypto/tink/hybrid/HybridUtil.java, com/google/crypto/tink/hybrid/internal/WrappedHybridDecrypt.java, com/google/crypto/tink/hybrid/internal/WrappedHybridEncrypt.java, com/google/crypto/tink/internal/Ed25519.java, com/google/crypto/tink/internal/PrimitiveWrapper.java, com/google/crypto/tink/jwt/JwtEcdsaVerifyKeyManager.java, com/google/crypto/tink/jwt/JwtSignatureConfig.java, com/google/crypto/tink/mac/HmacKeyManager.java, com/google/crypto/tink/mac/MacKeyTemplates.java, com/google/crypto/tink/mac/MacWrapper.java, com/google/crypto/tink/mac/internal/WrappedMac.java, com/google/crypto/tink/prf/AesCmacPrfKeyManager.java, com/google/crypto/tink/prf/internal/PrfAesCmac.java, com/google/crypto/tink/signature/PublicKeySignWrapper.java, com/google/crypto/tink/signature/PublicKeyVerifyWrapper.java, com/google/crypto/tink/signature/SignatureKeyTemplates.java, com/google/crypto/tink/signature/SignaturePemKeysetReader.java, com/google/crypto/tink/signature/internal/EcdsaSignJce.java, com/google/crypto/tink/signature/internal/EcdsaVerifyJce.java, com/google/crypto/tink/signature/internal/SigUtil.java, com/google/crypto/tink/streamingaead/StreamingAeadWrapper.java, com/google/crypto/tink/streamingaead/internal/InputStreamDecrypter.java, com/google/crypto/tink/streamingaead/internal/ReadableByteChannelDecrypter.java, com/google/crypto/tink/streamingaead/internal/SeekableByteChannelDecrypter.java, com/google/crypto/tink/streamingaead/internal/StreamingAeadHelper.java, com/google/crypto/tink/streamingaead/internal/WrappedStreamingAead.java, com/google/crypto/tink/subtle/AesEaxJce.java, com/google/crypto/tink/subtle/AesSiv.java, com/google/crypto/tink/subtle/EcdsaSignJce.java, com/google/crypto/tink/subtle/EcdsaVerifyJce.java, com/google/crypto/tink/subtle/EngineFactory.java, com/google/crypto/tink/subtle/PrfAesCmac.java
+// Copyright 2017 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/KeyWrap.java, com/google/crypto/tink/Version.java, com/google/crypto/tink/signature/internal/RsaSsaPkcs1SignJce.java, com/google/crypto/tink/signature/internal/RsaSsaPkcs1VerifyConscrypt.java, com/google/crypto/tink/subtle/Enums.java, com/google/crypto/tink/subtle/Kwp.java, com/google/crypto/tink/subtle/RsaSsaPkcs1SignJce.java, com/google/crypto/tink/subtle/RsaSsaPkcs1VerifyJce.java, com/google/crypto/tink/subtle/RsaSsaPssSignJce.java, com/google/crypto/tink/subtle/RsaSsaPssVerifyJce.java, com/google/crypto/tink/subtle/XChaCha20.java, com/google/crypto/tink/subtle/XChaCha20Poly1305.java
+// Copyright 2018 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/signature/RsaSsaPkcs1SignKeyManager.java, com/google/crypto/tink/signature/RsaSsaPkcs1VerifyKeyManager.java, com/google/crypto/tink/signature/RsaSsaPssSignKeyManager.java, com/google/crypto/tink/signature/RsaSsaPssVerifyKeyManager.java
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/keyderivation/KeysetDeriver.java
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// //////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/KeyTemplate.java, com/google/crypto/tink/aead/subtle/AeadFactory.java, com/google/crypto/tink/aead/subtle/AesGcmFactory.java, com/google/crypto/tink/hybrid/subtle/RsaKem.java, com/google/crypto/tink/hybrid/subtle/RsaKemHybridDecrypt.java, com/google/crypto/tink/hybrid/subtle/RsaKemHybridEncrypt.java, com/google/crypto/tink/internal/KeyTemplateProtoConverter.java, com/google/crypto/tink/jwt/JwtEcdsaSignKeyManager.java, com/google/crypto/tink/jwt/JwtHmacKeyManager.java, com/google/crypto/tink/jwt/JwtInvalidException.java, com/google/crypto/tink/jwt/JwtMac.java, com/google/crypto/tink/jwt/JwtMacConfig.java, com/google/crypto/tink/jwt/JwtMacWrapper.java, com/google/crypto/tink/jwt/JwtPublicKeySign.java, com/google/crypto/tink/jwt/JwtPublicKeySignInternal.java, com/google/crypto/tink/jwt/JwtPublicKeyVerify.java, com/google/crypto/tink/jwt/JwtPublicKeyVerifyInternal.java, com/google/crypto/tink/jwt/JwtRsaSsaPkcs1SignKeyManager.java, com/google/crypto/tink/jwt/JwtRsaSsaPkcs1VerifyKeyManager.java, com/google/crypto/tink/jwt/JwtRsaSsaPssSignKeyManager.java, com/google/crypto/tink/jwt/JwtRsaSsaPssVerifyKeyManager.java, com/google/crypto/tink/jwt/JwtValidator.java, com/google/crypto/tink/jwt/RawJwt.java, com/google/crypto/tink/jwt/VerifiedJwt.java, com/google/crypto/tink/jwt/internal/JwtFormat.java, com/google/crypto/tink/jwt/internal/JwtNames.java, com/google/crypto/tink/keyderivation/KeyDerivationConfig.java, com/google/crypto/tink/keyderivation/KeysetDeriverWrapper.java, com/google/crypto/tink/keyderivation/internal/PrfBasedDeriverKeyManager.java, com/google/crypto/tink/prf/HkdfPrfKeyManager.java, com/google/crypto/tink/prf/Prf.java, com/google/crypto/tink/prf/PrfConfig.java, com/google/crypto/tink/prf/PrfKeyTemplates.java, com/google/crypto/tink/prf/PrfSet.java, com/google/crypto/tink/prf/PrfSetWrapper.java, com/google/crypto/tink/prf/internal/WrappedPrfSet.java, com/google/crypto/tink/subtle/PrfMac.java, com/google/crypto/tink/subtle/SelfKeyTestValidators.java, com/google/crypto/tink/subtle/prf/HkdfStreamingPrf.java, com/google/crypto/tink/subtle/prf/PrfImpl.java, com/google/crypto/tink/subtle/prf/StreamingPrf.java, com/google/crypto/tink/tinkkey/KeyAccess.java, com/google/crypto/tink/tinkkey/KeyHandle.java, com/google/crypto/tink/tinkkey/SecretKeyAccess.java, com/google/crypto/tink/tinkkey/TinkKey.java, com/google/crypto/tink/tinkkey/internal/ProtoKey.java
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/KeyTemplates.java, com/google/crypto/tink/aead/internal/ChaCha20Util.java, com/google/crypto/tink/aead/internal/InsecureNonceChaCha20.java, com/google/crypto/tink/aead/internal/InsecureNonceChaCha20Base.java, com/google/crypto/tink/aead/internal/InsecureNonceChaCha20Poly1305.java, com/google/crypto/tink/aead/internal/InsecureNonceChaCha20Poly1305Base.java, com/google/crypto/tink/aead/internal/InsecureNonceChaCha20Poly1305Jce.java, com/google/crypto/tink/aead/internal/InsecureNonceXChaCha20.java, com/google/crypto/tink/aead/internal/InsecureNonceXChaCha20Poly1305.java, com/google/crypto/tink/aead/internal/Poly1305.java, com/google/crypto/tink/config/TinkFips.java, com/google/crypto/tink/config/internal/TinkFipsDisabled.java, com/google/crypto/tink/config/internal/TinkFipsUtil.java, com/google/crypto/tink/internal/KeyStatusTypeProtoConverter.java, com/google/crypto/tink/internal/Util.java, com/google/crypto/tink/jwt/JwkSetConverter.java, com/google/crypto/tink/jwt/JwtPublicKeySignWrapper.java, com/google/crypto/tink/jwt/JwtPublicKeyVerifyWrapper.java, com/google/crypto/tink/jwt/internal/JsonUtil.java, com/google/crypto/tink/tinkkey/internal/InternalKeyHandle.java
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/aead/internal/InsecureNonceAesGcmJce.java, com/google/crypto/tink/hybrid/internal/AesGcmHpkeAead.java, com/google/crypto/tink/hybrid/internal/ChaCha20Poly1305HpkeAead.java, com/google/crypto/tink/hybrid/internal/HkdfHpkeKdf.java, com/google/crypto/tink/hybrid/internal/HpkeAead.java, com/google/crypto/tink/hybrid/internal/HpkeContext.java, com/google/crypto/tink/hybrid/internal/HpkeDecrypt.java, com/google/crypto/tink/hybrid/internal/HpkeEncrypt.java, com/google/crypto/tink/hybrid/internal/HpkeKdf.java, com/google/crypto/tink/hybrid/internal/HpkeKem.java, com/google/crypto/tink/hybrid/internal/HpkeKemEncapOutput.java, com/google/crypto/tink/hybrid/internal/HpkePrimitiveFactory.java, com/google/crypto/tink/hybrid/internal/HpkePrivateKeyManager.java, com/google/crypto/tink/hybrid/internal/HpkePublicKeyManager.java, com/google/crypto/tink/hybrid/internal/HpkeUtil.java, com/google/crypto/tink/hybrid/internal/X25519HpkeKem.java
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/mac/internal/ChunkedHmacComputation.java
+// Copyright 2022 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/AccessesPartialKey.java, com/google/crypto/tink/InsecureSecretKeyAccess.java, com/google/crypto/tink/Key.java, com/google/crypto/tink/KeyStatus.java, com/google/crypto/tink/Parameters.java, com/google/crypto/tink/PrivateKey.java, com/google/crypto/tink/ProtoParametersSerialization.java, com/google/crypto/tink/SecretKeyAccess.java, com/google/crypto/tink/TinkJsonProtoKeysetFormat.java, com/google/crypto/tink/TinkProtoKeysetFormat.java, com/google/crypto/tink/aead/AeadKey.java, com/google/crypto/tink/aead/AeadParameters.java, com/google/crypto/tink/aead/AesEaxKey.java, com/google/crypto/tink/aead/AesEaxParameters.java, com/google/crypto/tink/aead/AesGcmKey.java, com/google/crypto/tink/aead/AesGcmParameters.java, com/google/crypto/tink/aead/AesGcmSivKey.java, com/google/crypto/tink/aead/AesGcmSivParameters.java, com/google/crypto/tink/aead/internal/AesEaxProtoSerialization.java, com/google/crypto/tink/daead/DeterministicAeadKey.java, com/google/crypto/tink/internal/BigIntegerEncoding.java, com/google/crypto/tink/internal/BuildDispatchedCode.java, com/google/crypto/tink/internal/KeyManagerRegistry.java, com/google/crypto/tink/internal/KeyParser.java, com/google/crypto/tink/internal/KeySerializer.java, com/google/crypto/tink/internal/LegacyProtoKey.java, com/google/crypto/tink/internal/LegacyProtoParameters.java, com/google/crypto/tink/internal/MonitoringAnnotations.java, com/google/crypto/tink/internal/MonitoringClient.java, com/google/crypto/tink/internal/MonitoringUtil.java, com/google/crypto/tink/internal/MutableMonitoringRegistry.java, com/google/crypto/tink/internal/MutablePrimitiveRegistry.java, com/google/crypto/tink/internal/MutableSerializationRegistry.java, com/google/crypto/tink/internal/ParametersParser.java, com/google/crypto/tink/internal/ParametersSerializer.java, com/google/crypto/tink/internal/PrimitiveConstructor.java, com/google/crypto/tink/internal/PrimitiveFactory.java, com/google/crypto/tink/internal/PrimitiveRegistry.java, com/google/crypto/tink/internal/SerializationRegistry.java, com/google/crypto/tink/internal/TinkBugException.java, com/google/crypto/tink/mac/AesCmacKey.java, com/google/crypto/tink/mac/AesCmacParameters.java, com/google/crypto/tink/mac/ChunkedMac.java, com/google/crypto/tink/mac/ChunkedMacComputation.java, com/google/crypto/tink/mac/ChunkedMacVerification.java, com/google/crypto/tink/mac/ChunkedMacWrapper.java, com/google/crypto/tink/mac/HmacKey.java, com/google/crypto/tink/mac/HmacParameters.java, com/google/crypto/tink/mac/MacKey.java, com/google/crypto/tink/mac/MacParameters.java, com/google/crypto/tink/mac/internal/AesCmacProtoSerialization.java, com/google/crypto/tink/mac/internal/ChunkedAesCmacComputation.java, com/google/crypto/tink/mac/internal/ChunkedAesCmacImpl.java, com/google/crypto/tink/mac/internal/ChunkedHmacImpl.java, com/google/crypto/tink/mac/internal/ChunkedMacVerificationFromComputation.java, com/google/crypto/tink/mac/internal/HmacProtoSerialization.java, com/google/crypto/tink/mac/internal/WrappedChunkedMac.java, com/google/crypto/tink/prf/PrfKey.java, com/google/crypto/tink/prf/PrfParameters.java, com/google/crypto/tink/signature/EcdsaParameters.java, com/google/crypto/tink/signature/EcdsaPrivateKey.java, com/google/crypto/tink/signature/EcdsaPublicKey.java, com/google/crypto/tink/signature/SignatureParameters.java, com/google/crypto/tink/signature/SignaturePrivateKey.java, com/google/crypto/tink/signature/SignaturePublicKey.java, com/google/crypto/tink/signature/internal/EcdsaProtoSerialization.java, com/google/crypto/tink/util/SecretBigInteger.java, com/google/crypto/tink/util/SecretBytes.java
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/hybrid/internal/HpkeKemKeyFactory.java, com/google/crypto/tink/hybrid/internal/HpkeKemPrivateKey.java, com/google/crypto/tink/hybrid/internal/NistCurvesHpkeKem.java
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/aead/LegacyKmsAeadKey.java, com/google/crypto/tink/aead/LegacyKmsAeadParameters.java, com/google/crypto/tink/aead/LegacyKmsEnvelopeAeadKey.java, com/google/crypto/tink/aead/LegacyKmsEnvelopeAeadParameters.java, com/google/crypto/tink/aead/LegacyKmsEnvelopeAeadProtoSerialization.java, com/google/crypto/tink/hybrid/PredefinedHybridParameters.java
+// Copyright 2023 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/Configuration.java, com/google/crypto/tink/LegacyKeysetSerialization.java, com/google/crypto/tink/TinkProtoParametersFormat.java, com/google/crypto/tink/aead/AesCtrHmacAeadKey.java, com/google/crypto/tink/aead/AesCtrHmacAeadParameters.java, com/google/crypto/tink/aead/ChaCha20Poly1305Key.java, com/google/crypto/tink/aead/ChaCha20Poly1305Parameters.java, com/google/crypto/tink/aead/LegacyKmsAeadProtoSerialization.java, com/google/crypto/tink/aead/PredefinedAeadParameters.java, com/google/crypto/tink/aead/XChaCha20Poly1305Key.java, com/google/crypto/tink/aead/XChaCha20Poly1305Parameters.java, com/google/crypto/tink/aead/internal/AesCtrHmacAeadProtoSerialization.java, com/google/crypto/tink/aead/internal/AesGcmProtoSerialization.java, com/google/crypto/tink/aead/internal/AesGcmSivProtoSerialization.java, com/google/crypto/tink/aead/internal/ChaCha20Poly1305ProtoSerialization.java, com/google/crypto/tink/aead/internal/LegacyFullAead.java, com/google/crypto/tink/aead/internal/XChaCha20Poly1305ProtoSerialization.java, com/google/crypto/tink/daead/AesSivKey.java, com/google/crypto/tink/daead/AesSivParameters.java, com/google/crypto/tink/daead/DeterministicAeadParameters.java, com/google/crypto/tink/daead/PredefinedDeterministicAeadParameters.java, com/google/crypto/tink/daead/internal/AesSivProtoSerialization.java, com/google/crypto/tink/daead/internal/LegacyFullDeterministicAead.java, com/google/crypto/tink/hybrid/EciesParameters.java, com/google/crypto/tink/hybrid/EciesPrivateKey.java, com/google/crypto/tink/hybrid/EciesPublicKey.java, com/google/crypto/tink/hybrid/HpkeParameters.java, com/google/crypto/tink/hybrid/HpkePrivateKey.java, com/google/crypto/tink/hybrid/HpkeProtoSerialization.java, com/google/crypto/tink/hybrid/HpkePublicKey.java, com/google/crypto/tink/hybrid/HybridParameters.java, com/google/crypto/tink/hybrid/HybridPrivateKey.java, com/google/crypto/tink/hybrid/HybridPublicKey.java, com/google/crypto/tink/hybrid/internal/EciesProtoSerialization.java, com/google/crypto/tink/internal/EnumTypeProtoConverter.java, com/google/crypto/tink/internal/LegacyKeyManagerImpl.java, com/google/crypto/tink/internal/MutableKeyCreationRegistry.java, com/google/crypto/tink/internal/MutableKeyDerivationRegistry.java, com/google/crypto/tink/internal/MutableParametersRegistry.java, com/google/crypto/tink/internal/Random.java, com/google/crypto/tink/jwt/JwtEcdsaParameters.java, com/google/crypto/tink/jwt/JwtEcdsaPrivateKey.java, com/google/crypto/tink/jwt/JwtEcdsaPublicKey.java, com/google/crypto/tink/jwt/JwtHmacKey.java, com/google/crypto/tink/jwt/JwtHmacParameters.java, com/google/crypto/tink/jwt/JwtHmacProtoSerialization.java, com/google/crypto/tink/jwt/JwtMacKey.java, com/google/crypto/tink/jwt/JwtMacParameters.java, com/google/crypto/tink/jwt/JwtRsaSsaPkcs1Parameters.java, com/google/crypto/tink/jwt/JwtRsaSsaPkcs1PrivateKey.java, com/google/crypto/tink/jwt/JwtRsaSsaPkcs1PublicKey.java, com/google/crypto/tink/jwt/JwtRsaSsaPssParameters.java, com/google/crypto/tink/jwt/JwtRsaSsaPssPrivateKey.java, com/google/crypto/tink/jwt/JwtRsaSsaPssPublicKey.java, com/google/crypto/tink/jwt/JwtSignatureParameters.java, com/google/crypto/tink/jwt/JwtSignaturePrivateKey.java, com/google/crypto/tink/jwt/JwtSignaturePublicKey.java, com/google/crypto/tink/jwt/internal/JwtEcdsaProtoSerialization.java, com/google/crypto/tink/jwt/internal/JwtRsaSsaPkcs1ProtoSerialization.java, com/google/crypto/tink/jwt/internal/JwtRsaSsaPssProtoSerialization.java, com/google/crypto/tink/keyderivation/KeyDerivationKey.java, com/google/crypto/tink/keyderivation/KeyDerivationParameters.java, com/google/crypto/tink/keyderivation/PrfBasedKeyDerivationKey.java, com/google/crypto/tink/keyderivation/PrfBasedKeyDerivationParameters.java, com/google/crypto/tink/keyderivation/internal/KeyDeriver.java, com/google/crypto/tink/keyderivation/internal/KeysetDeriverWrapper.java, com/google/crypto/tink/keyderivation/internal/PrfBasedKeyDerivationKeyProtoSerialization.java, com/google/crypto/tink/keyderivation/internal/PrfBasedKeyDeriver.java, com/google/crypto/tink/mac/PredefinedMacParameters.java, com/google/crypto/tink/mac/internal/LegacyFullMac.java, com/google/crypto/tink/prf/AesCmacPrfKey.java, com/google/crypto/tink/prf/AesCmacPrfParameters.java, com/google/crypto/tink/prf/HkdfPrfKey.java, com/google/crypto/tink/prf/HkdfPrfParameters.java, com/google/crypto/tink/prf/HmacPrfKey.java, com/google/crypto/tink/prf/HmacPrfParameters.java, com/google/crypto/tink/prf/PredefinedPrfParameters.java, com/google/crypto/tink/prf/internal/AesCmacPrfProtoSerialization.java, com/google/crypto/tink/prf/internal/HkdfPrfProtoSerialization.java, com/google/crypto/tink/prf/internal/HmacPrfProtoSerialization.java, com/google/crypto/tink/prf/internal/LegacyFullPrf.java, com/google/crypto/tink/signature/Ed25519Parameters.java, com/google/crypto/tink/signature/Ed25519PrivateKey.java, com/google/crypto/tink/signature/Ed25519PublicKey.java, com/google/crypto/tink/signature/PredefinedSignatureParameters.java, com/google/crypto/tink/signature/RsaSsaPkcs1Parameters.java, com/google/crypto/tink/signature/RsaSsaPkcs1PrivateKey.java, com/google/crypto/tink/signature/RsaSsaPkcs1PublicKey.java, com/google/crypto/tink/signature/RsaSsaPssParameters.java, com/google/crypto/tink/signature/RsaSsaPssPrivateKey.java, com/google/crypto/tink/signature/RsaSsaPssPublicKey.java, com/google/crypto/tink/signature/internal/Ed25519ProtoSerialization.java, com/google/crypto/tink/signature/internal/RsaSsaPkcs1ProtoSerialization.java, com/google/crypto/tink/signature/internal/RsaSsaPssProtoSerialization.java, com/google/crypto/tink/streamingaead/AesCtrHmacStreamingKey.java, com/google/crypto/tink/streamingaead/AesCtrHmacStreamingParameters.java, com/google/crypto/tink/streamingaead/AesGcmHkdfStreamingKey.java, com/google/crypto/tink/streamingaead/AesGcmHkdfStreamingParameters.java, com/google/crypto/tink/streamingaead/PredefinedStreamingAeadParameters.java, com/google/crypto/tink/streamingaead/StreamingAeadKey.java, com/google/crypto/tink/streamingaead/StreamingAeadParameters.java, com/google/crypto/tink/streamingaead/internal/AesCtrHmacStreamingProtoSerialization.java, com/google/crypto/tink/streamingaead/internal/AesGcmHkdfStreamingProtoSerialization.java, com/google/crypto/tink/streamingaead/internal/LegacyFullStreamingAead.java
+// Copyright 2023 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/internal/OutputPrefixUtil.java
+// Copyright 2024 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/ConfigurationFips140v2.java, com/google/crypto/tink/ConfigurationV0.java, com/google/crypto/tink/KeyGenConfiguration.java, com/google/crypto/tink/RegistryConfiguration.java, com/google/crypto/tink/aead/AeadConfigurationV0.java, com/google/crypto/tink/aead/XAesGcmKey.java, com/google/crypto/tink/aead/XAesGcmKeyManager.java, com/google/crypto/tink/aead/XAesGcmParameters.java, com/google/crypto/tink/aead/internal/ChaCha20Poly1305Jce.java, com/google/crypto/tink/aead/internal/XAesGcm.java, com/google/crypto/tink/aead/internal/XAesGcmProtoSerialization.java, com/google/crypto/tink/aead/internal/XChaCha20Poly1305Jce.java, com/google/crypto/tink/daead/DeterministicAeadConfigurationV0.java, com/google/crypto/tink/hybrid/HybridConfigurationV0.java, com/google/crypto/tink/hybrid/internal/EciesDemHelper.java, com/google/crypto/tink/hybrid/internal/X25519Conscrypt.java, com/google/crypto/tink/integration/android/AndroidKeystore.java, com/google/crypto/tink/internal/ConscryptUtil.java, com/google/crypto/tink/mac/MacConfigurationV0.java, com/google/crypto/tink/prf/PrfConfigurationV0.java, com/google/crypto/tink/signature/SignatureConfigurationV0.java, com/google/crypto/tink/signature/internal/Ed25519SignJce.java, com/google/crypto/tink/signature/internal/Ed25519VerifyJce.java, com/google/crypto/tink/signature/internal/LegacyFullSign.java, com/google/crypto/tink/signature/internal/LegacyFullVerify.java, com/google/crypto/tink/signature/internal/RsaSsaPssSignConscrypt.java, com/google/crypto/tink/signature/internal/RsaSsaPssVerifyConscrypt.java, com/google/crypto/tink/streamingaead/StreamingAeadConfigurationV0.java
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/aead/internal/AesGcmJceUtil.java, com/google/crypto/tink/hybrid/internal/LegacyFullHybridDecrypt.java, com/google/crypto/tink/hybrid/internal/LegacyFullHybridEncrypt.java, com/google/crypto/tink/hybrid/internal/X25519.java
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/KeysetHandleInterface.java, com/google/crypto/tink/LowLevelCryptoCaller.java, com/google/crypto/tink/aead/AeadConfigurationV1.java, com/google/crypto/tink/config/GlobalTinkFlags.java, com/google/crypto/tink/config/TinkFlag.java, com/google/crypto/tink/daead/DeterministicAeadConfigurationV1.java, com/google/crypto/tink/daead/subtle/DeterministicAeads.java, com/google/crypto/tink/hybrid/HybridConfigurationV1.java, com/google/crypto/tink/internal/KeyCreator.java, com/google/crypto/tink/internal/PrefixMap.java, com/google/crypto/tink/jwt/JwtSignatureConfigurationV0.java, com/google/crypto/tink/jwt/subtle/JwtEcdsaPublicKeySign.java, com/google/crypto/tink/jwt/subtle/JwtEcdsaPublicKeyVerify.java, com/google/crypto/tink/keyderivation/KeysetDeriverConfigurationV0.java, com/google/crypto/tink/keyderivation/KeysetDeriverConfigurationV1.java, com/google/crypto/tink/mac/MacConfig2026.java, com/google/crypto/tink/mac/internal/ChunkedAesCmacConscrypt.java, com/google/crypto/tink/prf/PrfConfig2026.java, com/google/crypto/tink/prf/PrfConfigurationV1.java, com/google/crypto/tink/prf/internal/PrfAesCmacConscrypt.java, com/google/crypto/tink/signature/MlDsaParameters.java, com/google/crypto/tink/signature/MlDsaPrivateKey.java, com/google/crypto/tink/signature/MlDsaPublicKey.java, com/google/crypto/tink/signature/MlDsaSignKeyManager.java, com/google/crypto/tink/signature/SignatureConfigurationV1.java, com/google/crypto/tink/signature/SlhDsaParameters.java, com/google/crypto/tink/signature/SlhDsaPrivateKey.java, com/google/crypto/tink/signature/SlhDsaPublicKey.java, com/google/crypto/tink/signature/SlhDsaSignKeyManager.java, com/google/crypto/tink/signature/internal/MlDsaProtoSerialization.java, com/google/crypto/tink/signature/internal/MlDsaSignConscrypt.java, com/google/crypto/tink/signature/internal/MlDsaVerifyConscrypt.java, com/google/crypto/tink/signature/internal/SlhDsaProtoSerialization.java, com/google/crypto/tink/signature/internal/SlhDsaSignConscrypt.java, com/google/crypto/tink/signature/internal/SlhDsaVerifyConscrypt.java, com/google/crypto/tink/streamingaead/StreamingAeadConfigurationV1.java
+// Copyright 2025 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/hybrid/internal/AuthHpkeHelperForAndroidKeystore.java, com/google/crypto/tink/hybrid/internal/HpkeHelperForAndroidKeystore.java
+// Copyright 2025 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/Annotations.java, com/google/crypto/tink/ProtoKeySerialization.java, com/google/crypto/tink/ProtoKeySerializer.java, com/google/crypto/tink/daead/DeterministicAeadConfig2026.java, com/google/crypto/tink/internal/PemUtil.java, com/google/crypto/tink/internal/ProtoConversions.java, com/google/crypto/tink/internal/SkipValidateKeysetsOnParsingTag.java, com/google/crypto/tink/signature/CompositeMlDsaParameters.java, com/google/crypto/tink/signature/CompositeMlDsaPrivateKey.java, com/google/crypto/tink/signature/CompositeMlDsaPublicKey.java, com/google/crypto/tink/signature/SignatureConfig2026.java, com/google/crypto/tink/signature/SignatureJwkSetConverter.java, com/google/crypto/tink/signature/internal/CompositeMlDsaProtoSerialization.java, com/google/crypto/tink/signature/internal/WrappedPublicKeySign.java, com/google/crypto/tink/signature/internal/WrappedPublicKeyVerify.java, com/google/crypto/tink/signature/subtle/EcdsaSigner.java, com/google/crypto/tink/signature/subtle/EcdsaVerifier.java, com/google/crypto/tink/signature/subtle/Ed25519Signer.java, com/google/crypto/tink/signature/subtle/Ed25519Verifier.java
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+Source entries: com/google/crypto/tink/hybrid/internal/XWingHpkeConscryptDecrypt.java, com/google/crypto/tink/hybrid/internal/XWingHpkeConscryptEncrypt.java
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+///////////////////////////////////////////////////////////////////////////////
+

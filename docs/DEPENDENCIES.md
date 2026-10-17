@@ -10,7 +10,7 @@
 | Windows notification area API | Системные Shell32/User32/Common-Controls v6 в поддерживаемых Windows 10/11; SDK закреплён локальным toolchain | Компоненты ОС Microsoft; не переупаковываются | Собственный tray adapter в +14; manifest запрашивает Common-Controls v6 для LoadIconMetric. Нового Flutter plugin/стороннего исходника нет. [Контракт и API](WINDOWS_TRAY.md) |
 | Flutter | **3.47.7**, commit `abaf9c523780a608bd46686fd5e53740a07077f8` | BSD-3-Clause; отдельные зависимости engine имеют свои лицензии | Версия/SHA-256 архива в `scripts/bootstrap/toolchain.lock.json`; [официальный LICENSE](https://github.com/flutter/flutter/blob/master/LICENSE) проверен; полный состав проверять по фактическому SDK |
 | Dart SDK | **3.13.5**, поставляется с закреплённым Flutter | BSD-3-Clause; зависимости имеют отдельные лицензии | Использован для `dart analyze`/113 тестов domain-пакета; [официальный LICENSE](https://github.com/dart-lang/sdk/blob/main/LICENSE) |
-| Xray-core | **26.10.10-exvpn.4**, собственный transport/TUN lifecycle patch поверх commit `701af60772cda123492f86e383e1fdba066614a9`; Go module `v1.260327.1-exvpn.4` | MPL-2.0, включая изменённые covered files | [Patch, pin и реконструкция](../native/patches/README.md); исходный LICENSE сохранён; binary/source `h1` проверяется при комплектации, системный E1 отдельно |
+| Xray-core | **26.10.10-exvpn.5**, собственный transport/TUN lifecycle patch поверх commit `701af60772cda123492f86e383e1fdba066614a9`; Go module `v1.260327.1-exvpn.5` | MPL-2.0, включая изменённые covered files | [Patch, pin и реконструкция](../native/patches/README.md); исходный LICENSE сохранён; binary/source `h1` проверяется при комплектации, системный E1 отдельно |
 | libXray | Исследовательский commit `4e1f7843e6cddb750ac7abc23ef36800820a8098` | MIT | Исследовательский pin записан в `native/core/config.go`; текущие Android/Windows используют собственный Go-адаптер прямо к Xray. libXray не входит в runtime graph и не должен выдаваться за упакованный компонент; [официальный LICENSE](https://github.com/XTLS/libXray/blob/main/LICENSE) |
 | Go | **1.27.2**; native module требует минимум 1.27.1 | BSD-3-Clause; сторонние модули отдельно | SDK/SHA-256 в `scripts/bootstrap/toolchain.lock.json`; [официальный LICENSE](https://go.dev/LICENSE); зависимости в `native/core/go.sum` |
 | Microsoft `go-winio` | **0.6.2**, `native/windows/go.mod` / `go.sum` | MIT | Локальный LICENSE закреплённого модуля проверен; Windows named-pipe IPC. Версия и Go checksum сверяются с build info служебного EXE при сборе notices |
@@ -122,3 +122,23 @@ dependencies: **AGP 9.1.0**, **protobuf-java 3.25.5**, **Gson 2.13.2**.
 ## Функциональные ориентиры
 
 HAPP и Hiddify не входят в зависимости ExVPN. Из них не скопированы код, логотипы или дизайн-ресурсы. Перед заимствованием любого компонента требуется отдельная проверка лицензии конкретной версии; начальный план указывает на ограничения NonCommercial в [лицензии Hiddify](https://github.com/hiddify/hiddify-app/blob/main/LICENSE.md). Выбор собственного клиента не отменяет обязанности проверять все реально используемые сторонние компоненты.
+
+## Комплект демо 0.1.0+18
+
+`actions/download-artifact` v7 закреплён commit
+`37930b1c2abaa49bbe596cd826c3c89aef350131`; полный LICENSE этого commit проверен
+(MIT). Это CI-инструмент, не компонент APK/EXE. Остальные actions сохраняют
+существующие точные pins.
+
+Три MSVC DLL не обновлены: CI извлекает их из официального immutable VSIX,
+URL/размер/SHA-256 в `scripts/windows/msvc-runtime-ci.lock.json`.
+Установщик сохраняет полные Microsoft terms и предлагает отдельные условия
+для этих компонентов. VSIX и dumpbin не включаются в релиз.
+
+Android Maven supplement: 65 закреплённых компонентов, 60 полных текстов;
+точные POM/artifact hashes и provenance в
+`scripts/release/licenses/android-demo/inventory.json`. Состав консервативно
+шире release-графа; same-build observer проверяет фактически выбранные входы.
+Tink shaded Protobuf включён отдельно. Это проверка уведомлений входных
+зависимостей, а не утверждение о полном post-R8 SBOM. Стабильный лицензионный
+аудит остаётся открытым. Обычный Flutter не включает native Shorebird updater.

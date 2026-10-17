@@ -1,0 +1,33 @@
+ExVPN demo - terms for the Microsoft runtime components
+
+These terms apply only to the unmodified Microsoft files msvcp140.dll,
+vcruntime140.dll and vcruntime140_1.dll included with ExVPN. Microsoft owns these
+components. They are separate proprietary Distributable Code; ExVPN does not
+relicense them under Apache-2.0. All other components retain their own licenses.
+ExVPN's own source and your rights under its Apache-2.0 license are unchanged.
+
+By installing the Microsoft components, you agree to use them only as part of
+ExVPN and to preserve their copyright, trademark and other proprietary notices.
+Do not distribute these components separately, rent, lease, lend, sublicense or
+transfer them except as permitted by the applicable Microsoft license. Any
+permitted downstream distribution must retain these terms and the full supplied
+Microsoft notices and require recipients to agree to the same protections.
+
+You may not work around technical limitations, reverse engineer, decompile or
+disassemble these components, except to the extent mandatory applicable law
+permits despite this limitation. Do not use them unlawfully or use Microsoft
+trademarks to imply Microsoft endorsement of ExVPN.
+
+The Microsoft components are supplied AS IS. To the extent permitted by law,
+Microsoft gives no warranties, including merchantability, fitness for a
+particular purpose or non-infringement, and excludes liability for indirect,
+special, incidental or consequential damages. To the extent permitted by law,
+any recovery of direct damages from Microsoft or its suppliers is limited to
+US$5.00. Mandatory statutory and consumer
+rights are not limited by these terms.
+
+The full Microsoft Visual Studio Community 2026 terms and redistribution notice
+are included in the installed ExVPN Installer control directory and the
+windows-notices.zip release asset. These demo terms
+do not grant rights broader than the applicable Microsoft license or substitute
+for a distributor's obligations under that license.

@@ -32,6 +32,7 @@ Var Parameters
 !define MUI_WELCOMEPAGE_TEXT "Development package for a controlled Windows test machine. VPN/WFP acceptance is incomplete. Close ExVPN in every session before installation or upgrade.$\r$\n$\r$\nThe installer prepares protected files, a LocalSystem service and a recovery copy. It does not launch the desktop UI with administrator privileges."
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "${LICENSE_FILE}"
+!insertmacro MUI_PAGE_LICENSE "${RUNTIME_TERMS_FILE}"
 Page custom OptionsPage OptionsLeave
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH

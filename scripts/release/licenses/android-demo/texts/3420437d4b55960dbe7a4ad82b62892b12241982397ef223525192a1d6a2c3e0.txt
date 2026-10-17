@@ -1,0 +1,15 @@
+Verbatim legal comments from the exact Maven source archive.
+The referenced full license texts are distributed alongside this file.
+
+Source entries: org/hamcrest/BaseMatcher.java, org/hamcrest/Matcher.java, org/hamcrest/MatcherAssert.java, org/hamcrest/core/DescribedAs.java, org/hamcrest/core/IsAnything.java, org/hamcrest/core/IsEqual.java, org/hamcrest/core/IsInstanceOf.java, org/hamcrest/core/IsSame.java, org/hamcrest/core/StringContains.java, org/hamcrest/core/StringEndsWith.java, org/hamcrest/core/StringStartsWith.java
+/*  Copyright (c) 2000-2006 hamcrest.org
+ */
+
+Source entries: org/hamcrest/core/IsNot.java
+/*  Copyright (c) 2000-2009 hamcrest.org
+ */
+
+Source entries: org/hamcrest/core/IsNull.java
+/*  Copyright (c) 2000-2010 hamcrest.org
+ */
+

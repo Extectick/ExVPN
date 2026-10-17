@@ -1,0 +1,11 @@
+Verbatim legal comments from the exact Maven source archive.
+The referenced full license texts are distributed alongside this file.
+
+Source entries: org/hamcrest/beans/HasProperty.java, org/hamcrest/beans/HasPropertyWithValue.java, org/hamcrest/beans/PropertyUtil.java, org/hamcrest/number/IsCloseTo.java, org/hamcrest/object/IsEventFrom.java, org/hamcrest/text/IsEqualIgnoringCase.java, org/hamcrest/text/IsEqualIgnoringWhiteSpace.java
+/*  Copyright (c) 2000-2006 hamcrest.org
+ */
+
+Source entries: org/hamcrest/number/OrderingComparison.java
+/*  Copyright (c) 2000-2009 hamcrest.org
+ */
+

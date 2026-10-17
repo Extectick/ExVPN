@@ -121,6 +121,10 @@ switch ($Lane) {
         Invoke-ScriptCheck 'scripts/release/android-runtime-inventory-test.ps1'
         Invoke-ScriptCheck 'scripts/release/test-android-aab-dependencies.ps1'
         Invoke-ScriptCheck 'scripts/core/test-xray-patch.ps1'
+        Invoke-ScriptCheck 'scripts/release/test-demo-release.ps1'
+        Invoke-ScriptCheck 'scripts/release/test-demo-maven-notices.ps1'
+        Invoke-ScriptCheck 'scripts/release/test-build-demo-android.ps1'
+        Invoke-ScriptCheck 'scripts/windows/test-ci-msvc-runtime.ps1'
         break
     }
 }

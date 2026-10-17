@@ -3,6 +3,8 @@
 param(
     [string]$NoticesDirectory = '', [switch]$Offline,
     [string]$UiDirectory = '',
+    [string]$RuntimeDirectory = '',
+    [string]$DumpbinPath = '',
     [ValidateSet('ordinary','shorebird')][string]$FlutterRuntime = 'ordinary'
 )
 $ErrorActionPreference = 'Stop'
@@ -29,7 +31,7 @@ function Copy-BuildTree([string]$Source,[string]$Destination) {
 $ui = if ($UiDirectory) { [IO.Path]::GetFullPath($UiDirectory) } else { Join-Path $repository 'apps/exvpn/build/windows/x64/runner/Release' }
 if (!(Test-Path -LiteralPath (Join-Path $ui 'exvpn.exe'))) { throw 'Build Flutter Windows release first.' }
 Copy-BuildTree $ui (Join-Path $payload 'ui')
-& (Join-Path $PSScriptRoot 'prepare-msvc-runtime.ps1') -UiDirectory (Join-Path $payload 'ui')
+& (Join-Path $PSScriptRoot 'prepare-msvc-runtime.ps1') -UiDirectory (Join-Path $payload 'ui') -RuntimeDirectory $RuntimeDirectory -DumpbinPath $DumpbinPath
 New-Item -ItemType Directory -Path (Join-Path $payload 'service'),(Join-Path $payload 'control') | Out-Null
 foreach ($name in @('exvpn-service.exe','wintun.dll','Wintun-LICENSE.txt')) { Copy-Item -LiteralPath (Join-Path $repository "artifacts/windows/$name") -Destination (Join-Path $payload "service/$name") }
 $wintunPin = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'wintun.lock.json') -Raw | ConvertFrom-Json
@@ -40,6 +42,7 @@ Copy-Item -LiteralPath (Join-Path $repository 'native/windows/licenses/NSIS-3.13
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'nsis.lock.json') -Destination (Join-Path $payload 'control')
 foreach ($name in @('Microsoft-Visual-Studio-2026-Community.txt','MSVC-REDISTRIBUTION.md')) { Copy-Item -LiteralPath (Join-Path $repository "native/windows/licenses/$name") -Destination (Join-Path $payload 'control') }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'msvc-runtime.lock.json') -Destination (Join-Path $payload 'control')
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'installer/runtime-terms.txt') -Destination (Join-Path $payload 'control')
 if ($NoticesDirectory) { Copy-BuildTree ([IO.Path]::GetFullPath($NoticesDirectory)) (Join-Path $payload 'control/notices') }
 else {
     $previousProxy,$previousSum = $env:GOPROXY,$env:GOSUMDB
@@ -99,7 +102,7 @@ try {
     $env:NSISDIR = Split-Path $compiler
     # Ignore user/global NSIS configuration; includes/plugins/stubs must come
     # exclusively from the verified pinned SDK. Warnings fail the build.
-    & $compiler /NOCONFIG /WX /INPUTCHARSET UTF8 /V3 "/DOUTPUT_FILE=$installer" "/DPRODUCT_VERSION=$version.$build" "/DDISPLAY_VERSION=$version+$build" "/DICON_FILE=$(Join-Path $repository 'apps/exvpn/windows/runner/resources/app_icon.ico')" "/DLICENSE_FILE=$(Join-Path $repository 'LICENSE')" "/DGENERATED_INCLUDE=$generated" (Join-Path $PSScriptRoot 'installer/exvpn.nsi')
+    & $compiler /NOCONFIG /WX /INPUTCHARSET UTF8 /V3 "/DOUTPUT_FILE=$installer" "/DPRODUCT_VERSION=$version.$build" "/DDISPLAY_VERSION=$version+$build" "/DICON_FILE=$(Join-Path $repository 'apps/exvpn/windows/runner/resources/app_icon.ico')" "/DLICENSE_FILE=$(Join-Path $repository 'LICENSE')" "/DRUNTIME_TERMS_FILE=$(Join-Path $PSScriptRoot 'installer/runtime-terms.txt')" "/DGENERATED_INCLUDE=$generated" (Join-Path $PSScriptRoot 'installer/exvpn.nsi')
     if ($LASTEXITCODE -ne 0) { throw 'NSIS compilation failed; payload retained for review.' }
 } finally { $env:NSISDIR = $previousNsisDirectory }
 $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()

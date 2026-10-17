@@ -1,0 +1,177 @@
+Verbatim legal comments from the exact Maven source archive.
+The referenced full license texts are distributed alongside this file.
+
+Source entries: androidx/test/espresso/AmbiguousViewMatcherException.java, androidx/test/espresso/AppNotIdleException.java, androidx/test/espresso/DataInteraction.java, androidx/test/espresso/Espresso.java, androidx/test/espresso/EspressoException.java, androidx/test/espresso/FailureHandler.java, androidx/test/espresso/IdlingPolicies.java, androidx/test/espresso/IdlingPolicy.java, androidx/test/espresso/IdlingResourceTimeoutException.java, androidx/test/espresso/InjectEventSecurityException.java, androidx/test/espresso/NoActivityResumedException.java, androidx/test/espresso/NoMatchingRootException.java, androidx/test/espresso/NoMatchingViewException.java, androidx/test/espresso/PerformException.java, androidx/test/espresso/Root.java, androidx/test/espresso/UiController.java, androidx/test/espresso/ViewAction.java, androidx/test/espresso/ViewAssertion.java, androidx/test/espresso/ViewFinder.java, androidx/test/espresso/ViewInteraction.java, androidx/test/espresso/ViewInteractionModule.java, androidx/test/espresso/action/AdapterDataLoaderAction.java, androidx/test/espresso/action/AdapterViewProtocol.java, androidx/test/espresso/action/AdapterViewProtocols.java, androidx/test/espresso/action/CloseKeyboardAction.java, androidx/test/espresso/action/CoordinatesProvider.java, androidx/test/espresso/action/EditorAction.java, androidx/test/espresso/action/EspressoKey.java, androidx/test/espresso/action/GeneralClickAction.java, androidx/test/espresso/action/GeneralLocation.java, androidx/test/espresso/action/GeneralSwipeAction.java, androidx/test/espresso/action/KeyEventAction.java, androidx/test/espresso/action/MotionEvents.java, androidx/test/espresso/action/OpenLinkAction.java, androidx/test/espresso/action/PrecisionDescriber.java, androidx/test/espresso/action/Press.java, androidx/test/espresso/action/ReplaceTextAction.java, androidx/test/espresso/action/ScrollToAction.java, androidx/test/espresso/action/Swipe.java, androidx/test/espresso/action/Swiper.java, androidx/test/espresso/action/Tap.java, androidx/test/espresso/action/Tapper.java, androidx/test/espresso/action/TypeTextAction.java, androidx/test/espresso/action/ViewActions.java, androidx/test/espresso/assertion/LayoutAssertions.java, androidx/test/espresso/assertion/PositionAssertions.java, androidx/test/espresso/assertion/ViewAssertions.java, androidx/test/espresso/base/ActiveRootLister.java, androidx/test/espresso/base/AsyncTaskPoolMonitor.java, androidx/test/espresso/base/BaseLayerModule.java, androidx/test/espresso/base/CompatAsyncTask.java, androidx/test/espresso/base/Default.java, androidx/test/espresso/base/DefaultFailureHandler.java, androidx/test/espresso/base/EventInjectionStrategy.java, androidx/test/espresso/base/EventInjector.java, androidx/test/espresso/base/IdlingResourceRegistry.java, androidx/test/espresso/base/InputManagerEventInjectionStrategy.java, androidx/test/espresso/base/Interrogator.java, androidx/test/espresso/base/MainThread.java, androidx/test/espresso/base/RootViewPickerScope.java, androidx/test/espresso/base/RootsOracle.java, androidx/test/espresso/base/SdkAsyncTask.java, androidx/test/espresso/base/ThreadPoolExecutorExtractor.java, androidx/test/espresso/base/UiControllerImpl.java, androidx/test/espresso/base/ViewFinderImpl.java, androidx/test/espresso/base/WindowManagerEventInjectionStrategy.java, androidx/test/espresso/matcher/BoundedMatcher.java, androidx/test/espresso/matcher/CursorMatchers.java, androidx/test/espresso/matcher/LayoutMatchers.java, androidx/test/espresso/matcher/PreferenceMatchers.java, androidx/test/espresso/matcher/RootMatchers.java, androidx/test/espresso/util/ActivityLifecycles.java, androidx/test/espresso/util/HumanReadables.java, androidx/test/espresso/util/TreeIterables.java
+/*
+ * Copyright (C) 2014 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/espresso/InteractionResultsHandler.java, androidx/test/espresso/base/InterruptableUiController.java, androidx/test/espresso/remote/RemoteEspressoException.java, androidx/test/espresso/remote/RemoteProtocolException.java
+/*
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/espresso/remote/AnyToTypeConverter.java, androidx/test/espresso/remote/BuilderReflector.java, androidx/test/espresso/remote/ByteStringToParcelableConverter.java, androidx/test/espresso/remote/ByteStringToTypeConverter.java, androidx/test/espresso/remote/ConstructorInvocation.java, androidx/test/espresso/remote/Converter.java, androidx/test/espresso/remote/EspressoRemote.java, androidx/test/espresso/remote/FieldDescriptor.java, androidx/test/espresso/remote/GenericRemoteMessage.java, androidx/test/espresso/remote/InteractionRequest.java, androidx/test/espresso/remote/InteractionResponse.java, androidx/test/espresso/remote/MethodInvocation.java, androidx/test/espresso/remote/NoopRemoteInteraction.java, androidx/test/espresso/remote/ParcelableToByteStringConverter.java, androidx/test/espresso/remote/ProtoReflector.java, androidx/test/espresso/remote/ProtoUtils.java, androidx/test/espresso/remote/RemoteDescriptor.java, androidx/test/espresso/remote/RemoteInteraction.java, androidx/test/espresso/remote/RemoteInteractionRegistry.java, androidx/test/espresso/remote/RemoteMessageDeserializer.java, androidx/test/espresso/remote/RemoteMessageSerializer.java, androidx/test/espresso/remote/TypeProtoConverters.java, androidx/test/espresso/remote/TypeToAnyConverter.java, androidx/test/espresso/remote/TypeToByteStringConverter.java
+/*
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+Source entries: androidx/test/espresso/action/RepeatActionUntilViewState.java, androidx/test/espresso/base/LooperIdlingResourceInterrogationHandler.java, androidx/test/espresso/matcher/HasBackgroundMatcher.java, androidx/test/espresso/remote/EspressoRemoteMessage.java, androidx/test/espresso/remote/RemoteDescriptorRegistry.java
+/*
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/espresso/ViewInteractionComponent.java, androidx/test/espresso/action/KeyEventActionBase.java, androidx/test/espresso/action/PressBackAction.java, androidx/test/espresso/base/IdleNotifier.java, androidx/test/espresso/base/IdlingUiController.java, androidx/test/espresso/base/NoopIdleNotificationCallbackIdleNotifierProvider.java, androidx/test/espresso/base/NoopRunnableIdleNotifier.java, androidx/test/espresso/remote/Bindable.java
+/*
+ * Copyright (C) 2017 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/espresso/action/TranslatedCoordinatesProvider.java, androidx/test/espresso/remote/Bindable.java
+/*
+ * Copyright (C) 2017 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+Source entries: androidx/test/espresso/base/RootViewPicker.java
+/*
+ * Copyright (C) 2017 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/espresso/remote/NoRemoteEspressoInstanceException.java
+/*
+ * Copyright (C) 2018 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+Source entries: androidx/test/espresso/base/UiControllerModule.java, androidx/test/espresso/util/EspressoOptional.java
+/*
+ * Copyright (C) 2018 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/espresso/matcher/ViewMatchers.java
+/*
+/*
+ * Copyright (C) 2014 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+

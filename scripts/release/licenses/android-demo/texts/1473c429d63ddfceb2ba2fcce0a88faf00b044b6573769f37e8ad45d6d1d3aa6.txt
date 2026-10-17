@@ -1,0 +1,295 @@
+Verbatim legal comments from the exact Maven source archive.
+The referenced full license texts are distributed alongside this file.
+
+Source entries: androidx/test/orchestrator/listeners/result/ITestRunListener.java, androidx/test/orchestrator/listeners/result/TestIdentifier.java
+/*
+ * Copyright (C) 2008 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/orchestrator/listeners/result/TestResult.java, androidx/test/orchestrator/listeners/result/TestRunResult.java
+/*
+ * Copyright (C) 2010 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/internal/runner/AndroidRunnerBuilder.java, androidx/test/internal/runner/ClassPathScanner.java, androidx/test/internal/runner/TestLoader.java, androidx/test/internal/runner/TestRequestBuilder.java, androidx/test/internal/runner/junit3/AndroidTestSuite.java, androidx/test/internal/runner/junit3/NonExecutingTestResult.java, androidx/test/internal/runner/junit4/AndroidJUnit4ClassRunner.java, androidx/test/internal/runner/listener/CoverageListener.java, androidx/test/internal/runner/listener/DelayInjector.java, androidx/test/internal/runner/listener/InstrumentationResultPrinter.java, androidx/test/internal/runner/listener/InstrumentationRunListener.java, androidx/test/runner/AndroidJUnitRunner.java
+/*
+ * Copyright (C) 2012 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/internal/runner/listener/LogRunListener.java
+/*
+ * Copyright (C) 2013 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/filters/FlakyTest.java, androidx/test/filters/RequiresDevice.java, androidx/test/filters/SdkSuppress.java, androidx/test/internal/runner/junit3/AndroidTestResult.java, androidx/test/internal/runner/junit3/DelegatingFilterableTestSuite.java, androidx/test/internal/runner/junit3/DelegatingTestResult.java, androidx/test/internal/runner/junit3/DelegatingTestSuite.java, androidx/test/internal/runner/junit3/NonLeakyTestSuite.java, androidx/test/internal/util/AndroidRunnerParams.java
+/*
+ * Copyright (C) 2014 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/internal/runner/junit4/statement/UiThreadStatement.java, androidx/test/runner/AndroidJUnit4.java
+/*
+ * Copyright (C) 2014 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/internal/runner/TestExecutor.java, androidx/test/internal/runner/junit3/AndroidJUnit3Builder.java, androidx/test/internal/runner/junit3/AndroidSuiteBuilder.java, androidx/test/internal/runner/junit3/NonExecutingTestSuite.java, androidx/test/internal/runner/junit4/AndroidJUnit4Builder.java, androidx/test/internal/util/AndroidRunnerBuilderUtil.java
+/*
+ * Copyright (C) 2015 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/internal/runner/junit4/AndroidAnnotatedBuilder.java
+/*
+ * Copyright (C) 2015 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/filters/LargeTest.java, androidx/test/filters/MediumTest.java, androidx/test/filters/SmallTest.java, androidx/test/filters/Suppress.java, androidx/test/internal/runner/AndroidLogOnlyBuilder.java, androidx/test/internal/runner/NonExecutingRunner.java, androidx/test/internal/runner/TestSize.java, androidx/test/internal/runner/listener/SuiteAssignmentPrinter.java, androidx/test/orchestrator/instrumentationlistener/OrchestratedInstrumentationListener.java, androidx/test/runner/UsageTrackerFacilitator.java
+/*
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/runner/permission/GrantPermissionCallable.java, androidx/test/runner/permission/PermissionRequester.java, androidx/test/runner/permission/RequestPermissionCallable.java, androidx/test/runner/permission/ShellCommand.java, androidx/test/runner/permission/UiAutomationShellCommand.java
+/*
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the Lice`nse is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/runner/screenshot/BasicScreenCaptureProcessor.java, androidx/test/runner/screenshot/ScreenCapture.java, androidx/test/runner/screenshot/ScreenCaptureProcessor.java, androidx/test/runner/screenshot/Screenshot.java, androidx/test/runner/screenshot/TakeScreenshotCallable.java, androidx/test/runner/screenshot/UiAutomationWrapper.java
+/*
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/internal/runner/junit4/statement/RunAfters.java, androidx/test/internal/runner/junit4/statement/RunBefores.java
+/*
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ *
+ */
+
+Source entries: androidx/test/internal/runner/RunnerArgs.java
+/*
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+Source entries: androidx/test/runner/intercepting/SingleActivityFactory.java
+/*
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/internal/runner/listener/ActivityFinisherRunListener.java, androidx/test/orchestrator/junit/BundleJUnitUtils.java, androidx/test/orchestrator/junit/ParcelableDescription.java, androidx/test/orchestrator/junit/ParcelableFailure.java, androidx/test/orchestrator/junit/ParcelableResult.java, androidx/test/orchestrator/listeners/OrchestrationListenerManager.java, androidx/test/orchestrator/listeners/OrchestrationRunListener.java
+/*
+ * Copyright (C) 2017 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/internal/runner/junit3/JUnit38ClassRunner.java, androidx/test/internal/runner/tracker/AnalyticsBasedUsageTracker.java, androidx/test/internal/runner/tracker/UsageTracker.java, androidx/test/internal/runner/tracker/UsageTrackerRegistry.java
+/*
+ * Copyright (C) 2017 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+Source entries: androidx/test/internal/runner/filters/ParentFilter.java, androidx/test/internal/runner/filters/TestsRegExFilter.java
+/*
+ * Copyright (C) 2019 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+

@@ -1,0 +1,6 @@
+Verbatim legal comments from the exact Maven source archive.
+The referenced full license texts are distributed alongside this file.
+
+Source entries: com/squareup/javawriter/JavaWriter.java
+// Copyright 2013 Square, Inc.
+

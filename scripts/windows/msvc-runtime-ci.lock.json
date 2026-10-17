@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "packageId": "Microsoft.VC.14.51.CRT.Redist.X64.base",
+  "packageVersion": "14.51.36247",
+  "runtimeFileVersion": "14.51.36247.0",
+  "archiveFile": "Microsoft.VC.14.51.CRT.Redist.X64.base-14.51.36247.vsix",
+  "url": "https://download.visualstudio.microsoft.com/download/pr/3984a6ef-2ffc-4c07-962e-bf9e9b862819/24a1c8dba0376d9b008ac2ba430d13c06664fc6f163511fd7866485030e289af/Microsoft.VC.14.51.CRT.Redist.X64.base.vsix",
+  "sha256": "24a1c8dba0376d9b008ac2ba430d13c06664fc6f163511fd7866485030e289af",
+  "bytes": 3397395,
+  "entryPrefix": "Contents/VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.CRT/",
+  "provenance": "Official Visual Studio Community 18.7.11903.348 release catalog, Microsoft.VC.14.51.CRT.Redist.X64.base payload. Downloaded archive and all three release DLLs independently verified against msvc-runtime.lock.json on 2026-10-17. ZIP data extraction only; no VSIX/MSI/EXE installer execution.",
+  "redistributionUrl": "https://learn.microsoft.com/en-us/visualstudio/releases/2026/redistribution"
+}
