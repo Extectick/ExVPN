@@ -93,6 +93,10 @@ foreach ($powershell in @(
 )) {
     Invoke-Checked $powershell @(
         '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
+        (Join-Path $repository 'scripts/qa/test-windows-subscriptions.ps1')
+    )
+    Invoke-Checked $powershell @(
+        '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
         (Join-Path $repository 'scripts/qa/test-teardown-qa.ps1')
     )
 }
@@ -114,6 +118,10 @@ Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
 Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
     '-NoProfile', '-NonInteractive', '-File',
     (Join-Path $repository 'scripts/release/test-android-notices.ps1')
+)
+Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
+    '-NoProfile', '-NonInteractive', '-File',
+    (Join-Path $repository 'scripts/release/android-runtime-inventory-test.ps1')
 )
 
 if ($Target -eq 'Android') {

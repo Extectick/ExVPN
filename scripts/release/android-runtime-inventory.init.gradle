@@ -1,0 +1,325 @@
+// SPDX-License-Identifier: Apache-2.0
+// Read-only dependency resolution, pinned to Gradle 9.3.1 public APIs.
+// https://docs.gradle.org/9.3.1/javadoc/org/gradle/api/artifacts/result/ResolutionResult.html
+// https://docs.gradle.org/9.3.1/javadoc/org/gradle/api/artifacts/ArtifactView.html
+// No project artifacts are built, and no build/audit policy is changed.
+import groovy.json.JsonOutput
+import java.security.MessageDigest
+import org.gradle.api.artifacts.FileCollectionDependency
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ModuleComponentSelector
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentSelector
+import org.gradle.api.artifacts.result.ResolvedArtifactResult
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.artifacts.result.UnresolvedDependencyResult
+import org.gradle.maven.MavenModule
+import org.gradle.maven.MavenPomArtifact
+
+// Gradle also applies init scripts to included tooling builds, but does not
+// propagate the root project's -P inventory contract to those builds. Scope
+// this task to the root invocation before reading/validating that contract.
+// The root graph remains strict; included tooling is never inventoried as an
+// application runtime component merely because Gradle configured it.
+if (gradle.parent != null) return
+
+def inventoryFail = { String code -> throw new GradleException('exvpn_inventory_' + code) }
+def props = gradle.startParameter.projectProperties
+def variant = props['exvpnInventoryVariant']
+def engine = props['exvpnInventoryEngine']
+def outputPath = props['exvpnInventoryOutput']
+def inventoryRoot = props['exvpnInventoryRoot']
+def inventoryGradleUserHome = props['exvpnInventoryGradleUserHome']
+if (gradle.gradleVersion != '9.3.1' || !gradle.startParameter.offline ||
+        !(variant in ['debug', 'release']) || !(engine ==~ /[a-f0-9]{40}/) ||
+        !outputPath || !inventoryRoot || !inventoryGradleUserHome) {
+    inventoryFail('invocation_invalid')
+}
+if (gradle.gradleUserHomeDir.canonicalFile != new File(inventoryGradleUserHome).canonicalFile) {
+    inventoryFail('gradle_user_home_mismatch')
+}
+def rootPath = new File(inventoryRoot).canonicalFile.toPath()
+def outputFile = new File(outputPath).canonicalFile
+if (!outputFile.toPath().startsWith(rootPath) || outputFile.exists()) {
+    inventoryFail('output_not_fresh')
+}
+
+def exactVersion = { String value, boolean allowEmpty = false ->
+    if (allowEmpty && !value) return
+    if (!value || value.length() > 200 || !(value ==~ /[A-Za-z0-9_.-]+/) ||
+            value.toLowerCase(Locale.ROOT).contains('snapshot') ||
+            value.toLowerCase(Locale.ROOT).startsWith('latest.')) {
+        inventoryFail('non_exact_version')
+    }
+}
+def coordinatePart = { String value ->
+    if (!value || value.length() > 200 || !(value ==~ /[A-Za-z0-9_.-]+/)) {
+        inventoryFail('coordinate_invalid')
+    }
+}
+def componentId = { id ->
+    if (id instanceof ModuleComponentIdentifier) {
+        coordinatePart(id.group); coordinatePart(id.module); exactVersion(id.version)
+        return "maven:${id.group}:${id.module}:${id.version}".toString()
+    }
+    if (id instanceof ProjectComponentIdentifier) {
+        return 'project:' + id.buildTreePath
+    }
+    inventoryFail('unknown_component')
+}
+def attributes = { value ->
+    def result = new TreeMap<String, String>()
+    value.keySet().each { key -> result[key.name] = String.valueOf(value.getAttribute(key)) }
+    result
+}
+def variantRecord = { value ->
+    [name: value.displayName, attributes: attributes(value.attributes),
+     capabilities: value.capabilities.collect {
+         [group: it.group, name: it.name, version: it.version]
+     }.sort { JsonOutput.toJson(it) }]
+}
+def fileRecord = { File file, String role ->
+    def real = file.canonicalFile
+    if (!real.isFile() || real.length() > 2L * 1024 * 1024 * 1024) {
+        inventoryFail('artifact_missing_or_too_large')
+    }
+    def before = [size: real.length(), modified: real.lastModified()]
+    def digest = MessageDigest.getInstance('SHA-256')
+    real.withInputStream { input ->
+        byte[] buffer = new byte[1024 * 1024]
+        int count
+        while ((count = input.read(buffer)) != -1) digest.update(buffer, 0, count)
+    }
+    if (before.size != real.length() || before.modified != real.lastModified()) {
+        inventoryFail('artifact_changed')
+    }
+    [file: real.path, name: real.name, role: role, size: before.size,
+     sha256: digest.digest().encodeHex().toString()]
+}
+def requestedRecord = { selector ->
+    if (selector instanceof ModuleComponentSelector) {
+        coordinatePart(selector.group); coordinatePart(selector.module)
+        def constraint = selector.versionConstraint
+        [constraint.requiredVersion, constraint.strictVersion,
+         constraint.preferredVersion].each { exactVersion(it, true) }
+        constraint.rejectedVersions.each { exactVersion(it) }
+        if (constraint.branch) inventoryFail('branch_selector')
+        return [kind: 'maven', group: selector.group, name: selector.module,
+                required: constraint.requiredVersion, strict: constraint.strictVersion,
+                preferred: constraint.preferredVersion, rejected: constraint.rejectedVersions]
+    }
+    if (selector instanceof ProjectComponentSelector) {
+        return [kind: 'project', projectPath: selector.projectPath,
+                buildPath: selector.buildPath]
+    }
+    inventoryFail('unknown_selector')
+}
+
+// Diagnostic data is deliberately narrower than exception text. Never use
+// failure.message, selector.displayName, stack traces or repository URLs.
+// Version ranges remain visible here so rejected non-exact requests can be
+// distinguished from missing fixed artifacts without weakening resolution.
+def diagnosticVersion = { String value ->
+    value != null && value ==~ /[A-Za-z0-9_.+*,\[\]() -]{0,200}/ ? value : '[unsupported]'
+}
+def diagnosticSelector = { selector ->
+    if (selector instanceof ModuleComponentSelector) {
+        coordinatePart(selector.group); coordinatePart(selector.module)
+        def constraint = selector.versionConstraint
+        return [selectorType: 'MODULE', group: selector.group, name: selector.module,
+            required: diagnosticVersion(constraint.requiredVersion),
+            strict: diagnosticVersion(constraint.strictVersion),
+            preferred: diagnosticVersion(constraint.preferredVersion),
+            rejected: constraint.rejectedVersions.take(100).collect { diagnosticVersion(it) },
+            hasBranch: constraint.branch != null]
+    }
+    if (selector instanceof ProjectComponentSelector) return [selectorType: 'PROJECT']
+    [selectorType: 'UNKNOWN']
+}
+def diagnosticFailureClass = { Throwable failure ->
+    def classes = [
+        'org.gradle.internal.resolve.ModuleVersionNotFoundException': 'MODULE_NOT_FOUND',
+        'org.gradle.internal.resolve.ModuleVersionResolveException': 'MODULE_RESOLUTION_FAILED',
+        'org.gradle.internal.resolve.ArtifactResolveException': 'ARTIFACT_RESOLUTION_FAILED',
+        'org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.conflicts.VersionConflictException': 'VERSION_CONFLICT',
+        'org.gradle.internal.component.resolution.failure.exception.VariantSelectionByAttributesException': 'VARIANT_SELECTION_FAILED',
+        'org.gradle.internal.component.resolution.failure.exception.VariantSelectionByNameException': 'VARIANT_SELECTION_FAILED',
+        'org.gradle.api.InvalidUserCodeException': 'INVALID_USER_CODE',
+        'org.gradle.api.GradleException': 'GRADLE_FAILURE']
+    def chain = []
+    def seen = Collections.newSetFromMap(new IdentityHashMap<Throwable, Boolean>())
+    while (failure != null && chain.size() < 8 && seen.add(failure)) {
+        chain.add(classes.get(failure.class.name, 'UNCLASSIFIED_FAILURE'))
+        failure = failure.cause
+    }
+    [failureClass: chain ? chain.first() : 'UNCLASSIFIED_FAILURE', causeClasses: chain]
+}
+
+gradle.projectsEvaluated {
+    // Init scripts can also be applied to tooling composite builds. Only the
+    // selected Android/fixture root may create and run the inventory task.
+    if (gradle.rootProject.projectDir.canonicalPath != props['exvpnInventoryProject']) return
+    def app = gradle.rootProject.findProject(':app')
+    if (app == null) inventoryFail('app_project_missing')
+    def config = app.configurations.findByName(variant + 'RuntimeClasspath')
+    if (config == null || !config.canBeResolved) inventoryFail('runtime_configuration_missing')
+    config.resolutionStrategy.failOnDynamicVersions()
+    config.resolutionStrategy.failOnChangingVersions()
+    gradle.taskGraph.whenReady { graph ->
+        if (graph.allTasks.collect { it.path } != [':app:exvpnRuntimeInventory']) {
+            inventoryFail('unexpected_task_graph')
+        }
+    }
+    app.tasks.register('exvpnRuntimeInventory') {
+        outputs.upToDateWhen { false }
+        doLast {
+            try {
+                if (config.allDependencies.any { it instanceof FileCollectionDependency }) {
+                    inventoryFail('file_dependency')
+                }
+                def resolution = config.incoming.resolutionResult
+                def unresolved = resolution.allDependencies.findAll { it instanceof UnresolvedDependencyResult }
+                if (unresolved) {
+                    if (unresolved.size() > 3000) inventoryFail('unresolved_limit')
+                    def diagnostics = unresolved.collect { dependency ->
+                        diagnosticSelector(dependency.requested) + diagnosticFailureClass(dependency.failure)
+                    }.unique { JsonOutput.toJson(it) }.sort { JsonOutput.toJson(it) }
+                    def diagnosticFile = new File(outputFile.parentFile, outputFile.name + '.unresolved.json')
+                    if (diagnosticFile.exists()) inventoryFail('diagnostic_not_fresh')
+                    diagnosticFile.parentFile.mkdirs()
+                    diagnosticFile.setText(JsonOutput.prettyPrint(JsonOutput.toJson([
+                        schema: 1, status: 'FAILED_UNRESOLVED_DEPENDENCIES',
+                        variant: variant, configuration: config.name, offline: true,
+                        failureCount: unresolved.size(), dependencies: diagnostics,
+                        exceptionMessagesIncluded: false, repositoryUrlsIncluded: false])) + '\n', 'UTF-8')
+                    inventoryFail('unresolved_dependency')
+                }
+                def components = resolution.allComponents.toList()
+                if (!components || components.size() > 3000) inventoryFail('component_limit')
+                def nodes = []
+                def edges = []
+                components.each { component ->
+                    def id = componentId(component.id)
+                    def node = [id: id,
+                        kind: component.id instanceof ModuleComponentIdentifier ? 'maven' : 'project',
+                        variants: component.variants.collect { variantRecord(it) },
+                        selectionCauses: component.selectionReason.descriptions.collect { it.cause.name() }.unique().sort(),
+                        artifacts: [], metadata: []]
+                    if (node.kind == 'maven') {
+                        node.group = component.id.group
+                        node.name = component.id.module
+                        node.version = component.id.version
+                        if (node.group == 'io.flutter' &&
+                                (node.version != '1.0.0-' + engine || !node.name.endsWith('_' + variant))) {
+                            inventoryFail('engine_mismatch')
+                        }
+                    } else {
+                        def project = gradle.rootProject.findProject(component.id.projectPath)
+                        if (project == null || !project.projectDir.canonicalFile.toPath().startsWith(rootPath)) {
+                            inventoryFail('project_outside_snapshot')
+                        }
+                        node.projectPath = component.id.projectPath
+                        node.projectDirectory = project.projectDir.canonicalPath
+                        node.buildFile = fileRecord(project.buildFile, 'project-build-script')
+                        // Project outputs are intentionally not requested/built.
+                        node.binaryArtifactsInspected = false
+                        project.configurations.findAll {
+                            it.name == variant + 'RuntimeClasspath' || it.name == 'runtimeClasspath'
+                        }.each { projectConfig ->
+                            if (projectConfig.allDependencies.any { it instanceof FileCollectionDependency }) {
+                                inventoryFail('file_dependency')
+                            }
+                        }
+                    }
+                    nodes.add(node)
+                    component.variants.each { fromVariant ->
+                        component.getDependenciesForVariant(fromVariant).each { dependency ->
+                            if (dependency instanceof UnresolvedDependencyResult) inventoryFail('unresolved_dependency')
+                            if (!(dependency instanceof ResolvedDependencyResult)) inventoryFail('unknown_dependency')
+                            edges.add([from: id, fromVariant: variantRecord(fromVariant),
+                                requested: requestedRecord(dependency.requested),
+                                to: componentId(dependency.selected.id),
+                                toVariant: variantRecord(dependency.resolvedVariant),
+                                constraint: dependency.constraint])
+                        }
+                    }
+                }
+                if (!nodes.any { it.kind == 'maven' && it.group == 'io.flutter' && it.name == 'flutter_embedding_' + variant }) {
+                    inventoryFail('engine_embedding_missing')
+                }
+                def byId = nodes.collectEntries { [(it.id): it] }
+                // Excluding only project identifiers still exposes opaque/file
+                // artifacts, which must fail instead of disappearing silently.
+                def artifacts = config.incoming.artifactView {
+                    componentFilter { !(it instanceof ProjectComponentIdentifier) }
+                    lenient = false
+                }.artifacts.artifacts
+                artifacts.each { artifact ->
+                    def id = componentId(artifact.id.componentIdentifier)
+                    if (!byId.containsKey(id)) inventoryFail('artifact_component_unknown')
+                    def file = artifact.file
+                    if (!(file.name.endsWith('.aar') || file.name.endsWith('.jar'))) inventoryFail('artifact_type_unknown')
+                    def record = fileRecord(file, 'resolved-runtime-artifact')
+                    record.variant = variantRecord(artifact.variant)
+                    record.displayName = artifact.id.displayName
+                    byId[id].artifacts.add(record)
+                }
+                // POMs use Gradle's public pinned artifact-query API. This is
+                // descriptor evidence for selected components, not a claim to
+                // expose Gradle's internal POM-vs-module metadata selection.
+                def ids = components.findAll { it.id instanceof ModuleComponentIdentifier }.collect { it.id }
+                def query = app.dependencies.createArtifactResolutionQuery()
+                    .forComponents(ids).withArtifacts(MavenModule, MavenPomArtifact).execute()
+                if (query.components.size() != query.resolvedComponents.size()) inventoryFail('pom_component_unresolved')
+                query.resolvedComponents.each { component ->
+                    def records = component.getArtifacts(MavenPomArtifact)
+                    if (records.size() != 1 || !(records.first() instanceof ResolvedArtifactResult)) {
+                        inventoryFail('pom_missing_or_ambiguous')
+                    }
+                    byId[componentId(component.id)].metadata.add(fileRecord(records.first().file, 'selected-component-pom'))
+                }
+                nodes.each { node ->
+                    if (node.kind == 'maven' && node.metadata.size() != 1) inventoryFail('pom_missing_or_ambiguous')
+                    node.artifacts.sort { it.name }
+                }
+                // AGP's public legacy merged ProductFlavor model does not
+                // expose packaging ABI filters. The externalNativeBuild API
+                // does not describe prebuilt JNI packaging. Keep final APK
+                // coverage unknown and record evaluated DSL inputs separately.
+                def abiObservation = [finalVariantAbiFiltersStatus: 'unknown',
+                    finalApkNativeCoverageVerified: false, evaluatedDslAvailable: false]
+                def android = app.extensions.findByName('android')
+                if (android != null) {
+                    abiObservation.evaluatedDslAvailable = true
+                    abiObservation.defaultConfigFilters = android.defaultConfig.ndk.abiFilters.toList().sort()
+                    abiObservation.buildTypeFilters = android.buildTypes.findByName(variant).ndk.abiFilters.toList().sort()
+                    abiObservation.productFlavorFilters = android.productFlavors.collect {
+                        [name: it.name, filters: it.ndk.abiFilters.toList().sort()]
+                    }
+                    abiObservation.flutterDefaultAbiInsertionDisabled = String.valueOf(app.findProperty('disable-abi-filtering')) == 'true'
+                }
+                def report = [schema: 1, status: 'RESOLVED_INPUT_GRAPH',
+                    gradleVersion: gradle.gradleVersion,
+                    javaVersion: System.getProperty('java.version'),
+                    variant: variant, configuration: config.name, engineRevision: engine,
+                    offline: true, taskGraph: [':app:exvpnRuntimeInventory'],
+                    configurationAttributes: attributes(config.attributes), abiObservation: abiObservation,
+                    rootComponent: componentId(resolution.rootComponent.get().id),
+                    components: nodes.sort { it.id },
+                    edges: edges.unique { JsonOutput.toJson(it) }.sort { JsonOutput.toJson(it) },
+                    boundaries: [apkBindingVerified: false, licensesReviewed: false,
+                        projectBinariesVerified: false, exactLinkedCodeInventory: false,
+                        metadataSourceSelectionVerified: false]]
+                outputFile.parentFile.mkdirs()
+                outputFile.setText(JsonOutput.prettyPrint(JsonOutput.toJson(report)) + '\n', 'UTF-8')
+                println "ExVPN runtime input graph resolved: ${nodes.size()} components, ${edges.size()} edges. APK/license proof remains incomplete."
+            } catch (Exception failure) {
+                // Never echo arbitrary resolver/provider exceptions into reports.
+                def code = failure.message?.find(/exvpn_inventory_[a-z_]+/) ?: 'exvpn_inventory_resolution_failed'
+                outputFile.parentFile.mkdirs()
+                outputFile.setText(JsonOutput.toJson([schema: 1, status: 'FAILED', code: code]) + '\n', 'UTF-8')
+                throw new GradleException(code)
+            }
+        }
+    }
+}

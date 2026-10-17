@@ -93,6 +93,12 @@ release blockers. Проверены SHA/signature установщика и о�
 
 ## Незакрытая часть release gate
 
+Для Gradle/Maven добавлен отдельный offline [runtime inventory](../scripts/release/ANDROID_RUNTIME_INVENTORY.md).
+Он собирает разрешённый граф и хеши входов без APK/JNI, явно оставляя открытыми
+проверки готового APK и лицензий. Фиксированный Flutter SDK сам по себе не
+закрепляет три dynamic debug зависимости `integration_test`; actual collector
+выявил этот отказ. Такой отказ не снимает ни один release blocker.
+
 Эта инвентаризация не является полным SBOM: Gradle/Maven runtime, отдельные NSIS
 компоненты и комплект Windows runtime проверяются дополнительно по фактическому
 пакету. Проверка совместимости лицензий, подписи и воспроизводимости выпуска

@@ -82,6 +82,12 @@ switch ($Lane) {
         if (!$?) { throw 'Offline Android DNS capture regression failed.' }
         & (Join-Path $PSScriptRoot 'test-windows-transport-lifecycle.ps1')
         if (!$?) { throw 'Windows transport lifecycle QA helper regression failed.' }
+        & (Join-Path $PSScriptRoot 'test-windows-subscriptions.ps1')
+        if (!$?) { throw 'Windows subscription QA helper regression failed.' }
+        Invoke-Check (Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe') @(
+            '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
+            (Join-Path $PSScriptRoot 'test-windows-subscriptions.ps1')
+        )
         & (Join-Path $PSScriptRoot 'test-teardown-qa.ps1')
         if (!$?) { throw 'Windows teardown QA helper regression failed.' }
         Invoke-Check (Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe') @(
@@ -96,6 +102,8 @@ switch ($Lane) {
         if (!$?) { throw 'Release artifact audit regression failed.' }
         & (Join-Path $repository 'scripts/release/test-android-notices.ps1')
         if (!$?) { throw 'Android notice snapshot regression failed.' }
+        & (Join-Path $repository 'scripts/release/android-runtime-inventory-test.ps1')
+        if (!$?) { throw 'Android runtime inventory regression failed.' }
         & (Join-Path $repository 'scripts/core/test-xray-patch.ps1')
         if (!$?) { throw 'Pinned Xray source reconstruction regression failed.' }
         break

@@ -34,6 +34,7 @@ credentials.json
 
 # Android / Gradle
 **/.gradle/
+**/.kotlin/
 **/.cxx/
 **/local.properties
 **/captures/
