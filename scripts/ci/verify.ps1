@@ -81,8 +81,21 @@ Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
 )
 Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
     '-NoProfile', '-NonInteractive', '-File',
+    (Join-Path $repository 'scripts/qa/android-dns-capture/test.ps1')
+)
+Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
+    '-NoProfile', '-NonInteractive', '-File',
     (Join-Path $repository 'scripts/qa/test-windows-transport-lifecycle.ps1')
 )
+foreach ($powershell in @(
+    (Join-Path $PSHOME 'pwsh.exe'),
+    (Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe')
+)) {
+    Invoke-Checked $powershell @(
+        '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
+        (Join-Path $repository 'scripts/qa/test-teardown-qa.ps1')
+    )
+}
 Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
     '-NoProfile', '-NonInteractive', '-File',
     (Join-Path $repository 'scripts/ci/test-build-impact.ps1')
@@ -104,6 +117,13 @@ Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
 )
 
 if ($Target -eq 'Android') {
+    # Compile the independent probe's pure parsers against the prepared SDK.
+    # These fixtures do not install the probe or contact a device/server.
+    Invoke-Checked (Join-Path $PSHOME 'pwsh.exe') @(
+        '-NoProfile', '-NonInteractive', '-File',
+        (Join-Path $repository 'scripts/qa/android-https-probe/test.ps1'),
+        '-AndroidSdkPath', $env:ANDROID_HOME
+    )
     if ($SkipNativeBuild) {
         & (Join-Path $PSScriptRoot 'build-impact-android-tests.ps1')
         if (!$?) { throw 'Standalone Android JVM tests failed.' }

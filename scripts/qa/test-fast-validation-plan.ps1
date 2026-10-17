@@ -19,6 +19,10 @@ function Assert-Lanes([string[]]$Paths, [string[]]$Expected) {
 $all = @(Get-FastValidationLaneNames)
 Assert-Lanes @() @()
 Assert-Lanes @('docs/PLAN.md', 'design/concepts/approved.png', 'README.md') @()
+Assert-Lanes @('docs/evidence/synthetic-report.json', 'docs/evidence/nested/another-report.json') @()
+Assert-Lanes @('docs/evidence/synthetic-report.json', 'packages/exvpn_updates/lib/updater.dart') @('updates', 'app')
+Assert-Lanes @('docs/configuration.json') $all
+Assert-Lanes @('docs/evidence/runner.json.ps1') $all
 Assert-Lanes @('apps/exvpn/lib/ui/home_screen.dart') @('app')
 Assert-Lanes @('apps/exvpn/test/new regression_test.dart') @('app')
 Assert-Lanes @('apps/exvpn/assets/images/new.png') @('app')

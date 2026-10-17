@@ -78,8 +78,16 @@ switch ($Lane) {
         if (!$?) { throw 'Android QA probe parser regression failed.' }
         & (Join-Path $PSScriptRoot 'test-android-lifecycle-tools.ps1')
         if (!$?) { throw 'Android lifecycle QA helper regression failed.' }
+        & (Join-Path $PSScriptRoot 'android-dns-capture/test.ps1')
+        if (!$?) { throw 'Offline Android DNS capture regression failed.' }
         & (Join-Path $PSScriptRoot 'test-windows-transport-lifecycle.ps1')
         if (!$?) { throw 'Windows transport lifecycle QA helper regression failed.' }
+        & (Join-Path $PSScriptRoot 'test-teardown-qa.ps1')
+        if (!$?) { throw 'Windows teardown QA helper regression failed.' }
+        Invoke-Check (Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe') @(
+            '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File',
+            (Join-Path $PSScriptRoot 'test-teardown-qa.ps1')
+        )
         & (Join-Path $repository 'scripts/ci/test-build-impact.ps1')
         if (!$?) { throw 'CI native build-impact regression failed.' }
         & (Join-Path $repository 'scripts/release/test-notice-inputs.ps1')

@@ -41,6 +41,7 @@ function Get-FastValidationPlan {
                 '^native/android/' { 'android'; break }
                 '^native/windows/' { 'windows'; break }
                 '^native/patches/' { 'xray'; break }
+                '^docs/evidence/(?:[a-zA-Z0-9_.-]+/)*[a-zA-Z0-9_.-]+\.json$' { 'documentation'; break }
                 '^(docs|design)/.*\.(md|png|jpe?g|gif|webp|svg|pdf)$' { 'documentation'; break }
                 '^(README\.md|LICENSE|NOTICE)$' { 'documentation'; break }
                 default { 'all' }
