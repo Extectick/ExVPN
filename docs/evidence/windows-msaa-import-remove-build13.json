@@ -1,0 +1,271 @@
+{
+  "schema": 1,
+  "kind": "ordinary-windows-ui-msaa-import-remove",
+  "runId": "6a548a29-96b9-47b7-a638-443e85352470",
+  "status": "PASS",
+  "createdUtc": "2026-10-17T06:40:03.1584042Z",
+  "build": "0.1.0+13",
+  "artifacts": {
+    "uiSha256": "e7299a563e2b81d41f334ec6d8f612971c18a58f8fd826323036503d1ba66299",
+    "serviceSha256": "3582d238cf50419fc43c596b539c99a374effe19c99d3382e9aac68ef3626e72",
+    "installerSha256": "fea39fdfa7e228dec3c9906f27e560912361ffaccd09f9111028a91450c68215",
+    "installedStateSha256": "4a9be1bb8052ef5a768ff3f41f596622378376d68f61fc124c89898d09916fdd"
+  },
+  "source": {
+    "scope": "Private QA only; ordinary installed product binary unchanged",
+    "sourceSealSha256": "56345da8e3e5b4674fe6fcac0990c4c7aea2b576d8f47a850bdc2512afb36b61",
+    "hostDriverSha256": "4b72ae03ea899c2b0e2f06d9499b57c76deca06f5a4eb2f35e35569bca80bbfc",
+    "focusedProofSha256": "76eb09f6d5bf7ddce96820d0fdc05e949903eaaf83ac50cb3dd8aefe9177aa2d",
+    "focusedChecks": 246.0,
+    "runtimeFiles": 14,
+    "fixtureFiles": 9,
+    "independentReview": "PASS before runtime",
+    "nativeHelperSha256": "99e72af96bce496d66a3a4af37b696c1b95e179ab4a5c9904e36d16af362dcc4",
+    "policyHelperSha256": "2f4ce791d5e96a14f6ffe7bedd3415a47888c3689f6ccbaf998badcf9230dae9"
+  },
+  "inputContract": "Addressed printable ASCII WM_CHAR to exact owned FLUTTERVIEW HWND using SendMessageTimeoutW; per-character PID/start/hash/HWND/thread/native-focus/MSAA-focused-field checks, exact prefix/final readback. No activation or global input dispatch.",
+  "actual": {
+    "stepsPassed": 11,
+    "semanticActions": 10,
+    "nameCharacters": 29,
+    "payloadCharacters": 147,
+    "singleSyntheticProfileImported": true,
+    "selectedProfileObserved": true,
+    "ownedGroupRemovedInUi": true,
+    "ordinaryUiClosed": true,
+    "connectActions": 0,
+    "vpnStarted": false,
+    "fixtureLaunched": false,
+    "maintenanceStarted": false,
+    "hostNetworkChanges": false,
+    "hostCoordinatorElapsedMs": 132542,
+    "uiCoordinatorElapsedMs": 100559,
+    "durationScope": "Separate host and guest stopwatches, each includes its setup/cleanup.",
+    "perAttemptDeadlineSeconds": 180,
+    "semanticChildDeadlineSeconds": 15,
+    "sessionDeadlineSeconds": 12,
+    "readbackDeadlineSeconds": 5,
+    "receipts": [
+      {
+        "sequence": 1,
+        "step": "settings",
+        "status": "PASS",
+        "actionIssued": true,
+        "charactersAttempted": 0,
+        "charactersSent": 0,
+        "elapsedMs": 299,
+        "failedFreshReadCount": 1,
+        "sha256": "6ea83957b1bfbb6d3cb9d2d4a405076b4f36aa9b22ad1e0649982f392cc48e4f"
+      },
+      {
+        "sequence": 2,
+        "step": "add",
+        "status": "PASS",
+        "actionIssued": true,
+        "charactersAttempted": 0,
+        "charactersSent": 0,
+        "elapsedMs": 270,
+        "failedFreshReadCount": 0,
+        "sha256": "8594dd880bc98f8e4cf624693db1f74ca9e24c9c844b3fc42e6fe8a6d6104f8a"
+      },
+      {
+        "sequence": 3,
+        "step": "text-mode",
+        "status": "PASS",
+        "actionIssued": true,
+        "charactersAttempted": 0,
+        "charactersSent": 0,
+        "elapsedMs": 175,
+        "failedFreshReadCount": 0,
+        "sha256": "33458a9d383d205c96f97e9df4947159979f0c87e8788a532d22ebd0ede5c8a1"
+      },
+      {
+        "sequence": 4,
+        "step": "name",
+        "status": "PASS",
+        "actionIssued": true,
+        "charactersAttempted": 29,
+        "charactersSent": 29,
+        "elapsedMs": 538,
+        "failedFreshReadCount": 0,
+        "sha256": "ac5419d8ddc078886a4735a5215748fb376f8e2a4bc0e408567a676f1214bd6b"
+      },
+      {
+        "sequence": 5,
+        "step": "payload",
+        "status": "PASS",
+        "actionIssued": true,
+        "charactersAttempted": 147,
+        "charactersSent": 147,
+        "elapsedMs": 1511,
+        "failedFreshReadCount": 0,
+        "sha256": "8b24027fe7a087a66bd2144d8413782b12e8eca91ffa4e3e3dcbf47b61846ce2"
+      },
+      {
+        "sequence": 6,
+        "step": "submit",
+        "status": "PASS",
+        "actionIssued": true,
+        "charactersAttempted": 0,
+        "charactersSent": 0,
+        "elapsedMs": 446,
+        "failedFreshReadCount": 1,
+        "sha256": "b7a377c758345f443ae3703173626ed90217d726af22717199c86082ad92ba62"
+      },
+      {
+        "sequence": 7,
+        "step": "observe-selection",
+        "status": "PASS",
+        "actionIssued": false,
+        "charactersAttempted": 0,
+        "charactersSent": 0,
+        "elapsedMs": 92,
+        "failedFreshReadCount": 0,
+        "sha256": "752d07b1c8ca826b3d35cabced5e67647d3f7d6b36ef4469a09616183ada34af"
+      },
+      {
+        "sequence": 8,
+        "step": "settings",
+        "status": "PASS",
+        "actionIssued": true,
+        "charactersAttempted": 0,
+        "charactersSent": 0,
+        "elapsedMs": 303,
+        "failedFreshReadCount": 1,
+        "sha256": "11a13d6dd5bb8a58eeaee7865304a13beb6ec8836a6bf728d2de114412f0679f"
+      },
+      {
+        "sequence": 9,
+        "step": "remove-group",
+        "status": "PASS",
+        "actionIssued": true,
+        "charactersAttempted": 0,
+        "charactersSent": 0,
+        "elapsedMs": 274,
+        "failedFreshReadCount": 1,
+        "sha256": "832696cce7ec895b24903f68cd03a3b03262085205cc840c23883548f6ebfcaf"
+      },
+      {
+        "sequence": 10,
+        "step": "confirm-remove",
+        "status": "PASS",
+        "actionIssued": true,
+        "charactersAttempted": 0,
+        "charactersSent": 0,
+        "elapsedMs": 366,
+        "failedFreshReadCount": 0,
+        "sha256": "6783599d9efc23c1c2adfe11ec69d50a6d8f1c0d998f231fbd13a7e9c01c011a"
+      },
+      {
+        "sequence": 11,
+        "step": "close-settings",
+        "status": "PASS",
+        "actionIssued": true,
+        "charactersAttempted": 0,
+        "charactersSent": 0,
+        "elapsedMs": 428,
+        "failedFreshReadCount": 0,
+        "sha256": "e58f2bc0bffd51cd738135feba91475be3a44b56e8e820dab25495b8bd4265dd"
+      }
+    ]
+  },
+  "cleanup": {
+    "status": "PASS",
+    "ownedUiClosed": true,
+    "ownedChildrenExited": true,
+    "storageBeforeFiles": 0,
+    "storageAfterFiles": 0,
+    "onlyOwnedCreatedDpapiFilesArchivedAndRemoved": true,
+    "ordinaryServiceRunning": true,
+    "productionBindingUnchanged": true,
+    "servicePidAndStartUnchanged": true,
+    "guardArmed": false,
+    "tunAbsent": true,
+    "routesAndDnsUnchanged": true,
+    "rollbackUnchanged": true,
+    "finalUiCount": 0,
+    "finalOtherQaCount": 0,
+    "proofs": [
+      {
+        "name": "session-native-before.json",
+        "sha256": "7c5588370397d95cb2dd50747bbd14c9eddc0ecfbbfccdeb3c1d45775f943a73"
+      },
+      {
+        "name": "session-native-after.json",
+        "sha256": "5cc1aa2a603c7ec8fab05ca269a754dcc36e6dd606377346f44462a3748894f2"
+      },
+      {
+        "name": "session-storage-before.json",
+        "sha256": "710691f3a2795d817d49acce9d8dd9ff2aa2df3a87c3b6ec5289c0dae061c418"
+      },
+      {
+        "name": "session-storage-after.json",
+        "sha256": "710691f3a2795d817d49acce9d8dd9ff2aa2df3a87c3b6ec5289c0dae061c418"
+      },
+      {
+        "name": "storage-created.json",
+        "sha256": "7cf139698e4616e26eddbc602532c12794c6291909ff2b1bcfa1b8742cccc2af"
+      },
+      {
+        "name": "session-ui-result.json",
+        "sha256": "fb99f7c707cb4bb16c94ada9f3ada658a9c2d792a22a9cdbc95637e6c8ca797f"
+      },
+      {
+        "name": "host-summary.json",
+        "sha256": "f38e2a4147549cd565529f2baa701c5f96aaf49dca485dd26e7ee0405e144408"
+      }
+    ]
+  },
+  "priorAttempts": [
+    {
+      "runId": "e0c6d84b-e7bf-44d0-bf9e-d04e2d8a074f",
+      "status": "REFUSED",
+      "failureCode": "semantic_target_missing",
+      "failedStep": "payload",
+      "passedSteps": 4,
+      "payloadCharactersSent": 0,
+      "nameCharactersSent": 29,
+      "hostCoordinatorElapsedMs": 81041,
+      "uiCoordinatorElapsedMs": 46931,
+      "exactFailedSelectionSnapshotSaved": false,
+      "originalFailureRetained": true,
+      "cleanupPassed": true,
+      "sourceSealSha256": "4d1010d1610468c51dcd9b3937725de4483bf57fc0a29efc19dcfa6a4f648de2",
+      "focusedChecks": 209.0,
+      "focusedProofSha256": "79b0347a84a4a30c689e420a3ef17512532bae090c5030e048e90da4055d1cce",
+      "failureReceiptSha256": "6571cd7a71dbb320360fae6c3008432aaac2a876b8556f27b80c8ff9adf39948",
+      "privateManifestPath": ".private/windows-lifecycle-results/e0c6d84b-e7bf-44d0-bf9e-d04e2d8a074f/private-evidence-manifest.json",
+      "privateManifestSha256": "c6027a5ae61b0d162b36b244823c2a487b0f4ee81ad2f048ebb12301b498cffa"
+    },
+    {
+      "runId": "f8813443-8931-470e-b052-ece4c093a64e",
+      "status": "REFUSED",
+      "failureCode": "semantic_target_missing",
+      "failedStep": "payload",
+      "passedSteps": 4,
+      "payloadCharactersSent": 0,
+      "nameCharactersSent": 29,
+      "hostCoordinatorElapsedMs": 80460,
+      "uiCoordinatorElapsedMs": 45778,
+      "exactFailedSelectionSnapshotSaved": true,
+      "originalFailureRetained": true,
+      "cleanupPassed": true,
+      "sourceSealSha256": "f6a8531d604f47b12d06ae897cacd6933e0646de874ab5a3d31f048253d8fa97",
+      "focusedChecks": 215.0,
+      "focusedProofSha256": "b0c0b7011b263364749b6da520cd000f2859a5aaff0fb078dd6fa71ad5737639",
+      "failureReceiptSha256": "114a82fc6e285ea4e52084e822808e89cdba243dcd9fa1685c0372df3cfc63b7",
+      "privateManifestPath": ".private/windows-lifecycle-results/f8813443-8931-470e-b052-ece4c093a64e/private-evidence-manifest.json",
+      "privateManifestSha256": "b692c8d479afb54307bd64336dd2f2b7866576a5a7157c7735c9da7d8b38839d"
+    }
+  ],
+  "resolvedHarnessDefect": "Focused empty multiline TextField exposed the exact label plus LF plus the known hint. Only those two full ordinal names are accepted, with unchanged uniqueness/state/ownership gates. All existing captures now retain bounded diagnostic snapshots.",
+  "privateManifestPath": ".private/windows-lifecycle-results/6a548a29-96b9-47b7-a638-443e85352470/private-evidence-manifest.json",
+  "privateManifestSha256": "06b66fc199a927a908b7d603aba9c53304a2dee78707c1f88e7e770803e0738f",
+  "privateManifestFiles": 124,
+  "boundaries": [
+    "This is an ordinary release UI import/remove proof with real storage. It is not a keyboard/IME or foreground UX test.",
+    "It does not establish cold persistence, Windows tray, VPN, crash/IPv6/DNS/exclusion, upgrade or uninstall acceptance.",
+    "No Connect, live fixture, installer or maintenance action was issued.",
+    "Earlier refusals remain recorded; cleanup PASS never changes a failed acceptance result."
+  ]
+}

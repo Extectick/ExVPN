@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "status": "INDETERMINATE",
+  "reason": "QA_FIXTURE_OWNER_PATH_MISSING_BEFORE_FAULT",
+  "startedAtUtc": "2026-10-17T06:22:55.5767345Z",
+  "finishedAtUtc": "2026-10-17T06:27:43.0941629Z",
+  "runtimeDurationMs": 287513,
+  "cleanupAddendumAtUtc": "2026-10-17T06:28:38.1561403Z",
+  "artifact": {
+    "helperExcludedSha256": "dac247d53f1ab9db7198f28a81b30fc63548c5757d2935d17a918bbbe1dcbe55",
+    "fixtureSha256": "79c2886d9178781ea47c053d9c1d2e8d4a2bf36e162bc78099c347898d5d540b",
+    "sha256": "7a85645227f045c3a8c5cb875ceb53e2ed3cfbd4d291658c368254868753fccd",
+    "immutableInstallUnchanged": true,
+    "consumedInputFingerprint": "46c2150e4d20989733f68ca3c0056ab6e0336cf769cba5b270f3cf99f3238e03",
+    "version": "0.1.0+13",
+    "core": "26.10.10-exvpn.4",
+    "fixtureCore": "26.10.10-exvpn.3",
+    "helperProtectedSha256": "6c6ced3231d41a69e6ad67fb034fdd3e1c9c3910995b82f964ce710418667b66",
+    "currentCheckoutNotUsedAsBuildProof": true
+  },
+  "scope": {
+    "api": 30,
+    "hostNetworkChanges": false,
+    "adbReverse": false,
+    "abi": "x86_64",
+    "externalPublicIpDifferenceNotExpectedForLocalFixture": true,
+    "osSettingsChanges": false,
+    "activeVpnUiAutomatorUsed": false,
+    "ordinarySeparateProbeUids": true,
+    "directAliasFixture": true,
+    "original5564Actions": 0,
+    "uiMechanism": "instrumentation_semantics_v1",
+    "ownedDisposableEmulator": true
+  },
+  "phases": {
+    "normalDisconnectCompleted": true,
+    "baseline": "PASS",
+    "additionalVpnRetries": 0,
+    "connectCommands": 1,
+    "connected": "PASS",
+    "restoredAfterIntentionalFault": "NOT_TESTED",
+    "fault": "NOT_TESTED",
+    "plannedOutageInjections": 0
+  },
+  "controls": {
+    "baseline": {
+      "protectedHttps": true,
+      "vpnNetId": false,
+      "nativeRecords": 1,
+      "controlledNonceCalls": 1,
+      "hostnameMasked": true,
+      "wireNonceLinked": false,
+      "dnsOutcome": "no_answer",
+      "completionWindowMatched": true,
+      "excludedNumericHttps": true,
+      "beforeAfterNetworkMapsMatched": true,
+      "liveProcessObservations": 129,
+      "knownUidAndLivePidMatched": true,
+      "dnsDurationMs": 14010,
+      "status": "PASS"
+    },
+    "connected": {
+      "protectedHttps": true,
+      "vpnNetId": true,
+      "nativeRecords": 1,
+      "controlledNonceCalls": 1,
+      "hostnameMasked": true,
+      "wireNonceLinked": false,
+      "dnsOutcome": "no_answer",
+      "completionWindowMatched": true,
+      "excludedNumericHttps": true,
+      "beforeAfterNetworkMapsMatched": true,
+      "liveProcessObservations": 1,
+      "knownUidAndLivePidMatched": true,
+      "dnsDurationMs": 128,
+      "status": "PASS"
+    }
+  },
+  "connected": {
+    "protectedProbeObservedVpn": true,
+    "excludedProbeObservedVpn": true,
+    "sameAppServiceProcess": true,
+    "fixtureDownloadIncreased": true,
+    "uidsProbedSequentially": true,
+    "fixtureUploadIncreased": true,
+    "positiveDns": true,
+    "fixtureEstablishedPeersPositive": true,
+    "servicePresent": true
+  },
+  "capture": {
+    "sha256": "7f8260554a9f6eab5dbf8e503fdb58d20870d6cdd08b5cabdae169f1c1a9cbaf",
+    "dropAccounting": "classic_pcap_has_no_drop_counter",
+    "stopped": true,
+    "capturedProtectedTcp53": 0,
+    "completedPhases": [
+      "baseline",
+      "connected"
+    ],
+    "maximumSeconds": 210,
+    "durationMs": 60817,
+    "completeIntervalEvidence": false,
+    "watchdogCompleted": true,
+    "intervalEnd": "file timestamp of completed cleanup Disconnect receipt; conservative post-receipt bound",
+    "capturedProtectedUdp53": 10,
+    "stable": true,
+    "packets": 758,
+    "status": "PARSED",
+    "parserSha256": "7e3de957bcc31bbcc5eefab6596a4f6e4f88ccc4ca2a0292df4948c96283c077",
+    "bytes": 188178,
+    "maximumBytes": 33554432,
+    "protectedIntervalCoverage": false,
+    "parserSourceSha256": "928fe37829c26a1504ad601e24e2b0c0e7a3b2a673a98ebc7a8665bc88e88eb5"
+  },
+  "diagnosis": {
+    "rootCause": "Start-Process returned an object whose Path was empty; startup saved that partial identity",
+    "fixtureStderrBytes": 0,
+    "cleanupReportedAbsenceFromIdentityMismatch": true,
+    "fixtureHadNotActuallyExited": true,
+    "unsafeStopWasRefused": true,
+    "code": "qa_fixture_owner_before_fault_changed",
+    "noProductDefectEstablished": true,
+    "correctedBySeparateAddendum": true
+  },
+  "cleanup": {
+    "uiDisconnected": true,
+    "qaGroupRemoved": true,
+    "exclusionPolicyRestored": true,
+    "settingsUnchanged": true,
+    "serviceAbsent": true,
+    "guestShutdown": true,
+    "originalIdentitiesPreserved": true,
+    "inputDeleted": true,
+    "reverseEmpty": true,
+    "watchdogStopped": true,
+    "dnsObserverStopped": true,
+    "fixtureStoppedBySeparateVerifiedCleanup": true,
+    "originalFixtureStoppedWasFalsePositive": true,
+    "originalReportPreserved": true,
+    "forcedOwnedGuestShutdown": true,
+    "normalDisconnect": {
+      "status": "completed",
+      "before": "connected",
+      "actionAccepted": true,
+      "after": "disconnected",
+      "hostDurationMs": 377,
+      "actionAttempted": true
+    }
+  },
+  "security": {
+    "protectedIntervalUdp53Owners": "UNATTRIBUTED",
+    "strictDnsGate": "INDETERMINATE",
+    "physicalDeviceAccepted": false,
+    "fullE1Accepted": false,
+    "historicalPacketOwnersAssigned": false,
+    "serverOutageGate": "NOT_TESTED",
+    "ipv6": "NOT_TESTED",
+    "excludedDnsValidation": "NOT_TESTED"
+  },
+  "integrity": {
+    "prior267SecondAttemptPreserved": true,
+    "frozenInputs": 44,
+    "runtimeInputsUnchanged": true,
+    "inputHashMismatches": 0,
+    "freezeSha256": "67ca660fcfc39e744f241138cc70d6f00536b184ea856a4104d8cd6caa59788e"
+  },
+  "evidence": {
+    "parserReportSha256": "7e53e3f232c74dfa06c261bb3043b765cc3b97391c4ecb70809fb70ac3c1a3ff",
+    "runtimeReportSha256": "84b4058919fe984af2d753e57df7869a12d0c97aef998ca607a09ef2fc263ef7",
+    "privateProofFiles": 917,
+    "captureReportSha256": "31e92aba3dc2317ff2dedb0a6ccef2f635e6607a985b6d4c745f8d41f07388f2",
+    "proofManifestSha256": "3b6fc88982259992c478b7a3c70d7d98853455380820c1f2833422604b201e9e",
+    "cleanupAddendumSha256": "f76879b9241a8ad957fdd44e15b17ad8ed9fe296d097f272282cc18f38a59d78"
+  },
+  "limitations": [
+    "Capture ended before cleanup Disconnect, so it does not cover the entire protected interval.",
+    "Ten captured cleartext UDP53 packets remain unattributed; neither PARSED nor requester controls justify no-leak PASS.",
+    "Fixture was stopped during verified cleanup, not as the planned active-VPN fault.",
+    "No device or APK reinstall; physical Android and full E1 remain open."
+  ]
+}

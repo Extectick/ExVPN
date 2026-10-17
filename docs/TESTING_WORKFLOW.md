@@ -75,6 +75,12 @@ child завершился за 3187 мс. 32 private evidence hashes прове
 admin token; обычный установленный EXE не означает unelevated acceptance.
 [Отчёт и ограничения](evidence/windows-msaa-discovery-build13.json).
 
+Следующий законченный этап MSAA — обычный установленный Windows +13:
+**11/11 шагов импорта/выбора/удаления подписки за 132,542 с**, включая setup и
+cleanup. Продуктовый бинарник не менялся, Computer Use и VPN не запускались.
+Это отдельный runtime UI-сценарий, не часть быстрого `-Full`.
+[Доказательство и сохранённые отказы стенда](evidence/windows-msaa-import-remove-build13.json).
+
 CI исходников +14 с треем успешно завершил обе native lanes — Android и Windows.
 Системная проверка установленного трея, DNS и release-подпись остаются отдельными
 критериями. [CI evidence](evidence/ci-build14-tray.json).
