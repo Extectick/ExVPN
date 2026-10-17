@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "task": "EXVPN-E6-004",
+  "status": "CLI_INSTALLED_PROJECT_AUTH_PENDING",
+  "cli": {
+    "version": "1.6.129",
+    "revision": "9fe1370bdd1d2f117cc08c57ae416b794ed92440",
+    "sourceBranch": "codex/exvpn-1.6.129",
+    "upstream": "origin/stable",
+    "revisionUnchanged": true,
+    "trackedChanges": 0,
+    "dependencyLockUnchanged": true,
+    "userPathConfigured": true,
+    "executionPolicyChanged": false,
+    "systemGitConfigChanged": false
+  },
+  "doctor": {
+    "exitCode": 0,
+    "beforeFailedValidators": [
+      "Shorebird is up-to-date",
+      "shorebird.yaml found in pubspec.yaml assets"
+    ],
+    "afterValidators": [
+      {
+        "name": "Shorebird is up-to-date",
+        "ok": true,
+        "issues": []
+      },
+      {
+        "name": "AndroidManifest.xml files contain INTERNET permission",
+        "ok": true,
+        "issues": []
+      },
+      {
+        "name": "android/app/build.gradle(.kts) does not contain a legacy keepDebugSymbols line for libapp.so",
+        "ok": true,
+        "issues": []
+      },
+      {
+        "name": "Xcode project does not override FLUTTER_ build settings",
+        "ok": true,
+        "issues": []
+      },
+      {
+        "name": "shorebird.yaml found in pubspec.yaml assets",
+        "ok": false,
+        "issues": [
+          {
+            "severity": "error",
+            "message": "No shorebird.yaml found in pubspec.yaml assets"
+          }
+        ]
+      },
+      {
+        "name": "Lock files are tracked in source control",
+        "ok": true,
+        "issues": []
+      }
+    ],
+    "network": [
+      {
+        "url": "https://api.shorebird.dev",
+        "reachable": true
+      },
+      {
+        "url": "https://console.shorebird.dev",
+        "reachable": true
+      },
+      {
+        "url": "https://oauth2.googleapis.com",
+        "reachable": true
+      },
+      {
+        "url": "https://storage.googleapis.com",
+        "reachable": true
+      },
+      {
+        "url": "https://cdn.shorebird.cloud",
+        "reachable": true
+      }
+    ],
+    "javaVersionAvailable": true,
+    "javaVersion": "21.0.6",
+    "gradleVersion": "9.3.1",
+    "allValidatorsPassed": false
+  },
+  "java": {
+    "diagnosis": "Pinned CLI adds literal quotes to a Windows executable containing spaces; reproduced exit 1 with quoted path, exit 0 with unquoted path.",
+    "fix": "Official shorebird flutter config --jdk-dir uses the existing 8.3 path to the same Android Studio JBR.",
+    "sameJavaBinarySha256": "f093eca45c3e452908ff8b54154c692d3af00ccfe61f4813affd3bf583015daa",
+    "jdkInstalledOrUpgraded": false,
+    "flutterUserSettingsUpdated": true,
+    "sdkSourceModified": false
+  },
+  "authentication": {
+    "browserRequested": true,
+    "result": "TIMED_OUT_WAITING_FOR_USER_AUTHORIZATION",
+    "exitCode": 70,
+    "authenticated": false,
+    "accountCreationReportedByUser": true,
+    "accountApiVerification": false,
+    "cloudProjectCreated": false,
+    "releaseCreated": false,
+    "patchCreated": false,
+    "keysCreated": false,
+    "credentialsPublished": false
+  },
+  "appBuildOrSdkChanged": false,
+  "evidence": [
+    {
+      "name": "doctor-before.stdout.txt",
+      "bytes": 1780,
+      "sha256": "47a67a8bb7d44a11d142d97b649f9bdcd2ca4ac85d14cef1e728db50ebb36ffe"
+    },
+    {
+      "name": "doctor-after.stdout.txt",
+      "bytes": 1666,
+      "sha256": "872fc1a439af0062ae50f5db2c7dcccb04865f0195a32a86bd8d81312fb98704"
+    },
+    {
+      "name": "doctor-jdk.stdout.txt",
+      "bytes": 1833,
+      "sha256": "46ad25ebe5591840a653bd97f9e3795cbc6047fbf7325865bb9fc5d40a5755ce"
+    },
+    {
+      "name": "java-quoted-check.json",
+      "bytes": 573,
+      "sha256": "9f9b99ad91b84fc6856376af81729afd8ce3f6058b2b8e80fb349ce421731f0a"
+    },
+    {
+      "name": "jdk-config.stdout.txt",
+      "bytes": 315,
+      "sha256": "beb02f66f4c59fc431e014713f1e46cd972d11634fb837593609ad901904097e"
+    }
+  ],
+  "limitations": [
+    "Shorebird project not initialized; shorebird.yaml validator remains open.",
+    "No release, signed patch or OTA runtime acceptance was performed.",
+    "Tool is installed in the pinned ExVPN tools directory; new terminals use its user PATH entry.",
+    "Doctor exit 0 does not mean every validator passed."
+  ]
+}

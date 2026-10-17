@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "status": "INCOMPLETE_BUILD_INPUT_EVIDENCE",
+  "scope": "Read-only observation of existing Windows +14 compiler metadata; no package execution or rebuild.",
+  "artifact": {
+    "version": "0.1.0+14",
+    "installerSha256": "d230a1899224ef71d9569b50bbae99d794d90ee9570df069246eba26250c4844",
+    "packagedAppSoSha256": "f3336148f37f23b818f16e4405bb6fc3fdfcb503f3d2832a0980eec34b915a93",
+    "cachedAppSoSha256": "f3336148f37f23b818f16e4405bb6fc3fdfcb503f3d2832a0980eec34b915a93",
+    "appSoMatches": true
+  },
+  "flutter": {
+    "version": "3.47.7",
+    "revision": "abaf9c523780a608bd46686fd5e53740a07077f8",
+    "trackedChangesObserved": 0,
+    "hashSourceSha256": "d70c1d7750dbd96fb359651211f32ad2733cfb9423702ee524ac7596a61cf8da",
+    "fileStoreSourceSha256": "5c88d1580b7d0627160d575934ef43cf81de465f3c9dd6cfd7b38ab67fb3010c",
+    "fileStoreSourceUrl": "https://github.com/flutter/flutter/blob/abaf9c523780a608bd46686fd5e53740a07077f8/packages/flutter_tools/lib/src/build_system/file_store.dart"
+  },
+  "probe": {
+    "path": "artifacts/release-audit/flutter-build-inputs-20261017/probe.dart",
+    "sha256": "99fae89068d5907a9dd26b68dd4c38af050fae667e398028f52fad993c23a1a3",
+    "cacheVersion": 2,
+    "cacheRecords": 1848,
+    "kernelStampInputs": 1632,
+    "uniqueKernelInputs": 1629,
+    "cachedHashesMissing": 896,
+    "pinnedFlutterAlgorithmMatched": 733,
+    "pinnedFlutterAlgorithmMismatched": 0,
+    "standardMd5Mismatched": 100,
+    "standardMismatchFileSizeRemainders": [
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63
+    ],
+    "meaning": "Cached values must be interpreted with the pinned Flutter hash implementation. Standard MD5 disagreement is not evidence of source modification."
+  },
+  "metadata": [
+    {
+      "name": "kernel_snapshot_program.stamp",
+      "sha256": "57340cabf886bdc0083c8cd46fdf0b24c8909f018e4b90c6b08d8d8f64a4a937"
+    },
+    {
+      "name": "aot_elf_release.stamp",
+      "sha256": "c4202064a2d25698256258df01c6e6257a24de7aa67d76a972becac2dac04b10"
+    },
+    {
+      "name": ".filecache",
+      "sha256": "0327f2913a89e24af7c5944ff9b0501a7e5cd2b41e4abc52cdd38e95efa6aef9"
+    },
+    {
+      "name": "app.dill",
+      "sha256": "6d80e89b7b6bfaf2185e8cf90f2017f953645369863f985391743aa68843344d"
+    },
+    {
+      "name": "app.so",
+      "sha256": "f3336148f37f23b818f16e4405bb6fc3fdfcb503f3d2832a0980eec34b915a93"
+    },
+    {
+      "name": "build_hooks_result.json",
+      "sha256": "7ffed1e9607d88c3f7d7445107ef7af568dece1c526e2e5ab89741dbd6553b42"
+    },
+    {
+      "name": "link_hooks_result.json",
+      "sha256": "e9ac68cdfac0da4e1c3a40a43b7549a8ab8546b89c80130e25ac36aecbf91f1b"
+    }
+  ],
+  "limitations": [
+    "Compiler stamps describe reported inputs, not AOT-retained symbols or an exact runtime link graph.",
+    "The file cache persists currentAssetKeys only; these saved metadata do not provide a complete digest history for all reported kernel inputs.",
+    "The 896 missing hashes are unknown; they are not assumed verified from current source bytes.",
+    "No release blocker was removed, no SDK source was changed, and the product binaries were not rebuilt.",
+    "A complete build-input attestation requires capture during the actual build, bound to its resulting artifacts; release licensing and signing remain open."
+  ]
+}

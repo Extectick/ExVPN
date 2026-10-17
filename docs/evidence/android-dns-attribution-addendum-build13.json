@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "status": "INDETERMINATE",
+  "kind": "OFFLINE_CORRELATION_ADDENDUM",
+  "createdAtUtc": "2026-10-17T06:59:12.5829303Z",
+  "originalCandidateSha256": "0af1e02840ca9b813012191469786834c72ec3f51b842e617bb559eb443a31ef",
+  "originalProofManifestSha256": "418c298475265975ea0cc9c2945b338915479f2f8ec501cc782c8dcb39e46d11",
+  "originalCheckpointUnmodified": true,
+  "originalConservativeIntervalUnmodified": true,
+  "strictContinuousDnsGate": false,
+  "namedPhaseAndFunctionalResultsUnmodified": true,
+  "noNewRuntimeProbesOrSettings": true,
+  "historicalRunAttribution": "NOT_ESTABLISHED_NO_RETROACTIVE_ATTRIBUTION",
+  "scope": {
+    "androidApi": 30,
+    "appBuild": 13,
+    "clientCore": "26.10.10-exvpn.4",
+    "fixtureCore": "26.10.10-exvpn.3",
+    "physicalDevice": false
+  },
+  "method": {
+    "clockUncertaintyMs": 36,
+    "clockUncertaintyBasis": "max(saved clock RTT)/2 + saved device-offset range + 2ms",
+    "networkMonitorMatch": "exact private full-name log event, overlapping bounded packet time, one native PID/netId/completion-time record, four independent same UID/PID/name process snapshots, consistent physical netId maps",
+    "noOwnershipFromDomainAlone": true,
+    "packetRequesterUidDirectlyMeasured": false,
+    "ambiguousMaskedQuerylogRowsNotDiscarded": true,
+    "responsePairing": "reverse addresses/ports, family, DNS transaction ID, question type/name hash and time inside unchanged interval"
+  },
+  "counts": {
+    "intervalUdp53Packets": 9,
+    "intervalTcp53Packets": 0,
+    "queries": 5,
+    "responses": 4,
+    "uniquelyCorrelatedQueries": 3,
+    "uniquelyCorrelatedQueriesAndResponses": 6,
+    "ambiguousQueries": 2,
+    "ambiguousQueriesAndResponses": 3,
+    "newQueriesAfterFixtureStopBeforeDisconnectContext": 0
+  },
+  "rows": [
+    {
+      "queryPacketIndex": 195,
+      "qnameSha256": "531c0c97f236d51c76fe3daa516b694de6d337bfc3a66b098916e5d0de057034",
+      "responsePacketIndicesWithinInterval": [
+        196
+      ],
+      "family": 4,
+      "classification": "AMBIGUOUS",
+      "exactNetworkMonitorNameEventCount": 0,
+      "uniqueUidPidNetworkTimeCorrelation": false,
+      "requesterUidMeasuredOnWire": false,
+      "underlyingNetwork": null,
+      "independentSameProcessSnapshots": null,
+      "querylogHostnameMasked": true,
+      "nominalAfterConnectContextMs": 408,
+      "nominalAfterDisconnectContextMs": -73806,
+      "nominalAfterFixtureStopMs": -24274,
+      "syntheticNonce": false
+    },
+    {
+      "queryPacketIndex": 198,
+      "qnameSha256": "2adc39b6bf1fae7fd2cee4c8c22135f1b3e5c750c45f0b70b0e98143b69ee313",
+      "responsePacketIndicesWithinInterval": [
+        199
+      ],
+      "family": 4,
+      "classification": "UNIQUELY_CORRELATED_NETWORK_MONITOR",
+      "exactNetworkMonitorNameEventCount": 1,
+      "uniqueUidPidNetworkTimeCorrelation": true,
+      "requesterUidMeasuredOnWire": false,
+      "underlyingNetwork": true,
+      "independentSameProcessSnapshots": 4,
+      "querylogHostnameMasked": true,
+      "nominalAfterConnectContextMs": 493,
+      "nominalAfterDisconnectContextMs": -73721,
+      "nominalAfterFixtureStopMs": -24189,
+      "syntheticNonce": false
+    },
+    {
+      "queryPacketIndex": 1043,
+      "qnameSha256": "2adc39b6bf1fae7fd2cee4c8c22135f1b3e5c750c45f0b70b0e98143b69ee313",
+      "responsePacketIndicesWithinInterval": [
+        1047
+      ],
+      "family": 4,
+      "classification": "UNIQUELY_CORRELATED_NETWORK_MONITOR",
+      "exactNetworkMonitorNameEventCount": 1,
+      "uniqueUidPidNetworkTimeCorrelation": true,
+      "requesterUidMeasuredOnWire": false,
+      "underlyingNetwork": true,
+      "independentSameProcessSnapshots": 4,
+      "querylogHostnameMasked": true,
+      "nominalAfterConnectContextMs": 74731,
+      "nominalAfterDisconnectContextMs": 517,
+      "nominalAfterFixtureStopMs": 50049,
+      "syntheticNonce": false
+    },
+    {
+      "queryPacketIndex": 1044,
+      "qnameSha256": "191347bfe55d0ca9a574db77bc8648275ce258461450e793528e0cc6d2dcf8f5",
+      "responsePacketIndicesWithinInterval": [
+        1045
+      ],
+      "family": 4,
+      "classification": "UNIQUELY_CORRELATED_NETWORK_MONITOR",
+      "exactNetworkMonitorNameEventCount": 1,
+      "uniqueUidPidNetworkTimeCorrelation": true,
+      "requesterUidMeasuredOnWire": false,
+      "underlyingNetwork": true,
+      "independentSameProcessSnapshots": 4,
+      "querylogHostnameMasked": true,
+      "nominalAfterConnectContextMs": 74732,
+      "nominalAfterDisconnectContextMs": 518,
+      "nominalAfterFixtureStopMs": 50050,
+      "syntheticNonce": false
+    },
+    {
+      "queryPacketIndex": 1048,
+      "qnameSha256": "531c0c97f236d51c76fe3daa516b694de6d337bfc3a66b098916e5d0de057034",
+      "responsePacketIndicesWithinInterval": [],
+      "family": 6,
+      "classification": "AMBIGUOUS",
+      "exactNetworkMonitorNameEventCount": 0,
+      "uniqueUidPidNetworkTimeCorrelation": false,
+      "requesterUidMeasuredOnWire": false,
+      "underlyingNetwork": null,
+      "independentSameProcessSnapshots": null,
+      "querylogHostnameMasked": true,
+      "nominalAfterConnectContextMs": 74738,
+      "nominalAfterDisconnectContextMs": 524,
+      "nominalAfterFixtureStopMs": 50056,
+      "syntheticNonce": false
+    }
+  ],
+  "transitionTiming": {
+    "connectContextStartIsReferenceZero": true,
+    "connectSemanticReceiptUpperBoundMs": 2261,
+    "connectActionAccepted": true,
+    "connectTerminalReceipt": "connected",
+    "connectActionAcceptedTimestampRecorded": false,
+    "connectInstrumentDurationMs": 2024,
+    "connectHostWrapperDurationMs": 2256,
+    "disconnectContextIncludesFreshObserve": true,
+    "disconnectConfirmedReceiptAfterContextMs": 640,
+    "disconnectActionAccepted": true,
+    "disconnectTerminalReceipt": "disconnected",
+    "disconnectActionAcceptedTimestampRecorded": false,
+    "disconnectInstrumentDurationMs": 127,
+    "disconnectHostWrapperDurationMs": 373,
+    "nativeEvents": [
+      {
+        "kind": "TUN_ADDRESS_ADDED",
+        "relativeConnectMs": 341,
+        "relativeDisconnectMs": -73873
+      },
+      {
+        "kind": "TUN_ADDRESS_ADDED",
+        "relativeConnectMs": 341,
+        "relativeDisconnectMs": -73873
+      },
+      {
+        "kind": "VPN_NETWORK_CREATED",
+        "relativeConnectMs": 349,
+        "relativeDisconnectMs": -73865
+      },
+      {
+        "kind": "VPN_ESTABLISHED",
+        "relativeConnectMs": 352,
+        "relativeDisconnectMs": -73862
+      },
+      {
+        "kind": "VPN_NETWORK_INFO_CONNECTED",
+        "relativeConnectMs": 367,
+        "relativeDisconnectMs": -73847
+      },
+      {
+        "kind": "VPN_NETWORK_INFO_DISCONNECTED",
+        "relativeConnectMs": 74719,
+        "relativeDisconnectMs": 505
+      }
+    ],
+    "firstAmbiguousQuery": "Connect +408ms, before semantic connected receipt; native TUN addresses +341ms / established +352ms / network CONNECTED +367ms already logged. This is not proof of an unprotected allowed transition.",
+    "secondAmbiguousQuery": "Close-Vpn context +524ms, native network DISCONNECTED +505ms, semantic disconnected receipt +640ms. Clock uncertainty prevents treating the wire packet as outside actual protection.",
+    "exactDataPlaneProtectionBoundaryEstablished": false
+  },
+  "limitations": [
+    "Native querylog masks hostnames. The three unique multi-source correlations are not a UID field captured on wire; two requests remain ambiguous.",
+    "A transition does not make an ambiguous DNS packet permitted. No interval or gate was narrowed.",
+    "Historical server-stop packets from prior runs cannot be assigned an owner using this run.",
+    "One IPv6 DNS packet in a transition is not a positive global IPv6 baseline; IPv6 acceptance remains NOT_TESTED.",
+    "No PCAP drop counter is available. No physical Android device or full E1 acceptance is claimed."
+  ]
+}

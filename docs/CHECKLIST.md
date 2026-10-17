@@ -52,6 +52,14 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   Дополнение 2026-10-17, Android +9/API30: закрытие Activity сохранило HTTPS через VPN; после выключения/возврата Wi-Fi и mobile data HTTPS восстановился за 3509 мс. После reboot эмулятора Always-on подключился до открытия UI. Авария процесса сохранила lockdown, но автоматический перезапуск не произошёл в трёх наблюдениях; ручное подключение восстановило HTTPS. Диагностика указывает на удаление записи службы при обработке смерти VPN Binder в Android 11; универсальное исправление не заявляется. Исходные системные настройки восстановлены. [Доказательства](evidence/android-lifecycle-build9.json), [разбор и ограничения](ANDROID_VALIDATION.md). Физическое устройство, sleep/resume и полная IPv6/DNS матрица остаются открытыми. Проверенный APK: [f5901bc](https://github.com/Extectick/ExVPN/commit/f5901bc7d0b61d22f555bc760cbfcb5e3c85de81); production-код при lifecycle QA не менялся.
   Дополнение 2026-10-16: Flutter integration test без Computer Use выбрал исключение в UI и проверил реальные HTTPS-процессы. При остановке fixture защищаемый процесс блокируется, исключённый получает HTTP 200. Hard kill установленной LocalSystem SCM-службы блокирует оба; рестарт сохраняет blocked, явное отключение восстанавливает HTTPS. WFP observer подтвердил guard после аварии; итоговые route/DNS hashes совпали с исходными. Смена сети, reboot/sleep, полная IPv6/DNS матрица и физический Android остаются открытыми. [Отчёт](evidence/windows-scm-failure-smoke.json), исходники [1575305](https://github.com/Extectick/ExVPN/commit/1575305923c37b9c1f41721d6b07ad11fe133824).
 - [ ] **EXVPN-E1-009** — Проверить DNS/IPv4/IPv6 и исключения с холодным DNS-кешем. Зависимости: E1-006–008. Критерий: нет незаявленного прямого DNS/IPv6, неизвестный владелец не получает direct; ограничения исключений в аварии описаны.
+  Дополнение 2026-10-17: новый Android +13 сценарий завершил четыре фазы за
+  369,283 с. При обрыве защищённый HTTPS/DNS отказал, исключённый HTTPS прошёл;
+  Disconnect восстановил исходный выход. Непрерывный интервал содержит 9 UDP53
+  пакетов: три из пяти запросов сопоставлены с NetworkMonitor, два остаются
+  неоднозначными. Исходный strict=false/INDETERMINATE сохранён, cleanup PASS;
+  986 файлов и 30 файлов addendum сверены. [Полный запуск](evidence/android-dns-fault-continuous-build13.json),
+  [отдельная корреляция](evidence/android-dns-attribution-addendum-build13.json).
+  Рабочее дерево; commit ожидается.
   Проверка Android +13, 2026-10-17: защищённый numeric HTTPS при остановке
   сервера отказал, исключённый UID получил HTTPS 200 при живом VPN. Непрерывный
   capture, включая промежутки между фазами, обнаружил три открытых DNS-запроса
@@ -190,6 +198,12 @@ PID, netId и временем в querylog. VPN не запускался; пр�
 - [ ] **EXVPN-E6-002** — Реализовать signed manifest Ed25519 и SHA-256 файлов данных. Зависимость: E6-001. Критерий: неверная подпись/хеш, несовместимость, выход пути, обрыв и нехватка места отклоняются до активации.
 - [ ] **EXVPN-E6-003** — Добавить staging, атомарную активацию и последний рабочий набор. Зависимость: E6-002. Критерий: обновление не прерывает активный VPN; сбой на каждом шаге сохраняет работоспособность; rollback новой подписанной ревизией проверен.
 - [ ] **EXVPN-E6-004** — Подключить Shorebird и включить обязательную подпись патчей. Зависимость: доступ к сервису/ключам и E6-001. Критерий: реальный release → signed patch → update → rollback Android/Windows, каналы изолированы; native change требует полного выпуска.
+  Дополнение 2026-10-17: CLI 1.6.129 добавлен в user PATH; на прежнем commit
+  исправлены branch/upstream для doctor и путь к тому же JBR 21.0.6.
+  Doctor: 5/6 validators PASS, пять URL доступны; остаётся конфигурация проекта.
+  OAuth ожидал пользователя и завершился тайм-аутом; cloud app/release/patch не
+  создавались. [Доказательство](evidence/shorebird-user-install-doctor.json).
+  Рабочее дерево; commit ожидается.
   Подготовка 2026-10-17: отдельный CLI 1.6.129 закреплён commit/lock/entry-point hashes и успешно запущен; `doctor --json` выявил ожидаемые ограничения detached pin и отсутствие app config, несмотря на exit 0. Cloud app/release/patch/ключи не создавались. [Контракт](SHOREBIRD.md), [доказательство](evidence/shorebird-cli-preflight.json), исходники [aaaf6f4](https://github.com/Extectick/ExVPN/commit/aaaf6f43826508cea252c1fd0018c98b087bbde2). Это не проверка Dart OTA.
 - [ ] **EXVPN-E6-005** — Проверить полное обновление APK/Windows. Зависимости: E4–E5, ключи подписи. Критерий: сохранены подписки/настройки, идентичность подписи, непрерывность защиты и явный безопасный перезапуск ядра.
 
@@ -284,6 +298,11 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   CI +10: [run 38969281066](https://github.com/Extectick/ExVPN/actions/runs/38969281066) на [924493a](https://github.com/Extectick/ExVPN/commit/924493a511547bb2b4c93262ab93df82fe127479) — **SUCCESS**, Windows 7:56, Android 14:50; tests/build/upload прошли. [Отчёт](evidence/ci-build10.json). Docs-only push не запустил дубликат и не отменил сборку. Это development artifacts, не подписанная beta.
   CI +11, 2026-10-17: [run 38979241913](https://github.com/Extectick/ExVPN/actions/runs/38979241913) на [292d3dc](https://github.com/Extectick/ExVPN/commit/292d3dc05f1b694a26ca9e2cb30953850e5b8373) — **SUCCESS**, Windows 9:11, Android 18:48; tests/build/upload прошли. [Отчёт](evidence/ci-build11.json). Это проверка данного commit; последующие QA/CI-изменения и системная приёмка имеют отдельные результаты.
 - [ ] **EXVPN-E7-002** — Подготовить лицензии/SBOM, подпись и артефакты beta. Зависимости: E4–E6, доступ к ключам. Критерий: APK и Windows installer подписаны; полный комплект уведомлений соответствует бинарникам; исходники MPL доступны.
+  Дополнение 2026-10-17: `app.so` готового Windows +14 совпал с cached AOT output.
+  733 сохранённых Flutter input hashes проверены реальным pinned-алгоритмом;
+  для 896 входов исторических хешей нет. Это неполное доказательство build inputs,
+  не runtime link graph; release blocker сохранён. [Отчёт](evidence/flutter-build-input-metadata-build14.json).
+  Рабочее дерево; commit ожидается.
   Дополнение 2026-10-17: явный prepared-input режим прошёл в новом private cache:
   77 POM, затем строгий offline граф из 68 Maven + 6 проектов / 279 связей совпал
   с закреплённым seed. Подготовка 19,837 с, offline 110,423 с, всего 148,158 с;
