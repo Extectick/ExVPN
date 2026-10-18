@@ -1,0 +1,213 @@
+{
+  "schema": 1,
+  "capturedUtc": "2026-10-18T16:43:15.5632777Z",
+  "status": "PASS_scoped_android_api30_runtime",
+  "candidate": {
+    "runtime": "ordinary",
+    "sourceCommit": "576a39244c77259b6ff91312cadf988d6f1471eb",
+    "version": "0.1.4+25",
+    "bytes": 134311047,
+    "installedBaseHashMatched": true,
+    "package": "ru.exvpn.exvpn",
+    "sha256": "5a28a5f865b93e0ab34ef5288964e123429033e9433fbbf4c821426fb136e2ad",
+    "debuggable": false
+  },
+  "signature": {
+    "verified": true,
+    "trustedSignerMatched": true,
+    "v2Verified": true,
+    "debug": false,
+    "certificateSha256": "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093"
+  },
+  "jvm": {
+    "task": ":app:testReleaseUnitTest",
+    "freshReports": true,
+    "tests": 40,
+    "suites": 6,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "packageAudit": {
+    "sourceInputsUnchanged": true,
+    "nativeAssetsBound": true,
+    "packagedNotices": true,
+    "mavenNotices": true,
+    "flutterEngineBytesBound": true,
+    "noticeSnapshot": true,
+    "sealSha256": "8916067a50a9af64a9054e126d9e418d465cf8002771a3939cc665820b29dada"
+  },
+  "device": {
+    "ownedIsolatedData": true,
+    "serial": "emulator-5582",
+    "api": 30,
+    "abi": "x86_64"
+  },
+  "consent": {
+    "grant": {
+      "realSystemGrant": true,
+      "nativeVpnCaptureStarted": true,
+      "firstDiagnosticPhase": "connecting",
+      "connectingPhaseCaptured": true,
+      "terminalPhase": "blocked",
+      "terminalCode": "tunnel_https_failed",
+      "listenerReadBytes": 0,
+      "listenerForwardedBytes": 0,
+      "noHttpsMatrix": true
+    },
+    "denyImmediateRetry": {
+      "baselineVersion": "0.1.4+25",
+      "coreVersion": "26.10.10-exvpn.5",
+      "firstDialogAutomatic": true,
+      "noServiceOrVpnAfterDenial": true,
+      "immediateConnectActionAvailable": true,
+      "actionDescription": "Ошибка подключения, Подключить VPN",
+      "manualDisconnectsBetweenDenyAndRetry": 0,
+      "otherAppActionsBetweenDenyAndRetry": 0,
+      "hostObservationDelayMs": 2052,
+      "secondRealSystemDialog": true,
+      "denialDiagnosticBeforeRetrySkippedToPreserveImmediateRetry": true
+    },
+    "alreadyGranted": {
+      "grantAlreadyAllowed": true,
+      "systemConsentObserved": false,
+      "boundedForegroundObservations": 8,
+      "nativeVpnCaptureStarted": true,
+      "diagnosticPhase": "blocked",
+      "diagnosticCode": "tunnel_https_failed",
+      "requestingPermissionObserved": false,
+      "fixtureUsed": false
+    },
+    "grantAndAlreadyGrantedEndWithOrdinaryDisconnect": true,
+    "freshOsRevocationViaSettings": true,
+    "denialRedVisualConfirmed": true
+  },
+  "settings": {
+    "shortAndSlowLarge": {
+      "source": "576a39244c77259b6ff91312cadf988d6f1471eb",
+      "apkSha256": "5a28a5f865b93e0ab34ef5288964e123429033e9433fbbf4c821426fb136e2ad",
+      "input": "adb_touchscreen",
+      "short": {
+        "returnedOpen": true,
+        "durationMs": 1200,
+        "distancePhysicalPx": 179
+      },
+      "slowLarge": {
+        "homePowerVisible": true,
+        "to": [
+          540,
+          2260
+        ],
+        "midDragCaptured": true,
+        "contentBounds": [
+          0,
+          351,
+          1080,
+          2340
+        ],
+        "from": [
+          540,
+          1346
+        ],
+        "settingsDismissed": true,
+        "durationMs": 2000
+      }
+    },
+    "scrolledFirst": {
+      "scrollBeforeSheet": true,
+      "sheetRemainedOpen": true,
+      "anchorBefore": [
+        411,
+        791,
+        1929,
+        1011
+      ],
+      "anchorAfter": [
+        411,
+        962,
+        1929,
+        1080
+      ],
+      "handleBefore": [
+        1104,
+        66,
+        1236,
+        198
+      ],
+      "handleAfter": [
+        1104,
+        66,
+        1236,
+        198
+      ],
+      "downGestureFrom": [
+        1170,
+        568
+      ],
+      "downGestureTo": [
+        1170,
+        762
+      ],
+      "durationMs": 1200,
+      "landscapeOnlyBecausePortraitListFits": true
+    },
+    "fast": {
+      "from": [
+        540,
+        1346
+      ],
+      "to": [
+        540,
+        2042
+      ],
+      "durationMs": 250,
+      "settingsDismissed": true
+    },
+    "inputSource": "ADB touchscreen/direct-contact injection",
+    "density": 2.75,
+    "slowPullNotReplacedByFling": true
+  },
+  "launcher": {
+    "launcher": "com.google.android.apps.nexuslauncher",
+    "label": "ExVPN",
+    "openedExpectedApplication": true,
+    "api30ColorIcon": true,
+    "visualReviewPending": false,
+    "api33MonochromeRuntimeTested": false,
+    "appCrashBufferEntries": 0,
+    "adaptiveSquirrelVisible": true
+  },
+  "finalDiagnostics": {
+    "version": "0.1.4+25",
+    "coreVersion": "26.10.10-exvpn.5",
+    "vpnPhase": "disconnected",
+    "errorCode": null,
+    "processCrashProtection": false
+  },
+  "cleanup": {
+    "noService": true,
+    "noVpn": true,
+    "noReverse": true,
+    "ownedListenerStopped": true,
+    "ownedPortNotListening": true,
+    "rotationRestored": true,
+    "appIdle": true,
+    "userEmulator5564Untouched": true,
+    "hostRoutesDnsFirewallUnchanged": true
+  },
+  "limits": [
+    "Physical Android touch/device not tested in this cycle",
+    "API33+ notification permission and monochrome launcher icon not runtime-tested",
+    "Late callback after cancelled native request not runtime-reproduced; JVM coverage kept separate",
+    "API30 OS Back did not dismiss original candidate dialog; patched Back behavior not claimed",
+    "No new HTTPS/routing/IPv6/DNS/lockdown acceptance matrix in this consent/UI cycle"
+  ],
+  "previousFailedCandidate": {
+    "evidence": "android-candidate25-runtime-old.json",
+    "sha256": "e0db03cb5ec6cd597a3bffc0d2a63772e00deca99a179f3afe068ab6ad187910",
+    "preserved": true,
+    "source": "6d2e947699b5b6f347dd07bb6f7ba246ca2ad8d4"
+  },
+  "noPrivateProfileDataPublished": true,
+  "noProductSourceEditedByQa": true
+}

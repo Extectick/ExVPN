@@ -1,0 +1,191 @@
+{
+  "schema": 1,
+  "version": "0.1.4+25",
+  "sourceCommit": "576a39244c77259b6ff91312cadf988d6f1471eb",
+  "verifiedUtc": "2026-10-18T16:53:43.693789+00:00",
+  "stableReady": false,
+  "scope": "Public delivery, signed APK, artifact/source bindings and signed Windows feed; no install or VPN runtime",
+  "sourceCI": {
+    "runId": 39145319784,
+    "url": "https://github.com/Extectick/ExVPN/actions/runs/39145319784",
+    "status": "completed",
+    "conclusion": "success",
+    "sourceCommit": "576a39244c77259b6ff91312cadf988d6f1471eb",
+    "jobs": [
+      {
+        "id": 117727851614,
+        "name": "Windows",
+        "conclusion": "success"
+      },
+      {
+        "id": 117727851839,
+        "name": "Android",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "releaseCI": {
+    "runId": 39145366138,
+    "url": "https://github.com/Extectick/ExVPN/actions/runs/39145366138",
+    "status": "completed",
+    "conclusion": "success",
+    "sourceCommit": "576a39244c77259b6ff91312cadf988d6f1471eb",
+    "jobs": [
+      {
+        "id": 117727993785,
+        "name": "Preview Windows",
+        "conclusion": "success"
+      },
+      {
+        "id": 117727994152,
+        "name": "Preview Android",
+        "conclusion": "success"
+      },
+      {
+        "id": 117732084088,
+        "name": "Publish verified preview and update feed",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "status": "PASS",
+  "releaseUrl": "https://github.com/Extectick/ExVPN/releases/tag/v0.1.4",
+  "publishedUtc": "2026-10-18T16:50:20Z",
+  "tagCommitVerified": "576a39244c77259b6ff91312cadf988d6f1471eb",
+  "githubRemoteAssetCount": 15,
+  "allDownloadedAssetsVerified": true,
+  "githubRemoteDigestsAndSizesVerified": true,
+  "manifestAssetCount": 13,
+  "checksumEntryCount": 14,
+  "androidActualApkSignerVerified": "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093",
+  "androidActualPackageIdentityVerified": true,
+  "windowsAuthenticodeAvailable": false,
+  "windowsFeedEd25519Verified": true,
+  "feedInstallerUrlSizeAndHashMatched": true,
+  "feedExpiresUtc": "2026-11-01T16:50:23+00:00",
+  "feed": {
+    "file": "windows-x64.json",
+    "bytes": 684,
+    "sha256": "b1916f0d664d0da08e6750c531722a5380f4483cf5f1d741e113dd93d5b0d51e"
+  },
+  "platforms": {
+    "android": {
+      "artifact": {
+        "file": "ExVPN-0.1.4-25-android.apk",
+        "bytes": 134311291,
+        "sha256": "e8b1f2f5e464fe98a82b7a2f6c216418175724aa5bb06dd9baee5198d093b7d9"
+      },
+      "buildSourceMatched": true,
+      "artifactNoticeAndSbomBindingsVerified": true,
+      "auditFindings": [
+        "android_gradle_maven_runtime_inventory_missing",
+        "dart_flutter_runtime_link_inventory_incomplete",
+        "license_expressions_and_distribution_obligations_not_fully_reviewed"
+      ],
+      "embeddedAndSidecarNoticesByteMatched": 226,
+      "actualNativeAbiHashesAndXrayPinVerified": true,
+      "actualFlutterAndDartHashesMatched": true,
+      "declaredPackageInputsSealSha256": "421ab4bf402a909b78f8eae1ea045956654ff230f637c20dd926613e0e2b3a0f",
+      "sourceInputsUnchanged": true,
+      "freshJvmTests": 40
+    },
+    "windows": {
+      "artifact": {
+        "file": "ExVPN-0.1.4-25-windows-x64-development.exe",
+        "bytes": 49140620,
+        "sha256": "3089b097e8b54fc2aed32cfac7b8f0399b20d20afd3cbf9dc39b3a3631921bf4"
+      },
+      "buildSourceMatched": true,
+      "artifactNoticeAndSbomBindingsVerified": true,
+      "auditFindings": [
+        "dart_flutter_runtime_link_inventory_incomplete",
+        "development_package",
+        "license_expressions_and_distribution_obligations_not_fully_reviewed",
+        "release_signer_not_pinned",
+        "windows_signature_not_valid"
+      ]
+    }
+  },
+  "assets": [
+    {
+      "file": "ExVPN-0.1.4-25-android.apk",
+      "bytes": 134311291,
+      "sha256": "e8b1f2f5e464fe98a82b7a2f6c216418175724aa5bb06dd9baee5198d093b7d9"
+    },
+    {
+      "file": "ExVPN-0.1.4-25-windows-x64-development.exe",
+      "bytes": 49140620,
+      "sha256": "3089b097e8b54fc2aed32cfac7b8f0399b20d20afd3cbf9dc39b3a3631921bf4"
+    },
+    {
+      "file": "RELEASE.md",
+      "bytes": 2625,
+      "sha256": "ddbd329ae17d281d7bd8a3a3f697c18a34e382b318c2816a3c295b0a985b0195"
+    },
+    {
+      "file": "SHA256SUMS.txt",
+      "bytes": 1254,
+      "sha256": "f6e562731d6653428ea22917e10cdf52f2f771ac5db4802512fb9faffee8903f"
+    },
+    {
+      "file": "android-audit.json",
+      "bytes": 28921,
+      "sha256": "812484fa0b1e95ca93a15bcc9e4e408e1fc098e8e785283f8189ed0f24ad321f"
+    },
+    {
+      "file": "android-build.json",
+      "bytes": 7092,
+      "sha256": "3a9a13eedc2a9f005dfcd4430827e14fc8edfcda918a18442dd3c83c35539298"
+    },
+    {
+      "file": "android-maven-notices.json",
+      "bytes": 1145,
+      "sha256": "9abc6b3cd2dc61ba196be211ebafdcd563ca57bf9b1ef46bc4477e57a789a0a2"
+    },
+    {
+      "file": "android-maven-notices.zip",
+      "bytes": 171613,
+      "sha256": "2874c5077098018b8327efab5c145bb6245e8abc4919b5d61a6ff255ae6f3053"
+    },
+    {
+      "file": "android-notices.zip",
+      "bytes": 1611229,
+      "sha256": "75a93ba301d6c7bb3cd3f5cda36da87e4b8e4bd55a361c15bbdca610dc0c69c1"
+    },
+    {
+      "file": "android-sbom.cdx.json",
+      "bytes": 432688,
+      "sha256": "0b9ca5063dca2e9de93cb6c6d62ca03698ae6d3aaaf1a7ca990846879487b22e"
+    },
+    {
+      "file": "release-manifest.json",
+      "bytes": 2493,
+      "sha256": "13810523c9cb282682d83dac793a71ce45dc476bab5d72811c3e48b43d0c3b17"
+    },
+    {
+      "file": "windows-audit.json",
+      "bytes": 19380,
+      "sha256": "b0307c4ef3989204c49a3abc6f74181237204ddc05b9aa8d09540e1be5e462d6"
+    },
+    {
+      "file": "windows-build.json",
+      "bytes": 645,
+      "sha256": "e91962d481d515f3a60eeac5d1451238795f6f33213399f945dc3851955b5ea2"
+    },
+    {
+      "file": "windows-notices.zip",
+      "bytes": 1649103,
+      "sha256": "8dc65113d603f3d3379b82791b9d47eb593c74ce8d199ebbe63c7a632a4b0bc6"
+    },
+    {
+      "file": "windows-sbom.cdx.json",
+      "bytes": 404359,
+      "sha256": "2388d6d8a122db141c922e176d87432b2ce19cabcf97b21aa707ec26b983c31f"
+    }
+  ],
+  "limits": [
+    "No installer handoff or installed restart tested here",
+    "Does not replace VPN runtime or physical-device acceptance",
+    "Windows unsigned; remains Preview"
+  ]
+}

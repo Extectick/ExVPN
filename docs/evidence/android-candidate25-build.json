@@ -1,0 +1,200 @@
+{
+  "schema": 1,
+  "version": "0.1.4+25",
+  "sourceCommit": "576a39244c77259b6ff91312cadf988d6f1471eb",
+  "runtime": "ordinary",
+  "syntheticProfiles": false,
+  "artifact": {
+    "file": "ExVPN-0.1.4-25-android.apk",
+    "bytes": 134311047,
+    "sha256": "5a28a5f865b93e0ab34ef5288964e123429033e9433fbbf4c821426fb136e2ad"
+  },
+  "stableReady": false,
+  "dartOtaAvailable": false,
+  "networkTestingOptInRequired": true,
+  "signature": {
+    "verified": true,
+    "trustedSignerMatched": true,
+    "v2Verified": true,
+    "debug": false,
+    "certificateSha256": "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093"
+  },
+  "android": {
+    "package": "ru.exvpn.exvpn",
+    "version": "0.1.4+25",
+    "minimumSdk": 30,
+    "targetSdk": 36,
+    "debuggable": false
+  },
+  "jvm": {
+    "task": ":app:testReleaseUnitTest",
+    "freshReports": true,
+    "tests": 40,
+    "suites": 6,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "sourceInputs": {
+    "files": 638,
+    "sha256": "35bcf49d3d06eff43573b7b004220ca9b6e348301a4277a95f8e405e7cf70b99",
+    "unchanged": true
+  },
+  "packageInputsSealSha256": "8916067a50a9af64a9054e126d9e418d465cf8002771a3939cc665820b29dada",
+  "flutterRuntime": {
+    "schema": 1,
+    "identity": {
+      "schema": 1,
+      "kind": "ordinary",
+      "target": "Android",
+      "buildMode": "release",
+      "flutterVersion": "3.47.7",
+      "flutterRevision": "abaf9c523780a608bd46686fd5e53740a07077f8",
+      "engineRevision": "deb287481e3ce9468f3434937ced4240a70539ca",
+      "dartVersion": "3.13.5",
+      "pin": {
+        "path": "scripts/bootstrap/toolchain.lock.json",
+        "sha256": "cf56d254881434fad1a438e610944acfc60eb430e44aecb9386ac8eca2d065fe"
+      },
+      "cli": null
+    },
+    "engineBytesBound": true,
+    "engineBinaries": [
+      {
+        "path": "lib/arm64-v8a/libflutter.so",
+        "sha256": "34f4113ae93b2c7069030f0bcfede18e7c83ed548b71a75c9ebb749403d3a060",
+        "size": 11747864,
+        "sdkSha256": "31f11027580a8eb4fb2e24bbb1fc9c740110418eaad39fb12b5a01c49748c558",
+        "sdkBytesMatched": false,
+        "bindingMethod": "verified_ndk_strip",
+        "transformation": {
+          "method": "ndk_llvm_strip",
+          "recalculated": true,
+          "toolchain": {
+            "method": "ndk_llvm_strip",
+            "pin": {
+              "path": "scripts/release/android-engine-transform.lock.json",
+              "sha256": "ea18d008fdafb1bab62cb48670e9daf2a6311e8dee7b2b71775f054c7303cbbb"
+            },
+            "ndkVersion": "28.2.13676358",
+            "host": "windows-x86_64",
+            "tool": {
+              "path": "toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-strip.exe",
+              "sha256": "2d411db64e0b45508775e9e8fd436fb6e0af814a9dfbf8aea8fc37ce436c435c",
+              "size": 5914720
+            },
+            "sourceProperties": {
+              "path": "source.properties",
+              "sha256": "c00aa236fdb205e9be9edd9e2169763e48aca52735efff4e16f34205d49783b5",
+              "size": 108
+            },
+            "arguments": [
+              "--strip-unneeded",
+              "-o",
+              "output",
+              "input"
+            ]
+          },
+          "sourceJar": {
+            "path": "bin/cache/artifacts/engine/android-arm64-release/flutter.jar",
+            "sha256": "dbbdf25d64e41b1d311e4cdc8ca995f0969d2fad95abcb3616296fc208402989",
+            "size": 42885427
+          },
+          "sourceEntry": {
+            "path": "lib/arm64-v8a/libflutter.so",
+            "sha256": "31f11027580a8eb4fb2e24bbb1fc9c740110418eaad39fb12b5a01c49748c558",
+            "size": 165164528
+          },
+          "output": {
+            "sha256": "34f4113ae93b2c7069030f0bcfede18e7c83ed548b71a75c9ebb749403d3a060",
+            "size": 11747864
+          },
+          "outputBytesMatched": true
+        }
+      },
+      {
+        "path": "lib/x86_64/libflutter.so",
+        "sha256": "207ff0aa7a5f6926cae6403a6f63c0b6ede457ae430546cbef8550845471abfc",
+        "size": 13051424,
+        "sdkSha256": "e554f4ac5901212bbfcd3e473cfdb2352b52159d52dfee7f1b85019a3e804857",
+        "sdkBytesMatched": false,
+        "bindingMethod": "verified_ndk_strip",
+        "transformation": {
+          "method": "ndk_llvm_strip",
+          "recalculated": true,
+          "toolchain": {
+            "method": "ndk_llvm_strip",
+            "pin": {
+              "path": "scripts/release/android-engine-transform.lock.json",
+              "sha256": "ea18d008fdafb1bab62cb48670e9daf2a6311e8dee7b2b71775f054c7303cbbb"
+            },
+            "ndkVersion": "28.2.13676358",
+            "host": "windows-x86_64",
+            "tool": {
+              "path": "toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-strip.exe",
+              "sha256": "2d411db64e0b45508775e9e8fd436fb6e0af814a9dfbf8aea8fc37ce436c435c",
+              "size": 5914720
+            },
+            "sourceProperties": {
+              "path": "source.properties",
+              "sha256": "c00aa236fdb205e9be9edd9e2169763e48aca52735efff4e16f34205d49783b5",
+              "size": 108
+            },
+            "arguments": [
+              "--strip-unneeded",
+              "-o",
+              "output",
+              "input"
+            ]
+          },
+          "sourceJar": {
+            "path": "bin/cache/artifacts/engine/android-x64-release/flutter.jar",
+            "sha256": "76613caced3e6dfe8c8019a5b98d57afe8cea5f3120e40f99627936e34614b73",
+            "size": 43201556
+          },
+          "sourceEntry": {
+            "path": "lib/x86_64/libflutter.so",
+            "sha256": "e554f4ac5901212bbfcd3e473cfdb2352b52159d52dfee7f1b85019a3e804857",
+            "size": 165996904
+          },
+          "output": {
+            "sha256": "207ff0aa7a5f6926cae6403a6f63c0b6ede457ae430546cbef8550845471abfc",
+            "size": 13051424
+          },
+          "outputBytesMatched": true
+        }
+      }
+    ],
+    "dartBinaries": [
+      {
+        "path": "lib/arm64-v8a/libapp.so",
+        "sha256": "2f21ba97f7f57ac64af0294e4fd0b876d2637757c81596c41cb0da92d27e83b9",
+        "size": 7275400
+      },
+      {
+        "path": "lib/x86_64/libapp.so",
+        "sha256": "b15caa9e752de3fcc95db146608f449437609c3cea542573edfb8431008e1238",
+        "size": 7472008
+      }
+    ],
+    "completeLinkInventory": false,
+    "rawSdkBytesMatched": false,
+    "bindingMethod": "verified_ndk_strip"
+  },
+  "notices": {
+    "file": "android-notices.zip",
+    "bytes": 1611009,
+    "sha256": "108e1fbb5acfc232c94745c0fe81fcdba11085a5c638272b3a1dd571ac12d36e"
+  },
+  "mavenNotices": {
+    "file": "android-maven-notices.zip",
+    "bytes": 171613,
+    "sha256": "22a5e163847440d5c3278cfa5977a4ce5f7c7ad696a9ccebddd15e60a7170f93"
+  },
+  "sbom": {
+    "file": "android-sbom.cdx.json",
+    "bytes": 432688,
+    "sha256": "50e8dbc5a692ec18116c0d495d508cebffd608e2dee90893003930b55d0dc0aa"
+  },
+  "sbomComplete": false
+}

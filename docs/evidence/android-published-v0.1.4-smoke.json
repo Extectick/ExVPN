@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "capturedUtc": "2026-10-18T16:57:14.1875141Z",
+  "status": "PASS_public_apk_tiny_smoke",
+  "provenance": {
+    "releaseAuditVerifiedCertV2IdentityAndDigests": true,
+    "tag": "v0.1.4",
+    "artifact": "ExVPN-0.1.4-25-android.apk",
+    "sha256": "e8b1f2f5e464fe98a82b7a2f6c216418175724aa5bb06dd9baee5198d093b7d9",
+    "bytes": 134311291,
+    "localRuntimeApkSha256": "5a28a5f865b93e0ab34ef5288964e123429033e9433fbbf4c821426fb136e2ad",
+    "releaseAuditExpectedCertificateSha256": "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093",
+    "sourceCommit": "576a39244c77259b6ff91312cadf988d6f1471eb",
+    "differentFromLocalRuntimeApk": true,
+    "version": "0.1.4+25",
+    "releaseWorkflowRun": "39145366138",
+    "localRuntimeEvidencePreserved": "android-candidate25-runtime.json"
+  },
+  "device": {
+    "serial": "emulator-5582",
+    "exclusiveOwnerVerified": true,
+    "abi": "x86_64",
+    "api": 30
+  },
+  "install": {
+    "apkSha256": "e8b1f2f5e464fe98a82b7a2f6c216418175724aa5bb06dd9baee5198d093b7d9",
+    "bytes": 134311291,
+    "version": "0.1.4+25",
+    "uid": 10169,
+    "installedBaseHashMatched": true,
+    "startup": true,
+    "rotation": "0",
+    "accelerometer": "1"
+  },
+  "runtime": {
+    "settingsVersionDisplayed": "ExVPN 0.1.4 · сборка 25",
+    "gestureCount": 1,
+    "gesture": {
+      "durationMs": 2000,
+      "midDragScreenshot": true,
+      "to": [
+        540,
+        2260
+      ],
+      "source": "adb_touchscreen",
+      "contentBounds": [
+        0,
+        351,
+        1080,
+        2340
+      ],
+      "from": [
+        540,
+        1346
+      ]
+    },
+    "settingsDismissed": true,
+    "homeConnectVisible": true,
+    "noService": true,
+    "noVpn": true,
+    "noReverse": true,
+    "rotationUnchanged": true,
+    "noExVpnCrashBufferEntries": true,
+    "consentOrNetworkRepeated": false,
+    "buildsPerformed": 0
+  },
+  "screenshot": {
+    "file": "android-published-v0.1.4-center-mid.png",
+    "noPrivateDataVisible": true,
+    "originalUnedited": true,
+    "sha256": "baf9df8b33dc805d2bf7035c83b5e62e02782a9b8e46ca8175c407bdd9c314a5",
+    "visualReview": "sheet_follows_slow_center_pull"
+  },
+  "limits": [
+    "This public artifact smoke repeats no consent or network matrix",
+    "Full consent/icon/gesture evidence belongs separately to local APK5a28 with same source576a392",
+    "Physical Android remains outside this emulator smoke"
+  ],
+  "noHostNetworkChanges": true,
+  "emulator5564Untouched": true,
+  "trackedFilesWritten": false,
+  "buildsPerformed": 0
+}

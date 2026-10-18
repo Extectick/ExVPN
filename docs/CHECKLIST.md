@@ -832,34 +832,65 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
 - [ ] **EXVPN-E4-006** — Android consent и launcher icon. Критерий: новый подписанный
   APK, fresh grant/deny/back/retry/already-granted без застревания, launcher белка,
   отключение/cleanup и отсутствие ложного connected на отказавшем сервере.
-  Прогресс 2026-10-18: 15 isolated JVM tests и aapt2 compile/link PASS. Runtime
-  кандидата +25 ещё не выполнен. API33 notification/themed icon и физический
-  телефон остаются отдельной проверкой. Рабочее дерево; commit ожидается.
+  Прогресс 2026-10-18: 20 isolated JVM tests и aapt2 compile/link PASS.
+  API33 notification/themed icon и физический телефон остаются отдельной проверкой.
   На сохранённом APK source6d2e947 подтверждены настоящий первый диалог,
   отсутствие службы до согласия и красное состояние отказа. Найден UX blocker:
   после отказа предлагался Disconnect вместо прямого retry. Исправлен нативный
   авторитетный idle-контракт, при существующем/неизвестном владельце guard
   сохраняется. 20 isolated JVM и повторный Full 12/12, 335 app tests PASS.
   [Исходное наблюдение](evidence/android-candidate25-runtime-partial.json),
-  [Full](evidence/fast-validation-v0.1.4-retry.json). Новый APK ещё не проверен.
-- [ ] **EXVPN-E2-018** — Закрытие нижних окон за содержимое. Критерий: reusable scope,
+  [Full](evidence/fast-validation-v0.1.4-retry.json).
+  Исправленный подписанный APK [576a392](https://github.com/Extectick/ExVPN/commit/576a39244c77259b6ff91312cadf988d6f1471eb)
+  прошёл 40 JVM tests и реальную API30 проверку: deny → немедленный retry без
+  Disconnect → системный диалог → grant → native connecting; already-granted
+  не показывает запрос. Проверены белка в launcher, красный retry, отключение
+  и cleanup. [Runtime](evidence/android-candidate25-runtime.json),
+  [build](evidence/android-candidate25-build.json),
+  [иконка](evidence/android-launcher25.png), [отказ](evidence/android-consent25-red-retry.png).
+  Back на исходном API30 диалоге не закрывал окно ОС; patched Back и поздний
+  callback не воспроизведены runtime, поэтому полный критерий остаётся открытым.
+- [x] **EXVPN-E2-018** — Закрытие нижних окон за содержимое. Критерий: reusable scope,
   short/long list, scroll-before-dismiss, малый/отменённый жест, fling, wheel и
   однократное закрытие проверены, затем реальный Android жест в Settings.
-  Прогресс 2026-10-18: 8 gesture tests и integration widget test настоящего
-  SettingsSheet PASS, analyzer чистый. Android runtime ещё не выполнен.
-  Рабочее дерево; commit ожидается.
+  Проверено 2026-10-18: integration widget test настоящего SettingsSheet,
+  analyzer и 13 focused gesture tests PASS.
   На первом APK медленный и быстрый жесты за содержимое не закрывали Settings.
   Найдена регрессия unknown input в touch-only guard; добавлены contact kinds
   и порог30% для доступного жеста из центра. 13 focused tests, затем Full12/12,
   340 app tests за94,63 с PASS. [Full](evidence/fast-validation-v0.1.4-gestures.json).
-  Пункт остаётся открытым до повторного native APK/runtime.
-- [ ] **EXVPN-E7-009** — Выпуск 0.1.4 Preview Android/Windows. Критерий: финальный Full,
+  Повторный подписанный APK source
+  [576a392](https://github.com/Extectick/ExVPN/commit/576a39244c77259b6ff91312cadf988d6f1471eb)
+  прошёл API30: короткое движение оставляет окно, медленный жест из центра
+  на 332 dp за 2 с и быстрый жест закрывают; scrolled list сначала прокручивается,
+  положение ручки неизменно. [Runtime](evidence/android-candidate25-runtime.json),
+  [во время жеста](evidence/android-modal25-mid-pull.png),
+  [после закрытия](evidence/android-modal25-dismissed.png).
+  Отдельно скачанный публичный APK e8b1f2f5 установлен с совпадением base.apk hash:
+  запуск и один медленный жест из центра также PASS.
+  [Публичный APK](evidence/android-published-v0.1.4-smoke.json),
+  [кадр жеста](evidence/android-published-v0.1.4-center-mid.png).
+  Проверка выполнена через ADB, без Computer Use. Физическое касание на телефоне
+  остаётся общей приёмкой устройства, не подтверждено эмулятором.
+- [x] **EXVPN-E7-009** — Выпуск 0.1.4 Preview Android/Windows. Критерий: финальный Full,
   чистый source commit, новый неизменяемый tag, обе CI-платформы, прежняя APK
-  подпись, скачанные assets/hash и подписанный beta feed. Подготовлен кандидат
-  0.1.4+25; публикации ещё нет. E1/общая стабильность этим не закрываются.
-  Финальный Full 12/12 PASS; native build/runtime/release gates ещё открыты.
+  подпись, скачанные assets/hash и подписанный beta feed. Проверено 2026-10-18:
+  опубликован 0.1.4+25 Preview. E1/общая стабильность этим не закрываются.
+  Финальный Full 12/12 PASS; подписанный native build с 40 JVM tests и scoped runtime
+  прошли. Новый tag v0.1.4 закреплён на
+  [576a392](https://github.com/Extectick/ExVPN/commit/576a39244c77259b6ff91312cadf988d6f1471eb);
+  source CI39145319784 и release CI39145366138 прошли на обеих платформах.
+  Все 15 файлов скачаны: 14 checksum entries, 13 manifest records, notices/SBOM,
+  фактическая v2-подпись APK и 40 JVM tests, Windows Ed25519 beta feed и привязка
+  установщика подтверждены. [Аудит](evidence/release-v0.1.4.json),
+  [скачать](https://github.com/Extectick/ExVPN/releases/tag/v0.1.4).
+  Исходный неуспешный runtime сохранён отдельно. Windows остаётся без Authenticode;
+  опубликованные ограничения лицензий/runtime inventory не сняты.
+  Дополнительный smoke публичного APK прошёл на API30: установленный хеш,
+  запуск и закрытие Settings из центра; без повторения сетевой матрицы.
+  [Протокол](evidence/android-published-v0.1.4-smoke.json).
   Первая попытка Android packaging остановлена на ложной case-insensitive
-  коллизии `res/zR.png`/`res/zr.png`; выпуск не опубликован. Исправлен только
+  коллизии `res/zR.png`/`res/zr.png`; та попытка не была опубликована. Исправлен только
   явный APK-mode verifier. 90 audit/47 notice fixtures и повторный Full 12/12
   за 136,33 с PASS. [Отчёт](evidence/fast-validation-v0.1.4-packaging.json),
   [сохранённая неуспешная попытка](evidence/android-candidate25-build-attempt.json).

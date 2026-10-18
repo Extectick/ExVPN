@@ -1,11 +1,24 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+Публикация 0.1.4+25: source CI39145319784 и release CI39145366138 на исходниках
+576a392 успешны для Android и Windows. Скачаны все 15 публичных assets,
+проверены SHA256SUMS, APK release certificate, notices/SBOM и Windows Ed25519 feed.
+[Аудит](evidence/release-v0.1.4.json). Это Preview, не завершение E1/физической
+приёмки или подписи Windows издателем.
+Публичный APK отдельно установлен-r в API30 с совпадением установленного хеша:
+запуск и один медленный центральный жест Settings PASS; VPN/consent не повторялись.
+[Smoke](evidence/android-published-v0.1.4-smoke.json).
+
 Финальная доработка content gesture: **12/12 PASS за 94,63 с**, 340 app tests,
 source unchanged; [Full](evidence/fast-validation-v0.1.4-gestures.json).
 13 gesture tests включают unknown/stylus, медленный pull из центра на35%,
 короткий/cancel/scroll-before-dismiss и отрицательные wheel/trackpad.
 Нативная проверка первого APK показала неработающее закрытие содержимым;
-это сохранено как failure, ожидается повтор на исправленной сборке.
+это сохранено как failure. Исправленный подписанный APK source 576a392 прошёл
+40 JVM tests и API30 runtime: slow-center 332 dp/2 с, fast, short и scroll-before-sheet.
+Подтверждены deny→direct retry→системный диалог→grant→native connecting,
+already-granted и cleanup. [Runtime](evidence/android-candidate25-runtime.json).
+Это отдельный consent/UI прогон без новой HTTPS/IPv6/DNS/lockdown матрицы.
 
 После runtime-исправления повторного VPN consent: **12/12 PASS за 141,67 с**,
 335 app tests, source unchanged; [Full](evidence/fast-validation-v0.1.4-retry.json).
