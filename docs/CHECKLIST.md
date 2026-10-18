@@ -834,6 +834,13 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   Прогресс 2026-10-18: 15 isolated JVM tests и aapt2 compile/link PASS. Runtime
   кандидата +25 ещё не выполнен. API33 notification/themed icon и физический
   телефон остаются отдельной проверкой. Рабочее дерево; commit ожидается.
+  На сохранённом APK source6d2e947 подтверждены настоящий первый диалог,
+  отсутствие службы до согласия и красное состояние отказа. Найден UX blocker:
+  после отказа предлагался Disconnect вместо прямого retry. Исправлен нативный
+  авторитетный idle-контракт, при существующем/неизвестном владельце guard
+  сохраняется. 20 isolated JVM и повторный Full 12/12, 335 app tests PASS.
+  [Исходное наблюдение](evidence/android-candidate25-runtime-partial.json),
+  [Full](evidence/fast-validation-v0.1.4-retry.json). Новый APK ещё не проверен.
 - [ ] **EXVPN-E2-018** — Закрытие нижних окон за содержимое. Критерий: reusable scope,
   short/long list, scroll-before-dismiss, малый/отменённый жест, fling, wheel и
   однократное закрытие проверены, затем реальный Android жест в Settings.

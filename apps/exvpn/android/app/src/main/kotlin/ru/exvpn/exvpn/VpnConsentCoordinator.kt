@@ -1,5 +1,16 @@
 package ru.exvpn.exvpn
 
+/** Permission failure cannot create a tunnel. Report an authoritative idle
+ * state only when BOTH native owners are confirmed absent; existing/unknown
+ * ownership must retain the controller's conservative protection state. */
+internal data class VpnConsentFailureState(val phase: String, val profileId: String?) {
+    companion object {
+        fun resolve(profileId: String, servicePresent: Boolean?, requestPending: Boolean?): VpnConsentFailureState =
+            if (servicePresent == false && requestPending == false) VpnConsentFailureState("disconnected", null)
+            else VpnConsentFailureState("error", profileId)
+    }
+}
+
 /** Owns one platform consent request, not the tunnel. All callbacks run on the
  * activity thread. A cancelled/stale activity result must never start a VPN. */
 internal class VpnConsentCoordinator<Request, Reply, Consent>(

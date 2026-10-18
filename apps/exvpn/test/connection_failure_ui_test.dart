@@ -1,4 +1,5 @@
 import 'package:exvpn/services/vpn_controller.dart';
+import 'package:exvpn/services/native_vpn_bridge.dart';
 import 'package:exvpn/src/home_screen.dart';
 import 'package:exvpn/src/power_button.dart';
 import 'package:exvpn/src/settings_sheet.dart';
@@ -11,7 +12,59 @@ import 'package:flutter_test/flutter_test.dart';
 import 'native_home_test.dart' show openConnectionControls;
 import 'vpn_controller_test.dart' show ModeBridge, off;
 
+class _RejectedConsentBridge extends ModeBridge {
+  _RejectedConsentBridge(this.code);
+  final String code;
+
+  @override
+  Future<void> connectInMode(ConnectionProfile profile, VpnMode mode) async {
+    modeConnects.add((profile.id, mode));
+    emit(
+      VpnStatus(
+        phase: VpnPhase.requestingPermission,
+        activeProfileId: profile.id,
+        processCrashProtection: false,
+        systemProxySupported: true,
+      ),
+    );
+    emit(
+      VpnStatus(
+        phase: VpnPhase.disconnected,
+        errorCode: code,
+        processCrashProtection: false,
+        systemProxySupported: true,
+      ),
+    );
+    throw VpnFailure(code);
+  }
+}
+
 void main() {
+  for (final code in ['permission_denied', 'vpn_permission_unavailable']) {
+    testWidgets('$code remains red and retries without an idle disconnect', (
+      tester,
+    ) async {
+      final bridge = _RejectedConsentBridge(code);
+      final state = await openConnectionControls(tester, bridge);
+      final buttonFinder = find.byKey(const Key('connect-button'));
+      final connectLabel = tester.widget<PowerButton>(buttonFinder).label;
+      for (var attempt = 1; attempt <= 2; attempt++) {
+        await tester.tap(buttonFinder);
+        await tester.pumpAndSettle();
+        expect(bridge.modeConnects.length, attempt);
+        expect(bridge.disconnects, 0);
+        expect(state.vpn.status.phase, VpnPhase.disconnected);
+        expect(state.vpn.canDisconnect, isFalse);
+        expect(state.vpn.lastErrorCode, code);
+        final button = tester.widget<PowerButton>(buttonFinder);
+        expect(button.failed, isTrue);
+        expect(button.connecting, isFalse);
+        expect(button.label, connectLabel);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('settings dismisses when pulled down from its contents', (
     tester,
   ) async {

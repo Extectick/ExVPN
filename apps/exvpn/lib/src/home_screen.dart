@@ -1052,7 +1052,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       label: action,
       active: phase == VpnPhase.connected,
       connecting: vpn?.connecting ?? false,
-      failed: phase == VpnPhase.blocked || phase == VpnPhase.error,
+      failed:
+          phase == VpnPhase.blocked ||
+          phase == VpnPhase.error ||
+          (phase == VpnPhase.disconnected && vpn?.lastErrorCode != null),
       elapsedLabel: phase == VpnPhase.connected
           ? _elapsed(vpn?.status.connectedAt)
           : null,

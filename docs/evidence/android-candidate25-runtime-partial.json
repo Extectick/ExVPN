@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "capturedUtc": "2026-10-18T16:00:46.8783765Z",
+  "status": "stopped_on_retry_action_issue",
+  "candidate": {
+    "version": "0.1.4+25",
+    "sourceCommit": "6d2e947699b5b6f347dd07bb6f7ba246ca2ad8d4",
+    "sha256": "e0db03cb5ec6cd597a3bffc0d2a63772e00deca99a179f3afe068ab6ad187910",
+    "releasePromoted": false,
+    "installedBaseHashMatched": true
+  },
+  "independentValidation": {
+    "trustedSigner": true,
+    "apkV2Verified": true,
+    "debuggable": false,
+    "zipExactDuplicates": 0,
+    "zipPathsSafe": true,
+    "allEntriesCrcRead": true,
+    "nativeFilesBound": 2,
+    "noticeFilesBound": 226,
+    "engineBytesBound": true,
+    "engineBindingMethod": "verified_ndk_strip"
+  },
+  "passed": {
+    "firstDialogOpenedAutomatically": true,
+    "dialogStayedOpenWhileAppPaused": true,
+    "noServiceOrVpnBeforeGrant": true,
+    "denialDiagnosticPhase": "error",
+    "denialDiagnosticCode": "permission_denied",
+    "requestingPermissionStuck": false,
+    "redPowerVisualConfirmed": true
+  },
+  "issue": {
+    "observedPowerDescription": "Ошибка подключения, Отключить VPN",
+    "diagnosticPhase": "error",
+    "diagnosticErrorCode": "permission_denied",
+    "vpnServiceAbsent": true,
+    "vpnCaptureAbsent": true,
+    "directRetryActionAvailable": false,
+    "extraResetSent": false,
+    "sourcePointer": "apps/exvpn/lib/services/vpn_controller.dart:249",
+    "controllerRule": "error retains mayHaveTunnel or sets it from activeProfileId"
+  },
+  "notRun": [
+    "system Back cancellation",
+    "grant and actual connecting phase",
+    "already-granted path",
+    "late callback runtime",
+    "launcher icon",
+    "small/large/scrolled sheet drags"
+  ],
+  "idle": {
+    "noVpnService": true,
+    "noVpnNetwork": true,
+    "noReverseMapping": true,
+    "stallProcessStarted": false,
+    "originalUserEmulatorTouched": false,
+    "hostNetworkChanged": false
+  },
+  "screenshots": [
+    "first-system-consent.png",
+    "permission-denied-red.png"
+  ],
+  "rawPrivateDiagnosticsPublished": false
+}

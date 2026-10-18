@@ -1,5 +1,12 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+После runtime-исправления повторного VPN consent: **12/12 PASS за 141,67 с**,
+335 app tests, source unchanged; [Full](evidence/fast-validation-v0.1.4-retry.json).
+20 isolated JVM tests и два новых UI/controller сценария доказывают красное
+idle-состояние и повтор без лишнего Disconnect; существующий/неизвестный владелец
+остаётся консервативным. Повторный APK/runtime gate ещё ожидается.
+[Найденный runtime отказ](evidence/android-candidate25-runtime-partial.json).
+
 После исправления APK ZIP verifier: **12/12 PASS за 136,33 с**, 333 app tests,
 source unchanged; [финальный Full](evidence/fast-validation-v0.1.4-packaging.json).
 90 artifact-audit и 47 Android-notice fixtures подтвердили различие регистра

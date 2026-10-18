@@ -38,7 +38,11 @@ class MainActivity : FlutterActivity() {
             startVpn(request, reply)
         },
         fail = { request, reply, code ->
-            if (code != "operation_in_progress") VpnRuntime.publish("error", request.profileId, error = code)
+            if (code != "operation_in_progress") {
+                val failed = VpnConsentFailureState.resolve(request.profileId,
+                    servicePresent = VpnRuntime.service != null, requestPending = VpnRuntime.pending != null)
+                VpnRuntime.publish(failed.phase, failed.profileId, error = code)
+            }
             reply.error(code, "VPN connection could not be started", null)
         },
     )
