@@ -1,5 +1,12 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+Финальная доработка content gesture: **12/12 PASS за 94,63 с**, 340 app tests,
+source unchanged; [Full](evidence/fast-validation-v0.1.4-gestures.json).
+13 gesture tests включают unknown/stylus, медленный pull из центра на35%,
+короткий/cancel/scroll-before-dismiss и отрицательные wheel/trackpad.
+Нативная проверка первого APK показала неработающее закрытие содержимым;
+это сохранено как failure, ожидается повтор на исправленной сборке.
+
 После runtime-исправления повторного VPN consent: **12/12 PASS за 141,67 с**,
 335 app tests, source unchanged; [Full](evidence/fast-validation-v0.1.4-retry.json).
 20 isolated JVM tests и два новых UI/controller сценария доказывают красное

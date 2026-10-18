@@ -64,9 +64,13 @@ Future<({ScrollController controller, _Observer observer})> _open(
   return (controller: controller, observer: observer);
 }
 
-Future<void> _slowPull(WidgetTester tester, double distance) async {
+Future<void> _slowPull(
+  WidgetTester tester,
+  double distance, {
+  PointerDeviceKind kind = PointerDeviceKind.touch,
+}) async {
   final start = tester.getTopLeft(find.byKey(_listKey)) + const Offset(120, 34);
-  final gesture = await tester.startGesture(start);
+  final gesture = await tester.startGesture(start, kind: kind);
   for (var i = 0; i < 10; i++) {
     await gesture.moveBy(Offset(0, distance / 10));
     await tester.pump(const Duration(milliseconds: 50));
@@ -77,6 +81,23 @@ Future<void> _slowPull(WidgetTester tester, double distance) async {
 }
 
 void main() {
+  for (final kind in [
+    PointerDeviceKind.unknown,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.invertedStylus,
+  ]) {
+    testWidgets(
+      '${kind.name} direct-contact pointer hands content drag to the sheet',
+      (tester) async {
+        final state = await _open(tester, count: 40);
+        await _slowPull(tester, 300, kind: kind);
+        expect(find.byKey(_scopeKey), findsNothing);
+        expect(state.observer.pops, 1);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   for (final count in [3, 40]) {
     testWidgets(
       'downward content pull dismisses ${count == 3 ? 'short' : 'long'} list at top exactly once',
@@ -107,12 +128,44 @@ void main() {
 
   testWidgets('a short slow pull returns without popping', (tester) async {
     final state = await _open(tester, count: 40);
+    final sheetHeight = tester.getSize(find.byType(BottomSheet)).height;
+    expect(65 / sheetHeight, lessThan(0.2));
     final before = tester.getTopLeft(find.byKey(_scopeKey));
     await _slowPull(tester, 65);
     expect(tester.getTopLeft(find.byKey(_scopeKey)), before);
     expect(state.observer.pops, 0);
     expect(state.controller.offset, 0);
   });
+
+  testWidgets(
+    'a slow central pull of 35 percent closes without reaching half-height',
+    (tester) async {
+      final state = await _open(tester, count: 40);
+      final sheetHeight = tester.getSize(find.byType(BottomSheet)).height;
+      final pull = sheetHeight * 0.35;
+      // Include gesture recognition slop, while keeping the entire finger path
+      // below half the sheet height and within the screen from its centre.
+      const recognitionSlop = 24.0;
+      expect(pull + recognitionSlop, lessThan(sheetHeight * 0.5));
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(_listKey)),
+      );
+      await gesture.moveBy(const Offset(0, recognitionSlop));
+      await tester.pump(const Duration(milliseconds: 50));
+      for (var i = 0; i < 10; i++) {
+        await gesture.moveBy(Offset(0, pull / 10));
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(state.observer.pops, 0);
+      await tester.pump(const Duration(milliseconds: 150));
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(find.byKey(_scopeKey), findsNothing);
+      expect(state.observer.pops, 1);
+      expect(find.text('Open'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('upward scroll and wheel overscroll do not dismiss', (
     tester,
@@ -132,6 +185,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(_scopeKey), findsOneWidget);
     expect(state.observer.pops, 0);
+  });
+
+  testWidgets('indirect trackpad overscroll does not dismiss', (tester) async {
+    final state = await _open(tester, count: 40);
+    await _slowPull(tester, 300, kind: PointerDeviceKind.trackpad);
+    expect(find.byKey(_scopeKey), findsOneWidget);
+    expect(state.observer.pops, 0);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('disabled content drag remains disabled', (tester) async {

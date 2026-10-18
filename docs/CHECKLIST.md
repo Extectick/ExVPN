@@ -819,7 +819,7 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   кнопки и браузерный просмотр dark/light/large/minimal. У ошибки refresh не
   меняется положение серверной строки. [Сверка](../design-qa.md),
   [снимок](../design/screenshots/subscription-tree-large-dark-final.png).
-  Рабочее дерево; commit ожидается. Native визуальная приёмка отдельно.
+  Исходники: [6d2e947](https://github.com/Extectick/ExVPN/commit/6d2e947699b5b6f347dd07bb6f7ba246ca2ad8d4). Native визуальная приёмка отдельно.
   Финальный Full: 12/12, 333 app tests, 293,54 с, source unchanged;
   [отчёт](evidence/fast-validation-v0.1.4.json).
 - [x] **EXVPN-E3-009** — Необязательное название и метаданные провайдера.
@@ -827,7 +827,8 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   atomic partial update, последний рабочий список/имя и миграция snapshot.
   Проверено 2026-10-18: 65 client-state tests, app metadata/loader/refresh/store
   tests и независимый read-only review. Snapshot v2 читает v1, обратное понижение
-  не поддерживается. [Контракт](ARCHITECTURE.md). Рабочее дерево; commit ожидается.
+  не поддерживается. [Контракт](ARCHITECTURE.md). Исходники:
+  [6d2e947](https://github.com/Extectick/ExVPN/commit/6d2e947699b5b6f347dd07bb6f7ba246ca2ad8d4).
 - [ ] **EXVPN-E4-006** — Android consent и launcher icon. Критерий: новый подписанный
   APK, fresh grant/deny/back/retry/already-granted без застревания, launcher белка,
   отключение/cleanup и отсутствие ложного connected на отказавшем сервере.
@@ -847,6 +848,11 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   Прогресс 2026-10-18: 8 gesture tests и integration widget test настоящего
   SettingsSheet PASS, analyzer чистый. Android runtime ещё не выполнен.
   Рабочее дерево; commit ожидается.
+  На первом APK медленный и быстрый жесты за содержимое не закрывали Settings.
+  Найдена регрессия unknown input в touch-only guard; добавлены contact kinds
+  и порог30% для доступного жеста из центра. 13 focused tests, затем Full12/12,
+  340 app tests за94,63 с PASS. [Full](evidence/fast-validation-v0.1.4-gestures.json).
+  Пункт остаётся открытым до повторного native APK/runtime.
 - [ ] **EXVPN-E7-009** — Выпуск 0.1.4 Preview Android/Windows. Критерий: финальный Full,
   чистый source commit, новый неизменяемый tag, обе CI-платформы, прежняя APK
   подпись, скачанные assets/hash и подписанный beta feed. Подготовлен кандидат

@@ -3,7 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 /// Apply only inside a showModalBottomSheet builder. A list at its top hands a
-/// downward touch pull to its containing sheet; other scrolling is unchanged.
+/// downward direct-contact pull to its sheet; other scrolling is unchanged.
 class ModalSheetScrollScope extends StatelessWidget {
   const ModalSheetScrollScope({super.key, required this.child});
 
@@ -47,6 +47,7 @@ class _SheetScrollHandoff extends StatefulWidget {
 
 class _SheetScrollHandoffState extends State<_SheetScrollHandoff> {
   int? _touch;
+  PointerDeviceKind? _contactKind;
   BottomSheet? _sheet;
   ModalRoute<dynamic>? _route;
   double _height = 1;
@@ -84,7 +85,7 @@ class _SheetScrollHandoffState extends State<_SheetScrollHandoff> {
         sourceTimeStamp: details.sourceTimeStamp,
         globalPosition: details.globalPosition,
         localPosition: details.localPosition,
-        kind: PointerDeviceKind.touch,
+        kind: _contactKind,
       ),
     );
     return true;
@@ -100,7 +101,7 @@ class _SheetScrollHandoffState extends State<_SheetScrollHandoff> {
     if (!mounted || route?.isCurrent != true || _closing) return;
     final close =
         !cancelled &&
-        (controller.value < 0.5 || details.velocity.pixelsPerSecond.dy > 700);
+        (controller.value < 0.7 || details.velocity.pixelsPerSecond.dy > 700);
     sheet.onDragEnd?.call(details, isClosing: close);
     if (close) {
       _closing = true;
@@ -151,16 +152,29 @@ class _SheetScrollHandoffState extends State<_SheetScrollHandoff> {
   @override
   Widget build(BuildContext context) => Listener(
     onPointerDown: (event) {
-      if (event.kind == PointerDeviceKind.touch && _touch == null) {
+      // Android can report injected/direct-contact pointers as unknown. Match
+      // the contact devices accepted by Scrollable, excluding indirect input.
+      if (const {
+            PointerDeviceKind.touch,
+            PointerDeviceKind.stylus,
+            PointerDeviceKind.invertedStylus,
+            PointerDeviceKind.unknown,
+          }.contains(event.kind) &&
+          _touch == null) {
         _touch = event.pointer;
+        _contactKind = event.kind;
       }
     },
     onPointerUp: (event) {
-      if (event.pointer == _touch) _touch = null;
+      if (event.pointer == _touch) {
+        _touch = null;
+        _contactKind = null;
+      }
     },
     onPointerCancel: (event) {
       if (event.pointer == _touch) {
         _touch = null;
+        _contactKind = null;
         _finish(DragEndDetails(), cancelled: true);
       }
     },

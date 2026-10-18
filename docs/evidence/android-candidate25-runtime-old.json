@@ -1,0 +1,156 @@
+{
+  "schema": 1,
+  "capturedUtc": "2026-10-18T16:22:55.8195197Z",
+  "status": "old_candidate_complete_with_failures",
+  "candidate": {
+    "sourceCommit": "6d2e947699b5b6f347dd07bb6f7ba246ca2ad8d4",
+    "independentGatesPassed": true,
+    "sha256": "e0db03cb5ec6cd597a3bffc0d2a63772e00deca99a179f3afe068ab6ad187910",
+    "releasePromoted": false,
+    "version": "0.1.4+25",
+    "packagingOutcome": "failed_before_promotion"
+  },
+  "consent": {
+    "alreadyGranted": {
+      "grantAlreadyAllowed": true,
+      "systemConsentObserved": false,
+      "boundedForegroundObservations": 8,
+      "nativeVpnCaptureStarted": true,
+      "diagnosticPhase": "blocked",
+      "diagnosticCode": "tunnel_https_failed",
+      "requestingPermissionObserved": false,
+      "fixtureUsed": false
+    },
+    "denialRetryAction": "FAIL_requires_extra_disconnect",
+    "lateCallbackRuntime": "not_reproduced_stock_modal_ui",
+    "workaroundOrdinaryDisconnectsAuthorized": true,
+    "redErrorVisualConfirmed": true,
+    "pausedActivityDidNotPrematurelyFail": true,
+    "firstDialogOpenedAutomatically": true,
+    "cancelSettledPermissionDenied": true,
+    "grant": {
+      "realSystemGrant": true,
+      "nativeVpnCaptureStarted": true,
+      "firstDiagnosticPhase": "connecting",
+      "connectingPhaseCaptured": true,
+      "terminalPhase": "blocked",
+      "terminalCode": "tunnel_https_failed",
+      "listenerReadBytes": 0,
+      "listenerForwardedBytes": 0,
+      "noHttpsMatrix": true
+    },
+    "backKey": {
+      "retryDialogOpenedAfterDocumentedWorkaround": true,
+      "backKeySentOnce": true,
+      "backDismissedOsDialog": false,
+      "osDialogRemainedVisible": true,
+      "cancelButtonSentOnce": true,
+      "settledPhase": "error",
+      "settledCode": "permission_denied",
+      "requestingPermissionStuckAfterCancel": false,
+      "noServiceOrVpn": true,
+      "knownRetryActionIssueStillPresent": true,
+      "ordinaryWorkaroundDisconnectsTotal": 2
+    }
+  },
+  "launcher": {
+    "launcher": "com.google.android.apps.nexuslauncher",
+    "label": "ExVPN",
+    "adaptiveSquirrelVisible": true,
+    "openedExpectedApplication": true,
+    "api30ColorIcon": true,
+    "api33MonochromeRuntimeTested": false
+  },
+  "settings": {
+    "scrolledList": {
+      "source": "6d2e947699b5b6f347dd07bb6f7ba246ca2ad8d4",
+      "apkSha256": "e0db03cb5ec6cd597a3bffc0d2a63772e00deca99a179f3afe068ab6ad187910",
+      "portraitListFits": true,
+      "landscapeListScrollable": true,
+      "scrollBeforeSheet": true,
+      "sheetRemainedOpen": true,
+      "handleBefore": [
+        1104,
+        66,
+        1236,
+        198
+      ],
+      "handleAfter": [
+        1104,
+        66,
+        1236,
+        198
+      ],
+      "anchorBefore": [
+        411,
+        791,
+        1929,
+        1011
+      ],
+      "anchorAfter": [
+        411,
+        962,
+        1929,
+        1080
+      ],
+      "rotationRestored": true
+    },
+    "fastPull": {
+      "source": "6d2e947699b5b6f347dd07bb6f7ba246ca2ad8d4",
+      "apkSha256": "e0db03cb5ec6cd597a3bffc0d2a63772e00deca99a179f3afe068ab6ad187910",
+      "sourceType": "explicit_touchscreen",
+      "contentBounds": [
+        0,
+        351,
+        1080,
+        2340
+      ],
+      "from": [
+        540,
+        1107
+      ],
+      "to": [
+        540,
+        2141
+      ],
+      "durationMs": 250,
+      "settingsStillOpen": true,
+      "homePowerVisible": false
+    },
+    "largerPull": {
+      "source": "6d2e947699b5b6f347dd07bb6f7ba246ca2ad8d4",
+      "apkSha256": "e0db03cb5ec6cd597a3bffc0d2a63772e00deca99a179f3afe068ab6ad187910",
+      "gestureSource": "adb_input_touchscreen",
+      "contentBounds": [
+        0,
+        351,
+        1080,
+        2340
+      ],
+      "from": [
+        540,
+        868
+      ],
+      "to": [
+        540,
+        2310
+      ],
+      "durationMs": 900,
+      "settingsStillOpen": true,
+      "homePowerVisible": false
+    },
+    "shortSlowPull": "PASS_returns_open",
+    "largeSlowCenterPull": "FAIL_remains_open"
+  },
+  "cleanup": {
+    "userEmulator5564Untouched": true,
+    "rotationRestored": true,
+    "noService": true,
+    "noReverse": true,
+    "hostNetworkUnchanged": true,
+    "ownedListenerStopped": true,
+    "noVpn": true
+  },
+  "noFullHttpsMatrix": true,
+  "rawPrivateDataPublished": false
+}
