@@ -13,6 +13,42 @@ const newProfile =
     'vless://00000000-0000-4000-8000-000000000002@sample.invalid:443?security=tls#New';
 void main() {
   test(
+    'refresh updates automatic provider name and preserves a manual name',
+    () async {
+      final app = AppController()
+        ..addSubscription(
+          raw: oldProfile,
+          providerName: 'Old provider',
+          sourceUrl: 'https://example.invalid/sub',
+        )
+        ..addSubscription(
+          name: 'My choice',
+          raw: oldProfile,
+          sourceUrl: 'https://example.invalid/manual',
+        );
+      final refresh = SubscriptionRefresh(
+        app,
+        loader: SubscriptionLoader(
+          client: MockClient(
+            (_) async => http.Response(
+              newProfile,
+              200,
+              headers: {'profile-title': 'New provider'},
+            ),
+          ),
+        ),
+      );
+      addTearDown(refresh.dispose);
+      addTearDown(app.dispose);
+      for (final id in app.groups.map((group) => group.id).toList()) {
+        expect(await refresh.refresh(id), isTrue);
+      }
+      expect(app.groups.first.name, 'New provider');
+      expect(app.groups.last.name, 'My choice');
+    },
+  );
+
+  test(
     'restart reservation discards a late HTTP response before storage changes',
     () async {
       final app = AppController()

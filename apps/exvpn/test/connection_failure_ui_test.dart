@@ -1,0 +1,138 @@
+import 'package:exvpn/services/vpn_controller.dart';
+import 'package:exvpn/src/home_screen.dart';
+import 'package:exvpn/src/power_button.dart';
+import 'package:exvpn/src/settings_sheet.dart';
+import 'package:exvpn_client_state/exvpn_client_state.dart';
+import 'package:exvpn_domain/exvpn_domain.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'native_home_test.dart' show openConnectionControls;
+import 'vpn_controller_test.dart' show ModeBridge, off;
+
+void main() {
+  testWidgets('settings dismisses when pulled down from its contents', (
+    tester,
+  ) async {
+    final app = AppController.demo();
+    addTearDown(app.dispose);
+    await tester.binding.setSurfaceSize(const Size(400, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.android),
+        home: HomeScreen(
+          controller: app,
+          themeMode: ThemeMode.dark,
+          onThemeChanged: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('settings-button')));
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsSheet), findsOneWidget);
+    final gesture = await tester.startGesture(
+      tester.getTopLeft(find.byType(SettingsSheet)) + const Offset(120, 180),
+    );
+    for (var i = 0; i < 12; i++) {
+      await gesture.moveBy(const Offset(0, 36));
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsSheet), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  for (final phase in [VpnPhase.blocked, VpnPhase.error]) {
+    testWidgets(
+      '$phase is visibly failed without silently removing protection',
+      (tester) async {
+        final bridge = ModeBridge()
+          ..current = VpnStatus(
+            phase: phase,
+            processCrashProtection: false,
+            errorCode: 'tunnel_unreachable',
+          );
+        await openConnectionControls(tester, bridge);
+        PowerButton button() =>
+            tester.widget<PowerButton>(find.byKey(const Key('connect-button')));
+        expect(button().failed, isTrue);
+        expect(button().active, isFalse);
+        expect(button().connecting, isFalse);
+        expect(button().enabled, isTrue);
+        expect(bridge.disconnects, 0);
+        if (phase == VpnPhase.blocked) {
+          await tester.tap(find.byKey(const Key('connect-button')));
+          await tester.pumpAndSettle();
+          expect(bridge.disconnects, 1);
+        } else {
+          bridge.emit(off);
+          await tester.pumpAndSettle();
+        }
+        expect(button().failed, isFalse);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets(
+    'failed subscription refresh keeps the list without a retry strip',
+    (tester) async {
+      final app = AppController.demo();
+      addTearDown(app.dispose);
+      await tester.binding.setSurfaceSize(const Size(440, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('ru'),
+          supportedLocales: const [Locale('ru')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: HomeScreen(
+            controller: app,
+            themeMode: ThemeMode.dark,
+            onThemeChanged: (_) {},
+            previewRefreshAction: () async => [app.groups.first.id],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final row = find.byKey(
+        ValueKey(
+          'server-${app.groups.first.id}-${app.groups.first.servers.first.id}',
+        ),
+      );
+      final before = tester.getRect(row);
+      await tester.tap(find.byKey(const Key('refresh-button')));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(ValueKey('retry-subscription-${app.groups.first.id}')),
+        findsNothing,
+      );
+      expect(find.text('Не удалось обновить подписку'), findsNothing);
+      expect(tester.getRect(row), before);
+      expect(app.groups.first.servers, isNotEmpty);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  test(
+    'permission errors describe refusal and unavailable dialogs truthfully',
+    () {
+      expect(
+        vpnErrorText('permission_denied'),
+        isNot(contains('Разрешите VPN в системном запросе')),
+      );
+      expect(
+        vpnErrorText('vpn_permission_unavailable'),
+        contains('Не удалось открыть запрос VPN'),
+      );
+    },
+  );
+}

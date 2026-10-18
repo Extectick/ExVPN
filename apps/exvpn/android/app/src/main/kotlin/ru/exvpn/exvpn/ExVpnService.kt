@@ -303,7 +303,7 @@ class ExVpnService : VpnService() {
     private fun notification(message: String): Notification {
         val open = PendingIntent.getActivity(this, 1, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val stop = PendingIntent.getService(this, 2, Intent(this, ExVpnService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        return Notification.Builder(this, CHANNEL).setSmallIcon(android.R.drawable.ic_lock_lock)
+        return Notification.Builder(this, CHANNEL).setSmallIcon(R.drawable.ic_stat_vpn)
             .setContentTitle("ExVPN").setContentText(message).setContentIntent(open).setOngoing(true)
             .addAction(Notification.Action.Builder(null, "Отключить", stop).build()).build()
     }

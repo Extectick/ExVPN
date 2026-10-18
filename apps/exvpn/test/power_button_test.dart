@@ -16,6 +16,7 @@ Future<void> _open(
   VoidCallback callback, {
   bool reduceMotion = false,
   bool active = false,
+  bool failed = false,
   ValueNotifier<bool>? activeState,
 }) async {
   tester.view.devicePixelRatio = 1;
@@ -26,6 +27,7 @@ Future<void> _open(
     key: _buttonKey,
     size: 200,
     active: confirmedActive,
+    failed: failed,
     onPressed: callback,
   );
   await tester.pumpWidget(
@@ -94,6 +96,41 @@ Future<List<Color>> _colors(
 }))!;
 
 void main() {
+  testWidgets(
+    'failure has red light, stays actionable and clears on disconnect',
+    (tester) async {
+      var calls = 0;
+      await _open(tester, () => calls++, failed: true);
+      final icon = tester.widget<Icon>(
+        find.byIcon(Icons.power_settings_new_rounded),
+      );
+      expect(icon.color, exVpnTheme(Brightness.dark).colorScheme.error);
+      final lit = await _colors(tester, [
+        (56, 160),
+        (263, 160),
+        (160, 56),
+        (160, 263),
+      ]);
+      for (final color in lit) {
+        expect(color.r - color.g, greaterThan(.05));
+      }
+      await tester.tap(find.byKey(_buttonKey));
+      await tester.pumpAndSettle();
+      expect(calls, 1);
+      await _open(tester, () => calls++);
+      final cleared = await _colors(tester, [
+        (56, 160),
+        (263, 160),
+        (160, 56),
+        (160, 263),
+      ]);
+      for (final color in cleared) {
+        expect(color, const Color(0xff071018));
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('touch releases once and cancelled gestures never activate', (
     tester,
   ) async {

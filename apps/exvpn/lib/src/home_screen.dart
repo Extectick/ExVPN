@@ -22,6 +22,8 @@ import 'app_strings.dart';
 import 'country_flag.dart';
 import 'desktop_window_controls.dart';
 import 'app_update_strip.dart';
+import 'subscription_tree.dart';
+import 'modal_sheet_scroll_behavior.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -798,15 +800,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   showDragHandle: true,
                   useSafeArea: true,
                   constraints: const BoxConstraints(maxWidth: 600),
-                  builder: (_) => SettingsSheet(
-                    controller: widget.controller,
-                    vpn: widget.vpn,
-                    persistence: widget.persistence,
-                    themeMode: widget.themeMode,
-                    onThemeChanged: widget.onThemeChanged,
-                    onAdd: () => _add(),
-                    previewVersion: widget.previewVersion,
-                    previewBuild: widget.previewBuild,
+                  builder: (_) => ModalSheetScrollScope(
+                    child: SettingsSheet(
+                      controller: widget.controller,
+                      vpn: widget.vpn,
+                      persistence: widget.persistence,
+                      themeMode: widget.themeMode,
+                      onThemeChanged: widget.onThemeChanged,
+                      onAdd: () => _add(),
+                      previewVersion: widget.previewVersion,
+                      previewBuild: widget.previewBuild,
+                    ),
                   ),
                 ),
                 icon: CupertinoIcons.gear_alt,
@@ -1048,6 +1052,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       label: action,
       active: phase == VpnPhase.connected,
       connecting: vpn?.connecting ?? false,
+      failed: phase == VpnPhase.blocked || phase == VpnPhase.error,
       elapsedLabel: phase == VpnPhase.connected
           ? _elapsed(vpn?.status.connectedAt)
           : null,
@@ -1342,11 +1347,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 11),
               child: Row(
                 children: [
-                  Icon(
-                    group.expanded
-                        ? CupertinoIcons.chevron_down
-                        : CupertinoIcons.chevron_right,
-                    size: 16,
+                  SizedBox(
+                    height: 30,
+                    child: Icon(
+                      group.expanded
+                          ? CupertinoIcons.chevron_down
+                          : CupertinoIcons.chevron_right,
+                      size: 16,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1365,25 +1373,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   if (_groupRefreshFailed(group) ||
                       group.issues.isNotEmpty ||
                       widget.controller.pendingUpdate(group.id) != null)
-                    IconButton(
-                      key: ValueKey('subscription-issues-${group.id}'),
-                      tooltip: context.tr(
-                        _groupRefreshFailed(group)
-                            ? 'Не удалось обновить подписку'
-                            : 'Проверить замечания к подписке',
-                      ),
-                      onPressed: () => _reviewSubscription(group.id),
-                      constraints: const BoxConstraints.tightFor(
-                        width: 30,
-                        height: 30,
-                      ),
-                      padding: EdgeInsets.zero,
-                      icon: Icon(
-                        CupertinoIcons.exclamationmark_circle,
-                        size: 17,
-                        color: _groupRefreshFailed(group)
-                            ? Theme.of(context).colorScheme.error
-                            : Theme.of(context).colorScheme.primary,
+                    SizedBox.square(
+                      dimension: 30,
+                      child: IconButton(
+                        key: ValueKey('subscription-issues-${group.id}'),
+                        tooltip: context.tr(
+                          _groupRefreshFailed(group)
+                              ? 'Не удалось обновить подписку'
+                              : 'Проверить замечания к подписке',
+                        ),
+                        onPressed: () => _reviewSubscription(group.id),
+                        constraints: const BoxConstraints.tightFor(
+                          width: 30,
+                          height: 30,
+                        ),
+                        padding: EdgeInsets.zero,
+                        icon: Icon(
+                          CupertinoIcons.exclamationmark_circle,
+                          size: 17,
+                          color: _groupRefreshFailed(group)
+                              ? Theme.of(context).colorScheme.error
+                              : Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                     ),
                   Text(
@@ -1399,38 +1410,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ),
       ),
-      if (_groupRefreshFailed(group))
-        Padding(
-          padding: const EdgeInsets.fromLTRB(7, 0, 7, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  context.tr('Не удалось обновить подписку'),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                ),
-              ),
-              TextButton(
-                key: ValueKey('retry-subscription-${group.id}'),
-                onPressed: _refreshBusy
-                    ? null
-                    : () => unawaited(_refresh(groupId: group.id)),
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(0, 28),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  context.tr('Повторить'),
-                  style: const TextStyle(fontSize: 11),
-                ),
-              ),
-            ],
-          ),
-        ),
       if (group.expanded) ...[
         if (group.servers.isEmpty)
           Padding(
@@ -1442,11 +1421,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
           ),
-        for (final server in group.servers)
-          _server(group, server, onSelected: onSelected),
+        SubscriptionTree(
+          children: [
+            for (final server in group.servers)
+              _server(group, server, onSelected: onSelected),
+          ],
+        ),
       ],
-      const SizedBox(height: 8),
-      const Divider(),
+      const SizedBox(height: 14),
     ],
   );
 
@@ -1523,6 +1505,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         : widget.controller.selectedGroupId == group.id &&
               widget.controller.selectedServerId == server.id;
     final scheme = Theme.of(context).colorScheme;
+    final light = Theme.of(context).brightness == Brightness.light;
+    final foreground = selected && light
+        ? scheme.onPrimaryContainer
+        : scheme.onSurface;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Semantics(
@@ -1531,7 +1517,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         enabled: !_connectionBusy,
         label: '${server.name}, ${server.protocolLabel}',
         child: Material(
-          color: selected ? scheme.primaryContainer : Colors.transparent,
+          color: selected
+              ? light
+                    ? scheme.primaryContainer
+                    : scheme.primary.withValues(alpha: .13)
+              : Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(11),
             side: selected && Theme.of(context).brightness == Brightness.light
@@ -1571,9 +1561,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               height: 1.2,
                               fontWeight: FontWeight.w600,
                               letterSpacing: -0.45,
-                              color: selected
-                                  ? scheme.onPrimaryContainer
-                                  : scheme.onSurface,
+                              color: foreground,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -1584,10 +1572,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             style: TextStyle(
                               fontSize: 13,
                               height: 1.2,
-                              color: selected
-                                  ? scheme.onPrimaryContainer.withValues(
-                                      alpha: .72,
-                                    )
+                              color: selected && light
+                                  ? foreground.withValues(alpha: .72)
                                   : scheme.onSurfaceVariant,
                             ),
                           ),
@@ -1595,7 +1581,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _latency(server, selected: selected),
+                    _latency(server, selected: selected && light),
                     SizedBox(
                       width: 38,
                       child: selected
@@ -1603,7 +1589,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               alignment: Alignment.centerRight,
                               child: Icon(
                                 Icons.check_rounded,
-                                color: scheme.onPrimaryContainer,
+                                color: light
+                                    ? scheme.onPrimaryContainer
+                                    : scheme.primary,
                                 size: 24,
                               ),
                             )

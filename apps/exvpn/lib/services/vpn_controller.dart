@@ -596,7 +596,9 @@ String vpnErrorText(String? code) => switch (code) {
   'native_storage_unavailable' => 'Не удалось прочитать или сохранить защищённые настройки VPN. Соединение не восстановлено автоматически.',
   'exclusions_unavailable' => 'Не удалось прочитать сохранённые исключения. Перезапустите службу или явно сбросьте список в настройках исключений.',
   'system_testing_required' => 'Эта сборка требует проверки VPN в Windows. Системное подключение ещё не разрешено установщиком.',
-  'permission_denied' => 'Разрешите VPN в системном запросе.',
+  'permission_denied' => 'Разрешение VPN не предоставлено. Попробуйте ещё раз.',
+  'vpn_permission_unavailable' =>
+    'Не удалось открыть запрос VPN. Откройте приложение и попробуйте ещё раз.',
   'permission_cancelled' => 'Запрос подключения отменён.',
   'native_core_unavailable' ||
   'native_unavailable' => 'VPN-модуль недоступен в этой сборке.',

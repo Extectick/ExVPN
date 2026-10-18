@@ -30,6 +30,12 @@ String _text(Object? value, {int max = 16384, bool empty = false}) {
 String? _optional(Object? value, {int max = 16384}) =>
     value == null ? null : _text(value, max: max, empty: true);
 
+String _subscriptionName(Object? value) {
+  final text = _text(value, max: 160);
+  if (safeSubscriptionName(text) != text) _invalidSnapshot();
+  return text;
+}
+
 int _integer(Object? value, int min, int max) {
   if (value is! int || value < min || value > max) _invalidSnapshot();
   return value;
@@ -179,7 +185,7 @@ AppController _decodeSnapshot(Map<String, dynamic> value) {
       'selectedGroupId',
       'selectedServerId',
     });
-    if (snapshot['version'] is! int || snapshot['version'] != 1) {
+    if (snapshot['version'] is! int || !{1, 2}.contains(snapshot['version'])) {
       _invalidSnapshot();
     }
     final groups = <SubscriptionGroup>[];
@@ -190,6 +196,8 @@ AppController _decodeSnapshot(Map<String, dynamic> value) {
       final group = _object(item, {
         'id',
         'name',
+        'providerName',
+        'nameIsAutomatic',
         'expanded',
         'profiles',
         'issues',
@@ -228,6 +236,12 @@ AppController _decodeSnapshot(Map<String, dynamic> value) {
         SubscriptionGroup(
           id: id,
           name: _text(group['name'], max: 512),
+          providerName: group['providerName'] == null
+              ? null
+              : _subscriptionName(group['providerName']),
+          nameIsAutomatic: group.containsKey('nameIsAutomatic')
+              ? _boolean(group['nameIsAutomatic'])
+              : false,
           servers: profiles.map((p) => ServerEntry(profile: p)).toList(),
           expanded: _boolean(group['expanded']),
           issues: issues,
@@ -255,7 +269,7 @@ Map<String, Object?> _encodeSnapshot(AppController controller) {
   final groups = controller.groups.where((g) => !g.isDemo).toList();
   final selectedReal = groups.any((g) => g.id == controller.selectedGroupId);
   final result = <String, Object?>{
-    'version': 1,
+    'version': 2,
     'selectedGroupId': selectedReal ? controller.selectedGroupId : null,
     'selectedServerId': selectedReal ? controller.selectedServerId : null,
     'groups': [
@@ -263,6 +277,8 @@ Map<String, Object?> _encodeSnapshot(AppController controller) {
         <String, Object?>{
           'id': group.id,
           'name': group.name,
+          'providerName': group.providerName,
+          'nameIsAutomatic': group.nameIsAutomatic,
           'expanded': group.expanded,
           'sourceUrl': group.sourceUrl,
           'updatedAt': group.updatedAt?.millisecondsSinceEpoch,

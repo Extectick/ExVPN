@@ -1,8 +1,13 @@
 package ru.exvpn.exvpn
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.VpnService
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -10,12 +15,39 @@ import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONObject
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 class MainActivity : FlutterActivity() {
     private var qrPicker: QrImagePicker? = null
     private var qrChannel: MethodChannel? = null
-    private var permissionResult: MethodChannel.Result? = null
-    private var permissionRequest: ConnectRequest? = null
+    private val activityHandler = Handler(Looper.getMainLooper())
+    private var activityResumed = false
+    private var notificationPermissionPending = false
+    private val consent = VpnConsentCoordinator<ConnectRequest, MethodChannel.Result, Intent>(
+        prepare = { VpnService.prepare(this) },
+        nextToken = {
+            permissionTokens.incrementAndGet().also { check(it <= 65535) }
+        },
+        launch = { intent, token ->
+            startActivityForResult(intent, token)
+            schedulePermissionCheck()
+        },
+        waiting = { request -> VpnRuntime.publish("requestingPermission", request.profileId) },
+        start = { request, reply ->
+            VpnRuntime.service?.prepareReplacement()
+            startVpn(request, reply)
+        },
+        fail = { request, reply, code ->
+            if (code != "operation_in_progress") VpnRuntime.publish("error", request.profileId, error = code)
+            reply.error(code, "VPN connection could not be started", null)
+        },
+    )
+    private val permissionCheck = Runnable {
+        if (activityResumed && hasWindowFocus()) {
+            consent.onFocusedForeground()
+            requestNotificationsIfNeeded()
+        }
+    }
     private val iconWorker = Executors.newSingleThreadExecutor()
     private val knownApplicationIcons = mutableSetOf<String>()
     private val pendingIcons = mutableSetOf<MethodChannel.Result>()
@@ -49,7 +81,7 @@ class MainActivity : FlutterActivity() {
                 }
                 "coreVersion" -> result.success("26.10.10-exvpn.5")
                 "connect", "reconnect" -> {
-                    if (permissionResult != null) { result.error("operation_in_progress", "VPN permission request pending", null); return@setMethodCallHandler }
+                    if (consent.pending) { result.error("operation_in_progress", "VPN permission request pending", null); return@setMethodCallHandler }
                     if (!NativeCore.available) { result.error("native_core_unavailable", "Native core is not installed", null); return@setMethodCallHandler }
                     val requestedMode = call.argument<String>("mode")
                     if (requestedMode != null && requestedMode != "vpn") {
@@ -63,35 +95,26 @@ class MainActivity : FlutterActivity() {
                     VpnRuntime.ensurePolicy(this)
                     val routing = VpnRuntime.applicationRouting
                     val request = ConnectRequest(raw, profile["id"] as? String ?: "", routing.applications.toSet(), routing.mode)
-                    val prepare = VpnService.prepare(this)
-                    if (prepare != null) {
-                        if (call.method == "reconnect") {
-                            result.error("vpn_permission_revoked", "VPN permission is required", null); return@setMethodCallHandler
-                        }
-                        permissionResult = result; permissionRequest = request
-                        VpnRuntime.publish("requestingPermission", request.profileId)
-                        startActivityForResult(prepare, VPN_PERMISSION)
-                    } else {
-                        VpnRuntime.service?.prepareReplacement()
-                        startVpn(request, result)
-                    }
+                    // Re-check for every user connect/reconnect. Another VPN or
+                    // system policy may have revoked this app's earlier grant.
+                    consent.connect(request, result)
                 }
                 "disconnect" -> {
-                    permissionRequest = null
-                    permissionResult?.error("permission_cancelled", "Connection cancelled", null); permissionResult = null
+                    consent.cancel()?.second?.error("permission_cancelled", "Connection cancelled", null)
+                    notificationPermissionPending = false
                     VpnRuntime.pending = null
                     if (VpnRuntime.service != null) startService(Intent(this, ExVpnService::class.java).setAction(ExVpnService.ACTION_STOP))
                     else { VpnPersistence.clearResume(this); VpnRuntime.publish("disconnected") }
                     result.success(null)
                 }
                 "setExclusions" -> {
-                    if (VpnRuntime.service != null || permissionResult != null || VpnRuntime.pending != null) { result.error("reconnect_required", "Disconnect before changing exclusions", null); return@setMethodCallHandler }
+                    if (VpnRuntime.service != null || consent.pending || VpnRuntime.pending != null) { result.error("reconnect_required", "Disconnect before changing exclusions", null); return@setMethodCallHandler }
                     val applications = call.argument<List<String>>("applications") ?: throw IllegalArgumentException()
                     if (applications.size > 500 || applications.any { !it.matches(Regex("[a-zA-Z0-9_]+(\\.[a-zA-Z0-9_]+)+")) }) throw IllegalArgumentException()
                     VpnRuntime.savePolicy(this, applications.toSet()); result.success(null)
                 }
                 "setApplicationRouting" -> {
-                    if (VpnRuntime.service != null || permissionResult != null || VpnRuntime.pending != null) {
+                    if (VpnRuntime.service != null || consent.pending || VpnRuntime.pending != null) {
                         result.error("reconnect_required", "Disconnect before changing application routing", null); return@setMethodCallHandler
                     }
                     val routing = try { ApplicationRoutingPolicy.fromWire(call.arguments) }
@@ -140,22 +163,62 @@ class MainActivity : FlutterActivity() {
     private fun startVpn(request: ConnectRequest, result: MethodChannel.Result) {
         VpnRuntime.pending = request
         VpnRuntime.publish("connecting", request.profileId)
-        startForegroundService(Intent(this, ExVpnService::class.java).setAction(ExVpnService.ACTION_CONNECT))
+        try {
+            startForegroundService(Intent(this, ExVpnService::class.java).setAction(ExVpnService.ACTION_CONNECT))
+        } catch (error: Exception) {
+            if (VpnRuntime.pending === request) VpnRuntime.pending = null
+            throw error
+        }
         result.success(null)
+        // Notifications explain the active connection; denying this optional
+        // Android 13+ permission must not cancel or impersonate VPN consent.
+        notificationPermissionPending = true
+        schedulePermissionCheck()
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (qrPicker?.onActivityResult(requestCode, resultCode, data) == true) return
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != VPN_PERMISSION) return
-        val result = permissionResult; val request = permissionRequest
-        permissionResult = null; permissionRequest = null
-        if (result == null || request == null) return
-        if (resultCode == Activity.RESULT_OK) startVpn(request, result) else {
-            VpnRuntime.publish("error", error = "permission_denied")
-            result.error("permission_denied", "VPN permission was not granted", null)
+        if (requestCode > VPN_PERMISSION_BASE && requestCode <= 65535) {
+            consent.onActivityResult(requestCode, resultCode == Activity.RESULT_OK)
+        }
+    }
+    override fun onResume() {
+        super.onResume()
+        activityResumed = true
+        schedulePermissionCheck()
+    }
+    override fun onPause() {
+        activityResumed = false
+        consent.onActivityPaused()
+        activityHandler.removeCallbacks(permissionCheck)
+        super.onPause()
+    }
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) schedulePermissionCheck()
+    }
+    private fun schedulePermissionCheck() {
+        activityHandler.removeCallbacks(permissionCheck)
+        // Give Android time to display the external consent activity. While it
+        // is visible this activity is paused/unfocused, so it cannot time out.
+        activityHandler.postDelayed(permissionCheck, 1200)
+    }
+    private fun requestNotificationsIfNeeded() {
+        if (!notificationPermissionPending || consent.pending || !activityResumed || !hasWindowFocus()) return
+        notificationPermissionPending = false
+        if (Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
+        val preferences = getSharedPreferences("notification_permission", MODE_PRIVATE)
+        if (preferences.getBoolean("requested", false)) return
+        try {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION)
+            preferences.edit().putBoolean("requested", true).apply()
+        } catch (_: Exception) {
+            // A notification denial/restriction is not a VPN connection error.
         }
     }
     override fun onDestroy() {
+        activityHandler.removeCallbacks(permissionCheck)
+        consent.dispose()
         pendingIcons.toList().forEach { it.success(null) }
         pendingIcons.clear()
         iconWorker.shutdownNow()
@@ -165,5 +228,9 @@ class MainActivity : FlutterActivity() {
         qrChannel = null
         super.onDestroy()
     }
-    companion object { private const val VPN_PERMISSION = 7001 }
+    companion object {
+        private const val VPN_PERMISSION_BASE = 7300
+        private const val NOTIFICATION_PERMISSION = 7003
+        private val permissionTokens = AtomicInteger(VPN_PERMISSION_BASE)
+    }
 }

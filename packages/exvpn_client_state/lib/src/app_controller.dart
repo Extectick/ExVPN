@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:exvpn_domain/exvpn_domain.dart';
 
 import 'presentation_models.dart';
+import 'subscription_name.dart';
 
 part 'snapshot_codec.dart';
 
@@ -69,19 +70,27 @@ final class AppController {
   /// Raw input is parsed and discarded. Only normalized profiles and safe issue
   /// codes remain in memory. HTTPS subscription URLs are not fetched here.
   SubscriptionImportResult addSubscription({
-    required String name,
+    String name = '',
+    String? providerName,
     required String raw,
     String? sourceUrl,
   }) {
     _ensureAlive();
     _validateSourceUrl(sourceUrl);
     final result = _parser.parse(raw);
+    final explicitName = safeSubscriptionName(name, sourceUrl: sourceUrl);
+    final metadataName = safeSubscriptionName(
+      providerName,
+      sourceUrl: sourceUrl,
+    );
     final id = 'subscription-${_nextGroup++}';
     _groups = [
       ..._groups,
       SubscriptionGroup(
         id: id,
-        name: name.trim().isEmpty ? 'Подписка' : name.trim(),
+        name: explicitName ?? metadataName ?? 'Подписка',
+        providerName: metadataName,
+        nameIsAutomatic: explicitName == null,
         servers: result.profiles
             .map((profile) => ServerEntry(profile: profile))
             .toList(),
@@ -104,6 +113,7 @@ final class AppController {
   SubscriptionImportResult updateSubscription({
     required String groupId,
     required String raw,
+    String? providerName,
     String? sourceUrl,
     bool clearSourceUrl = false,
   }) {
@@ -113,6 +123,10 @@ final class AppController {
     if (index == -1) throw StateError('Subscription no longer exists.');
     final group = _groups[index];
     final result = _parser.parse(raw);
+    final metadataName = safeSubscriptionName(
+      providerName,
+      sourceUrl: sourceUrl ?? group.sourceUrl,
+    );
     final hasErrors = result.issues.any(
       (issue) => issue.code != ImportIssueCode.ignoredLocalConfiguration,
     );
@@ -133,12 +147,15 @@ final class AppController {
         issues: result.issues,
         sourceUrl: sourceUrl,
         clearSourceUrl: clearSourceUrl,
+        providerName: metadataName,
       );
     }
     _groups = [
       for (var i = 0; i < _groups.length; i++)
         if (i == index)
           group.copyWith(
+            name: apply && group.nameIsAutomatic ? metadataName : null,
+            providerName: apply ? metadataName : null,
             servers: apply ? servers : null,
             issues: result.issues,
             isDemo: apply ? false : group.isDemo,
@@ -175,6 +192,8 @@ final class AppController {
       for (var i = 0; i < _groups.length; i++)
         if (i == index)
           group.copyWith(
+            name: group.nameIsAutomatic ? candidate._providerName : null,
+            providerName: candidate._providerName,
             servers: candidate._servers,
             issues: candidate.issues,
             isDemo: false,
@@ -277,11 +296,13 @@ final class PendingSubscriptionUpdate {
     required List<ImportIssue> issues,
     required String? sourceUrl,
     required bool clearSourceUrl,
+    required String? providerName,
   }) : _expectedRevision = expectedRevision,
        _servers = List.unmodifiable(servers),
        issues = List.unmodifiable(issues),
        _sourceUrl = sourceUrl,
-       _clearSourceUrl = clearSourceUrl;
+       _clearSourceUrl = clearSourceUrl,
+       _providerName = providerName;
 
   final String groupId;
   final int previousCount;
@@ -290,6 +311,7 @@ final class PendingSubscriptionUpdate {
   final List<ImportIssue> issues;
   final String? _sourceUrl;
   final bool _clearSourceUrl;
+  final String? _providerName;
   int get supportedCount => _servers.length;
 
   @override

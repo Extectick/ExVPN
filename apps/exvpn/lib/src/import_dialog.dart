@@ -88,8 +88,8 @@ class _ImportDialogState extends State<ImportDialog> {
   }
 
   Future<void> _submit() async {
-    if (_input.text.trim().isEmpty || _name.text.trim().isEmpty) {
-      setState(() => _error = 'Укажите название и данные подписки.');
+    if (_input.text.trim().isEmpty) {
+      setState(() => _error = 'Укажите данные подписки.');
       return;
     }
     setState(() {
@@ -107,7 +107,9 @@ class _ImportDialogState extends State<ImportDialog> {
         return;
       }
       if (group != null) widget.controller.discardPendingUpdate(group.id);
-      final raw = _link ? await _loader.load(_input.text.trim()) : _input.text;
+      final document = _link
+          ? await _loader.loadDocument(_input.text.trim())
+          : SubscriptionDocument.fromText(_input.text);
       if (!mounted) return;
       if (group != null &&
           !widget.controller.groups.any(
@@ -121,12 +123,14 @@ class _ImportDialogState extends State<ImportDialog> {
       final result = group == null
           ? widget.controller.addSubscription(
               name: _name.text.trim(),
-              raw: raw,
+              raw: document.body,
+              providerName: document.providerName,
               sourceUrl: _link ? _input.text.trim() : null,
             )
           : widget.controller.updateSubscription(
               groupId: group.id,
-              raw: raw,
+              raw: document.body,
+              providerName: document.providerName,
               sourceUrl: _link ? _input.text.trim() : null,
               clearSourceUrl: !_link,
             );
@@ -233,6 +237,7 @@ class _ImportDialogState extends State<ImportDialog> {
                 key: const Key('subscription-name'),
                 decoration: InputDecoration(
                   labelText: context.tr('Название подписки'),
+                  hintText: context.tr('Необязательно'),
                   counterText: '',
                 ),
               ),

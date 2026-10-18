@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 
 import '../build_identity.dart';
 import 'subscription_identity.dart';
+import 'subscription_metadata.dart';
+export 'subscription_metadata.dart';
 
 enum SubscriptionLoadErrorCode {
   invalidUrl,
@@ -57,7 +59,9 @@ final class SubscriptionLoader {
   final Set<_Download> _downloads = {};
   bool _closed = false;
 
-  Future<String> load(String input) async {
+  Future<String> load(String input) async => (await loadDocument(input)).body;
+
+  Future<SubscriptionDocument> loadDocument(String input) async {
     if (_closed) {
       throw const SubscriptionLoadException(SubscriptionLoadErrorCode.closed);
     }
@@ -172,7 +176,12 @@ final class SubscriptionLoader {
         onDone: () {
           if (download.finished) return;
           try {
-            download.complete(utf8.decode(bytes.takeBytes()));
+            download.complete(
+              SubscriptionDocument.fromText(
+                utf8.decode(bytes.takeBytes()),
+                headers: response.headers,
+              ),
+            );
           } on FormatException {
             download.fail(SubscriptionLoadErrorCode.invalidEncoding);
           }
@@ -199,7 +208,7 @@ final class SubscriptionLoader {
 }
 
 final class _Download {
-  final result = Completer<String>();
+  final result = Completer<SubscriptionDocument>();
   final abort = Completer<void>();
   StreamSubscription<List<int>>? body;
   Timer? deadline;
@@ -212,7 +221,7 @@ final class _Download {
     result.completeError(SubscriptionLoadException(code));
   }
 
-  void complete(String value) {
+  void complete(SubscriptionDocument value) {
     if (finished) return;
     _stop();
     result.complete(value);

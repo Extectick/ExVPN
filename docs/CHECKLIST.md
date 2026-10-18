@@ -809,6 +809,43 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
 Новые доказательства добавлять обезличенными. Полные приватные входные данные и журналы сохранять вне репозитория; в таблице достаточно результата, версии, платформы и безопасного идентификатора проверки.
 
 
+## Цикл 0.1.4 — подписки и разрешения, 2026-10-18
+
+- [x] **EXVPN-E2-017** — Компактное дерево подписок и ясное состояние ошибки.
+  Критерий: выбранный пользователем эталон, отступ24, простые ветки без точек,
+  collapse/selection/minimal picker, локальная ошибка без полосы повтора,
+  красная кнопка blocked/error без автоматического снятия защиты. Проверено
+  2026-10-18: 7 focused tree/error tests, отдельный pixel/gesture test красной
+  кнопки и браузерный просмотр dark/light/large/minimal. У ошибки refresh не
+  меняется положение серверной строки. [Сверка](../design-qa.md),
+  [снимок](../design/screenshots/subscription-tree-large-dark-final.png).
+  Рабочее дерево; commit ожидается. Native визуальная приёмка отдельно.
+  Финальный Full: 12/12, 333 app tests, 293,54 с, source unchanged;
+  [отчёт](evidence/fast-validation-v0.1.4.json).
+- [x] **EXVPN-E3-009** — Необязательное название и метаданные провайдера.
+  Критерий: HTTP/base64/body/filename, ручной override, безопасный fallback,
+  atomic partial update, последний рабочий список/имя и миграция snapshot.
+  Проверено 2026-10-18: 65 client-state tests, app metadata/loader/refresh/store
+  tests и независимый read-only review. Snapshot v2 читает v1, обратное понижение
+  не поддерживается. [Контракт](ARCHITECTURE.md). Рабочее дерево; commit ожидается.
+- [ ] **EXVPN-E4-006** — Android consent и launcher icon. Критерий: новый подписанный
+  APK, fresh grant/deny/back/retry/already-granted без застревания, launcher белка,
+  отключение/cleanup и отсутствие ложного connected на отказавшем сервере.
+  Прогресс 2026-10-18: 15 isolated JVM tests и aapt2 compile/link PASS. Runtime
+  кандидата +25 ещё не выполнен. API33 notification/themed icon и физический
+  телефон остаются отдельной проверкой. Рабочее дерево; commit ожидается.
+- [ ] **EXVPN-E2-018** — Закрытие нижних окон за содержимое. Критерий: reusable scope,
+  short/long list, scroll-before-dismiss, малый/отменённый жест, fling, wheel и
+  однократное закрытие проверены, затем реальный Android жест в Settings.
+  Прогресс 2026-10-18: 8 gesture tests и integration widget test настоящего
+  SettingsSheet PASS, analyzer чистый. Android runtime ещё не выполнен.
+  Рабочее дерево; commit ожидается.
+- [ ] **EXVPN-E7-009** — Выпуск 0.1.4 Preview Android/Windows. Критерий: финальный Full,
+  чистый source commit, новый неизменяемый tag, обе CI-платформы, прежняя APK
+  подпись, скачанные assets/hash и подписанный beta feed. Подготовлен кандидат
+  0.1.4+25; публикации ещё нет. E1/общая стабильность этим не закрываются.
+  Финальный Full 12/12 PASS; native build/runtime/release gates ещё открыты.
+
 ## Цикл 0.1.3 — настройки, маршрутизация и доставка, 2026-10-18
 
 - [x] **EXVPN-E2-016** — Компактные настройки и выбор приложений. Критерий:

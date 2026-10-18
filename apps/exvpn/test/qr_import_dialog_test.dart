@@ -55,6 +55,27 @@ String _input(WidgetTester tester) => tester
     .text;
 
 void main() {
+  testWidgets('name is optional and imported body metadata names the group', (
+    tester,
+  ) async {
+    final controller = AppController();
+    addTearDown(controller.dispose);
+    await _open(
+      tester,
+      controller,
+      () async => '#profile-title: Provider VPN\n$_profile',
+    );
+    await _read(tester);
+    await tester.ensureVisible(find.byKey(const Key('import-submit')));
+    await tester.tap(find.byKey(const Key('import-submit')));
+    await tester.pumpAndSettle();
+    expect(controller.groups.single.name, 'Provider VPN');
+    expect(controller.groups.single.nameIsAutomatic, isTrue);
+    expect(controller.groups.single.servers, hasLength(1));
+    expect(find.byType(ImportDialog), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('QR text is previewed and imported only after confirmation', (
     tester,
   ) async {

@@ -77,6 +77,8 @@ final class SubscriptionGroup {
   SubscriptionGroup({
     required this.id,
     required this.name,
+    this.providerName,
+    this.nameIsAutomatic = false,
     required List<ServerEntry> servers,
     this.expanded = true,
     List<ImportIssue> issues = const [],
@@ -89,6 +91,10 @@ final class SubscriptionGroup {
 
   final String id;
   final String name;
+
+  /// Sanitized provider metadata. A manually supplied name remains authoritative.
+  final String? providerName;
+  final bool nameIsAutomatic;
   final List<ServerEntry> servers;
   final bool expanded;
   final List<ImportIssue> issues;
@@ -103,6 +109,8 @@ final class SubscriptionGroup {
   final int contentRevision;
 
   SubscriptionGroup copyWith({
+    String? name,
+    String? providerName,
     List<ServerEntry>? servers,
     bool? expanded,
     List<ImportIssue>? issues,
@@ -113,7 +121,9 @@ final class SubscriptionGroup {
     int? contentRevision,
   }) => SubscriptionGroup(
     id: id,
-    name: name,
+    name: name ?? this.name,
+    providerName: providerName ?? this.providerName,
+    nameIsAutomatic: nameIsAutomatic,
     servers: servers ?? this.servers,
     expanded: expanded ?? this.expanded,
     issues: issues ?? this.issues,

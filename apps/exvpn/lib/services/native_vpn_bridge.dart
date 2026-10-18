@@ -27,6 +27,7 @@ const _codes = {
   'transport_unreachable',
   'guard_recovered',
   'vpn_permission_revoked',
+  'vpn_permission_unavailable',
   'vpn_setup_failed',
   'profile_required',
   'invalid_exclusion',

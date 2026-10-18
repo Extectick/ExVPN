@@ -1,206 +1,56 @@
-# Web UI — обновление и настройки, 2026-10-18
+# Compact subscription tree — 2026-10-18
 
-final result: passed — scoped browser design; real updater is not implemented.
+Source visual truth: `design/references/subscription-tree-selected.png`
+(1122×1402). User override: reduce the child gutter. Keep the existing product
+typography, flags, theme and three layouts; replace nesting only.
 
-Источник: выбранный стиль и предыдущие captures
-`design/screenshots/windows-polish/`, новые прямые требования пользователя.
-Проверенный результат: `design/screenshots/windows-update-design/`.
-Сравнение source/result сведено в `comparison.png`: слева прежний
-`medium-light-final.png`, справа `update-available.jpg`. Оба capture 779×846,
-app crop 411×711 без изменения масштаба. Разница в верхней полосе и сдвиге
-контента внутри прежней высоты — требование пользователя, а не переполнение;
-последние строки остаются доступны в прокручиваемом списке.
-Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98). Только targeted analyze/browser UI;
-native builds, установка, VPN tests и Full не запускались.
+Rendered implementation: `design/screenshots/subscription-tree-large-dark-final.png`
+(779×846), IAB at its default viewport, dark, large, connected, synthetic data.
+Logical app canvas 1040×680 is scaled to fit. The source is a standalone list;
+the implementation is a desktop app with a list panel and additional ping action.
+Different demo counts/cities are intentional. No claim of whole-screen identity.
 
-- **Типографика:** сохранён Inter; подпись strip 11 px, иконка 13, высота 24.
-  Подписи трёх тем и Русский читаемы без обрезания.
-- **Ритм/компоновка:** strip находится от верхней границы до 6 px перед header,
-  на всю ширину. Canvas прежний; изменения download/restart не расширяют окно.
-- **Цвета:** existing white/blue и graphite/amber, error color только у проблемной
-  подписки; без ложного глобального приложения-error.
-- **Изображения:** белка, диск и flags не менялись; значок обновления Cupertino.
-- **Тексты:** System удалён, «Я дизайнер», endonym языка. Проблема и повтор
-  относятся к подписке; версия 0.1.1/build21 явно принадлежит макету.
+Combined full/list comparison: `design/screenshots/subscription-tree-comparison.png`.
+Both artifacts were opened, then placed together in that comparison before review.
+The source was normalized to width550; the rendered list crop (369,228)-(744,620)
+was enlarged to550×575. This is a structural comparison, not a pixel-diff score.
+Focused tree/header/row details are readable in the same board.
 
-Взаимодействия: Settings проверен; refresh показал scoped error без общего
-индикатора, значок открыл короткий диалог с X/повтором; полоса update перешла в
-progress и UI повторно открылся без полосы с новой макетной версией в Settings.
-Последний рабочий список сохранён. Downloading screenshot не содержит прежнего
-текста/иконки полосы. Установленная версия 0.1.0+20 не менялась.
-Дополнительно просмотрены minimal/large в тёмной теме. После смены minimal→large
-и макетного обновления сохраняется именно large, без возврата к исходному URI.
+Additional captures: `subscription-tree-medium-light.png`,
+`subscription-tree-minimal-picker.png`, `connection-failed-light.png` under
+`design/screenshots/`. They cover theme, modal and failed connection states.
 
-Реальная подписанная доставка и безопасный restart/rollback остаются вне scope,
-E6 открыт. Технические детали: `docs/ARCHITECTURE.md`.
+## Findings and required surfaces
 
----
+- Typography: existing local Inter hierarchy retained, readable two-line rows.
+  The standalone illustration's enlarged type is not copied into the denser app.
+- Spacing/layout: child gutter24, one straight rail15, short branches to21;
+  last branch stops at the last row centre. No dots, curves or duplicate rails.
+  Natural heights, narrow320 and text scale1.5 tested; RTL mirrors the gutter.
+- Colors/tokens: dark selected row uses translucent amber, light uses pale blue;
+  latency retains green/yellow/red semantics. Guides deliberately subdued.
+- Assets: existing local country flags and approved squirrel reused. No emoji
+  replacement, external font fetching or reconstructed logo artwork.
+- Copy/content: group title/count kept, optional name, error belongs to group.
+  Extra retry strip removed without deleting the saved server list.
 
-# Windows UI — последняя редакция дизайна, 2026-10-18
+No actionable P0/P1/P2 difference in the requested nesting change. Browser
+interactions exercised: expand backup group, select Frankfurt, switch minimal,
+open configuration picker. Browser error/warning log check returned no entries.
+The native Android/Windows acceptance matrix is separate from this web review.
 
-final result: passed — только браузерный UI; native frame/resize не приняты.
+## Comparison history
 
-Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98). Основание — выбранный
-`design/concepts/approved-close-wordmark.png`, текущие 14 пунктов пользователя
-и последующие замечания по overflow/иконкам/отступам. Native/VPN/Android tests,
-Full, build, установка и публикация в этом цикле не запускались.
+1. Widget checks found loose row widths in the new stack; changed to passthrough
+   constraints. The corrected tree passed dynamic-height/RTL checks before capture.
+2. Opened the source and actual browser capture together. Compact gutters and
+   current product density are intentional; no visual P0/P1/P2 fix was required.
 
-## Визуальное сравнение и итерации
+## Implementation checklist
 
-Сохранённый источник последней ошибки:
-`design/screenshots/windows-polish/source-minimal-overflow.png` (597×650).
-Результат: `minimal-light-final.png` (полный capture 779×846, app crop 400×440).
-Они сведены в **один** `minimal-comparison.png` (840×480): слева источник,
-справа исправление, панели приведены к одинаковым 400×440. Окружение/поля
-браузера исключены из сравнения; намеренные новые иконки и меньший диаметр
-не являются отклонением от спецификации. Таймер различается по времени capture.
-
-1. [P2, исправлено] Minimal: на 3 px не помещался блок кнопки/переключателей.
-   Диаметр теперь вычисляется из доступной высоты с резервом под остальные
-   элементы, вместо маскирования overflow. Новый capture без предупреждения.
-2. [P2, исправлено] Старые subset fonts не содержали новых icon glyphs.
-   После перезапуска dev-server загружены полные fonts, все три иконки видимы.
-3. [P2, исправлено] Китайский UI показывал отсутствующие символы.
-   Подключены локальные Noto Sans SC/Arabic и fallback; ZH повторно просмотрен,
-   AR/RTL сохранён в `settings-ar.png`, без tofu.
-4. Уточнения пользователя применены: шапка 20 px/круглые targets 34×34,
-   glyph форматов 20 px, у групп 8 px сверху/снизу. Hover close просмотрен:
-   выделение круглое, native действие в browser-only bridge не исполняется.
-
-## Проверенные поверхности
-
-- **Шрифт:** Inter сохранён; Noto SC/Arabic дополняют отсутствующие письменности.
-  RU/EN/ZH/AR показаны в живом интерфейсе; тексты пользователя не переводятся.
-- **Отступы/компоновка:** minimal/medium/large переключены, overflow не виден;
-  край шапки симметричен, свечение не перекрывает верхнее меню. Форматы слева
-  от неизменённого центра PROXY/VPN. Список имеет отдельную прокрутку.
-- **Цвета:** тёмный graphite/amber, светлый white/blue, custom lavender
-  применён вживую к листу настроек. Значения палитры сохраняются отдельно.
-- **Изображения:** исходный диск используется и в light, блик/фактура сохранены.
-  Флаги 4:3 не растянуты; видимые NL/DE/FI/PL корректны, набор расширен до 257
-  upstream assets. Неизвестной стране не назначается выдуманный флаг.
-- **Тексты:** Settings без подписок; четыре подписанные темы, языки, равные
-  интервалы versions/diagnostics, footer только `created by БЕЛКА`.
-
-## Визуальные действия и границы
-
-Клик по углу вне диска сохранил disconnected; клик в центре показал только
-макетное connected/glow/timer. Light/custоm/EN/Chinese/Arabic переключены через
-UI; редактор палитры и preset Lavender применены и закрыты. Три формата
-повторно просмотрены после исправления overflow и размера иконок.
-Снимки: `minimal-light-final.png`, `medium-light-final.png`, `large-light-final.png`,
-`settings-dark.png`, `settings-en.png`, `settings-ar.png`, `custom-editor.png`.
-`dart analyze main.dart design_preview.dart src presentation_models.dart` — clean.
-
-Системная полоска Windows заменена только в исходниках. Реальное растяжение,
-DPI, drag, tray-close, системная локаль Windows/Android и сохранение настроек
-на устройствах требуют следующего native цикла: E2-013 остаётся открытым.
-В браузере нет оставшихся известных P0/P1/P2 по проверенным состояниям.
-
----
-
-# Предыдущая редакция Windows UI — визуальная проверка 2026-10-18
+- [x] Selected tree and explicit compact-gutter override implemented.
+- [x] Source and running app opened and compared together.
+- [x] Themes, collapse, selection and minimal picker checked in browser.
+- [ ] Physical Android and native Windows visual acceptance (separate gate).
 
 final result: passed
-
-Область: браузерный просмотр главного Flutter-экрана по текущему поручению.
-Это не приёмка VPN, native host, Android или установочных пакетов.
-Исходники: [5b41a1c](https://github.com/Extectick/ExVPN/commit/5b41a1c070aa1d19675d9af3aabb1939a097fe98). Автоматические функциональные тесты,
-Full runner, native/release builds и GitHub workflow в этом цикле не запускались.
-
-## Основание сравнения
-
-- Принятый стиль: `design/concepts/approved-close-wordmark.png`, 853×1844 px.
-- Актуальная спецификация: пункты 1–9.3 запроса пользователя 2026-10-18.
-  Они заменяют старые подписи и компоновку исходного макета.
-- Снимки страницы: 779×846 px, обычный IAB viewport на Windows.
-- Все три новых состояния — синтетический connected; проверен также
-  disconnected/connecting без надписей под кнопкой.
-- Обзор: `design/screenshots/windows-layouts/overview.jpg`.
-- Совмещённое сравнение стиля: `design/screenshots/windows-layouts/reference-comparison.jpg`.
-  Источник уменьшен до высоты 760; новый средний холст вырезан из снимка
-  по границам приложения. Разные пропорции — требуемое изменение, а не
-  попытка выдать макеты за совпадение пиксель в пиксель.
-- Временный viewport override сброшен. Снимки с ошибочным масштабом override
-  не используются как окончательные доказательства; сохранены обычные captures.
-
-## Проверенные поверхности
-
-- **Шрифт:** существующий Inter, умеренная толщина шапки и списка; таймер
-  использует цифры равной ширины. Действие кнопки сохранено в semantics,
-  видимая подпись удалена.
-- **Отступы:** общий desktop canvas имеет left/right 20 и top 12 logical px;
-  дополнительный левый отступ бренда удалён. Три переключателя находятся
-  в центре шапки. Состояние не добавляет новый блок под кнопкой.
-- **Цвета:** сохранены graphite/amber, белый текст и жёлтая выбранная строка.
-  Новых цветовых систем нет.
-- **Изображения:** использованы существующие белка, флаги и диск кнопки.
-  Свечение и волна не обрезаются. Переключатели и настройки — Cupertino Icons.
-- **Тексты:** убраны видимые Подключить/Отключить, строка состояния/таймер/скорость
-  под кнопкой и placeholder о неподтверждённой защите. Имя узла в среднем
-  режиме отсутствует; в minimal/large находится в предусмотренном месте.
-  Замечания открываются по «!» перед количеством подключений.
-
-## Визуальные взаимодействия
-
-- Все три режима переключены кнопками шапки; stage меняет размер и пропорцию.
-- Minimal: шапка, круг с таймером, текущий узел снизу.
-- Medium: прокрутка и раскрытие резервной группы, шапка/круг остаются на месте.
-- Large: сведения слева, список на правой половине доступной высоты.
-- Кнопка: спокойное состояние → свечение/волна → таймер; реальный VPN не создаётся.
-- Значок замечаний открыл существующий диалог, диалог закрыт.
-- Ползунок стенда уменьшил весь minimal canvas; текст и элементы масштабировались
-  вместе, компоновка не перестроилась.
-- Во время debug hot restart зарегистрирован единичный engine assertion
-  `Trying to render a disposed EngineFlutterView`. После полной перезагрузки
-  страницы выполнена отдельная проверка свежей сессии; это ограничение dev
-  перезапуска фиксируется отдельно от внешнего вида. Интерфейс после него
-  продолжал переключаться и обновлять таймер.
-
-## История уточнений
-
-1. Первые снимки показали правильную компоновку, но переключатели были нарисованы
-   отдельным painter. Заменены встроенными Cupertino Icons и подписанными tooltips.
-2. После горячего обновления повторно сохранены minimal/medium/large, проверены
-   таймер, замечания и прокрутка. Актуальные снимки не содержат старых иконок.
-3. В отдельном preview entry добавлены демонстрационные счётчики для прямого
-   открытия `state=connected`; production entry не использует эту симуляцию.
-
-Открытых P0/P1/P2 по текущему браузерному экрану не обнаружено. Нативное
-растяжение реального Windows-окна и его DPI-переходы ещё не проверялись:
-для них требуется отложенный пользователем native запуск.
-
-## Последующее уточнение: действия списка и чёрная кнопка
-
-Источник этой редакции — принятый выше стиль и новые прямые поручения
-пользователя: пакетное обновление без chooser, верхняя короткая ошибка,
-кнопка пинга/цвета и чёрное отключённое состояние Space Gray без свечения.
-Исходный макет с янтарным символом в off этой частью требований заменён.
-
-Снимки `design/screenshots/windows-actions/` сделаны в отдельном макете,
-viewport 1280×720. Область окна вырезана одинаково для off/on/error и сведена
-в `windows-actions/overview.jpg`. Это реальные captures Flutter, не ImageGen.
-Обзор совместно просмотрен: шрифт/отступы/графит/янтарный active сохранились;
-изменение off palette намеренное. Space Gray — `#737980`, сам диск почти чёрный.
-
-- Подключённый макет → отключение под курсором: уже первый capture после
-  действия показывает чёрный диск без волны/свечения и без таймера.
-- Начальная загрузка off также чёрная. Наведение не включает янтарь.
-- Кнопка пинга слева от обновления: проверены ожидание и результаты
-  42 (зелёный), 168 (жёлтый), 342 мс (красный), нейтральное «—» для unsupported.
-- Обновление не открыло диалог; макет `refreshError=1` показал сверху
-  «Не удалось обновить подписку «Основная подписка»» и затем автоматически скрыл.
-- Новая сессия не зарегистрировала console error/warn. Анализ шести Dart-файлов
-  завершился без замечаний. Реальная сеть, native/release builds и Full не запускались.
-
-final result: passed
-
-Граница: это визуальная/макетная проверка. Истинный bulk refresh и native
-TCP/DNS probe требуют отдельного функционального прогона. Hysteria2/UDP-only
-задержка этим TCP probe не измеряется.
-
-Последнее уточнение пользователя отменяет затемнение самого диска в off.
-Удалён только tint изображения: исходный графитовый цвет и фактура восстановлены,
-Space Gray символы и отсутствие свечения сохранены. Проверено горячим
-обновлением и просмотром off: `windows-actions/off-original-disc-full.jpg`.
-Предыдущие чёрные off-снимки выше отражают уже заменённую редакцию.

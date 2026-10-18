@@ -43,7 +43,7 @@ final class SubscriptionRefresh extends ChangeNotifier {
     if (group?.sourceUrl == null) return false;
     controller.discardPendingUpdate(id);
     try {
-      final raw = await _loader.load(group!.sourceUrl!);
+      final document = await _loader.loadDocument(group!.sourceUrl!);
       if (!_allowed) return false;
       final current = controller.groups
           .where((item) => item.id == id)
@@ -55,7 +55,12 @@ final class SubscriptionRefresh extends ChangeNotifier {
         return false;
       }
       final applied = controller
-          .updateSubscription(groupId: id, raw: raw, sourceUrl: group.sourceUrl)
+          .updateSubscription(
+            groupId: id,
+            raw: document.body,
+            sourceUrl: group.sourceUrl,
+            providerName: document.providerName,
+          )
           .applied;
       if (applied) {
         _failedRevisions.remove(id);

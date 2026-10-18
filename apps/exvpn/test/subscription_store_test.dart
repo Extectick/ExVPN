@@ -34,6 +34,28 @@ class MemorySecureStore implements SecureKeyValueStore {
 
 void main() {
   test(
+    'secure journal retains automatic provider naming across restart',
+    () async {
+      final backend = MemorySecureStore();
+      final store = SubscriptionStore.forTesting(backend);
+      final controller = AppController()
+        ..addSubscription(raw: node, providerName: 'Provider');
+      addTearDown(controller.dispose);
+      await store.save(controller);
+      final restarted = await SubscriptionStore.forTesting(backend).load();
+      addTearDown(restarted.dispose);
+      expect(restarted.groups.single.nameIsAutomatic, isTrue);
+      restarted.updateSubscription(
+        groupId: restarted.groups.single.id,
+        raw: node,
+        providerName: 'New provider',
+      );
+      expect(restarted.groups.single.name, 'New provider');
+      expect(backend.values.keys, [SubscriptionStore.currentKey]);
+    },
+  );
+
+  test(
     'restart restores profiles and only newest snapshot remains after deletion',
     () async {
       final backend = MemorySecureStore();

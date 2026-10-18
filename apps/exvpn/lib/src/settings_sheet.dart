@@ -18,6 +18,7 @@ import 'sliding_segments.dart';
 import 'theme_editor.dart';
 import 'updates_sheet.dart';
 import 'settings_navigation_row.dart';
+import 'modal_sheet_scroll_behavior.dart';
 
 class SettingsSheet extends StatefulWidget {
   const SettingsSheet({
@@ -163,7 +164,9 @@ class _SettingsSheetState extends State<SettingsSheet> {
       useSafeArea: true,
       showDragHandle: true,
       constraints: const BoxConstraints(maxWidth: 560),
-      builder: (_) => ThemeEditorSheet(appearance: appearance),
+      builder: (_) => ModalSheetScrollScope(
+        child: ThemeEditorSheet(appearance: appearance),
+      ),
     );
   }
 

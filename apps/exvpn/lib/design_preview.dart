@@ -341,6 +341,18 @@ class _DesignOnlyBridge
         ),
       );
       _startSamples();
+    } else if (Uri.base.queryParameters['state'] == 'blocked' ||
+        Uri.base.queryParameters['state'] == 'error') {
+      _status = VpnStatus(
+        phase: Uri.base.queryParameters['state'] == 'blocked'
+            ? VpnPhase.blocked
+            : VpnPhase.error,
+        processCrashProtection: false,
+        mode: _mode,
+        systemProxySupported: true,
+        activeProfileId: selectedId(),
+        errorCode: 'tunnel_unreachable',
+      );
     }
   }
   final String? Function() selectedId;
@@ -376,17 +388,19 @@ class _DesignOnlyBridge
       ),
     );
     _transition = Timer(const Duration(milliseconds: 1800), () {
+      final failed = Uri.base.queryParameters['connectError'] == '1';
       _publish(
         VpnStatus(
-          phase: VpnPhase.connected,
+          phase: failed ? VpnPhase.blocked : VpnPhase.connected,
           processCrashProtection: false,
           mode: mode,
           systemProxySupported: true,
           activeProfileId: targetId,
-          connectedAt: DateTime.now(),
+          connectedAt: failed ? null : DateTime.now(),
+          errorCode: failed ? 'tunnel_unreachable' : null,
         ),
       );
-      _startSamples();
+      if (!failed) _startSamples();
     });
   }
 

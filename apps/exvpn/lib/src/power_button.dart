@@ -17,6 +17,7 @@ class PowerButton extends StatefulWidget {
     this.elapsedLabel,
     this.active = false,
     this.connecting = false,
+    this.failed = false,
     this.enabled = true,
   }) : assert(size > 0);
 
@@ -26,6 +27,10 @@ class PowerButton extends StatefulWidget {
   final String? elapsedLabel;
   final bool active;
   final bool connecting;
+
+  /// A failed/blocked native session can still own the tunnel. Keep its
+  /// disconnect action and distinguish it from a clean inactive button.
+  final bool failed;
   final bool enabled;
 
   @override
@@ -56,7 +61,7 @@ class _PowerButtonState extends State<PowerButton>
   bool _focused = false;
   Timer? _keyboardFeedback;
 
-  bool get _illuminated => widget.active || widget.connecting;
+  bool get _illuminated => widget.active || widget.connecting || widget.failed;
 
   @override
   void didChangeDependencies() {
@@ -68,13 +73,16 @@ class _PowerButtonState extends State<PowerButton>
   void didUpdateWidget(PowerButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.connecting != widget.connecting ||
-        oldWidget.active != widget.active) {
+        oldWidget.active != widget.active ||
+        oldWidget.failed != widget.failed) {
       _syncPulse();
     }
   }
 
   void _syncPulse() {
-    if (!_illuminated || MediaQuery.disableAnimationsOf(context)) {
+    if (!_illuminated ||
+        widget.failed ||
+        MediaQuery.disableAnimationsOf(context)) {
       _wave.stop();
       _wave.value = 0;
     } else if (widget.connecting) {
@@ -121,12 +129,18 @@ class _PowerButtonState extends State<PowerButton>
     final scheme = theme.colorScheme;
     final light = theme.brightness == Brightness.light;
     final visuals = theme.extension<ExVpnVisuals>();
-    final glowColor = visuals?.glowColor ?? scheme.primary;
+    final glowColor = widget.failed
+        ? scheme.error
+        : visuals?.glowColor ?? scheme.primary;
     final discColor =
         visuals?.buttonColor ??
         (light ? const Color(0xfff5f9fc) : const Color(0xff25282a));
     final idleColor = light ? const Color(0xff8d9faa) : const Color(0xff737980);
-    final symbolColor = illuminated ? scheme.primary : idleColor;
+    final symbolColor = widget.failed
+        ? scheme.error
+        : illuminated
+        ? scheme.primary
+        : idleColor;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final pressed = _pointerPressed || _keyboardPressed;
     final image = Image.asset(
@@ -306,7 +320,9 @@ class _PowerButtonState extends State<PowerButton>
       button: true,
       enabled: widget.enabled,
       label: context.tr(widget.label),
-      value: widget.elapsedLabel,
+      value: widget.failed
+          ? context.tr('Ошибка подключения')
+          : widget.elapsedLabel,
       onTap: widget.enabled ? _activate : null,
       child: FocusableActionDetector(
         enabled: widget.enabled,
