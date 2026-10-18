@@ -845,6 +845,11 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   подпись, скачанные assets/hash и подписанный beta feed. Подготовлен кандидат
   0.1.4+25; публикации ещё нет. E1/общая стабильность этим не закрываются.
   Финальный Full 12/12 PASS; native build/runtime/release gates ещё открыты.
+  Первая попытка Android packaging остановлена на ложной case-insensitive
+  коллизии `res/zR.png`/`res/zr.png`; выпуск не опубликован. Исправлен только
+  явный APK-mode verifier. 90 audit/47 notice fixtures и повторный Full 12/12
+  за 136,33 с PASS. [Отчёт](evidence/fast-validation-v0.1.4-packaging.json),
+  [сохранённая неуспешная попытка](evidence/android-candidate25-build-attempt.json).
 
 ## Цикл 0.1.3 — настройки, маршрутизация и доставка, 2026-10-18
 

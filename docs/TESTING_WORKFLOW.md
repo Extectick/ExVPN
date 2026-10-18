@@ -1,11 +1,20 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+После исправления APK ZIP verifier: **12/12 PASS за 136,33 с**, 333 app tests,
+source unchanged; [финальный Full](evidence/fast-validation-v0.1.4-packaging.json).
+90 artifact-audit и 47 Android-notice fixtures подтвердили различие регистра
+ресурсов APK, отказ точных дубликатов/traversal и прежние Windows/Go guards.
+Первый preview workflow39140860058 завершился ошибкой Android packaging;
+публикация была пропущена, тег не создавался. Сохранённый APK source6d2e947
+прошёл 35 JVM tests; его runtime и новый CI-выпуск учитываются отдельно.
+[Причина остановки](evidence/android-candidate25-build-attempt.json).
+
 Кандидат 0.1.4+25, 2026-10-18: **12/12 PASS за 293,54 с**, 333 app tests,
 source fingerprint before/after совпал. [Full](evidence/fast-validation-v0.1.4.json).
 Отдельно 15 isolated Android consent JVM tests и resource link прошли;
 новая APK/runtime проверка ещё выполняется и не подменяется этим прогоном.
-На длительность влияли новые fixture-компиляции и параллельный web build;
-контролируемого сравнения производительности нет.
+Прогон выполнялся параллельно с web build; контролируемого сравнения
+производительности нет.
 
 Последний общий прогон 2026-10-18, исходники
 [3d4e363](https://github.com/Extectick/ExVPN/commit/3d4e363fc8d6a75d2006f7e043585589005f68c8):

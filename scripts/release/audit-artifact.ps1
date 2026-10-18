@@ -133,7 +133,8 @@ try {
         $artifactFile = $inputPath
         $artifactName = [IO.Path]::GetFileName($artifactFile)
         $artifactHash = Get-AuditSha256 $artifactFile
-        $files = Get-AuditZipFiles $artifactFile
+        $files = Get-AuditZipFiles $artifactFile -Apk
+        $noticeFiles = New-AuditFileMap -CaseSensitive
         $AndroidSdkPath = Get-ReleaseAndroidSdkPath $AndroidSdkPath
         $buildTools = Join-Path $AndroidSdkPath 'build-tools/36.0.0'
         $aapt = Join-Path $buildTools 'aapt2.exe'

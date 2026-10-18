@@ -73,8 +73,20 @@ $badZip = New-FixtureZip 'traversal.zip' @(@{ path = '../../escape'; text = 'no'
 Assert-Rejected { Get-AuditZipFiles $badZip } 'unsafe_relative_path'
 $duplicateZip = New-FixtureZip 'duplicate.zip' @(@{ path = 'file'; text = 'one' }, @{ path = 'FILE'; text = 'two' })
 Assert-Rejected { Get-AuditZipFiles $duplicateZip } 'duplicate_archive_path'
+$apkCasePair = New-FixtureZip 'case-pair.apk' @(@{ path = 'res/zR.png'; text = 'upper resource' }, @{ path = 'res/zr.png'; text = 'lower resource' })
+$apkFiles = Get-AuditZipFiles $apkCasePair -Apk
+Assert-True ($apkFiles.Count -eq 2 -and $apkFiles['res/zR.png'].sha256 -ceq (Get-AuditTextHash 'upper resource') -and
+    $apkFiles['res/zr.png'].sha256 -ceq (Get-AuditTextHash 'lower resource')) 'APK keeps distinct AAPT case-pair resources and exact bytes'
+Assert-True (!$apkFiles.ContainsKey('res/ZR.png')) 'APK lookup never falls back to another letter case'
+Assert-Rejected { Get-AuditZipFiles $apkCasePair } 'duplicate_archive_path'
+Assert-Rejected { Get-AuditZipFiles $apkCasePair -GoModule } 'duplicate_archive_path'
+Assert-Rejected { Get-AuditZipFiles $apkCasePair -Apk -GoModule } 'apk_go_module_mode_conflict'
+$apkExactDuplicate = New-FixtureZip 'exact-duplicate.apk' @(@{ path = 'res/zR.png'; text = 'one' }, @{ path = 'res/zR.png'; text = 'two' })
+Assert-Rejected { Get-AuditZipFiles $apkExactDuplicate -Apk } 'duplicate_archive_path'
+Assert-Rejected { Get-AuditZipFiles $badZip -Apk } 'unsafe_relative_path'
 $linkZip = New-FixtureZip 'link.zip' @(@{ path = 'link'; text = 'target'; attributes = [int]-1610612736 })
 Assert-Rejected { Get-AuditZipFiles $linkZip } 'archive_link_not_allowed'
+Assert-Rejected { Get-AuditZipFiles $linkZip -Apk } 'archive_link_not_allowed'
 $smallStream = [IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes('too long'))
 try { Assert-Rejected { Get-AuditStreamHash $smallStream 3 } 'archive_entry_length_mismatch' } finally { $smallStream.Dispose() }
 $emptyZip = New-FixtureZip 'empty.zip' @()
@@ -87,6 +99,7 @@ $prefixZip = New-FixtureZip 'prefix.zip' @(@{ path = 'LICENSE.md'; text = 'B' },
 Assert-True ((Get-AuditGoZipSum $prefixZip) -ceq 'h1:nY/RJ6yENsnpGpKjYpGuXCT/Z/8L4cFjEyWMk/r73cM=') 'Go prefix-name h1 vector'
 $collisionZip = New-FixtureZip 'collision.zip' @(@{ path = 'parent'; text = 'file' }, @{ path = 'parent/child'; text = 'child' })
 Assert-Rejected { Get-AuditZipFiles $collisionZip } 'archive_file_directory_collision'
+Assert-Rejected { Get-AuditZipFiles $collisionZip -Apk } 'archive_file_directory_collision'
 $shell = Join-Path $PSHOME 'pwsh.exe'
 Assert-Rejected { Invoke-AuditTool $shell @('-NoProfile', '-Command', 'exit 7') } 'audit_tool_failed'
 Assert-Rejected { Invoke-AuditTool $shell @('-NoProfile', '-Command', 'Start-Sleep -Seconds 5') 1 } 'audit_tool_timeout'

@@ -31,7 +31,10 @@ function Assert-AuditNoLinks([string]$Path) {
     }
 }
 
-function New-AuditFileMap { ,([Collections.Generic.Dictionary[string, object]]::new([StringComparer]::OrdinalIgnoreCase)) }
+function New-AuditFileMap([switch]$CaseSensitive) {
+    $comparer = if ($CaseSensitive) { [StringComparer]::Ordinal } else { [StringComparer]::OrdinalIgnoreCase }
+    ,([Collections.Generic.Dictionary[string, object]]::new($comparer))
+}
 
 function Get-AuditStreamHash($Stream, [long]$ExpectedBytes) {
     $digest = [Security.Cryptography.IncrementalHash]::CreateHash([Security.Cryptography.HashAlgorithmName]::SHA256)
@@ -67,10 +70,16 @@ function Get-AuditTreeFiles([string]$Root) {
     ,$files
 }
 
-function Get-AuditZipFiles([string]$Path, [switch]$GoModule) {
+function Get-AuditZipFiles([string]$Path, [switch]$GoModule, [switch]$Apk) {
+    if ($Apk -and $GoModule) { throw 'apk_go_module_mode_conflict' }
     Assert-AuditNoLinks $Path
-    $files = New-AuditFileMap
-    $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    # APK entries are Android's case-sensitive virtual filesystem. AAPT can
+    # legitimately emit res/zR.png and res/zr.png. They are never extracted to
+    # the Windows filesystem here. All generic/Windows/Go archives retain the
+    # stricter historical case-insensitive collision guard unless APK is explicit.
+    $files = New-AuditFileMap -CaseSensitive:$Apk
+    $comparer = if ($Apk) { [StringComparer]::Ordinal } else { [StringComparer]::OrdinalIgnoreCase }
+    $seen = [Collections.Generic.HashSet[string]]::new($comparer)
     $zip = [IO.Compression.ZipFile]::OpenRead($Path)
     try {
         if ($zip.Entries.Count -gt 30000) { throw 'too_many_archive_entries' }

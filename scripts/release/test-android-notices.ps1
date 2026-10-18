@@ -187,6 +187,8 @@ function New-FixtureApk($Fixture, [string]$Change = '') {
                 if ($Change -eq 'missing-notice' -and $path -eq 'assets/exvpn_notices/own/LICENSE') { continue }
                 $bytes = [IO.File]::ReadAllBytes((Join-Path $Fixture.Stage "$($group.Source)/$($file.path)"))
                 if (($Change -eq 'changed-native' -and $path -eq 'lib/x86_64/libexvpn.so') -or ($Change -eq 'changed-notice' -and $path -eq 'assets/exvpn_notices/own/LICENSE')) { $bytes[0] = $bytes[0] -bxor 1 }
+                if ($Change -eq 'notice-case-renamed' -and $path -ceq 'assets/exvpn_notices/own/LICENSE') { $path = 'assets/exvpn_notices/own/license' }
+                if ($Change -eq 'native-case-renamed' -and $path -ceq 'lib/x86_64/libexvpn.so') { $path = 'lib/x86_64/libexvpn.SO' }
                 $stream = $zip.CreateEntry($path).Open()
                 try { $stream.Write($bytes, 0, $bytes.Length) } finally { $stream.Dispose() }
             }
@@ -212,6 +214,12 @@ function New-FixtureApk($Fixture, [string]$Change = '') {
         }
         $stream = $zip.CreateEntry($extra).Open()
         try { $stream.WriteByte(42) } finally { $stream.Dispose() }
+        if ($Change -eq 'resource-case-pair') {
+            foreach ($name in @('res/zR.png', 'res/zr.png')) {
+                $stream = $zip.CreateEntry($name).Open()
+                try { $stream.WriteByte(43) } finally { $stream.Dispose() }
+            }
+        }
     } finally { $zip.Dispose() }
     $apk
 }
@@ -219,6 +227,13 @@ $f = New-NoticeFixture
 $apk = New-FixtureApk $f
 Assert-AndroidPackagedNotices $f.Root $f.Stage $apk
 $checks++
+$apk = New-FixtureApk $f 'resource-case-pair'
+Assert-AndroidPackagedNotices $f.Root $f.Stage $apk
+$checks++
+$apk = New-FixtureApk $f 'notice-case-renamed'
+Assert-Refused { Assert-AndroidPackagedNotices $f.Root $f.Stage $apk } 'APK notice case is exact' 'android_packaged_native_or_notice_mismatch'
+$apk = New-FixtureApk $f 'native-case-renamed'
+Assert-Refused { Assert-AndroidPackagedNotices $f.Root $f.Stage $apk } 'APK native library case is exact' 'android_packaged_incomplete_abi'
 foreach ($change in @('changed-native', 'missing-native', 'changed-notice', 'missing-notice', 'extra-notice', 'extra-abi', 'foreign-abi-only', 'x86-dependency', 'missing-flutter', 'case-alias')) {
     $apk = New-FixtureApk $f $change
     Assert-Refused { Assert-AndroidPackagedNotices $f.Root $f.Stage $apk } "final APK $change"

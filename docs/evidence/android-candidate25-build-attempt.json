@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "capturedUtc": "2026-10-18T15:49:05.6071209Z",
+  "status": "packaging_failed_before_promotion",
+  "sourceCommit": "6d2e947699b5b6f347dd07bb6f7ba246ca2ad8d4",
+  "version": "0.1.4+25",
+  "singleBuildAttempt": true,
+  "candidate": {
+    "sha256": "e0db03cb5ec6cd597a3bffc0d2a63772e00deca99a179f3afe068ab6ad187910",
+    "bytes": 134311047,
+    "preserved": true,
+    "installed": false,
+    "promoted": false
+  },
+  "jvm": {
+    "tests": 35,
+    "suites": 5,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "failure": {
+    "phase": "package_verification",
+    "check": "Get-AuditZipFiles",
+    "file": "scripts/release/artifact-audit-lib.ps1",
+    "line": 83,
+    "code": "duplicate_archive_path",
+    "exactDuplicateEntries": 0,
+    "caseFoldedCollidingEntries": [
+      "res/zR.png",
+      "res/zr.png"
+    ]
+  },
+  "runtimeStarted": false,
+  "originalUserEmulatorTouched": false,
+  "hostNetworkChanged": false,
+  "rawPrivateDiagnosticsPublished": false
+}
