@@ -1,5 +1,16 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+2026-10-20, `1d99998`: расширенные импорты и native primary/backup.
+Один Full 134,71с: 11 lanes PASS, app остановлен на двух analyzer notices
+о блоках `if`; после исправления повторён только весь app lane:
+analyzer clean и 398 PASS. Domain201/state82, Go native suites PASS.
+Android5 policy tests и Kotlin API36 host typecheck (resource-ID stub),
+C++ Release x64 ClCompile PASS. Native Compile30/30 приватных записей;
+loopback HTTPS4/18. Это составная проверка исходников, не новый единый
+Full12/12 и не TUN/IPv4/IPv6/DNS runtime-приёмка. APK/EXE и установленный
+клиент не менялись. [Результаты](evidence/subscription-compatibility-20261020.json),
+[границы и следующий gate](SUBSCRIPTION_COMPATIBILITY_AND_FAILOVER.md).
+
 Выпуск **0.1.6+27**, 2026-10-19: final Full **12/12 PASS за 126,78 с**,
 373 app tests, fingerprint unchanged; [отчёт](evidence/fast-validation-v0.1.6.json).
 Первый прогон остановился на двух lint-замечаниях; отдельная app-проверка

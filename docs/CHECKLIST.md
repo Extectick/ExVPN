@@ -4,15 +4,51 @@
 
 `[ ]` — работа не завершена или не подтверждена; `[x]` — критерий проверен. Стабильный ID не переиспользуется. У закрытого пункта указываются дата, проверка и commit/PR. Пока изменения не закоммичены, используется явная пометка «рабочее дерево; commit ожидается»; после публикации её заменяют ссылкой. Ссылка на задачу Linear/GitHub не является доказательством проверки.
 
+## Совместимость и резервные серверы — 2026-10-20
+
+- [x] **EXVPN-E3-011** — Строгий импорт показанных расширений Xray/Hiddify.
+  Критерий: keepalive и XUDP/WS нормализованы, privileged socket options и
+  insecure отклонены, снимок сохраняет типизированные поля, заглушка не становится
+  сервером. Проверено: 201 domain и 82 state tests PASS; реальные примеры
+  27/2/1 записей, native Compile 30/30. HTTPS через loopback подтвердился 4/18;
+  остальные подключения рабочими не объявлены. Исходники: `1d99998`.
+  [Контракт](SUBSCRIPTION_COMPATIBILITY_AND_FAILOVER.md),
+  [обезличенные результаты](evidence/subscription-compatibility-20261020.json).
+- [x] **EXVPN-E3-012** — Локальная automatic group и native supervisor в исходниках.
+  Критерий: явное включение пользователем, максимум32 без усечения,
+  native HTTPS-состояния, пауза после обхода, сохранение guard/TUN в ветке замены,
+  отмена/epoch, отсутствие direct fallback и остановка на ошибках защиты.
+  Проверено: Go native suites, 21 controller automatic tests в составе
+  398 app tests, 5 Kotlin policy tests; C++ compile и Kotlin host typecheck.
+  Full прошёл 11 lanes; app остановился на двух lint-скобках, исправлен и целиком
+  повторён: analyzer clean, 398 PASS. Повтор остальных11 lanes не выполнялся.
+  Это source/synthetic-проверки, не runtime-приёмка VPN. Исходники: `1d99998`.
+  [Границы](SUBSCRIPTION_COMPATIBILITY_AND_FAILOVER.md).
+- [ ] **EXVPN-E1-012** — Проверить native primary→backup на Android/Windows с TUN.
+  Критерий: отдельный стенд, реальный HTTPS при отказе основного и закрытом UI,
+  полный отказ группы, IPv4/IPv6/DNS и исключения во время замены, смена сети,
+  отмена без позднего подключения. Требуется новая Shorebird-база: изменения
+  Kotlin/Go/C++ нельзя доставить Dart-патчем базы0.1.8+29. Физический Android и
+  общая E1-приёмка остаются открытыми. Установленный клиент не менялся.
+
 ## Сводка этапов
 
-- [ ] **EXVPN-E6-015** — Выпускать подписанные Android/Windows Dart-патчи через
+- [x] **EXVPN-E6-015** — Выпускать подписанные Android/Windows Dart-патчи через
   GitHub Actions поверх принятой базы 0.1.8+29. Критерий: hosted Android preflight
   принят без отключения strip/signature/native/assets guards; оба CI job публикуют
   проверенные подписанные патчи, receipts привязаны к исходникам и базе; SDK
-  применяют фактические новые номера. 2026-10-20: работа в процессе; commit
-  ожидается. Повторные APK/EXE, полный VPN runtime и уже принятый rollback
-  не требуются для исправления инструментов CI.
+  применяют фактические новые номера. Проверено 2026-10-20: commit
+  [`8acc0af0`](https://github.com/Extectick/ExVPN/commit/8acc0af0a830267a1470b171b81544e92ffc5c87),
+  [run39309178502 SUCCESS](https://github.com/Extectick/ExVPN/actions/runs/39309178502)
+  обе платформы. Windows **№3/id731963**, Android **№4/id731975**, beta;
+  RSA4096/AOT binding приняты для Windows x64 и Android x64/ARM64. Actual SDK
+  current/next **3/3** и **4/4**, uiRevision **1**, restartRequired=false;
+  прежние base/native bytes и Android UID сохранены. Full374/12 переиспользован
+  по равенству Dart inputs, 160 input checks/job PASS. Windows повторная
+  byte continuity пользовательских данных не заявляется: helper не завершился;
+  перезапуск наблюдался извне, exit0 не подтверждён. Android проверен в эмуляторе.
+  [Квитанции и границы](evidence/shorebird29-ci-patch-delivery.json).
+  Повторные установщики, полный VPN runtime и уже принятый rollback не запускались.
 
 Цикл **0.1.8+29 / Shorebird beta**, 2026-10-20: базовый commit `5bddc777`,
 Dart-патч `0d9fdf22`, исправление CLI-отката `4a2262f3`. Настоящий SDK Windows
@@ -46,8 +82,8 @@ Full Dart-патча: **12/12 PASS,374 app tests,235,6с**; maintenance:298 guar
   expiry-проверки. [Релиз](https://github.com/Extectick/ExVPN/releases/tag/v0.1.8),
   [независимый аудит](evidence/release-v0.1.8.json).
   Физический Android, E1, точный post-link SBOM, Windows Authenticode и
-  стабильная VPN-приёмка остаются открытыми. Hosted Android patch preflight
-  отдельно не принят; сам клиентский OTA roundtrip подтверждён на обеих ОС.
+  стабильная VPN-приёмка остаются открытыми. Hosted Android patch preflight и
+  выпуск signed-патчей через Actions приняты отдельно в E6-015.
 
 Выпуск **0.1.6+27**, 2026-10-19: итоговый Full **12/12 PASS за 126,78 с**,
 373 app tests, fingerprint неизменен; tag `v0.1.6`, исходники `ae35c9a`.

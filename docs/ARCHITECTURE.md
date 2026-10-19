@@ -1,5 +1,21 @@
 # ExVPN — архитектура
 
+## Локальная автоматическая группа серверов
+
+Connect/reconnect могут содержать `automaticProfiles`: 1–32 уникальных
+нормализованных профиля, выбранных пользователем. Основной профиль должен
+полностью совпадать с членом группы. Каждый кандидат валидируется закреплённым
+ядром; provider routing/DNS/burstObservatory не становятся локальной политикой.
+Windows SCM и Android VpnService самостоятельно наблюдают фиксированную
+HTTPS-проверку и при разрешённых транспортных отказах заменяют сервер,
+сохраняя persistent guard/TUN. После полного неудачного обхода — пауза 30 с.
+Security/config/storage/unknown ошибки прекращают перебор. Состояние
+`automaticSelection` авторитетно у native, Dart не запускает параллельный
+supervisor. `clearAutomaticSelection` отменяет будущие замены, сохраняя туннель.
+Проверки epoch/generation не допускают позднего подключения после ручного
+выбора/отключения. [Контракт и границы](SUBSCRIPTION_COMPATIBILITY_AND_FAILOVER.md).
+Это ordered primary/backup, не эмуляция `leastLoad` или `roundRobin`.
+
 ## Дополнение: CI-подготовка Dart-патчей
 
 Workflow `shorebird.yml` разделяет no-build `diagnose_android` и signed patch

@@ -1,0 +1,481 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-20",
+  "scope": "Source implementation, strict imports, synthetic native failover and loopback HTTPS; not OS TUN leak/runtime acceptance",
+  "examples": [
+    {
+      "sourceRecords": 27,
+      "uniqueProfiles": 15,
+      "id": 1
+    },
+    {
+      "sourceRecords": 2,
+      "uniqueProfiles": 2,
+      "id": 2
+    },
+    {
+      "sourceRecords": 1,
+      "uniqueProfiles": 1,
+      "id": 3
+    }
+  ],
+  "nativeCompile": [
+    {
+      "example": 1,
+      "node": 1,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 2,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 3,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 4,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 5,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 6,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 7,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 8,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 9,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 10,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 11,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 12,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 13,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 14,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 15,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 16,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 17,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 18,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 19,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 20,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 21,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 22,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 23,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 24,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 25,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 26,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 1,
+      "node": 27,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 2,
+      "node": 1,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 2,
+      "node": 2,
+      "ok": true,
+      "code": "config_valid"
+    },
+    {
+      "example": 3,
+      "node": 1,
+      "ok": true,
+      "code": "config_valid"
+    }
+  ],
+  "httpsProbes": [
+    {
+      "example": 1,
+      "node": 14,
+      "protocol": "vless",
+      "transport": "xhttp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 3456
+    },
+    {
+      "example": 1,
+      "node": 23,
+      "protocol": "vless",
+      "transport": "tcp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 4142
+    },
+    {
+      "example": 1,
+      "node": 9,
+      "protocol": "vless",
+      "transport": "xhttp",
+      "ok": true,
+      "code": "probe_ok",
+      "httpStatus": 204,
+      "elapsedMs": 1202
+    },
+    {
+      "example": 1,
+      "node": 1,
+      "protocol": "vless",
+      "transport": "xhttp",
+      "ok": true,
+      "code": "probe_ok",
+      "httpStatus": 204,
+      "elapsedMs": 6890
+    },
+    {
+      "example": 1,
+      "node": 25,
+      "protocol": "vless",
+      "transport": "xhttp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 3969
+    },
+    {
+      "example": 1,
+      "node": 16,
+      "protocol": "vless",
+      "transport": "xhttp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 3939
+    },
+    {
+      "example": 1,
+      "node": 21,
+      "protocol": "vless",
+      "transport": "tcp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 10000
+    },
+    {
+      "example": 1,
+      "node": 27,
+      "protocol": "vless",
+      "transport": "tcp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 10001
+    },
+    {
+      "example": 1,
+      "node": 26,
+      "protocol": "vless",
+      "transport": "xhttp",
+      "ok": true,
+      "code": "probe_ok",
+      "httpStatus": 204,
+      "elapsedMs": 1323
+    },
+    {
+      "example": 1,
+      "node": 24,
+      "protocol": "vless",
+      "transport": "tcp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 10003
+    },
+    {
+      "example": 1,
+      "node": 22,
+      "protocol": "vless",
+      "transport": "xhttp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 3271
+    },
+    {
+      "example": 1,
+      "node": 19,
+      "protocol": "vless",
+      "transport": "xhttp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 10000
+    },
+    {
+      "example": 1,
+      "node": 18,
+      "protocol": "vless",
+      "transport": "tcp",
+      "ok": true,
+      "code": "probe_ok",
+      "httpStatus": 204,
+      "elapsedMs": 916
+    },
+    {
+      "example": 3,
+      "node": 1,
+      "protocol": "vless",
+      "transport": "tcp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 10000
+    },
+    {
+      "example": 2,
+      "node": 2,
+      "protocol": "vless",
+      "transport": "tcp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 10009
+    },
+    {
+      "example": 1,
+      "node": 11,
+      "protocol": "vless",
+      "transport": "xhttp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 10001
+    },
+    {
+      "example": 1,
+      "node": 20,
+      "protocol": "vless",
+      "transport": "tcp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 10006
+    },
+    {
+      "example": 2,
+      "node": 1,
+      "protocol": "vless",
+      "transport": "tcp",
+      "ok": false,
+      "code": "probe_connection_failed",
+      "httpStatus": null,
+      "elapsedMs": 10001
+    }
+  ],
+  "validation": {
+    "full": {
+      "status": "failed",
+      "durationSeconds": 134.71,
+      "sourceUnchanged": true,
+      "lanes": [
+        {
+          "lane": "android",
+          "status": "passed",
+          "exitCode": 0
+        },
+        {
+          "lane": "app",
+          "status": "failed",
+          "exitCode": 1
+        },
+        {
+          "lane": "appupdater",
+          "status": "passed",
+          "exitCode": 0
+        },
+        {
+          "lane": "ci",
+          "status": "passed",
+          "exitCode": 0
+        },
+        {
+          "lane": "core",
+          "status": "passed",
+          "exitCode": 0
+        },
+        {
+          "lane": "domain",
+          "status": "passed",
+          "exitCode": 0
+        },
+        {
+          "lane": "installer",
+          "status": "passed",
+          "exitCode": 0
+        },
+        {
+          "lane": "scripts",
+          "status": "passed",
+          "exitCode": 0
+        },
+        {
+          "lane": "state",
+          "status": "passed",
+          "exitCode": 0
+        },
+        {
+          "lane": "updates",
+          "status": "passed",
+          "exitCode": 0
+        },
+        {
+          "lane": "windows",
+          "status": "passed",
+          "exitCode": 0
+        },
+        {
+          "lane": "xray",
+          "status": "passed",
+          "exitCode": 0
+        }
+      ]
+    },
+    "correction": "Only two missing-brace analyzer notices in home_screen; corrected, then entire app lane passed with no analyzer issues and 398 app tests. Other 11 lanes not repeated.",
+    "appRetest": {
+      "tests": 398,
+      "analyzer": "No issues found",
+      "exitCode": 0
+    },
+    "domainTests": 201,
+    "stateTests": 82,
+    "androidPolicyTests": 5,
+    "windowsBridge": "MSBuild ClCompile Release x64 exit0",
+    "androidTypecheck": "API36 plus cached Flutter/Androidx jars, resource-ID stub, no APK/resource linking",
+    "androidFinalVisibilityCheck": {
+      "typecheckExitCode": 0,
+      "change": "Volatile publication of automatic policy to native status readers",
+      "logSha256": "c8bee7beff84a67f41430fcfd8fee4a017dc6ae0de8b04b3ebe3fb475c6dd062"
+    }
+  },
+  "notVerified": [
+    "Actual Android/Windows group failover under TUN with UI closed",
+    "IPv4/IPv6/DNS and excluded-app leakage during rotation",
+    "Physical Android",
+    "New Shorebird base build/install and release"
+  ],
+  "installedClientChanged": false,
+  "hostNetworkSettingsChanged": false,
+  "credentialsIncluded": false,
+  "sourceCommit": "1d9999817337b862c78019b0bb5f42bed38d5c91"
+}
