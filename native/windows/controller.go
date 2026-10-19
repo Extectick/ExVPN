@@ -521,7 +521,31 @@ func (c *Controller) connect(ctx context.Context, generation uint64, p exvpn.Pro
 	e = t.Verify(verifyCtx)
 	verifyCancel()
 	if e != nil || ctx.Err() != nil {
-		fail("tunnel_unreachable")
+		// Automatic selection may exhaust every remote endpoint while the
+		// replacement core, TUN and known-owner direct dispatcher remain healthy.
+		// Keep that core throughout cooldown: removing it blocks exclusions too.
+		// The persistent guard and VPN-only DNS remain unchanged; this is never a
+		// connected state or permission to route protected traffic directly.
+		if ctx.Err() == nil && remoteTunnelVerificationFailure(e) && !tunnelRecoveryRequired(t) {
+			c.mu.Lock()
+			retain := !c.closed && c.stopping == 0 && c.generation == generation && c.tunnel == t && c.status.AutomaticSelection && c.status.GuardActive && c.tunnelMode == ModeVPN
+			if retain {
+				c.guardRecovered = false
+				c.status.State, c.status.Code, c.status.ConnectedAt = "blocked", "tunnel_unreachable", 0
+			}
+			c.mu.Unlock()
+			if retain {
+				// Do not finishAttempt: cancellation would retire the owned lease
+				// and make the retained direct dispatcher unusable during cooldown.
+				go c.monitor(ctx, generation, t, p, exclusions, false)
+				return
+			}
+		}
+		code := "tunnel_unreachable"
+		if e != nil && !remoteTunnelVerificationFailure(e) {
+			code = safeCode(e, "tunnel_verification_failed")
+		}
+		fail(code)
 		return
 	}
 	recovering := tunnelRecoveryRequired(t)
@@ -580,6 +604,17 @@ func (c *Controller) monitor(ctx context.Context, generation uint64, t Tunnel, p
 		c.mu.Lock()
 		if ctx.Err() != nil || c.closed || c.generation != generation || c.tunnel != t {
 			c.mu.Unlock()
+			c.ops.Unlock()
+			return
+		}
+		if err != nil && !remoteTunnelVerificationFailure(err) {
+			c.mu.Unlock()
+			code := safeCode(err, "tunnel_verification_failed")
+			if stopErr := c.stopTunnel(); stopErr != nil {
+				code = safeCode(stopErr, "tunnel_stop_failed")
+			}
+			c.set("blocked", code, true)
+			c.finishAttempt(generation)
 			c.ops.Unlock()
 			return
 		}

@@ -60,6 +60,20 @@ func automaticTransportFailure(code string) bool {
 	return false
 }
 
+// A failed HTTPS exchange can leave a fully initialized core and its confirmed
+// direct-application dispatcher healthy. Never treat setup, permission, lease
+// or unclassified errors as evidence that such a core is safe to retain.
+func remoteTunnelVerificationFailure(err error) bool {
+	if err == context.DeadlineExceeded {
+		return true
+	}
+	switch err {
+	case Code("probe_failed"), Code("probe_http_failed"), Code("tunnel_unreachable"), Code("transport_unreachable"), Code("proxy_unreachable"), Code("offline"), Code("remote_unreachable"):
+		return true
+	}
+	return false
+}
+
 // Service-owned supervision survives UI closure. One bounded native attempt is
 // active at a time. A failed sweep backs off; a healthy peer is kept rather than
 // chased by small ping differences. Security/config/storage errors halt the group.

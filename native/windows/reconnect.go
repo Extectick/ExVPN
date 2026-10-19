@@ -113,13 +113,19 @@ func (c *Controller) reconnectOnce(ctx context.Context, generation uint64, profi
 		// A remote outage does not justify closing that healthy direct path;
 		// keep the guard and let monitor verify this core again. A changed
 		// underlay or cancellation does require retiring it before another try.
-		if ctx.Err() == nil && !underlayChanged {
+		if ctx.Err() == nil && !underlayChanged && remoteTunnelVerificationFailure(err) {
 			c.mu.Lock()
 			current = !c.closed && c.stopping == 0 && c.generation == generation && c.tunnel == tunnel
 			c.mu.Unlock()
 			if current {
 				return tunnel, false
 			}
+		}
+		if err != nil && !remoteTunnelVerificationFailure(err) && ctx.Err() == nil && !underlayChanged {
+			if stopErr := c.stopTunnel(); stopErr != nil {
+				return fatal(safeCode(stopErr, "tunnel_stop_failed"))
+			}
+			return fatal(safeCode(err, "tunnel_verification_failed"))
 		}
 		return failed()
 	}
