@@ -1,4 +1,4 @@
-name: ExVPN Android analyzer probe (no application build)
+name: ExVPN accepted local Shorebird 29 base import (no build)
 
 on:
   workflow_dispatch:
@@ -7,44 +7,255 @@ permissions:
   contents: read
 
 jobs:
-  probe:
-    runs-on: windows-2025
-    timeout-minutes: 5
-    defaults:
-      run:
-        shell: pwsh
+  import-accepted-bases:
+    if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/codex/shorebird29-base-import-f67eb71354'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
-      - name: Probe installed analyzer and Java combinations using a synthetic ZIP
+      - name: Verify and import the exact two accepted local base archives
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          $ErrorActionPreference='Stop'
-          $PSNativeCommandUseErrorActionPreference=$false
-          $zipPath=Join-Path $env:RUNNER_TEMP 'exvpn-analyzer-probe.zip'
-          $archive=[IO.Compression.ZipFile]::Open($zipPath,[IO.Compression.ZipArchiveMode]::Create)
-          try {
-            $entry=$archive.CreateEntry('BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/libflutter.so.sym')
-            $stream=$entry.Open();try{$stream.WriteByte(1)}finally{$stream.Dispose()}
-          }finally{$archive.Dispose()}
-          $java=@{current=$env:JAVA_HOME;java21=$env:JAVA_HOME_21_X64;studio='C:/Program Files/Android/Android Studio/jbr';studioCompact='C:/Program Files/Android/AndroidStudio/jbr'}
-          $tools=@(Get-ChildItem -LiteralPath (Join-Path $env:ANDROID_HOME 'cmdline-tools') -Directory | Where-Object {Test-Path (Join-Path $_.FullName 'bin/apkanalyzer.bat')})
-          $results=@()
-          foreach($tool in $tools){
-            foreach($label in $java.Keys | Sort-Object){
-              if(!$java[$label] -or !(Test-Path (Join-Path $java[$label] 'bin/java.exe'))){continue}
-              $env:JAVA_HOME=$java[$label]
-              $stdout=Join-Path $env:RUNNER_TEMP ('analyzer-'+[guid]::NewGuid().ToString('N')+'.out')
-              $stderr=$stdout+'.err'
-              & (Join-Path $tool.FullName 'bin/apkanalyzer.bat') files list $zipPath 1>$stdout 2>$stderr
-              $code=$LASTEXITCODE
-              $out=[IO.File]::ReadAllText($stdout);$err=[IO.File]::ReadAllText($stderr)
-              $marker=if(($out+$err) -match 'JAVA_HOME is not set|JAVA_HOME is set to an invalid directory|could not find java'){'java_not_found'}elseif(($out+$err) -match 'UnsupportedClassVersionError|class file version'){'class_version'}elseif(($out+$err) -match 'requires Java|Java version'){'java_version_gate'}elseif($code-eq0){'none'}else{'other'}
-              $results+=@{toolVersion=$tool.Name;javaContext=$label;exitCode=$code;expectedMetadataListed=$out.Contains('libflutter.so.sym');errorMarker=$marker;stderrBytes=(Get-Item $stderr).Length;stdoutBytes=(Get-Item $stdout).Length}
-            }
+          set -euo pipefail
+          python3 - <<'PY'
+          """One-off accepted local base transport. Never builds or changes base receipts."""
+          import hashlib
+          import json
+          import os
+          from pathlib import Path, PurePosixPath
+          import re
+          import shutil
+          import stat
+          import subprocess
+          import sys
+          import zipfile
+          
+          SOURCE = "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3"
+          COMPILED_WINDOWS = "e8cba9fc7f849013c804b02d2c401b07a907d9e8"
+          PINS = {
+              "Android": {
+                  "count": 438,
+                  "receipt": "b0562e74722c3f7730e3c80424bca89e96e5e7041bee8fedf694308a40933d57",
+                  "binaries": {
+                      "ExVPN-0.1.8-29-android.apk": "d7b519748a0a2d348c57a031a8606047f8d3e7791a6ff5ea3c4b159fd3fcf389",
+                      "ExVPN-0.1.8-29-android.aab": "b2f8d4f52d9b6e245fbb5718c24890231a1fa2f6f0926172f29712a6bea342cb",
+                  },
+              },
+              "Windows": {
+                  "count": 288,
+                  "receipt": "5c90dc1230236266545eec71e420426ed6654b95f93486ecc637609bff0bf4f7",
+                  "binaries": {
+                      "ExVPN-0.1.8-29-windows-x64-development.exe": "8429328151c42ed136d90086a470ed9b4fa893807d21023b6d87aed8bc11fd5d",
+                  },
+              },
           }
-          @{schemaVersion=1;results=$results;toolCount=$tools.Count;applicationBuilds=0;nativeBuilds=0;secretsUsed=$false;rawLogsExported=$false}|ConvertTo-Json -Depth 5|Set-Content (Join-Path $env:RUNNER_TEMP 'android-analyzer-probe.json') -Encoding utf8NoBOM
-          Get-Content (Join-Path $env:RUNNER_TEMP 'android-analyzer-probe.json')
-          $global:LASTEXITCODE=0
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+          
+          
+          def need(value, code):
+              if not value:
+                  raise ValueError(code)
+          
+          
+          def digest(stream):
+              h = hashlib.sha256()
+              while block := stream.read(1024 * 1024):
+                  h.update(block)
+              return h.hexdigest()
+          
+          
+          def file_hash(path):
+              with open(path, "rb") as stream:
+                  return digest(stream)
+          
+          
+          def safe_name(name):
+              need(isinstance(name, str) and len(name) <= 240, "path_length")
+              need(re.fullmatch(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*", name), "path_characters")
+              parts = name.split("/")
+              reserved = {"con", "prn", "aux", "nul"} | {f"com{i}" for i in range(1, 10)} | {f"lpt{i}" for i in range(1, 10)}
+              need(all(p not in (".", "..") and not p.endswith(".") and p.split(".")[0].lower() not in reserved for p in parts), "path_alias")
+              return name
+          
+          
+          def zip_entries(archive, expected_count=None):
+              infos = archive.infolist()
+              need(0 < len(infos) <= 500, "zip_entry_count")
+              if expected_count is not None:
+                  need(len(infos) == expected_count, "zip_exact_count")
+              seen = set()
+              entries = {}
+              total = 0
+              for info in infos:
+                  name = safe_name(info.filename)
+                  need(name.casefold() not in seen, "zip_duplicate_or_alias")
+                  seen.add(name.casefold())
+                  mode = info.external_attr >> 16
+                  need(stat.S_IFMT(mode) in (0, stat.S_IFREG) and not info.is_dir(), "zip_not_regular")
+                  need(not (info.flag_bits & 1) and info.compress_type in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED), "zip_encoding")
+                  need(0 < info.file_size <= 512 * 1024 * 1024, "zip_entry_size")
+                  total += info.file_size
+                  entries[name] = info
+              need(total <= 1024 * 1024 * 1024, "zip_total_size")
+              for name in entries:
+                  need(not any(str(parent) in entries for parent in PurePosixPath(name).parents if str(parent) != "."), "zip_file_parent")
+              return entries
+          
+          
+          def check_receipt(raw, target):
+              pin = PINS[target]
+              need(hashlib.sha256(raw).hexdigest() == pin["receipt"], "receipt_pin")
+              receipt = json.loads(raw)
+              for key, expected in {
+                  "schemaVersion": 2, "action": "base", "version": "0.1.8+29", "target": target,
+                  "track": "beta", "published": True, "auditAccepted": True, "stableReady": False,
+                  "appId": "ea97a683-02e5-4d86-9aa1-779d6b4bc81e", "releaseId": 908884,
+                  "sourceCommit": SOURCE, "compiledSourceCommit": SOURCE if target == "Android" else COMPILED_WINDOWS,
+                  "autoUpdate": False, "updaterPolicyVerified": True, "patchVerification": "strict", "sourceLockUnchanged": True,
+              }.items():
+                  need(receipt.get(key) == expected, "receipt_identity_" + key)
+              identity = receipt["runtime"]["identity"]
+              need(identity["kind"] == "shorebird" and identity["target"] == target and identity["buildMode"] == "release", "runtime_identity")
+              need(identity["flutterRevision"] == "5bef02a16146a0effc07da4acccaafe90a2739ce", "flutter_pin")
+              need(identity["engineRevision"] == "4b936a0c03e13389ddfb1ac48823f187964975c2", "engine_pin")
+              need(identity["cli"]["version"] == "1.6.129" and identity["cli"]["revision"] == "9fe1370bdd1d2f117cc08c57ae416b794ed92440", "cli_pin")
+              need(receipt["packagedRuntime"]["engineBytesBound"] is True, "engine_binding")
+              need(receipt["publicKeySha256"] == "b275456f18ac7037d511ae414f73f719f419177bac0443942ade6a1ccb4fb859", "rsa_pem_pin")
+              files = receipt["files"]
+              need(len(files) == pin["count"] - 1, "receipt_file_count")
+              records = {}
+              aliases = set()
+              for record in files:
+                  name = safe_name(record["path"])
+                  need(name.casefold() not in aliases and name != "build.json", "receipt_duplicate")
+                  aliases.add(name.casefold())
+                  need(re.fullmatch(r"[a-f0-9]{64}", record["sha256"]), "receipt_file_hash")
+                  records[name] = record["sha256"]
+              for name, sha in pin["binaries"].items():
+                  need(records.get(name) == sha, "binary_pin")
+              if target == "Android":
+                  need(receipt["signature"]["verified"] is True and receipt["signature"]["trustedSignerMatched"] is True and receipt["signature"]["v2Verified"] is True, "apk_signature_receipt")
+                  need(receipt["signature"]["certificateSha256"] == "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093", "apk_signer_pin")
+                  need(receipt["jvm"]["tests"] == 47 and receipt["jvm"]["failures"] == receipt["jvm"]["errors"] == 0, "jvm_receipt")
+              return records
+          
+          
+          def verify_zip(path, target, expected_sha=None, output=None):
+              need(path.is_file() and not path.is_symlink() and path.stat().st_size <= 800 * 1024 * 1024, "zip_file_bound")
+              zip_sha = file_hash(path)
+              need(expected_sha is None or zip_sha == expected_sha, "zip_sha256")
+              with zipfile.ZipFile(path) as archive:
+                  entries = zip_entries(archive, PINS[target]["count"])
+                  need("build.json" in entries and entries["build.json"].file_size <= 4 * 1024 * 1024, "receipt_bound")
+                  records = check_receipt(archive.read("build.json"), target)
+                  need(set(entries) == set(records) | {"build.json"}, "zip_exact_filemap")
+                  for name, expected in records.items():
+                      with archive.open(name) as stream:
+                          need(digest(stream) == expected, "zip_filemap_sha256")
+                  if output is not None:
+                      need(not output.exists(), "output_exists")
+                      output.mkdir(parents=True)
+                      for name in sorted(entries):
+                          dest = output.joinpath(*PurePosixPath(name).parts)
+                          dest.parent.mkdir(parents=True, exist_ok=True)
+                          with archive.open(name) as src, open(dest, "xb") as dst:
+                              shutil.copyfileobj(src, dst, 1024 * 1024)
+                      actual = {f.relative_to(output).as_posix() for f in output.rglob("*") if f.is_file()}
+                      need(actual == set(entries), "extracted_exact_filemap")
+                      for name, expected in {**records, "build.json": PINS[target]["receipt"]}.items():
+                          need(file_hash(output / name) == expected, "extracted_filemap_sha256")
+              return {"target": target, "sourceCommit": SOURCE, "compiledSourceCommit": SOURCE if target == "Android" else COMPILED_WINDOWS,
+                      "archiveSha256": zip_sha, "archiveBytes": path.stat().st_size, "buildReceiptSha256": PINS[target]["receipt"],
+                      "files": PINS[target]["count"], "filemapRecords": PINS[target]["count"] - 1, "binaries": PINS[target]["binaries"],
+                      "origin": "local_accepted_import", "ciCompiled": False, "sdkInvocations": 0, "cloudReleaseMutations": 0}
+          
+          
+          def pack(root, output, target):
+              need(root.is_dir() and not root.is_symlink() and not output.exists(), "pack_paths")
+              records = check_receipt((root / "build.json").read_bytes(), target)
+              names = set(records) | {"build.json"}
+              actual = set()
+              for base, dirs, files in os.walk(root, followlinks=False):
+                  for name in dirs + files:
+                      p = Path(base) / name
+                      s = p.lstat()
+                      need(not stat.S_ISLNK(s.st_mode) and not (getattr(s, "st_file_attributes", 0) & 0x400), "pack_reparse")
+                  for name in files:
+                      p = Path(base) / name
+                      need(p.is_file() and p.stat().st_nlink == 1, "pack_regular_file")
+                      actual.add(p.relative_to(root).as_posix())
+              need(actual == names, "pack_exact_filemap")
+              for name, expected in {**records, "build.json": PINS[target]["receipt"]}.items():
+                  need(file_hash(root / name) == expected, "pack_filemap_sha256")
+              with zipfile.ZipFile(output, "x", compression=zipfile.ZIP_DEFLATED, compresslevel=6, strict_timestamps=True) as archive:
+                  for name in sorted(names):
+                      info = zipfile.ZipInfo(name, (2026, 10, 19, 0, 0, 0))
+                      info.create_system = 3
+                      info.external_attr = (stat.S_IFREG | 0o644) << 16
+                      info.compress_type = zipfile.ZIP_DEFLATED
+                      with open(root / name, "rb") as src, archive.open(info, "w", force_zip64=True) as dst:
+                          shutil.copyfileobj(src, dst, 1024 * 1024)
+              return verify_zip(output, target)
+          
+          
+          def download_and_import(manifest, destination):
+              need(not destination.exists(), "import_destination_exists")
+              destination.mkdir(parents=True)
+              response = subprocess.run(["gh", "api", f"repos/Extectick/ExVPN/releases/{manifest['releaseId']}"],
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
+              need(response.returncode == 0 and len(response.stdout) <= 1024 * 1024, "draft_readback_failed")
+              release = json.loads(response.stdout)
+              need(release["draft"] is True and release["tag_name"] == manifest["tag"] and
+                   release["target_commitish"] == SOURCE, "draft_identity")
+              expected_assets = {a["id"]: a for a in manifest["assets"].values()}
+              need(set(expected_assets) == {a["id"] for a in release["assets"]}, "draft_exact_assets")
+              for asset in release["assets"]:
+                  pin = expected_assets[asset["id"]]
+                  need(asset["name"] == pin["name"] and asset["size"] == pin["bytes"] and asset["state"] == "uploaded", "draft_asset_identity")
+              results = []
+              for target in ("Android", "Windows"):
+                  asset = manifest["assets"][target]
+                  filename = destination / (target + ".zip")
+                  with open(filename, "xb") as stream:
+                      process = subprocess.run(["gh", "api", "--method", "GET", "-H", "Accept: application/octet-stream",
+                                                f"repos/Extectick/ExVPN/releases/assets/{asset['id']}"], stdout=stream, stderr=subprocess.PIPE, timeout=600)
+                  need(process.returncode == 0, "asset_download_failed")
+                  need(filename.stat().st_size == asset["bytes"], "asset_download_size")
+                  result = verify_zip(filename, target, asset["sha256"], destination / target)
+                  result["assetId"] = asset["id"]
+                  results.append(result)
+              provenance = {"schemaVersion": 1, "status": "PASS_EXACT_ACCEPTED_LOCAL_BASE_IMPORT", "origin": "local_accepted_import",
+                            "sourceCommit": SOURCE, "temporaryDraftReleaseId": manifest["releaseId"], "ciCompiled": False,
+                            "baseReceiptsModified": False, "sdkInvocations": 0, "cloudReleaseMutations": 0, "bases": results}
+              (destination / "import-provenance.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
+              print(json.dumps(provenance))
+          
+          
+          manifest = json.loads('{"assets": {"Android": {"bytes": 174282984, "id": 656900081, "name": "Android.zip", "sha256": "7c64078562d4d8a25ec2fd9c47ec1d009b7e255e842af74d7f3ee326e9413449"}, "Windows": {"bytes": 81381440, "id": 656900078, "name": "Windows.zip", "sha256": "19efd0c030a904420ae23705ed74dc69aed6bf5c94d05bc18e8ebd9e0aa13296"}}, "ciCompiled": false, "origin": "local_accepted_import", "releaseId": 417544674, "schemaVersion": 1, "sourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3", "tag": "qa-shorebird29-base-import-20261020-f67eb71354"}')
+          download_and_import(manifest, Path("accepted-base-import"))
+          PY
+      - name: Retain accepted Android base for existing patch consumers
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: android-analyzer-probe
-          path: ${{ runner.temp }}/android-analyzer-probe.json
+          name: shorebird-base-Android-5bddc7770acd5446ca0c579857f9d1c7b2b1ada3
+          path: accepted-base-import/Android/
           if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 90
+          compression-level: 0
+      - name: Retain accepted Windows base for existing patch consumers
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: shorebird-base-Windows-5bddc7770acd5446ca0c579857f9d1c7b2b1ada3
+          path: accepted-base-import/Windows/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 90
+          compression-level: 0
+      - name: Retain separate truthful import provenance
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: shorebird-base-import-provenance-5bddc7770acd5446ca0c579857f9d1c7b2b1ada3
+          path: accepted-base-import/import-provenance.json
+          if-no-files-found: error
+          retention-days: 90
