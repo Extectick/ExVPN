@@ -242,6 +242,88 @@ final class VpnController extends ChangeNotifier {
   }
 
   bool _policyPending = false;
+  bool protectionBusy = false;
+  String? protectionError;
+  ConnectionProtection connectionProtection = const ConnectionProtection(
+    supported: false,
+    enabled: null,
+    active: false,
+    systemManaged: false,
+  );
+  int _protectionRevision = 0;
+  Future<void>? _protectionRead;
+
+  Future<void> refreshConnectionProtection() {
+    if (_disposed || protectionBusy) return Future.value();
+    final revision = _protectionRevision;
+    return _protectionRead ??= _readConnectionProtection().whenComplete(() {
+      _protectionRead = null;
+      if (!_disposed && !protectionBusy && revision != _protectionRevision) {
+        unawaited(refreshConnectionProtection());
+      }
+    });
+  }
+
+  Future<void> _readConnectionProtection() async {
+    final capability = bridge;
+    if (capability is! ConnectionProtectionBridge) return;
+    final revision = _protectionRevision;
+    try {
+      final value = await (capability as ConnectionProtectionBridge)
+          .getConnectionProtection()
+          .timeout(const Duration(seconds: 10));
+      if (!_disposed && revision == _protectionRevision) {
+        connectionProtection = value;
+        protectionError = null;
+        _changed();
+      }
+    } catch (_) {
+      if (!_disposed && revision == _protectionRevision) {
+        connectionProtection = const ConnectionProtection(
+          supported: false,
+          enabled: null,
+          active: false,
+          systemManaged: false,
+        );
+        _changed();
+      }
+    }
+  }
+
+  Future<bool> setConnectionProtection(bool enabled) async {
+    final capability = bridge;
+    if (_disposed ||
+        commandPending ||
+        capability is! ConnectionProtectionBridge) {
+      return false;
+    }
+    final revision = ++_protectionRevision;
+    protectionBusy = true;
+    protectionError = null;
+    _changed();
+    try {
+      final value = await (capability as ConnectionProtectionBridge)
+          .setConnectionProtection(enabled)
+          .timeout(const Duration(seconds: 15));
+      if (_disposed) return false;
+      if (revision == _protectionRevision) connectionProtection = value;
+      return true;
+    } catch (error) {
+      if (!_disposed) {
+        protectionError = error is VpnFailure
+            ? safeVpnCode(error.code)
+            : 'connection_protection_unavailable';
+      }
+      return false;
+    } finally {
+      protectionBusy = false;
+      _changed();
+      if (!_disposed && revision != _protectionRevision) {
+        unawaited(refreshConnectionProtection());
+      }
+    }
+  }
+
   bool _dataUpdatePending = false;
   bool _connectionChangePending = false;
   bool _disconnectPending = false;
@@ -256,6 +338,7 @@ final class VpnController extends ChangeNotifier {
   bool get applicationRestartPending => _applicationRestartPending;
   bool get connectionChangePending => _connectionChangePending;
   bool get commandsReserved =>
+      protectionBusy ||
       _automaticClearing != null ||
       _policyPending ||
       _dataUpdatePending ||
@@ -264,6 +347,7 @@ final class VpnController extends ChangeNotifier {
   bool get canChangeConnection =>
       !_disposed && initialized && !commandsReserved;
   bool get commandPending =>
+      protectionBusy ||
       _commandPending ||
       _connectionChangePending ||
       _disconnectPending ||
@@ -444,6 +528,7 @@ final class VpnController extends ChangeNotifier {
       },
     );
     await refresh();
+    await refreshConnectionProtection();
     try {
       final value = await bridge.coreVersion();
       if (!_disposed) {
@@ -467,7 +552,15 @@ final class VpnController extends ChangeNotifier {
         value.connectedAt != status.connectedAt) {
       _clearStatistics();
     }
+    final protectionChanged =
+        value.phase != status.phase ||
+        value.mode != status.mode ||
+        value.processCrashProtection != status.processCrashProtection;
     status = value;
+    if (protectionChanged) {
+      ++_protectionRevision;
+      unawaited(refreshConnectionProtection());
+    }
     if (value.phase != VpnPhase.disconnected || value.cleanupRequired) {
       _mode = value.mode;
     }
@@ -495,6 +588,13 @@ final class VpnController extends ChangeNotifier {
     _unsafeEpoch++;
     initialized = true;
     _clearStatistics();
+    ++_protectionRevision;
+    connectionProtection = ConnectionProtection(
+      supported: connectionProtection.supported,
+      enabled: null,
+      active: false,
+      systemManaged: connectionProtection.systemManaged,
+    );
     lastErrorCode = error is VpnFailure ? error.code : 'ipc_disconnected';
     status = VpnStatus(
       phase: VpnPhase.error,

@@ -16,6 +16,7 @@ import 'services/data_updates.dart';
 import 'services/dart_updates.dart';
 import 'services/desktop_tray.dart';
 import 'services/app_updates.dart';
+import 'services/client_logs.dart';
 import 'src/app_update_strip.dart';
 import 'src/updates_sheet.dart';
 
@@ -94,6 +95,7 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
   late final DataUpdatesController _updates;
   late final DartUpdatesController _dartUpdates;
   late final AppUpdatesController _appUpdates;
+  late final ClientLogs _logs;
   @override
   void initState() {
     super.initState();
@@ -114,6 +116,13 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
           dartUpdates: _dartUpdates,
           beforeRestart: _beforeRestart,
         );
+    _logs = ClientLogs(
+      controller: widget.controller,
+      vpn: widget.vpn,
+      appUpdates: _appUpdates,
+      dartUpdates: _dartUpdates,
+      persistence: _persistence,
+    );
     unawaited(_appUpdates.initialize());
     if (!kIsWeb &&
         defaultTargetPlatform == TargetPlatform.windows &&
@@ -141,7 +150,10 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(_appUpdates.onResume());
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_appUpdates.onResume());
+      unawaited(widget.vpn?.refreshConnectionProtection());
+    }
   }
 
   Future<bool> _beforeRestart(
@@ -272,49 +284,53 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
   }
 
   @override
-  Widget build(BuildContext context) => AppUpdatesScope(
-    controller: _appUpdates,
-    child: DartUpdatesScope(
-      controller: _dartUpdates,
-      child: DataUpdatesScope(
-        controller: _updates,
-        child: AppearanceScope(
-          controller: _appearance,
-          child: AnimatedBuilder(
-            animation: Listenable.merge([_appearance, _appUpdates]),
-            builder: (context, _) => MaterialApp(
-              navigatorKey: _navigator,
-              navigatorObservers: [_updateNavigation],
-              scaffoldMessengerKey: _messenger,
-              title: 'ExVPN',
-              debugShowCheckedModeBanner: false,
-              theme: _appearance.lightTheme,
-              darkTheme: _appearance.darkTheme,
-              themeMode: _appearance.themeMode,
-              locale: _appearance.locale,
-              localeListResolutionCallback: resolveAppLocale,
-              supportedLocales: appSupportedLocales,
-              localizationsDelegates: GlobalMaterialLocalizations.delegates,
-              builder: (context, child) => AnimatedBuilder(
-                animation: widget.vpn ?? _appUpdates,
-                builder: (context, _) => AbsorbPointer(
-                  absorbing: widget.vpn?.applicationRestartPending == true,
-                  child: child,
-                ),
-              ),
-              home: HomeScreen(
-                controller: widget.controller,
-                vpn: widget.vpn,
-                persistence: _persistence,
-                storageWarning: widget.storageWarning,
-                appUpdate: _updatePresentation,
-                onAppUpdate: _activateUpdate,
+  Widget build(BuildContext context) => ClientLogsScope(
+    logs: _logs,
+    child: AppUpdatesScope(
+      controller: _appUpdates,
+      child: DartUpdatesScope(
+        controller: _dartUpdates,
+        child: DataUpdatesScope(
+          controller: _updates,
+          child: AppearanceScope(
+            controller: _appearance,
+            child: AnimatedBuilder(
+              animation: Listenable.merge([_appearance, _appUpdates]),
+              builder: (context, _) => MaterialApp(
+                navigatorKey: _navigator,
+                navigatorObservers: [_updateNavigation],
+                scaffoldMessengerKey: _messenger,
+                title: 'ExVPN',
+                debugShowCheckedModeBanner: false,
+                theme: _appearance.lightTheme,
+                darkTheme: _appearance.darkTheme,
                 themeMode: _appearance.themeMode,
-                onThemeChanged: (mode) => _appearance.setChoice(switch (mode) {
-                  ThemeMode.system => ThemeChoice.system,
-                  ThemeMode.dark => ThemeChoice.dark,
-                  ThemeMode.light => ThemeChoice.light,
-                }),
+                locale: _appearance.locale,
+                localeListResolutionCallback: resolveAppLocale,
+                supportedLocales: appSupportedLocales,
+                localizationsDelegates: GlobalMaterialLocalizations.delegates,
+                builder: (context, child) => AnimatedBuilder(
+                  animation: widget.vpn ?? _appUpdates,
+                  builder: (context, _) => AbsorbPointer(
+                    absorbing: widget.vpn?.applicationRestartPending == true,
+                    child: child,
+                  ),
+                ),
+                home: HomeScreen(
+                  controller: widget.controller,
+                  vpn: widget.vpn,
+                  persistence: _persistence,
+                  storageWarning: widget.storageWarning,
+                  appUpdate: _updatePresentation,
+                  onAppUpdate: _activateUpdate,
+                  themeMode: _appearance.themeMode,
+                  onThemeChanged: (mode) =>
+                      _appearance.setChoice(switch (mode) {
+                        ThemeMode.system => ThemeChoice.system,
+                        ThemeMode.dark => ThemeChoice.dark,
+                        ThemeMode.light => ThemeChoice.light,
+                      }),
+                ),
               ),
             ),
           ),
@@ -325,6 +341,7 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _logs.dispose();
     _appUpdates.dispose();
     _tray?.dispose();
     _persistence?.dispose();

@@ -8,12 +8,14 @@ class SettingsNavigationRow extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.onTap,
+    this.trailing,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +40,7 @@ class SettingsNavigationRow extends StatelessWidget {
           leading: Icon(icon, size: 23),
           title: Text(title),
           subtitle: Text(subtitle),
-          trailing: const Icon(Icons.chevron_right, size: 21),
+          trailing: trailing ?? const Icon(Icons.chevron_right, size: 21),
           hoverColor: scheme.primary.withValues(alpha: .055),
           splashColor: scheme.primary.withValues(alpha: .075),
           onTap: onTap,

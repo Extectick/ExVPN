@@ -47,6 +47,9 @@ type Controller struct {
 	applicationRouting ApplicationRoutingPolicy
 	guardRecovered     bool
 	policy             PolicyStore
+	protectionEnabled  bool
+	protectionKnown    bool
+	protectionStore    ConnectionProtectionStore
 	monitorInterval    time.Duration
 	reconnectDelays    []time.Duration
 	automaticEpoch     uint64
@@ -111,9 +114,19 @@ func NewControllerWithPolicy(g Guard, f TunnelFactory, validate func([]string) e
 			}
 		}
 	}
+	c.initializeConnectionProtection(policy)
 	return c, nil
 }
-func (c *Controller) Status() Status { c.mu.Lock(); defer c.mu.Unlock(); return c.status }
+func (c *Controller) Status() Status {
+	c.mu.Lock()
+	status := c.status
+	c.mu.Unlock()
+	if guard, ok := c.guard.(connectionProtectionGuard); ok && status.Mode == ModeVPN {
+		active, err := guard.PersistentArmed()
+		status.PersistentGuardActive = err == nil && active
+	}
+	return status
+}
 
 // Install before serving IPC. Existing constructors remain VPN-only by default.
 func (c *Controller) SetProxyFactory(factory TunnelFactory) {
@@ -144,6 +157,20 @@ func (c *Controller) Handle(r Request) Response {
 		c.clearAutomaticLocked()
 		c.mu.Unlock()
 	case "status":
+	case "getConnectionProtection", "setConnectionProtection":
+		if r.Command == "setConnectionProtection" {
+			if r.Enabled == nil {
+				return Response{Version: ProtocolVersion, ID: r.ID, Code: "ipc_invalid_payload", Status: c.Status()}
+			}
+			if err := c.SetConnectionProtection(*r.Enabled); err != nil {
+				return Response{Version: ProtocolVersion, ID: r.ID, Code: safeCode(err, "connection_protection_unavailable"), Status: c.Status()}
+			}
+		}
+		value, err := c.ConnectionProtection()
+		if err != nil {
+			return Response{Version: ProtocolVersion, ID: r.ID, Code: safeCode(err, "connection_protection_unavailable"), Status: c.Status()}
+		}
+		return Response{Version: ProtocolVersion, ID: r.ID, OK: true, Code: "ok", Status: c.Status(), ConnectionProtection: &value}
 	case "stats":
 		traffic, err := c.Statistics()
 		if err != nil {
@@ -362,6 +389,9 @@ func (c *Controller) connectInModeAutomatic(p exvpn.Profile, paths []string, sto
 	}
 	if !c.networkEnabled {
 		return Code("system_testing_required")
+	}
+	if mode == ModeVPN && !c.protectionKnown {
+		return Code("connection_protection_unavailable")
 	}
 	if c.stopping != 0 || (!replace && (c.cancel != nil || c.tunnel != nil)) {
 		return Code("connection_busy")

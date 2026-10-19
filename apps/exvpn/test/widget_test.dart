@@ -289,7 +289,25 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('diagnostics copies only the preview after explicit action', (
+  testWidgets('server rows are compact and retain a 48px touch target', (
+    tester,
+  ) async {
+    await _open(tester, AppController.demo());
+    final rows = find.byWidgetPredicate(
+      (widget) =>
+          widget is InkWell &&
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith('server-'),
+    );
+    expect(rows, findsWidgets);
+    for (final row in rows.evaluate()) {
+      final height = tester.getSize(find.byWidget(row.widget)).height;
+      expect(height, inInclusiveRange(48, 52));
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('logs copy fresh safe state only after explicit action', (
     tester,
   ) async {
     String? copied;
@@ -309,11 +327,11 @@ void main() {
     await _open(tester, controller);
     await _tap(tester, find.byKey(const Key('settings-button')));
     await tester.scrollUntilVisible(
-      find.text('Обезличенная диагностика'),
+      find.text('Логи'),
       250,
       scrollable: find.byType(Scrollable).last,
     );
-    await _tap(tester, find.text('Обезличенная диагностика'));
+    await _tap(tester, find.text('Логи'));
     expect(copied, isNull);
     final preview = tester
         .widget<SelectableText>(find.byType(SelectableText))
@@ -321,10 +339,22 @@ void main() {
     expect(preview, isNot(contains('PRIVATE_SUBSCRIPTION_NAME')));
     expect(preview, isNot(contains('sample.invalid')));
     expect(preview, isNot(contains('00000000-0000-4000-8000-000000000001')));
-    expect((jsonDecode(preview) as Map)['version'], appVersionLabel);
-    await _tap(tester, find.text('Копировать'));
-    expect(copied, preview);
-    expect(find.text('Отчёт скопирован'), findsOneWidget);
+    expect(
+      ((jsonDecode(preview) as Map)['diagnostics'] as Map)['version'],
+      appVersionLabel,
+    );
+    await _tap(tester, find.text('Скопировать'));
+    final copiedReport = jsonDecode(copied!) as Map;
+    final shownReport = jsonDecode(preview) as Map;
+    expect(copiedReport['diagnostics'], shownReport['diagnostics']);
+    expect(copiedReport['events'], shownReport['events']);
+    expect(
+      (copiedReport['session'] as Map)['elapsedMs'],
+      greaterThanOrEqualTo((shownReport['session'] as Map)['elapsedMs']),
+    );
+    expect(copied, isNot(contains('PRIVATE_SUBSCRIPTION_NAME')));
+    expect(copied, isNot(contains('sample.invalid')));
+    expect(find.text('Скопировано'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

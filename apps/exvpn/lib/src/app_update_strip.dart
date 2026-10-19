@@ -85,15 +85,7 @@ class AppUpdateStrip extends StatelessWidget {
               focusColor: color.withValues(alpha: .16),
               hoverColor: color.withValues(alpha: .06),
               child: downloading
-                  ? LinearProgressIndicator(
-                      value: progress,
-                      minHeight: height,
-                      color: scheme.primary.withValues(alpha: .38),
-                      backgroundColor: scheme.primary.withValues(alpha: .06),
-                      borderRadius: BorderRadius.zero,
-                      stopIndicatorRadius: 0,
-                      trackGap: 0,
-                    )
+                  ? AppUpdateProgress(progress: progress)
                   : Stack(
                       children: [
                         Center(
@@ -147,6 +139,37 @@ class AppUpdateStrip extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// One full-surface progress treatment for the top strip and update action.
+class AppUpdateProgress extends StatelessWidget {
+  const AppUpdateProgress({
+    super.key,
+    this.progress,
+    this.height = AppUpdateStrip.height,
+  });
+  final double? progress;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    return SizedBox(
+      width: double.infinity,
+      height: height,
+      child: LinearProgressIndicator(
+        value: progress != null && progress!.isFinite
+            ? progress!.clamp(0.0, 1.0)
+            : null,
+        minHeight: height,
+        color: color.withValues(alpha: .38),
+        backgroundColor: color.withValues(alpha: .06),
+        borderRadius: BorderRadius.zero,
+        stopIndicatorRadius: 0,
+        trackGap: 0,
       ),
     );
   }

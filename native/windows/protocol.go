@@ -28,6 +28,7 @@ type Request struct {
 	Mode               string                    `json:"mode,omitempty"`
 	ApplicationRouting *ApplicationRoutingPolicy `json:"applicationRouting,omitempty"`
 	AutomaticProfiles  []json.RawMessage         `json:"automaticProfiles,omitempty"`
+	Enabled            *bool                     `json:"enabled,omitempty"`
 }
 
 type Capabilities struct {
@@ -38,27 +39,29 @@ type Capabilities struct {
 	Verified              bool `json:"verified"`
 }
 type Status struct {
-	State              string       `json:"state"`
-	Code               string       `json:"code"`
-	GuardActive        bool         `json:"guardActive"`
-	ConnectedAt        int64        `json:"connectedAt,omitempty"`
-	CoreVersion        string       `json:"coreVersion"`
-	ActiveProfileID    string       `json:"activeProfileId,omitempty"`
-	Capabilities       Capabilities `json:"capabilities"`
-	Mode               string       `json:"mode"`
-	ProxyPort          int          `json:"proxyPort"`
-	AutomaticSelection bool         `json:"automaticSelection"`
+	State                 string       `json:"state"`
+	Code                  string       `json:"code"`
+	GuardActive           bool         `json:"guardActive"`
+	PersistentGuardActive bool         `json:"persistentGuardActive"`
+	ConnectedAt           int64        `json:"connectedAt,omitempty"`
+	CoreVersion           string       `json:"coreVersion"`
+	ActiveProfileID       string       `json:"activeProfileId,omitempty"`
+	Capabilities          Capabilities `json:"capabilities"`
+	Mode                  string       `json:"mode"`
+	ProxyPort             int          `json:"proxyPort"`
+	AutomaticSelection    bool         `json:"automaticSelection"`
 }
 type Response struct {
-	Version            int                       `json:"version"`
-	ID                 string                    `json:"id,omitempty"`
-	OK                 bool                      `json:"ok"`
-	Code               string                    `json:"code"`
-	Status             Status                    `json:"status"`
-	Probe              *ProbeResult              `json:"probe,omitempty"`
-	Traffic            *Traffic                  `json:"traffic,omitempty"`
-	Exclusions         []string                  `json:"exclusions,omitempty"`
-	ApplicationRouting *ApplicationRoutingPolicy `json:"applicationRouting,omitempty"`
+	Version              int                       `json:"version"`
+	ID                   string                    `json:"id,omitempty"`
+	OK                   bool                      `json:"ok"`
+	Code                 string                    `json:"code"`
+	Status               Status                    `json:"status"`
+	Probe                *ProbeResult              `json:"probe,omitempty"`
+	Traffic              *Traffic                  `json:"traffic,omitempty"`
+	Exclusions           []string                  `json:"exclusions,omitempty"`
+	ApplicationRouting   *ApplicationRoutingPolicy `json:"applicationRouting,omitempty"`
+	ConnectionProtection *ConnectionProtection     `json:"connectionProtection,omitempty"`
 }
 type Traffic struct {
 	UploadBytes   int64 `json:"uploadBytes"`
@@ -119,6 +122,9 @@ func DecodeRequest(b []byte) (Request, error) {
 	var fields map[string]json.RawMessage
 	_ = json.Unmarshal(b, &fields)
 	_, hasMode := fields["mode"]
+	if _, present := fields["enabled"]; present && r.Command != "setConnectionProtection" {
+		return Request{}, Code("ipc_unexpected_payload")
+	}
 	if hasMode && r.Mode != ModeVPN && r.Mode != ModeProxy {
 		return Request{}, Code("connection_mode_rejected")
 	}
@@ -139,9 +145,13 @@ func DecodeRequest(b []byte) (Request, error) {
 		}
 	}
 	switch r.Command {
-	case "status", "stats", "disconnect", "getExclusions", "getApplicationRouting", "clearAutomaticSelection":
+	case "status", "stats", "disconnect", "getExclusions", "getApplicationRouting", "clearAutomaticSelection", "getConnectionProtection":
 		if len(r.Profile) != 0 || r.Exclusions != nil {
 			return Request{}, Code("ipc_unexpected_payload")
+		}
+	case "setConnectionProtection":
+		if r.Enabled == nil || len(r.Profile) != 0 || r.Exclusions != nil {
+			return Request{}, Code("ipc_invalid_payload")
 		}
 	case "setExclusions":
 		if len(r.Profile) != 0 || r.Exclusions == nil || len(r.Exclusions) > 128 {

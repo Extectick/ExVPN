@@ -3,15 +3,16 @@ import 'dart:async';
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../build_identity.dart';
 import '../services/dart_updates.dart';
+import '../services/client_logs.dart';
 import '../services/data_updates.dart';
 import '../services/safe_diagnostics.dart';
 import '../services/subscription_persistence.dart';
 import '../services/vpn_controller.dart';
 import 'app_strings.dart';
+import 'logs_sheet.dart';
 import 'appearance.dart';
 import 'exclusions_sheet.dart';
 import 'sliding_segments.dart';
@@ -48,6 +49,7 @@ class SettingsSheet extends StatefulWidget {
 
 class _SettingsSheetState extends State<SettingsSheet> {
   late final AppearanceController _fallbackAppearance;
+  ClientLogs? _fallbackLogs;
 
   @override
   void initState() {
@@ -59,6 +61,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
         ThemeMode.light => ThemeChoice.light,
       });
     widget.vpn?.addListener(_vpnChanged);
+    unawaited(widget.vpn?.refreshConnectionProtection());
   }
 
   void _vpnChanged() {
@@ -68,6 +71,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
   @override
   void dispose() {
     widget.vpn?.removeListener(_vpnChanged);
+    _fallbackLogs?.dispose();
     _fallbackAppearance.dispose();
     super.dispose();
   }
@@ -89,76 +93,70 @@ class _SettingsSheetState extends State<SettingsSheet> {
   void _diagnostics() {
     final updates = DataUpdatesScope.maybeOf(context);
     final dartUpdates = DartUpdatesScope.maybeOf(context);
-    final report = safeDiagnostics(
-      status: widget.vpn?.status,
-      platform: kIsWeb ? 'web' : defaultTargetPlatform.name,
-      coreVersion: widget.vpn?.core,
-      errorCode: widget.vpn?.lastErrorCode,
-      secureStorageAvailable: widget.persistence != null,
-      dataRevision: updates?.snapshot.revision,
-      dataChannel: updates?.channel,
-      dartUpdatesAvailable: dartUpdates?.snapshot?.available,
-      currentDartPatch: dartUpdates?.snapshot?.current,
-      nextDartPatch: dartUpdates?.snapshot?.next,
-      dartRestartRequired: dartUpdates?.restartRequired,
-      dartUpdateTrack: dartUpdates?.track,
-    );
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.tr('Обезличенная диагностика')),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                ctx.tr(
-                  'Отчёт содержит только версии и состояние приложения. Подписки, ключи, адреса и история трафика не включены.',
-                ),
-              ),
-              const SizedBox(height: 16),
-              Semantics(
-                label: report,
-                excludeSemantics: true,
-                child: SelectableText(
-                  report,
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-                ),
-              ),
-            ],
+    final logs =
+        ClientLogsScope.maybeOf(context) ??
+        (_fallbackLogs ??= ClientLogs(
+          controller: widget.controller,
+          vpn: widget.vpn,
+          persistence: widget.persistence,
+        ));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LogsSheet(
+          logs: logs,
+          diagnosticsBuilder: () => safeDiagnostics(
+            status: widget.vpn?.status,
+            platform: kIsWeb ? 'web' : defaultTargetPlatform.name,
+            coreVersion: widget.vpn?.core,
+            errorCode: widget.vpn?.lastErrorCode,
+            secureStorageAvailable: widget.persistence != null,
+            dataRevision: updates?.snapshot.revision,
+            dataChannel: updates?.channel,
+            dartUpdatesAvailable: dartUpdates?.snapshot?.available,
+            currentDartPatch: dartUpdates?.snapshot?.current,
+            nextDartPatch: dartUpdates?.snapshot?.next,
+            dartRestartRequired: dartUpdates?.restartRequired,
+            dartUpdateTrack: dartUpdates?.track,
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(ctx.tr('Закрыть')),
-          ),
-          FilledButton.icon(
-            icon: const Icon(Icons.copy, size: 18),
-            label: Text(ctx.tr('Копировать')),
-            onPressed: () async {
-              try {
-                await Clipboard.setData(ClipboardData(text: report));
-                if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(context.tr('Отчёт скопирован'))),
-                  );
-                }
-              } catch (_) {
-                if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) {
-                  _info(
-                    'Буфер обмена недоступен',
-                    'Выделите текст отчёта и скопируйте его вручную.',
-                  );
-                }
-              }
-            },
-          ),
-        ],
       ),
+    );
+  }
+
+  Future<void> _toggleProtection(bool enabled) async {
+    final vpn = widget.vpn;
+    if (vpn == null) return;
+    await vpn.setConnectionProtection(enabled);
+  }
+
+  Widget _protection() {
+    final vpn = widget.vpn;
+    final protection = vpn?.connectionProtection;
+    final enabled = protection?.enabled == true;
+    final available = protection?.supported == true;
+    final busy = vpn?.protectionBusy == true;
+    return SettingsNavigationRow(
+      key: const Key('settings-protection'),
+      icon: Icons.shield_outlined,
+      title: context.tr('Защита соединения'),
+      subtitle: context.tr(
+        vpn?.protectionError != null
+            ? vpn!.protectionError ==
+                      'connection_protection_requires_disconnected'
+                  ? 'Сначала отключите VPN'
+                  : 'Не удалось изменить защиту соединения'
+            : !available
+            ? 'Недоступно в этой версии'
+            : protection!.systemManaged
+            ? 'Настраивается в Android'
+            : 'Блокировать интернет при обрыве VPN',
+      ),
+      trailing: Switch.adaptive(
+        key: const Key('connection-protection-switch'),
+        value: enabled,
+        onChanged: available && !busy ? _toggleProtection : null,
+      ),
+      onTap: available && !busy ? () => _toggleProtection(!enabled) : null,
     );
   }
 
@@ -319,65 +317,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
                       'Список приложений и правила обхода VPN будут доступны после подключения и проверки системного модуля.',
                     ),
             ),
-            SettingsNavigationRow(
-              icon: Icons.shield_outlined,
-              title: context.tr('Защита соединения'),
-              subtitle: context.tr(
-                widget.vpn?.status.processCrashProtection == true
-                    ? 'Системная защита подтверждена'
-                    : 'Защита соединения ещё не подтверждена.',
-              ),
-              onTap: () => showDialog<void>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: Text(ctx.tr('Защита соединения')),
-                  content: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          ctx.tr(
-                            'На Android включите Always-on VPN и «Блокировать соединения без VPN» в настройках системы. Блокировка может оставаться включённой после отключения VPN. На Windows защитой управляет ExVPN.',
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          ctx.tr(
-                            DataUpdatesScope.maybeOf(ctx)?.snapshot.help ??
-                                bundledConnectionHelp,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  actions: [
-                    if (widget.vpn != null)
-                      TextButton(
-                        onPressed: () async {
-                          Navigator.pop(ctx);
-                          try {
-                            await widget.vpn!.bridge
-                                .openSystemProtectionSettings();
-                          } catch (_) {
-                            if (mounted) {
-                              _info(
-                                'Системные настройки',
-                                'Откройте настройки VPN в вашей системе.',
-                              );
-                            }
-                          }
-                        },
-                        child: Text(ctx.tr('Настройки системы')),
-                      ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: Text(ctx.tr('Понятно')),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            _protection(),
             SettingsNavigationRow(
               icon: Icons.system_update_alt,
               title: context.tr('Версии и обновления'),
@@ -410,8 +350,8 @@ class _SettingsSheetState extends State<SettingsSheet> {
             ),
             SettingsNavigationRow(
               icon: Icons.description_outlined,
-              title: context.tr('Обезличенная диагностика'),
-              subtitle: context.tr('Посмотреть и скопировать отчёт'),
+              title: context.tr('Логи'),
+              subtitle: context.tr('Состояние и последние события'),
               onTap: _diagnostics,
             ),
             const SizedBox(height: 20),

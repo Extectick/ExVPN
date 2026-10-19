@@ -1451,7 +1451,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _group(SubscriptionGroup group, {VoidCallback? onSelected}) => Column(
     children: [
-      const SizedBox(height: 8),
+      const SizedBox(height: 4),
       Semantics(
         expanded: group.expanded,
         child: Material(
@@ -1461,7 +1461,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             borderRadius: BorderRadius.circular(8),
             onTap: () => widget.controller.toggleGroup(group.id),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 11),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 7),
               child: Row(
                 children: [
                   SizedBox(
@@ -1480,7 +1480,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
                         letterSpacing: -.4,
                       ),
@@ -1509,7 +1509,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   Text(
                     _count(group.servers.length),
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11.5,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -1539,18 +1539,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ],
         ),
       ],
-      const SizedBox(height: 14),
+      const SizedBox(height: 6),
     ],
   );
 
   Widget _flag(ServerEntry server, {required bool selected}) =>
-      CountryFlag(countryCode: server.countryCode, size: 28);
+      CountryFlag(countryCode: server.countryCode, size: 24);
 
   Widget _automaticServer(SubscriptionGroup group, {VoidCallback? onSelected}) {
     final selected = widget.controller.selectedAutomaticGroupId == group.id;
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 1),
       child: Material(
         color: selected
             ? scheme.primary.withValues(alpha: .13)
@@ -1558,6 +1558,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         borderRadius: BorderRadius.circular(11),
         child: ListTile(
           key: ValueKey('automatic-${group.id}'),
+          dense: true,
+          minTileHeight: 48,
+          minLeadingWidth: 24,
+          horizontalTitleGap: 10,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(11),
           ),
@@ -1565,11 +1569,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           leading: Icon(
             CupertinoIcons.arrow_2_circlepath,
             color: scheme.primary,
-            size: 28,
+            size: 24,
           ),
           title: Text(
             context.tr('Авто · основной и резерв'),
-            style: const TextStyle(fontSize: 15),
+            style: const TextStyle(fontSize: 14),
           ),
           subtitle: Text(
             context.tr(
@@ -1577,7 +1581,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ? 'Авто доступно для групп до 32 серверов'
                   : 'Проверка HTTPS · резерв при обрыве',
             ),
-            style: const TextStyle(fontSize: 12),
+            style: const TextStyle(fontSize: 11.5),
           ),
           trailing: selected
               ? Icon(CupertinoIcons.check_mark, size: 20, color: scheme.primary)
@@ -1666,7 +1670,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ? scheme.onPrimaryContainer
         : scheme.onSurface;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 1),
       child: Semantics(
         selected: selected,
         button: true,
@@ -1694,39 +1698,39 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ? null
                 : () => _selectServer(group, server, onSelected: onSelected),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 56),
+              constraints: const BoxConstraints(minHeight: 48),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
-                  vertical: 8,
+                  vertical: 5,
                 ),
                 child: Row(
                   children: [
                     _flag(server, selected: selected),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             server.name,
-                            maxLines: 2,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 15,
                               height: 1.2,
                               fontWeight: FontWeight.w600,
                               letterSpacing: -0.45,
                               color: foreground,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           Text(
                             server.protocolLabel,
-                            maxLines: 2,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 12,
                               height: 1.2,
                               color: selected && light
                                   ? foreground.withValues(alpha: .72)
@@ -1736,10 +1740,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     _latency(server, selected: selected && light),
                     SizedBox(
-                      width: 38,
+                      width: 26,
                       child: selected
                           ? Align(
                               alignment: Alignment.centerRight,
@@ -1748,7 +1752,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 color: light
                                     ? scheme.onPrimaryContainer
                                     : scheme.primary,
-                                size: 24,
+                                size: 20,
                               ),
                             )
                           : null,

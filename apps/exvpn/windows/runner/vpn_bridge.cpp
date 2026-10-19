@@ -95,7 +95,7 @@ Value Status(const JsonObject& s) {
          Value(s.GetNamedBoolean(L"automaticSelection", false))},
         {Value("processCrashProtection"),
          Value(mode == "vpn" && capabilities.GetNamedBoolean(L"verified") &&
-               s.GetNamedBoolean(L"guardActive"))}};
+               s.GetNamedBoolean(L"persistentGuardActive", false))}};
   if (s.HasKey(L"activeProfileId"))
     m.emplace(Value("activeProfileId"),
               Value(winrt::to_string(s.GetNamedString(L"activeProfileId"))));
@@ -205,7 +205,8 @@ void Transfer(HANDLE pipe, void* data, DWORD size, bool write,
 JsonObject Request(const std::string& command, const Value* profile,
                    const List& exclusions, const std::string& mode = "",
                    const Value* application_routing = nullptr,
-                   const Value* automatic_profiles = nullptr) {
+                   const Value* automatic_profiles = nullptr,
+                   const bool* protection_enabled = nullptr) {
   Handle pipe{CreateFileW(
       kPipe, 0x12019b, 0, nullptr, OPEN_EXISTING,
       FILE_FLAG_OVERLAPPED | SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION,
@@ -227,6 +228,8 @@ JsonObject Request(const std::string& command, const Value* profile,
     request.Insert(L"applicationRouting", Json(*application_routing));
   if (automatic_profiles)
     request.Insert(L"automaticProfiles", Json(*automatic_profiles));
+  if (protection_enabled)
+    request.Insert(L"enabled", JsonValue::CreateBooleanValue(*protection_enabled));
   std::string body = winrt::to_string(request.Stringify());
   if (body.empty() || body.size() > kMaxFrame) Fail("invalid_native_request");
   uint32_t size = static_cast<uint32_t>(body.size());
@@ -521,6 +524,36 @@ void VpnBridge::Work() {
               ? FamilyIconImage(winrt::to_hstring(*id).c_str()) : image->second); }
           catch (...) { completion.value = Value(); }
         }
+      } else if (job.method == "getConnectionProtection" ||
+                 job.method == "setConnectionProtection") {
+        const auto* arguments = std::get_if<Map>(&job.arguments);
+        const bool* enabled = nullptr;
+        if (job.method == "setConnectionProtection") {
+          if (!arguments || arguments->size() != 1)
+            Fail("invalid_native_request");
+          enabled = std::get_if<bool>(&Field(job.arguments, "enabled"));
+          if (!enabled) Fail("invalid_native_request");
+        } else if (!std::holds_alternative<std::monostate>(job.arguments) &&
+                   (!arguments || !arguments->empty())) {
+          Fail("invalid_native_request");
+        }
+        auto response = Request(job.method, nullptr, {}, "", nullptr, nullptr,
+                                enabled);
+        if (!response.GetNamedBoolean(L"ok"))
+          throw std::runtime_error(winrt::to_string(response.GetNamedString(L"code")));
+        const auto value = response.GetNamedObject(L"connectionProtection");
+        if (value.Size() != 4 ||
+            value.GetNamedValue(L"supported").ValueType() != JsonValueType::Boolean ||
+            value.GetNamedValue(L"enabled").ValueType() != JsonValueType::Boolean ||
+            value.GetNamedValue(L"active").ValueType() != JsonValueType::Boolean ||
+            value.GetNamedValue(L"systemManaged").ValueType() != JsonValueType::Boolean ||
+            value.GetNamedBoolean(L"systemManaged"))
+          Fail("ipc_invalid_response");
+        completion.value = Value(Map{
+            {Value("supported"), Value(value.GetNamedBoolean(L"supported"))},
+            {Value("enabled"), Value(value.GetNamedBoolean(L"enabled"))},
+            {Value("active"), Value(value.GetNamedBoolean(L"active"))},
+            {Value("systemManaged"), Value(false)}});
       } else if (job.method == "openSystemProtectionSettings") {
         Fail("system_protection_settings_unsupported");
       } else if (job.method == "setApplicationRouting") {

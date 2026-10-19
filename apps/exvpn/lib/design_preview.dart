@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'services/vpn_controller.dart';
+import 'services/client_logs.dart';
 import 'services/subscription_loader.dart';
 import 'build_identity.dart';
 import 'services/app_updates.dart';
@@ -51,6 +52,7 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
     backend: DisabledDataUpdatesBackend(),
   );
   late AppUpdatesController _previewUpdates = _createPreviewUpdates();
+  late final ClientLogs _logs = ClientLogs(controller: _app, vpn: _vpn);
   final _appearance = AppearanceController(preview: true);
   DesktopLayout _layout = DesktopLayout.values.firstWhere(
     (mode) => mode.name == Uri.base.queryParameters['layout'],
@@ -201,6 +203,7 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
 
   @override
   void dispose() {
+    _logs.dispose();
     _previewUpdates.dispose();
     _previewData.dispose();
     _previewLoader.close();
@@ -370,27 +373,30 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
         size: canvas,
         child: MediaQuery(
           data: MediaQuery.of(context).copyWith(size: canvas),
-          child: AppUpdatesScope(
-            controller: _previewUpdates,
-            child: DataUpdatesScope(
-              controller: _previewData,
-              child: Navigator(
-                key: ValueKey(_homeGeneration),
-                pages: [
-                  MaterialPage<void>(
-                    name: Uri.base.queryParameters['page'] == 'updates'
-                        ? UpdatesSheet.routeName
-                        : null,
-                    child: Uri.base.queryParameters['page'] == 'updates'
-                        ? UpdatesSheet(
-                            updates: _previewData,
-                            appUpdates: _previewUpdates,
-                            previewVersion: _previewVersion,
-                          )
-                        : child,
-                  ),
-                ],
-                onDidRemovePage: (_) {},
+          child: ClientLogsScope(
+            logs: _logs,
+            child: AppUpdatesScope(
+              controller: _previewUpdates,
+              child: DataUpdatesScope(
+                controller: _previewData,
+                child: Navigator(
+                  key: ValueKey(_homeGeneration),
+                  pages: [
+                    MaterialPage<void>(
+                      name: Uri.base.queryParameters['page'] == 'updates'
+                          ? UpdatesSheet.routeName
+                          : null,
+                      child: Uri.base.queryParameters['page'] == 'updates'
+                          ? UpdatesSheet(
+                              updates: _previewData,
+                              appUpdates: _previewUpdates,
+                              previewVersion: _previewVersion,
+                            )
+                          : child,
+                    ),
+                  ],
+                  onDidRemovePage: (_) {},
+                ),
               ),
             ),
           ),
@@ -447,7 +453,11 @@ class _DesignUpdatesBackend implements FullUpdatesBackend {
 /// Contains no native bridge, HTTP client, subscription URL or subscription
 /// persistence. Visual preferences use their own isolated preview storage.
 class _DesignOnlyBridge
-    implements VpnBridge, ConnectionModeBridge, ApplicationRoutingBridge {
+    implements
+        VpnBridge,
+        ConnectionModeBridge,
+        ApplicationRoutingBridge,
+        ConnectionProtectionBridge {
   _DesignOnlyBridge(this.selectedId, {required bool initiallyConnected}) {
     _mode = Uri.base.queryParameters['mode'] == 'proxy'
         ? VpnMode.proxy
@@ -583,6 +593,24 @@ class _DesignOnlyBridge
 
   @override
   Future<String> coreVersion() async => '26.10.10-exvpn.5';
+  bool _protectionEnabled = true;
+  @override
+  Future<ConnectionProtection> getConnectionProtection() async =>
+      ConnectionProtection(
+        supported: true,
+        enabled: _protectionEnabled,
+        active:
+            _protectionEnabled &&
+            _mode == VpnMode.vpn &&
+            _status.phase == VpnPhase.connected,
+        systemManaged: false,
+      );
+  @override
+  Future<ConnectionProtection> setConnectionProtection(bool enabled) async {
+    _protectionEnabled = enabled;
+    return getConnectionProtection();
+  }
+
   @override
   Future<Set<String>> getExclusions() async =>
       _routing.mode == ApplicationRoutingMode.exclude

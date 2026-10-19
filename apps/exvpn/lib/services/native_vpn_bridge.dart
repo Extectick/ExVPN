@@ -94,6 +94,8 @@ const _codes = {
   'application_routing_rejected',
   'application_icon_unavailable',
   'native_method_unsupported',
+  'connection_protection_unavailable',
+  'connection_protection_requires_disconnected',
 };
 
 final class NativeVpnBridge
@@ -103,7 +105,8 @@ final class NativeVpnBridge
         ServerReconnectBridge,
         AutomaticSelectionBridge,
         ApplicationRoutingBridge,
-        ApplicationIconBridge {
+        ApplicationIconBridge,
+        ConnectionProtectionBridge {
   NativeVpnBridge({
     MethodChannel? methods,
     EventChannel? stateEvents,
@@ -389,6 +392,37 @@ final class NativeVpnBridge
   @override
   Future<void> openSystemProtectionSettings() async {
     await _invoke('openSystemProtectionSettings');
+  }
+
+  @override
+  Future<ConnectionProtection> getConnectionProtection() async =>
+      decodeConnectionProtection(await _invoke('getConnectionProtection'));
+
+  @override
+  Future<ConnectionProtection> setConnectionProtection(bool enabled) async =>
+      decodeConnectionProtection(
+        await _invoke('setConnectionProtection', {'enabled': enabled}),
+      );
+
+  static ConnectionProtection decodeConnectionProtection(Object? raw) {
+    final map = _map(raw);
+    const keys = {'supported', 'enabled', 'active', 'systemManaged'};
+    if (map.length != keys.length ||
+        !keys.every(map.containsKey) ||
+        map['supported'] is! bool ||
+        map['active'] is! bool ||
+        map['systemManaged'] is! bool ||
+        (map['enabled'] != null && map['enabled'] is! bool) ||
+        (map['enabled'] == null && map['systemManaged'] != true) ||
+        (map['active'] == true && map['supported'] != true)) {
+      throw const VpnFailure('invalid_native_response');
+    }
+    return ConnectionProtection(
+      supported: map['supported'] as bool,
+      enabled: map['enabled'] as bool?,
+      active: map['active'] as bool,
+      systemManaged: map['systemManaged'] as bool,
+    );
   }
 
   static VpnStatus decodeStatus(Object? raw) {

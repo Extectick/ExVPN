@@ -8,6 +8,7 @@ import '../services/app_updates.dart';
 import '../services/data_updates.dart';
 import '../services/dart_updates.dart';
 import 'app_strings.dart';
+import 'app_update_strip.dart';
 
 /// A single entry point for full releases and compatible interface patches.
 class UpdatesSheet extends StatefulWidget {
@@ -144,21 +145,28 @@ class _UpdatesSheetState extends State<UpdatesSheet> {
         : null;
     final scheme = Theme.of(context).colorScheme;
     final downloading = phase == AppUpdateStatePhase.downloading;
-    final text =
-        '${context.tr(label)}${downloading && fraction != null ? ' ${(fraction * 100).round()}%' : ''}';
     return Semantics(
       liveRegion: true,
+      label: busy ? context.tr(label) : null,
       child: SizedBox(
         width: double.infinity,
         child: FilledButton(
           key: const Key('updates-primary'),
+          clipBehavior: Clip.antiAlias,
           style: FilledButton.styleFrom(
             minimumSize: const Size.fromHeight(56),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            fixedSize: const Size.fromHeight(56),
+            visualDensity: VisualDensity.standard,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            padding: busy
+                ? EdgeInsets.zero
+                : const EdgeInsets.symmetric(horizontal: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            disabledBackgroundColor: scheme.primary.withValues(alpha: .72),
+            disabledBackgroundColor: busy
+                ? Colors.transparent
+                : scheme.primary.withValues(alpha: .72),
             disabledForegroundColor: scheme.onPrimary,
           ),
           onPressed: controller == null || busy
@@ -174,31 +182,34 @@ class _UpdatesSheetState extends State<UpdatesSheet> {
                     unawaited(controller.check());
                   }
                 },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (busy)
-                SizedBox.square(
-                  dimension: 19,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    value: downloading ? fraction : null,
-                    color: scheme.onPrimary,
-                  ),
+          child: busy
+              ? AppUpdateProgress(
+                  key: const Key('updates-progress'),
+                  progress: downloading ? fraction : null,
+                  height: 56,
                 )
-              else
-                Icon(
-                  phase == AppUpdateStatePhase.available
-                      ? Icons.download_rounded
-                      : controller?.canRestart == true
-                      ? Icons.restart_alt_rounded
-                      : Icons.refresh_rounded,
-                  size: 21,
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      phase == AppUpdateStatePhase.available
+                          ? Icons.download_rounded
+                          : controller?.canRestart == true
+                          ? Icons.restart_alt_rounded
+                          : Icons.refresh_rounded,
+                      size: 21,
+                    ),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        context.tr(label),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
                 ),
-              const SizedBox(width: 10),
-              Flexible(child: Text(text, textAlign: TextAlign.center)),
-            ],
-          ),
         ),
       ),
     );

@@ -153,3 +153,23 @@ abstract interface class ApplicationRoutingBridge {
 abstract interface class ApplicationIconBridge {
   Future<Uint8List?> getApplicationIcon(String applicationId);
 }
+
+/// Preference and verified OS state are distinct. Android returns unknown
+/// without a live VpnService and delegates changes to system VPN settings.
+final class ConnectionProtection {
+  const ConnectionProtection({
+    required this.supported,
+    required this.enabled,
+    required this.active,
+    required this.systemManaged,
+  });
+  final bool supported;
+  final bool? enabled;
+  final bool active;
+  final bool systemManaged;
+}
+
+abstract interface class ConnectionProtectionBridge {
+  Future<ConnectionProtection> getConnectionProtection();
+  Future<ConnectionProtection> setConnectionProtection(bool enabled);
+}

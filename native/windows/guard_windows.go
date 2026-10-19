@@ -182,61 +182,21 @@ type WindowsGuard struct {
 	mu        sync.Mutex
 	permits   windows.Handle
 	bootstrap windows.Handle
+	blocks    windows.Handle
+	volatile  bool
+	policy    guardPolicyBackend
 }
 
 func (g *WindowsGuard) Armed() (bool, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	h, e := openWFP(false)
-	if e != nil {
-		return false, e
-	}
-	defer wfpCall(wfpClose, uintptr(h))
-	for i := 0; i < 4; i++ {
-		k := guardKey(i)
-		var f *wfpFilter
-		e = wfpCall(wfpGet, uintptr(h), uintptr(unsafe.Pointer(&k)), uintptr(unsafe.Pointer(&f)))
-		if e == nil {
-			_ = wfpCall(wfpFree, uintptr(unsafe.Pointer(&f)))
-			return true, nil
-		}
-		if e != windows.Errno(wfpFilterNotFound) {
-			return false, e
-		}
-	}
-	return false, nil
+	state, err := g.policyBackend().inspect()
+	return state.any, err
 }
 func (g *WindowsGuard) Arm() error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	h, e := openWFP(false)
-	if e != nil {
-		return e
-	}
-	defer wfpCall(wfpClose, uintptr(h))
-	return transaction(h, func() error {
-		s := wfpSublayer{Key: guardSublayer, Display: wfpDisplay{Name: utf16("ExVPN persistent guard")}, Flags: wfpPersistent, Weight: 0xff00}
-		e := wfpCall(wfpAddSublayer, uintptr(h), uintptr(unsafe.Pointer(&s)), 0)
-		runtime.KeepAlive(s)
-		if e != nil && e != windows.Errno(wfpAlreadyExists) {
-			return e
-		}
-		for i := 0; i < 8; i++ {
-			if e := deleteGuardFilter(h, i); e != nil {
-				return e
-			}
-		}
-		for i, layer := range guardLayers {
-			if e := addGuardFilter(h, i, layer, true, 0, wfpBlock, nil); e != nil {
-				return e
-			}
-			loopback := []wfpCondition{{Field: fieldFlags, Match: 6, Value: wfpValue{Type: 3, Value: 1}}}
-			if e := addGuardFilter(h, i+4, layer, true, 1, wfpPermit, loopback); e != nil {
-				return e
-			}
-		}
-		return nil
-	})
+	return g.armPolicy()
 }
 func (g *WindowsGuard) PermitTunnel(luid uint64) error {
 	g.mu.Lock()
@@ -326,21 +286,12 @@ func (g *WindowsGuard) Disarm() error {
 	if g.permits != 0 || g.bootstrap != 0 {
 		return Code("guard_permits_active")
 	}
-	h, e := openWFP(false)
-	if e != nil {
-		return e
+	backend := g.policyBackend()
+	if g.blocks != 0 {
+		if err := backend.close(g.blocks); err != nil {
+			return err
+		}
+		g.blocks = 0
 	}
-	defer wfpCall(wfpClose, uintptr(h))
-	return transaction(h, func() error {
-		for i := 0; i < 8; i++ {
-			if e := deleteGuardFilter(h, i); e != nil {
-				return e
-			}
-		}
-		e := wfpCall(wfpDeleteSublayer, uintptr(h), uintptr(unsafe.Pointer(&guardSublayer)))
-		if e == windows.Errno(wfpSublayerNotFound) {
-			return nil
-		}
-		return e
-	})
+	return backend.remove()
 }

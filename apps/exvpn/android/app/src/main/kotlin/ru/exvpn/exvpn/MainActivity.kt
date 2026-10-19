@@ -2,6 +2,7 @@ package ru.exvpn.exvpn
 
 import android.Manifest
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.VpnService
@@ -85,6 +86,22 @@ class MainActivity : FlutterActivity() {
         MethodChannel(messenger, "exvpn/vpn").setMethodCallHandler { call, result ->
             try { when (call.method) {
                 "getStatus" -> result.success(VpnRuntime.status())
+                "getConnectionProtection" -> {
+                    AndroidConnectionProtection.validateRead(call.arguments)
+                    result.success(connectionProtection().wire())
+                }
+                "setConnectionProtection" -> {
+                    try {
+                        val state = AndroidConnectionProtection.requestChange(call.arguments,
+                            openSystemSettings = { startActivity(Intent(Settings.ACTION_VPN_SETTINGS)) },
+                            readState = { connectionProtection() })
+                        result.success(state.wire())
+                    } catch (_: ActivityNotFoundException) {
+                        result.error("connection_protection_unavailable", "VPN settings unavailable", null)
+                    } catch (_: SecurityException) {
+                        result.error("connection_protection_unavailable", "VPN settings unavailable", null)
+                    }
+                }
                 "getExclusions" -> { VpnRuntime.ensurePolicy(this); result.success(VpnRuntime.exclusions.sorted()) }
                 "getApplicationRouting" -> {
                     VpnRuntime.ensurePolicy(this)
@@ -201,6 +218,15 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             } } catch (_: NativeStoreFailure) { result.error("native_storage_unavailable", "Protected VPN settings unavailable", null) }
             catch (_: Exception) { result.error("invalid_native_request", "Native request could not be applied", null) }
+        }
+    }
+    private fun connectionProtection(): AndroidConnectionProtectionState = AndroidConnectionProtection.read {
+        // These public API29+ methods require a real VpnService. Without one,
+        // Android's persisted configuration cannot be confirmed by this app.
+        val service = VpnRuntime.service
+        if (service == null) null else {
+            val flags = service.isAlwaysOn to service.isLockdownEnabled
+            if (VpnRuntime.service === service) flags else null
         }
     }
     private fun startVpn(request: ConnectRequest, result: MethodChannel.Result) {
