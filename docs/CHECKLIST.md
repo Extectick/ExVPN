@@ -174,7 +174,7 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   Исходники `96444e3`; [снимки](../design/screenshots/import-autofill/),
   [сверка](../design-qa.md), [ограничения](DESIGN_PREVIEW.md).
   Реальная камера не проверена; web camera реализована, native camera и бинарный
-  image clipboard Windows/Android остаются открытыми в E3-004. Нет APK/EXE,
+  image clipboard Windows/Android остаются открытыми в E3-005. Нет APK/EXE,
   Full, установки, публикации или CI; версия и опубликованные теги прежние.
 
 - [x] **EXVPN-E2-019** — Упростить импорт и модальные окна minimal в веб-дизайне.
@@ -833,6 +833,26 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
 
 Новые доказательства добавлять обезличенными. Полные приватные входные данные и журналы сохранять вне репозитория; в таблице достаточно результата, версии, платформы и безопасного идентификатора проверки.
 
+
+## Цикл 0.1.6 — выпуск обновлённого интерфейса, 2026-10-19
+
+- [x] **EXVPN-E3-010** — Автоматически применять поддерживаемую часть подписки
+  без предупреждений о неподдерживаемых записях. Критерий: >=1 валидный профиль,
+  только unsupportedProtocol/unsupportedFeature/ignoredLocalConfiguration;
+  malformed/empty/network сохраняют рабочие данные. Метаданные атомарны,
+  неизвестные local/security настройки не импортируются. Прогресс: 78 state
+  tests PASS (13 новых), targeted analyze PASS. Проверено 2026-10-19: final
+  Full **12/12 PASS за 126,78 с**, 373 app tests, source unchanged;
+  [отчёт](evidence/fast-validation-v0.1.6.json).
+  Рабочее дерево; commit ожидается и будет указан после публикации.
+- [ ] **EXVPN-E7-012** — Опубликовать 0.1.6+27 в существующий канал обновлений.
+  Критерий: один финальный Full на замороженных исходниках, подписанный Android,
+  Windows package, immutable v0.1.6, обе platform jobs и оба подписанных feed,
+  проверка публичных hashes/состава/версий. Без повторной сетевой VPN-матрицы:
+  native core/служба/маршруты не менялись. Дублирующий development CI подавляется
+  в release commit; manual release workflow сохраняет собственные проверки.
+  Windows unsigned остаётся Preview, E1 и native camera не закрываются.
+  Final Full 12/12 PASS; tag/workflow/public audit ещё ожидаются.
 
 ## Цикл 0.1.5 — полные обновления, 2026-10-19
 

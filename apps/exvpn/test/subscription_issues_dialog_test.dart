@@ -17,7 +17,10 @@ const newProfile =
     'vless://00000000-0000-4000-8000-000000000002@sample.invalid:443?security=tls#PRIVATE-NAME';
 const cleanNewProfile =
     'vless://00000000-0000-4000-8000-000000000002@sample.invalid:443?security=tls#New';
-const broken = 'unknown://PRIVATE-CREDENTIAL@sample.invalid/PRIVATE-TOKEN';
+// A malformed supported profile must still block replacement; unsupported
+// protocols are now informational and no longer create a partial candidate.
+const broken =
+    'vless://PRIVATE-CREDENTIAL@sample.invalid:443?security=tls#PRIVATE-TOKEN';
 
 void main() {
   late AppController app;
@@ -96,7 +99,7 @@ void main() {
       await open(tester, completed: (value) => outcome = value);
       expect(find.text('PRIVATE-GROUP'), findsOneWidget);
       expect(
-        find.textContaining('Часть подключений пока не поддерживается.'),
+        find.textContaining('В части подключений есть ошибки параметров.'),
         findsOneWidget,
       );
       expect(
@@ -190,7 +193,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(app.groups.single.issues.length, 40);
       expect(
-        find.textContaining('Часть подключений пока не поддерживается.'),
+        find.textContaining('В части подключений есть ошибки параметров.'),
         findsOneWidget,
       );
       expect(find.byKey(const Key('subscription-issues-list')), findsNothing);
@@ -251,7 +254,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.textContaining('Часть подключений пока не поддерживается.'),
+        find.textContaining('В части подключений есть ошибки параметров.'),
         findsOneWidget,
       );
       expect(

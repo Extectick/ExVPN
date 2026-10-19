@@ -11,6 +11,9 @@ const oldProfile =
     'vless://00000000-0000-4000-8000-000000000001@sample.invalid:443?security=tls#Old';
 const newProfile =
     'vless://00000000-0000-4000-8000-000000000002@sample.invalid:443?security=tls#New';
+// Unsupported records are skippable; a malformed supported profile still
+// requires explicit consent before replacing an existing working list.
+const malformedProfile = 'vless://not-a-uuid@sample.invalid:443?security=tls';
 void main() {
   test(
     'refresh updates automatic provider name and preserves a manual name',
@@ -101,7 +104,7 @@ void main() {
         app,
         loader: SubscriptionLoader(
           client: MockClient(
-            (_) async => http.Response('$newProfile\nunknown://invalid', 200),
+            (_) async => http.Response('$newProfile\n$malformedProfile', 200),
           ),
         ),
       );
@@ -113,6 +116,7 @@ void main() {
       expect(app.selectedServer!.name, 'Old');
       expect(app.groups.single.updatedAt, before);
       expect(refresh.failed, {id});
+      expect(app.pendingUpdate(id)!.issues.single.code.name, 'invalidProfile');
       expect(app.acceptPartialUpdate(app.pendingUpdate(id)!), isTrue);
       expect(app.selectedServer!.name, 'New');
       expect(refresh.failed, isEmpty);
@@ -131,9 +135,10 @@ void main() {
       final id = app.groups.single.id;
       app.updateSubscription(
         groupId: id,
-        raw: '$newProfile\nunknown://invalid',
+        raw: '$newProfile\n$malformedProfile',
       );
       final oldCandidate = app.pendingUpdate(id)!;
+      expect(oldCandidate.issues.single.code.name, 'invalidProfile');
       final response = Completer<http.Response>();
       final refresh = SubscriptionRefresh(
         app,
@@ -171,8 +176,9 @@ void main() {
       final request = refresh.refresh(id);
       app.updateSubscription(
         groupId: id,
-        raw: '$newProfile\nunknown://invalid',
+        raw: '$newProfile\n$malformedProfile',
       );
+      expect(app.pendingUpdate(id)!.issues.single.code.name, 'invalidProfile');
       expect(app.acceptPartialUpdate(app.pendingUpdate(id)!), isTrue);
       response.complete(http.Response(oldProfile, 200));
       expect(await request, isFalse);

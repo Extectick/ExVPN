@@ -7,7 +7,8 @@ const newProfile =
     'vless://00000000-0000-4000-8000-000000000002@sample.invalid:443?security=tls#New';
 const sharedProfile =
     'vless://00000000-0000-4000-8000-000000000003@sample.invalid:443?security=tls#Shared';
-const broken = 'unknown://PRIVATE-CREDENTIAL@sample.invalid/PRIVATE-TOKEN';
+const broken =
+    'vless://PRIVATE-CREDENTIAL@sample.invalid:443?security=tls#PRIVATE-TOKEN';
 
 void main() {
   late AppController app;

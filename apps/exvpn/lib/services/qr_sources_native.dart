@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 
 import 'qr_import.dart';
 
+const qrCameraAvailable = false;
+
 /// Desktop clipboard file paths only; binary image clipboard support is not
 /// provided by Flutter's text clipboard. The caller can fall back to the picker.
 Future<String?> readQrClipboard() async {

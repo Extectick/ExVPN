@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:exvpn/main.dart';
 import 'package:exvpn/build_identity.dart';
 import 'package:exvpn/src/power_button.dart';
+import 'package:exvpn/src/import_dialog.dart';
+import 'package:exvpn/src/sliding_segments.dart';
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -68,43 +70,27 @@ void main() {
     await font.load();
   });
 
-  testWidgets('home shows brief partial-update reason and keeps working list', (
-    tester,
-  ) async {
+  testWidgets('unsupported-only replacement has no warning UI', (tester) async {
     final controller = AppController();
     addTearDown(controller.dispose);
     final id = controller
         .addSubscription(name: 'Example', raw: _sampleProfile)
         .groupId;
-    controller.updateSubscription(
+    final result = controller.updateSubscription(
       groupId: id,
       raw:
           '${_sampleProfile.replaceFirst('000000000001', '000000000002').replaceFirst('#Sample', '#New')}\nunknown://invalid',
     );
-    final candidate = controller.pendingUpdate(id);
-    expect(candidate, isNotNull);
-    expect(candidate!.previousCount, 1);
-    expect(candidate.issues.single.index, 2);
+    expect(result.applied, isTrue);
+    expect(result.issues.single.index, 2);
+    expect(controller.pendingUpdate(id), isNull);
     await _open(tester, controller);
-    expect(controller.selectedServer!.name, 'Sample');
+    expect(controller.selectedServer!.name, 'New');
     expect(find.byKey(const Key('connection-notice')), findsNothing);
-    await _tap(tester, find.byKey(ValueKey('subscription-issues-$id')));
-    expect(
-      find.textContaining('Часть подключений пока не поддерживается.'),
-      findsOneWidget,
-    );
-    expect(find.byKey(const Key('accept-partial-subscription')), findsNothing);
-    expect(
-      find.textContaining('Последний рабочий список сохранён.'),
-      findsOneWidget,
-    );
-    await _tap(tester, find.byKey(const Key('keep-subscription')));
     expect(find.byKey(const Key('subscription-issues-dialog')), findsNothing);
-    expect(controller.selectedServer!.name, 'Sample');
-    expect(controller.pendingUpdate(id), same(candidate));
+    expect(find.byKey(ValueKey('subscription-issues-$id')), findsNothing);
+    expect(find.textContaining('Часть подключений'), findsNothing);
     _expectDisconnected(tester);
-    expect(find.byKey(ValueKey('subscription-issues-$id')), findsOneWidget);
-    expect(find.byKey(const Key('connection-notice')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -167,12 +153,15 @@ void main() {
     expect(refresh.dx, lessThan(add.dx));
     expect(refresh.dy, add.dy);
     await _tap(tester, find.byKey(const Key('add-button')));
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(ImportDialog), findsOneWidget);
     expect(find.byKey(const Key('subscription-name')), findsOneWidget);
     expect(find.byKey(const Key('subscription-input')), findsOneWidget);
-    expect(find.textContaining('только до закрытия'), findsOneWidget);
-    await _tap(tester, find.text('Отмена'));
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(
+      tester.getBottomLeft(find.byKey(const Key('subscription-name'))).dy,
+      lessThan(tester.getTopLeft(find.byType(SlidingSegments<String>)).dy),
+    );
+    await _tap(tester, find.byTooltip('Закрыть'));
+    expect(find.byType(ImportDialog), findsNothing);
   });
 
   testWidgets(
@@ -182,7 +171,7 @@ void main() {
       await _open(tester, controller);
       expect(find.byKey(const Key('empty-add-button')), findsOneWidget);
       await _importText(tester, name: 'Test subscription', raw: _sampleProfile);
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(ImportDialog), findsNothing);
       expect(find.byKey(const Key('empty-add-button')), findsNothing);
       expect(find.text('Test subscription'), findsOneWidget);
       expect(find.text('Sample'), findsOneWidget);
@@ -193,7 +182,7 @@ void main() {
   );
 
   testWidgets(
-    'failed import is an existing error group rather than empty state',
+    'unsupported-only import keeps its empty group without a warning icon',
     (tester) async {
       final controller = AppController();
       await _open(tester, controller);
@@ -213,16 +202,9 @@ void main() {
       final issues = find.byKey(
         ValueKey('subscription-issues-${controller.groups.single.id}'),
       );
-      expect(issues, findsOneWidget);
-      await _tap(tester, issues);
-      expect(
-        find.byKey(const Key('subscription-issues-dialog')),
-        findsOneWidget,
-      );
-      expect(
-        find.textContaining('Часть подключений пока не поддерживается.'),
-        findsOneWidget,
-      );
+      expect(issues, findsNothing);
+      expect(find.byKey(const Key('subscription-issues-dialog')), findsNothing);
+      expect(controller.selectedServer, isNull);
       expect(find.textContaining('synthetic.invalid'), findsNothing);
       expect(tester.takeException(), isNull);
     },
@@ -245,7 +227,7 @@ void main() {
   testWidgets('connect with no subscription starts import', (tester) async {
     await _open(tester, AppController());
     await _tap(tester, find.byKey(const Key('connect-button')));
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(ImportDialog), findsOneWidget);
     expect(find.byKey(const Key('subscription-name')), findsOneWidget);
     expect(find.text('VPN пока недоступен'), findsNothing);
   });

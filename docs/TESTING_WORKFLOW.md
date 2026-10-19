@@ -1,5 +1,16 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+Кандидат **0.1.6+27**, 2026-10-19: final Full **12/12 PASS за 126,78 с**,
+373 app tests, fingerprint unchanged; [отчёт](evidence/fast-validation-v0.1.6.json).
+Первый прогон остановился на двух lint-замечаниях; отдельная app-проверка
+выявила четыре устаревших ожидания тестов формы/partial refresh. Они исправлены
+до итогового Full без ослабления consent/race/data-preservation критериев.
+Следующая сборка выполняется только в release workflow: отдельный development
+CI подавляется в commit через skip ci, локальные APK/EXE не дублируются.
+Повторная системная VPN-матрица не выполняется: native исходники не менялись.
+Публичные пакеты/подписанные feeds проверяются отдельно после публикации;
+Preview не закрывает E1/стабильную приёмку/подпись издателя Windows.
+
 Кандидат 0.1.5+26, 2026-10-19: **12/12 PASS за 216,79 с**, 366 app tests,
 source fingerprint unchanged. [Full](evidence/fast-validation-v0.1.5.json).
 Windows handoff regression и Android signed APK updater проверены на уровне

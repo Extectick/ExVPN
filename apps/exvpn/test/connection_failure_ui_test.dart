@@ -137,6 +137,8 @@ void main() {
     (tester) async {
       final app = AppController.demo();
       addTearDown(app.dispose);
+      var refreshCalls = 0;
+      var refreshFails = true;
       await tester.binding.setSurfaceSize(const Size(440, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
@@ -148,7 +150,10 @@ void main() {
             controller: app,
             themeMode: ThemeMode.dark,
             onThemeChanged: (_) {},
-            previewRefreshAction: () async => [app.groups.first.id],
+            previewRefreshAction: () async {
+              refreshCalls++;
+              return refreshFails ? [app.groups.first.id] : [];
+            },
           ),
         ),
       );
@@ -159,6 +164,7 @@ void main() {
         ),
       );
       final before = tester.getRect(row);
+      final selected = app.selectedServerId;
       await tester.tap(find.byKey(const Key('refresh-button')));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 6));
@@ -168,8 +174,34 @@ void main() {
         findsNothing,
       );
       expect(find.text('Не удалось обновить подписку'), findsNothing);
+      final issues = find.byKey(
+        ValueKey('subscription-issues-${app.groups.first.id}'),
+      );
+      expect(issues, findsOneWidget);
       expect(tester.getRect(row), before);
       expect(app.groups.first.servers, isNotEmpty);
+      expect(app.selectedServerId, selected);
+      expect(refreshCalls, 1);
+      await tester.tap(issues);
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Нет соединения с сервером подписки. Последний список сохранён.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('accept-partial-subscription')),
+        findsNothing,
+      );
+      refreshFails = false;
+      await tester.tap(find.text('Повторить'));
+      await tester.pumpAndSettle();
+      expect(refreshCalls, 2);
+      expect(issues, findsNothing);
+      expect(find.byKey(const Key('subscription-issues-dialog')), findsNothing);
+      expect(tester.getRect(row), before);
+      expect(app.selectedServerId, selected);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     },

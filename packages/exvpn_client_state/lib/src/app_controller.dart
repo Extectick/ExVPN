@@ -108,8 +108,9 @@ final class AppController {
     );
   }
 
-  /// Failed or partially malformed replacement cannot erase a working list.
-  /// An empty group may accept supported records while retaining all issues.
+  /// Apply supported records automatically when the rest are only unsupported
+  /// or ignored local settings. Malformed/empty replacements retain working
+  /// content and metadata, including when the previous group is empty.
   SubscriptionImportResult updateSubscription({
     required String groupId,
     required String raw,
@@ -127,11 +128,15 @@ final class AppController {
       providerName,
       sourceUrl: sourceUrl ?? group.sourceUrl,
     );
-    final hasErrors = result.issues.any(
-      (issue) => issue.code != ImportIssueCode.ignoredLocalConfiguration,
+    final onlySkippableIssues = result.issues.every(
+      (issue) => switch (issue.code) {
+        ImportIssueCode.unsupportedProtocol ||
+        ImportIssueCode.unsupportedFeature ||
+        ImportIssueCode.ignoredLocalConfiguration => true,
+        _ => false,
+      },
     );
-    final apply =
-        result.profiles.isNotEmpty && (group.servers.isEmpty || !hasErrors);
+    final apply = result.profiles.isNotEmpty && onlySkippableIssues;
     final servers = result.profiles
         .map((profile) => ServerEntry(profile: profile))
         .toList();

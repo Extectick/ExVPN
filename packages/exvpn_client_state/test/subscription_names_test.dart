@@ -107,7 +107,7 @@ void main() {
       final id = app.addSubscription(raw: _node, providerName: 'First').groupId;
       app.updateSubscription(
         groupId: id,
-        raw: '$_node\nunknown://invalid',
+        raw: '$_node\nvless://invalid-uuid@sample.invalid:443?security=tls',
         providerName: 'Candidate',
       );
       expect(app.groups.single.name, 'First');

@@ -6,6 +6,7 @@ import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 const _url = 'https://example.invalid/subscription';
 const _profile =
@@ -27,6 +28,9 @@ Future<void> _open(
 ) async {
   await tester.pumpWidget(
     MaterialApp(
+      locale: const Locale('ru'),
+      supportedLocales: const [Locale('ru')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: Scaffold(
         body: Builder(
           builder: (context) => TextButton(
@@ -102,6 +106,40 @@ void main() {
     expect(_value(tester, _input), isEmpty);
     expect(_value(tester, _name), isEmpty);
   });
+
+  testWidgets(
+    'leaving link mode cancels lookup and ignores an in-flight name response',
+    (tester) async {
+      final app = AppController();
+      addTearDown(app.dispose);
+      final response = Completer<SubscriptionDocument>();
+      var lookups = 0;
+      await _open(tester, app, (_) {
+        lookups++;
+        return response.future;
+      });
+      await tester.enterText(_input, _url);
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.text('QR'));
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+      expect(lookups, 0);
+      expect(_value(tester, _name), isEmpty);
+
+      await tester.tap(find.text('Ссылка'));
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(lookups, 1);
+      await tester.tap(find.text('Текст'));
+      await tester.pump();
+      response.complete(_document);
+      await tester.pumpAndSettle();
+      expect(_value(tester, _name), isEmpty);
+      expect(_value(tester, _input), _url);
+      expect(app.groups, isEmpty);
+      expect(lookups, 1);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets(
     'late provider metadata cannot replace a manual name or a newer source',

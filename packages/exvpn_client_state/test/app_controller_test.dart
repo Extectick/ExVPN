@@ -126,19 +126,24 @@ void main() {
       expect(replacement.issues.toString(), isNot(contains('secret')));
     });
 
-    test('partial replacement preserves all old nodes and exposes issues', () {
+    test('unsupported records are skipped when replacing working nodes', () {
       final imported = controller.addSubscription(
         name: 'One',
         raw: '${_node('a', 'A')}\n${_node('b', 'B')}',
       );
-      final before = controller.groups.single.servers;
       final replacement = controller.updateSubscription(
         groupId: imported.groupId,
         raw: '${_node('c', 'C')}\nunsupported://test.invalid',
       );
-      expect(replacement.applied, isFalse);
-      expect(controller.groups.single.servers, before);
-      expect(controller.groups.single.issues, isNotEmpty);
+      expect(replacement.applied, isTrue);
+      expect(controller.groups.single.servers.map((entry) => entry.name), [
+        'C',
+      ]);
+      expect(
+        controller.groups.single.issues.single.code,
+        ImportIssueCode.unsupportedProtocol,
+      );
+      expect(controller.pendingUpdate(imported.groupId), isNull);
     });
 
     test('successful replacement retains a still-existing selected ID', () {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:exvpn_client_state/exvpn_client_state.dart';
+import 'package:exvpn_domain/exvpn_domain.dart' show ImportIssueCode;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
@@ -118,7 +119,7 @@ class _ImportDialogState extends State<ImportDialog> {
     if (!_link) {
       final document = SubscriptionDocument.fromText(_input.text);
       _useProviderName(document.providerName);
-    } else if (_isSubscriptionLink(_input.text.trim())) {
+    } else if (!_qrMode && _isSubscriptionLink(_input.text.trim())) {
       _nameDebounce = Timer(
         const Duration(milliseconds: 500),
         () => _resolveName(revision),
@@ -132,12 +133,24 @@ class _ImportDialogState extends State<ImportDialog> {
   }
 
   Future<void> _resolveName(int revision) async {
-    if (!mounted || _loading || revision != _sourceRevision) return;
+    if (!mounted ||
+        _loading ||
+        !_link ||
+        _qrMode ||
+        revision != _sourceRevision) {
+      return;
+    }
     final source = _input.text.trim();
     setState(() => _nameLoading = true);
     try {
       final document = await _loadDocument(source);
-      if (!mounted || revision != _sourceRevision || _loading) return;
+      if (!mounted ||
+          revision != _sourceRevision ||
+          _loading ||
+          !_link ||
+          _qrMode) {
+        return;
+      }
       _cachedSource = source;
       _cachedDocument = document;
       _useProviderName(document.providerName);
@@ -335,7 +348,15 @@ class _ImportDialogState extends State<ImportDialog> {
               widget.persistence?.error != null
                   ? 'Подписка применена в этом сеансе, но не сохранена. Повторите сохранение на главном экране.'
                   : applied
-                  ? result.issues.isEmpty
+                  ? result.issues.every(
+                          (issue) =>
+                              issue.code ==
+                                  ImportIssueCode.unsupportedProtocol ||
+                              issue.code ==
+                                  ImportIssueCode.unsupportedFeature ||
+                              issue.code ==
+                                  ImportIssueCode.ignoredLocalConfiguration,
+                        )
                         ? group == null
                               ? 'Подписка добавлена'
                               : 'Подписка обновлена'
@@ -505,6 +526,9 @@ class _ImportDialogState extends State<ImportDialog> {
                               onChanged: _loading
                                   ? null
                                   : (value) => setState(() {
+                                      _nameDebounce?.cancel();
+                                      _sourceRevision++;
+                                      _nameLoading = false;
                                       _qrMode = value == 'qr';
                                       if (!_qrMode) _link = value == 'link';
                                       _error = null;
@@ -569,8 +593,12 @@ class _ImportDialogState extends State<ImportDialog> {
                               const SizedBox(width: 16),
                               IconButton.filledTonal(
                                 key: const Key('qr-camera-button'),
-                                tooltip: context.tr('Сканировать QR'),
-                                onPressed: _loading ? null : _openCamera,
+                                tooltip: context.tr(
+                                  qrCameraAvailable ? 'Сканировать QR' : 'Камера пока недоступна. Выберите QR из изображения.',
+                                ),
+                                onPressed: _loading || !qrCameraAvailable
+                                    ? null
+                                    : _openCamera,
                                 constraints: const BoxConstraints.tightFor(
                                   width: 64,
                                   height: 64,
@@ -586,7 +614,11 @@ class _ImportDialogState extends State<ImportDialog> {
                                 icon: Icon(
                                   CupertinoIcons.camera,
                                   size: 27,
-                                  color: scheme.primary,
+                                  color: qrCameraAvailable
+                                      ? scheme.primary
+                                      : scheme.onSurfaceVariant.withValues(
+                                          alpha: .45,
+                                        ),
                                 ),
                               ),
                             ],

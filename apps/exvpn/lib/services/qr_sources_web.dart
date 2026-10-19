@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 
 import 'qr_import.dart';
 
+const qrCameraAvailable = true;
+
 @JS('navigator')
 external _Navigator get _navigator;
 @JS('document')

@@ -1365,7 +1365,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   );
 
   bool _groupRefreshFailed(SubscriptionGroup group) =>
-      _refreshes.errorCode(group.id) != null ||
+      (_refreshes.failed.contains(group.id) &&
+          (_refreshes.errorCode(group.id) != null ||
+              (widget.controller.pendingUpdate(group.id)?.issues ??
+                      group.issues)
+                  .any(
+                    (issue) =>
+                        issue.code != ImportIssueCode.unsupportedProtocol &&
+                        issue.code != ImportIssueCode.unsupportedFeature &&
+                        issue.code != ImportIssueCode.ignoredLocalConfiguration,
+                  ))) ||
       _manualRefreshFailures[group.id] == group.contentRevision;
 
   Widget _group(SubscriptionGroup group, {VoidCallback? onSelected}) => Column(
