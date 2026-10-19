@@ -60,6 +60,10 @@ foreach ($invalid in @('relative/sdk','C:\sdk\..\other','C:\sdk\tool:stream','C:
 foreach ($invalid in @('C:\Program Files\sdk','C:\sdk\..\other','C:\sdk\\bin','C:\sdk\trailing.','C:\sdk\tool:stream',('C:\'+('a'*2048)))) {
     Reject { Assert-ShorebirdAndroidLiteralToolPath $invalid } 'shorebird_android_tool_literal_invalid'
 }
+Check ((Get-ShorebirdAndroidToolFailureReason 'shorebird_android_tool_path_alias') -ceq 'shorebird_android_tool_path_alias') 'known_path_refusal_is_safe_reason'
+Check ((Get-ShorebirdAndroidToolFailureReason 'private_acl') -ceq 'private_acl') 'known_acl_refusal_is_safe_reason'
+Check ((Get-ShorebirdAndroidToolFailureReason 'PRIVATE_ACL') -ceq 'unclassified') 'reason_allowlist_is_case_exact'
+Check ((Get-ShorebirdAndroidToolFailureReason 'SYNTHETIC-PRIVATE-PATH C:\fixture') -ceq 'unclassified') 'unknown_exception_is_never_public_reason'
 if ([OperatingSystem]::IsWindows()) {
     Initialize-ShorebirdAndroidPathInterop
     $physical=Assert-ShorebirdAndroidToolPath $env:ProgramFiles
@@ -73,6 +77,45 @@ if ([OperatingSystem]::IsWindows()) {
     $second=[ExVpnShorebirdAndroidPath]::Hold($short,$true)
     try { Assert-ShorebirdAndroidToolPair $first $second $true; $script:checks++ }
     finally { $first.Dispose(); $second.Dispose() }
+
+    # Exercise the early-failure spool before any caller private path or ACL
+    # was accepted. Generic encryption is tested in the pipeline suite; this
+    # fixture deliberately has no recipient and invokes no SDK/process/cloud.
+    . (Join-Path $PSScriptRoot 'artifact-audit-lib.ps1')
+    . (Join-Path $PSScriptRoot 'shorebird-pipeline-lib.ps1')
+    $repository=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+    $parent=Join-Path $repository '.private/shorebird-builds'
+    $before=@(Get-ChildItem -LiteralPath $parent -Directory -Filter 'android-tool-failure-*' -ErrorAction SilentlyContinue | ForEach-Object FullName)
+    $savedRecipient=$env:EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64
+    $spools=@()
+    try {
+        $env:EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64=$null
+        $captured=$null
+        try { throw 'SYNTHETIC-EARLY-EXCEPTION' } catch { $captured=$_ }
+        $encrypted=Write-ShorebirdAndroidToolFailureDiagnostic $repository 'not-an-accepted-directory' $false $captured 'paths' 'android_sdk_physical' @{
+            repository=$repository;androidSdkPath='SYNTHETIC-PRIVATE-INPUT';privateDirectory='not-an-accepted-directory'}
+        Check (!$encrypted) 'missing_recipient_never_exports_plaintext'
+        $spools=@(Get-ChildItem -LiteralPath $parent -Directory -Filter 'android-tool-failure-*' | Where-Object FullName -CNotIn $before)
+        Check ($spools.Count -eq 1) 'early_refusal_gets_one_owned_spool'
+        $spool=Assert-ShorebirdAndroidPrivateDirectory $spools[0].FullName $repository
+        $script:checks++
+        $pair=Join-Path $spool 'analyzer-export.json'
+        $detail=[IO.File]::ReadAllText([IO.Path]::ChangeExtension($pair,'.log'))
+        Check ((Get-Item -LiteralPath $pair).Length -eq 0 -and $detail.Contains('ExVPN/android-tool-context/v1')) 'early_failure_has_paired_bounded_context'
+        Check ($detail.Contains('SYNTHETIC-EARLY-EXCEPTION') -and $detail.Contains('SYNTHETIC-PRIVATE-INPUT')) 'exact_early_exception_and_inputs_retained_privately'
+        Check (!(Test-Path -LiteralPath (Join-Path $repository 'not-an-accepted-directory'))) 'rejected_caller_directory_is_not_used'
+        Check ($env:APPDATA -ceq $appDataBefore -and $env:JAVA_HOME -ceq $javaBefore) 'diagnostic_spool_does_not_change_environment'
+    } finally {
+        $env:EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64=$savedRecipient
+        foreach($spool in $spools){
+            $full=[IO.Path]::GetFullPath($spool.FullName)
+            if(!$full.StartsWith($parent+'\',[StringComparison]::OrdinalIgnoreCase) -or
+                [IO.Path]::GetFileName($full) -cnotmatch '^android-tool-failure-[a-f0-9]{32}$'){throw 'fixture_cleanup_scope_invalid'}
+            $null=Assert-ShorebirdAndroidPrivateDirectory $full $repository
+            $null=Get-AuditTreeFiles $full
+            Remove-Item -LiteralPath $full -Recurse -Force
+        }
+    }
 }
 Check ($env:APPDATA -ceq $appDataBefore -and $env:JAVA_HOME -ceq $javaBefore) 'environment_unchanged'
 Write-Host "Shorebird Android environment: $script:checks focused checks passed; SDK/build/cloud/device invocations=0."

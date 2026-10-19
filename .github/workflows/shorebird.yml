@@ -5,7 +5,7 @@ on:
     inputs:
       operation:
         type: choice
-        options: [base, patch, rollback, diagnose, recover_base]
+        options: [base, patch, rollback, diagnose, diagnose_android, recover_base]
         required: true
       version:
         description: Exact base SemVer+build; patches never change it
@@ -38,7 +38,7 @@ concurrency:
 
 jobs:
   deliver:
-    if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/main' && inputs.operation != 'rollback'
+    if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/main' && inputs.operation != 'rollback' && inputs.operation != 'diagnose_android'
     name: Shorebird ${{ inputs.operation }} ${{ matrix.target }}
     runs-on: windows-2025
     environment: demo-release
@@ -245,6 +245,95 @@ jobs:
         with:
           name: shorebird-source-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/shorebird-source/*.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+  diagnose-android:
+    if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/main' && inputs.operation == 'diagnose_android'
+    name: Android exact tool preflight (no application build)
+    runs-on: windows-2025
+    environment: demo-release
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Restore existing exact Windows Shorebird SDK without bootstrap or cache save
+        id: existing-sdk
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools/shorebird-1.6.129
+          key: exvpn-shorebird-sdk-v1-${{ runner.os }}-${{ runner.arch }}-Windows-${{ hashFiles('scripts/bootstrap/shorebird.lock.json') }}
+      - name: Run exact Android preflight and preserve early encrypted diagnosis
+        env:
+          CI: 'true'
+          FLUTTER_SUPPRESS_ANALYTICS: 'true'
+          DART_SUPPRESS_ANALYTICS: 'true'
+          EXVPN_DIAG_CACHE_HIT: ${{ steps.existing-sdk.outputs.cache-hit }}
+          EXVPN_DIAG_VERSION: ${{ inputs.version }}
+          EXVPN_DIAG_PUBLISH: ${{ inputs.publish_cloud }}
+          EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64: ${{ secrets.EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64 }}
+        run: |
+          $ErrorActionPreference='Stop'
+          . ./scripts/release/flutter-runtime-inputs.ps1
+          . ./scripts/release/shorebird-pipeline-lib.ps1
+          . ./scripts/release/shorebird-android-environment.ps1
+          $repository=(Get-Location).Path
+          $saved=@{}
+          foreach($name in @('APPDATA','JAVA_HOME','PATH','PUB_CACHE','GRADLE_USER_HOME','FLUTTER_STORAGE_BASE_URL')) {
+            $saved[$name]=[Environment]::GetEnvironmentVariable($name,'Process')
+          }
+          $private=New-ShorebirdPrivateDirectory $repository 'android-diagnose'
+          $pair=Join-Path $private 'diagnose.json'
+          $safe=[ordered]@{schemaVersion=1;action='diagnose_android';status='failed';phase='source'
+            sourceCommit=$null;sdkCacheHit=($env:EXVPN_DIAG_CACHE_HIT -ceq 'true');sdkCacheTarget='Windows'
+            errorCode=$null;diagnosticEncrypted=$false;applicationBuilds=0;nativeBuilds=0;cloudCalls=0}
+          try {
+            if($env:EXVPN_DIAG_VERSION -cnotmatch '^\d+\.\d+\.\d+\+[1-9]\d*$' -or $env:EXVPN_DIAG_PUBLISH -ceq 'true') { throw 'shorebird_android_diagnose_inputs_invalid' }
+            $safe.sourceCommit=Get-ShorebirdSourceCommit $repository
+            $safe.phase='cache'
+            if(!$safe.sdkCacheHit) { throw 'shorebird_android_diagnose_cache_miss' }
+            $safe.phase='runtime'
+            $null=Get-ShorebirdCli $repository
+            $runtime=Get-ReleaseFlutterRuntime -Repository $repository -Target Windows -FlutterRuntime shorebird -FlutterBuildMode release
+            $safe.phase='java'
+            if(!$env:JAVA_HOME_21_X64) { throw 'shorebird_android_diagnose_java_missing' }
+            $env:JAVA_HOME=$env:JAVA_HOME_21_X64
+            $env:PATH=(Join-Path $runtime.SdkRoot 'bin')+[IO.Path]::PathSeparator+$saved.PATH
+            $env:PUB_CACHE=Join-Path $repository '.tools/cache/pub'
+            $env:GRADLE_USER_HOME=Join-Path $repository '.tools/cache/gradle'
+            $env:FLUTTER_STORAGE_BASE_URL='https://download.shorebird.dev'
+            $safe.phase='android_sdk'
+            $sdk=Resolve-ReleaseAndroidSdkDirectory $env:ANDROID_HOME
+            $safe.phase='tool_preflight'
+            $null=Initialize-ShorebirdAndroidToolEnvironment -Repository $repository -FlutterSdkRoot $runtime.SdkRoot -AndroidSdkPath $sdk -PrivateDirectory $private
+            $safe.status='completed';$safe.phase='complete'
+          } catch {
+            $safe.errorCode=if($_.Exception.Message -cin @('shorebird_android_diagnose_inputs_invalid','shorebird_android_diagnose_cache_miss','shorebird_android_diagnose_java_missing','shorebird_android_environment_preflight_failed')) { $_.Exception.Message } else { 'shorebird_android_diagnose_failed' }
+            $safe|ConvertTo-Json -Depth 4|Set-Content -LiteralPath $pair -Encoding utf8NoBOM
+            ($_|Out-String)|Set-Content -LiteralPath ([IO.Path]::ChangeExtension($pair,'.log')) -Encoding utf8NoBOM
+            $safe.diagnosticEncrypted=$null -ne (Write-ShorebirdEncryptedDiagnostic $repository $pair)
+            throw 'shorebird_android_diagnose_failed'
+          } finally {
+            foreach($name in $saved.Keys) { [Environment]::SetEnvironmentVariable($name,$saved[$name],'Process') }
+            $directory=Join-Path $repository 'artifacts/shorebird-recovery'
+            New-Item -ItemType Directory -Path $directory -Force|Out-Null
+            Assert-AuditNoLinks $directory
+            $safe|ConvertTo-Json -Depth 4|Set-Content -LiteralPath (Join-Path $directory ('android-diagnose-'+[guid]::NewGuid().ToString('N')+'.json')) -Encoding utf8NoBOM
+          }
+          $global:LASTEXITCODE=0
+      - name: Preserve safe receipts and encrypted private tails only
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: shorebird-android-diagnose-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            artifacts/shorebird-recovery/*.json
+            artifacts/shorebird-source/*.json
           if-no-files-found: ignore
           retention-days: 90
 

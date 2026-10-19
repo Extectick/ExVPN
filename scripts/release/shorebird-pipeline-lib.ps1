@@ -118,12 +118,18 @@ function Assert-ShorebirdPatchPaths([string[]]$Paths) {
         if ($path -cmatch '^packages/(?:exvpn_domain|exvpn_client_state|exvpn_updates)/lib/[a-zA-Z0-9_/-]+\.dart$') {
             $production++; continue
         }
-        # These noncompiled rollback/validation helpers may be maintained
-        # without replacing a native base. Build wrappers, pins, dependencies,
-        # native code and assets remain forbidden; upstream diff checks stay on.
+        # Exact reviewed CI/preflight/patch preparation maintenance only.
+        # No directory-wide tooling exemption: native, assets, dependencies,
+        # pins and identity stay fixed; upstream diff checks remain required.
         if ($path -cin @('scripts/release/shorebird-rollback.ps1',
             'scripts/release/shorebird-pipeline-lib.ps1',
-            'scripts/release/test-shorebird-pipeline.ps1')) { continue }
+            'scripts/release/test-shorebird-pipeline.ps1',
+            '.github/workflows/shorebird.yml',
+            'scripts/release/shorebird-patch.ps1',
+            'scripts/release/shorebird-android-environment.ps1',
+            'scripts/release/test-shorebird-android-environment.ps1',
+            'scripts/release/shorebird-patch-inputs.ps1',
+            'scripts/release/test-shorebird-patch-inputs.ps1')) { continue }
         # Tests and prose do not enter the app. Other tooling/config changes fail.
         if ($path -cmatch '^(?:apps/exvpn|packages/(?:exvpn_domain|exvpn_client_state|exvpn_updates))/test/[a-zA-Z0-9_/-]+\.dart$' -or
             $path -cmatch '^docs/[a-zA-Z0-9_./-]+\.md$' -or

@@ -97,7 +97,7 @@ foreach ($path in @('apps/exvpn/lib/ui_revision.dart','apps/exvpn/lib/src/home_s
 foreach ($path in @('native/core/core.go','apps/exvpn/android/app/build.gradle.kts','apps/exvpn/windows/runner/main.cpp',
     'apps/exvpn/assets/picture.png','apps/exvpn/pubspec.yaml','apps/exvpn/pubspec.lock','apps/exvpn/lib/build_identity.dart',
     'packages/exvpn_updates/pubspec.yaml','scripts/bootstrap/shorebird.lock.json','config/signing/shorebird-beta-public.pem',
-    'scripts/release/shorebird-patch.ps1','apps/exvpn/lib/Foo.DART','apps/exvpn/lib/../native.dart','apps/exvpn/lib/foo\\bar.dart')) {
+    'scripts/release/unreviewed-patch-wrapper.ps1','apps/exvpn/lib/Foo.DART','apps/exvpn/lib/../native.dart','apps/exvpn/lib/foo\\bar.dart')) {
     Assert-Refuses { Assert-ShorebirdPatchPaths @('apps/exvpn/lib/ui_revision.dart',$path) } 'non_dart_guard'
 }
 Assert-Refuses { Assert-ShorebirdPatchPaths @() } 'empty_patch'
@@ -107,12 +107,17 @@ Assert-Test $true 'test_prose_with_dart'
 Assert-ShorebirdPatchPaths @('apps/exvpn/lib/ui_revision.dart','docs/evidence/release-v0.1.7.json')
 Assert-Test $true 'noncompiled_json_proof_with_dart'
 Assert-Refuses { Assert-ShorebirdPatchPaths @('apps/exvpn/lib/ui_revision.dart','docs/elsewhere/proof.json') } 'only_scoped_json_evidence'
-foreach ($path in @('scripts/release/shorebird-rollback.ps1','scripts/release/shorebird-pipeline-lib.ps1','scripts/release/test-shorebird-pipeline.ps1')) {
+foreach ($path in @('scripts/release/shorebird-rollback.ps1','scripts/release/shorebird-pipeline-lib.ps1','scripts/release/test-shorebird-pipeline.ps1',
+    '.github/workflows/shorebird.yml','scripts/release/shorebird-patch.ps1',
+    'scripts/release/shorebird-android-environment.ps1','scripts/release/test-shorebird-android-environment.ps1',
+    'scripts/release/shorebird-patch-inputs.ps1','scripts/release/test-shorebird-patch-inputs.ps1')) {
     Assert-ShorebirdPatchPaths @('apps/exvpn/lib/ui_revision.dart',$path)
     Assert-Test $true 'noncompiled_rollback_maintenance_with_dart'
     Assert-Refuses { Assert-ShorebirdPatchPaths @($path) } 'maintenance_alone_is_not_patch'
 }
-foreach ($path in @('scripts/release/shorebird-release.ps1','.github/workflows/shorebird.yml','scripts/release/shorebird-rollback-all.ps1')) {
+foreach ($path in @('scripts/release/shorebird-release.ps1','.github/workflows/shorebird-publish.yml','scripts/release/shorebird-rollback-all.ps1',
+    'scripts/release/shorebird-patch-inputs-extra.ps1','scripts/release/SHOREBIRD-PATCH.ps1',
+    'scripts/release/flutter-runtime-inputs.ps1','scripts/bootstrap/bootstrap.ps1')) {
     Assert-Refuses { Assert-ShorebirdPatchPaths @('apps/exvpn/lib/ui_revision.dart',$path) } 'unreviewed_tooling_still_refused'
 }
 $lookup=@(Get-ShorebirdPatchLookupArguments '0.1.8+29' 2)
@@ -764,7 +769,24 @@ Assert-Test ($workflow -cmatch 'include-hidden-files: true') 'base_artifact_keep
 Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized cloud recovery identity even after failure\s+if: always\(\).*?path: artifacts/shorebird-recovery/\*\.json') 'failure_recovery_upload_always_and_allowlisted'
 Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized SDK preparation diagnosis even after failure\s+if: always\(\).*?path: artifacts/shorebird-prepare/\*\.json') 'prepare_diagnosis_upload_always_and_allowlisted'
 Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized source guard diagnosis even after failure\s+if: always\(\).*?path: artifacts/shorebird-source/\*\.json') 'source_diagnosis_upload_always_and_allowlisted'
-Assert-Test ($workflow -cmatch 'options: \[base, patch, rollback, diagnose, recover_base\]' -and $workflow -cmatch 'fromJSON\(inputs.operation == ''diagnose'' && ''\["Windows"\]''') 'diagnose_has_only_windows_matrix_target'
+Assert-Test ($workflow -cmatch 'options: \[base, patch, rollback, diagnose, diagnose_android, recover_base\]' -and $workflow -cmatch 'fromJSON\(inputs.operation == ''diagnose'' && ''\["Windows"\]''') 'diagnose_has_only_windows_matrix_target'
+Assert-Test ($workflow -cmatch "inputs.operation != 'rollback' && inputs.operation != 'diagnose_android'") 'android_diagnose_excluded_from_delivery_matrix'
+$androidDiagnosis=[regex]::Match($workflow,'(?ms)^  diagnose-android:\r?\n(?<job>.*?)^  rollback:').Groups['job'].Value
+Assert-Test ($androidDiagnosis.Contains("inputs.operation == 'diagnose_android'") -and $androidDiagnosis.Contains('runs-on: windows-2025') -and !$androidDiagnosis.Contains('matrix:')) 'android_diagnose_one_windows_host_no_other_platform_job'
+Assert-Test ($androidDiagnosis.Contains('actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9') -and $androidDiagnosis.Contains('exvpn-shorebird-sdk-v1-${{ runner.os }}-${{ runner.arch }}-Windows-${{ hashFiles(''scripts/bootstrap/shorebird.lock.json'') }}') -and !$androidDiagnosis.Contains('restore-keys:') -and !$androidDiagnosis.Contains('actions/cache@') -and !$androidDiagnosis.Contains('actions/cache/save@')) 'android_diagnose_exact_existing_windows_cache_restore_only'
+foreach($forbidden in @('bootstrap.ps1','prepare-shorebird.ps1','sdkmanager.bat','shorebird-release.ps1','shorebird-patch.ps1','native/android/build.ps1','secrets.SHOREBIRD_TOKEN','secrets.EXVPN_ANDROID','secrets.EXVPN_SHOREBIRD_PRIVATE')) {
+    Assert-Test (!$androidDiagnosis.Contains($forbidden)) 'android_diagnose_no_bootstrap_build_cloud_or_signing_secret'
+}
+Assert-Test ($androidDiagnosis.IndexOf('if(!$safe.sdkCacheHit)') -lt $androidDiagnosis.IndexOf('$null=Get-ShorebirdCli') -and $androidDiagnosis.IndexOf('if(!$safe.sdkCacheHit)') -lt $androidDiagnosis.IndexOf('$runtime=Get-ReleaseFlutterRuntime')) 'android_diagnose_cache_miss_before_any_sdk_execution'
+Assert-Test ($androidDiagnosis.Contains('$sdk=Resolve-ReleaseAndroidSdkDirectory $env:ANDROID_HOME') -and $androidDiagnosis.Contains('-AndroidSdkPath $sdk -PrivateDirectory $private')) 'android_diagnose_uses_production_physical_sdk_resolver'
+Assert-Test ($androidDiagnosis.Contains('Get-ReleaseFlutterRuntime -Repository $repository -Target Windows -FlutterRuntime shorebird -FlutterBuildMode release') -and $androidDiagnosis.Contains('$env:JAVA_HOME=$env:JAVA_HOME_21_X64')) 'android_diagnose_validates_restored_pins_and_matches_production_jdk'
+Assert-Test ($androidDiagnosis.Contains('Write-ShorebirdEncryptedDiagnostic $repository $pair') -and $androidDiagnosis.Contains('artifacts/shorebird-recovery/*.json') -and $androidDiagnosis.Contains('if: always()') -and !$androidDiagnosis.Contains('path: .private') -and !$androidDiagnosis.Contains('*.log')) 'android_diagnose_early_private_pair_encrypted_and_no_raw_export'
+Assert-Test ($androidDiagnosis.Contains('[Environment]::SetEnvironmentVariable($name,$saved[$name],''Process'')') -and $androidDiagnosis.Contains('throw ''shorebird_android_diagnose_failed''')) 'android_diagnose_restores_process_context_and_throws_fixed_error'
+$diagnosticRun=[regex]::Match($androidDiagnosis,'(?s)        run: \|\r?\n(?<run>.*?)      - name: Preserve safe receipts').Groups['run'].Value
+$diagnosticRun=($diagnosticRun -split '\r?\n'|ForEach-Object {if($_.StartsWith('          ')){$_.Substring(10)}else{$_}})-join "`n"
+$diagnosticTokens=$null;$diagnosticErrors=$null
+$null=[Management.Automation.Language.Parser]::ParseInput($diagnosticRun,[ref]$diagnosticTokens,[ref]$diagnosticErrors)
+Assert-Test (!$diagnosticErrors.Count) 'android_diagnose_actual_inline_powershell_parses'
 foreach ($step in @('Prepare exact Shorebird CLI and Flutter','Build once and optionally publish signed beta','Upload audited artifacts and sanitized receipts only')) {
     Assert-Test ($workflow -cmatch ('name: '+[regex]::Escape($step)+'\r?\n\s+if: inputs.operation != ''diagnose''')) 'diagnose_skips_sdk_secret_step_and_promotion'
 }

@@ -91,7 +91,7 @@ build cache удалены только stale web-generated `AssetManifest.bin.j
 все filemap/binary hashes. Это `local_accepted_import`, **не CI compilation**;
 Windows compiled E8 / packaging C7 и Android compiled C7 сохранены. Срок CI
 хранения — 90 дней, до 2027-01-17T17:20:23Z; protected local backup остаётся.
-[Import proof](evidence/shorebird29-base-ci-import.json). Временные draft/tag
+[Import proof](evidence/shorebird29-ci-base-import.json). Временные draft/tag
 удалены только после независимой сверки; immutable `v0.1.8` не менялся.
 Будущие patch/publish используют этот `base_run_id` вместе с отдельными actual
 runtime receipts. Для чтения draft понадобился ephemeral builtin token
