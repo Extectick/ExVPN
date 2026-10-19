@@ -156,11 +156,14 @@ $delivery=Join-Path $output 'delivery'
 New-Item -ItemType Directory -Path $delivery | Out-Null
 $files=@(Get-ChildItem -LiteralPath $output -File -Recurse)
 foreach ($file in $files) { Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $delivery $file.Name) }
-$notes=Invoke-ShorebirdGit $repository @('show',"${BaseSourceCommit}:docs/releases/$($parts[0]).md")
+# Independent bases are accepted before their runtime proof/release notes exist.
+# Bind that later documentation explicitly; package source and tag stay on base.
+$notesSourceCommit=if ($Independent) {$head} else {$BaseSourceCommit}
+$notes=Invoke-ShorebirdGit $repository @('show',"${notesSourceCommit}:docs/releases/$($parts[0]).md")
 [IO.File]::WriteAllText((Join-Path $delivery 'RELEASE.md'),$notes + "`n",[Text.UTF8Encoding]::new($false))
 $assets=@(Get-ChildItem -LiteralPath $delivery -File | ForEach-Object { Get-DemoAssetRecord $_.FullName })
 $manifest=[ordered]@{schema=1;version=$parts[0];build=[int]$parts[1];channel='beta';tag=$tag;sourceCommit=$BaseSourceCommit;prerelease=$true;stableReady=$false;runtime='shorebird';dartOtaAvailable=$true;runtimeQaSha256=$qaHash;assets=$assets}
-if ($Independent) { $manifest['otaProvider']='exvpn' }
+if ($Independent) { $manifest['otaProvider']='exvpn';$manifest['notesSourceCommit']=$notesSourceCommit }
 $manifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $delivery 'release-manifest.json') -Encoding utf8NoBOM
 $assets+=Get-DemoAssetRecord (Join-Path $delivery 'release-manifest.json')
 $assets | Sort-Object file | ForEach-Object { "$($_.sha256)  $($_.file)" } | Set-Content -LiteralPath (Join-Path $delivery 'SHA256SUMS.txt') -Encoding ascii

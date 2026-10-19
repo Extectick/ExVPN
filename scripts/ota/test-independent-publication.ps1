@@ -82,7 +82,20 @@ foreach ($match in [regex]::Matches($workflow,'(?m)^        run: \|\r?\n((?:    
 }
 foreach ($path in @('scripts/release/publish-shorebird-preview.ps1','scripts/release/shorebird-publication-lib.ps1','scripts/ota/publish-base.ps1')) {
     $tokens=$null;$errors=$null
-    $null=[Management.Automation.Language.Parser]::ParseFile((Join-Path $repository $path),[ref]$tokens,[ref]$errors)
+    $parsed=[Management.Automation.Language.Parser]::ParseFile((Join-Path $repository $path),[ref]$tokens,[ref]$errors)
+    if ($path -ceq 'scripts/release/publish-shorebird-preview.ps1') { $publisherAst=$parsed }
     Check (@($errors).Count -eq 0) 'publisher_syntax'
 }
+$notesSelection=@($publisherAst.FindAll({param($node) $node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left.Extent.Text -ceq '$notesSourceCommit'},$true))
+$notesMetadata=@($publisherAst.FindAll({param($node) $node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left.Extent.Text -ceq '$manifest[''notesSourceCommit'']'},$true))
+Check ($notesSelection.Count -eq 1 -and $notesMetadata.Count -eq 1) 'notes_provenance_is_explicit'
+$head='f'*40;$BaseSourceCommit=$baseCommit;$Independent=$true
+. ([scriptblock]::Create($notesSelection[0].Extent.Text))
+Check ($notesSourceCommit -ceq $head) 'independent_notes_may_follow_accepted_base'
+$Independent=$false
+. ([scriptblock]::Create($notesSelection[0].Extent.Text))
+Check ($notesSourceCommit -ceq $baseCommit) 'legacy_notes_stay_bound_to_base'
+$manifest=[ordered]@{sourceCommit=$baseCommit};$notesSourceCommit=$head
+. ([scriptblock]::Create($notesMetadata[0].Extent.Text))
+Check ($manifest.sourceCommit -ceq $baseCommit -and $manifest.notesSourceCommit -ceq $head) 'manifest_separates_compiled_source_from_notes_source'
 [ordered]@{schemaVersion=1;checks=$script:checks;passed=$true;scope='independent publication and CI contract fixtures; no network, builds, secrets or release writes'} | ConvertTo-Json -Compress

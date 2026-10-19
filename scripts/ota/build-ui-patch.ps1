@@ -177,10 +177,13 @@ try {
         $archOutput = Join-Path $output $item.key
         New-Item -ItemType Directory -Path $archOutput | Out-Null
         $buildOutputs = Join-Path $logs ($item.key + '-outputs.txt')
-        $encodedDefines = (@($expectedDefines | ForEach-Object { [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($_)) }) -join ',')
         Assert-ExvpnOtaSourceDriver $sdk $driver
         $arguments = @(('--packages='+$driver.packageConfig),$driver.entrypoint,'--no-version-check','--suppress-analytics','assemble',('--output=' + $archOutput),('--build-outputs=' + $buildOutputs),
-            ('-dTargetPlatform=' + $item.platform),'-dBuildMode=release','-dTargetFile=lib/main.dart','-dTrackWidgetCreation=false','-dDartObfuscation=false',('-dDartDefines=' + $encodedDefines),'kernel_snapshot_program')
+            ('-dTargetPlatform=' + $item.platform),'-dBuildMode=release','-dTargetFile=lib/main.dart','-dTrackWidgetCreation=false','-dDartObfuscation=false')
+        # Pinned assemble accepts each app define as base64, separately from
+        # its deprecated comma-splitting -d target configuration options.
+        $arguments += @($expectedDefines | ForEach-Object { '--dart-define=' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($_)) })
+        $arguments += 'kernel_snapshot_program'
         Invoke-OtaPinnedProcess $dart $arguments $app (Join-Path $logs ($item.key + '-kernel.log')) @{FLUTTER_ROOT=$sdk}
         $kernels = @(Get-Content -LiteralPath $buildOutputs | Where-Object { $_.Replace('\','/') -match '/app\.dill$' })
         if ($kernels.Count -ne 1) { throw 'ota_kernel_output_ambiguous' }
