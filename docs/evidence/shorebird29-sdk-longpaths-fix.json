@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "dateUtc": "2026-10-19T14:54:52.0211164Z",
+  "hostedProbeRun": 39272145620,
+  "defaultTrackedChanges": 34,
+  "commandScopedLongPathsTrackedChanges": 0,
+  "commandScopedLongPathsDiffEmpty": true,
+  "gitConfigPersisted": false,
+  "cacheResetOrDeleted": false,
+  "localPinnedSdkGuardPassed": true,
+  "noticeChecks": 177,
+  "updaterCrateNoticeChecks": 43,
+  "changedSourceStillRejectedByExistingFixture": true,
+  "applicationBuilds": 0,
+  "nativeBuilds": 0,
+  "fullRepeated": false,
+  "sourceState": "working_tree_commit_pending"
+}

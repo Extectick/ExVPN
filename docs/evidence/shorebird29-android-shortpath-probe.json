@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "status": "completed",
+  "phase": "complete",
+  "errorCode": null,
+  "shortPathAvailable": true,
+  "shortPathContainsSpace": false,
+  "sdkDirectoryIdentityMatched": true,
+  "analyzerFileIdentityMatched": true,
+  "physicalSdkContainsSpace": true,
+  "dartVersionMatched": true,
+  "dartSha256": "40730e2e18ddab75d145ccae891805769512fc90bb34b64744dbecf3574186bd",
+  "results": [
+    {
+      "variant": "physical_full",
+      "exitCode": 1,
+      "expectedMetadataListed": false,
+      "errorMarker": "class_not_found_files"
+    },
+    {
+      "variant": "short_8_3",
+      "exitCode": 0,
+      "expectedMetadataListed": true,
+      "errorMarker": "none"
+    }
+  ],
+  "applicationBuilds": 0,
+  "nativeBuilds": 0,
+  "cacheSaved": false,
+  "rawLogsExported": false
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "cacheHit": true,
+  "cacheKey": "exvpn-shorebird-sdk-v1-Windows-X64-Windows-0d9d3d777be33b86590833086d65216457b442a45f96ab8c087c3bc77b88b896",
+  "repositories": [
+    {
+      "repository": "cli",
+      "expectedHead": "9fe1370bdd1d2f117cc08c57ae416b794ed92440",
+      "head": "9fe1370bdd1d2f117cc08c57ae416b794ed92440",
+      "pinMatched": true,
+      "status": "inspected",
+      "trackedChangedCount": 0,
+      "omittedCount": 0,
+      "diffEmpty": true,
+      "maxChangedFullPathLength": 0,
+      "longPathsStatusExitCode": 0,
+      "longPathsTrackedChangedCount": 0,
+      "longPathsDiffEmpty": true,
+      "paths": []
+    },
+    {
+      "repository": "flutter",
+      "expectedHead": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+      "head": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+      "pinMatched": true,
+      "status": "inspected",
+      "trackedChangedCount": 34,
+      "omittedCount": 31,
+      "diffEmpty": false,
+      "maxChangedFullPathLength": 297,
+      "longPathsStatusExitCode": 0,
+      "longPathsTrackedChangedCount": 0,
+      "longPathsDiffEmpty": true,
+      "paths": [
+        {
+          "path": "dev/integration_tests/android_engine_test/android/app/src/main/kotlin/com/example/native_driver_test/fixtures/BlueOrangeGradientSurfaceViewPlatformViewFactory.kt",
+          "status": " M",
+          "rawSha256": "4a737094f24dabaa622263393f5a2bdd3aab461aad3073b83d7e3ece850c7d8c",
+          "bytes": 2713,
+          "headBlobSha1": "9736b39fe40e58639ab9ffdeb2cf526cbb0cedb5",
+          "regularFile": true
+        },
+        {
+          "path": "dev/integration_tests/ios_app_with_extensions/ios/watch Extension/Assets.xcassets/Complication.complicationset/Graphic Large Rectangular.imageset/Contents.json",
+          "status": " M",
+          "rawSha256": "ae722dc47ee1d39cfeb8be3eb656d6574dbcbd80fac9ebce4b3afc366931d7e2",
+          "bytes": 469,
+          "headBlobSha1": "aefef2914e28a0d2c65db706a027e2f0f45f8eba",
+          "regularFile": true
+        },
+        {
+          "path": "engine/src/flutter/testing/ios_scenario_app/ios/FlutterAppExtensionTestHost/FlutterAppExtensionTestHost.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+          "status": " M",
+          "rawSha256": "d557c2c32fc6258ec28981fa45dc847b76c9968beb90a2e26d13ef9c4ea45c30",
+          "bytes": 246,
+          "headBlobSha1": "18d981003d68d0546c4804ac2ff47dd97c6e7921",
+          "regularFile": true
+        }
+      ]
+    }
+  ],
+  "gitTooLongMarkers": 0,
+  "longPathsProcessOverrideCompared": true,
+  "applicationBuilds": 0,
+  "nativeBuilds": 0,
+  "sdkCommands": 0,
+  "cacheSaved": false,
+  "sourceReset": false,
+  "rawLogsExported": false
+}

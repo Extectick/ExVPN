@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "status": "focused_pass",
+  "sourceState": "working_tree_commit_pending",
+  "focusedChecks": 29,
+  "focusedCommand": "test-shorebird-pipeline.ps1 -AndroidBuildDiagnosticsOnly",
+  "actionsStyleExitCode": 0,
+  "wrappers": [
+    "shorebird-release.ps1",
+    "shorebird-patch.ps1"
+  ],
+  "ciAndroidOnly": true,
+  "initializationBeforePubAndCloud": true,
+  "appDataSavedAndRestored": true,
+  "sharedHelperOwnedByOtherAgent": true,
+  "syntaxFiles": 3,
+  "diffCheckPassed": true,
+  "sdkCommands": 0,
+  "productBuilds": 0,
+  "cloudMutations": 0,
+  "fullRerun": false,
+  "hostedShortPathProofRun": 39273468103
+}

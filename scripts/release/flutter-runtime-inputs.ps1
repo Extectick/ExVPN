@@ -12,7 +12,10 @@ function Get-ReleaseRuntimeField($Value, [string]$Name) {
 
 function Invoke-ReleaseRuntimeGit([string]$Root, [string[]]$Arguments) {
     $git = (Get-Command git -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
-    (Invoke-AuditTool $git (@('-c', 'core.fsmonitor=false', '-C', $Root) + $Arguments) 30).Trim()
+    # Cached Git index timestamps change on hosted Windows restores. Read long
+    # upstream fixture paths as well, so unchanged files do not appear dirty.
+    # This is command-scoped; the pinned tree and checkout guard stay intact.
+    (Invoke-AuditTool $git (@('-c', 'core.fsmonitor=false', '-c', 'core.longpaths=true', '-C', $Root) + $Arguments) 30).Trim()
 }
 
 function Assert-ReleaseRuntimeCheckout([string]$Root, [string]$Revision) {

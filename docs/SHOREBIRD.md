@@ -2,6 +2,39 @@
 
 ## Реальный цикл 0.1.8+29, 2026-10-19 — в работе
 
+Уточнение CI39269602856 (`e3a9939`): Android AAB содержит engine debug metadata
+для обеих ABI. Реальный отказ — `apkanalyzer.bat` из SDK с пробелами в пути:
+некавыченный `toolsdir` JVM option приводит к `ClassNotFoundException: Files`.
+Strip-validation не отключается; исправляется путь запуска инструмента.
+Readback после завершения снова подтвердил отсутствие Android registration.
+[Причина](evidence/shorebird29-android-analyzer-path.json),
+[readback](evidence/shorebird29-fourth-attempt-readback.json).
+
+Windows prepare того же run остановился после восстановления кэша SDK.
+Read-only probe39272145620 доказал: Git по умолчанию помечает34 длинных путей
+как изменённые; только `-c core.longpaths=true` возвращает0 изменений и пустой
+diff при том же pinned HEAD. Кэш и исходники не исправлялись/не удалялись.
+SDK Git helper получает этот параметр на время команды, сохраняя проверку
+настоящих изменений. [Наблюдение](evidence/shorebird29-sdk-longpaths-probe.json).
+С исправленным helper прошли177 notice-input и43 updater-notice checks,
+включая прежний отказ при реальном изменении SDK; Full не повторялся.
+[Проверка](evidence/shorebird29-sdk-longpaths-fix.json).
+
+Hosted probe39273468103 запустил именно pinned Dart Process: полный путь
+SDK с пробелами воспроизвёл отказ `Files`, а DOS8.3 имя того же физического
+каталога и того же analyzer (volume/file IDs совпали) дало exit0 и metadata.
+Ни SDK batch/source, ни подписи, ни strip-проверки не менялись; сборок0.
+CI Android получает изолированный Flutter config с этим проверенным именем
+и выбранным JDK; preflight выполняется до долгой сборки. То же окружение
+нужно release и patch. [Воспроизведение](evidence/shorebird29-android-shortpath-probe.json).
+Общий helper прошёл29 focused guard checks и один реальный локальный preflight
+(8,8с): fresh private Flutter config, pinned Dart → actual analyzer → synthetic
+metadata, exit0. SDK/source/signing identities не менялись, окружение
+восстановлено; app/native builds=0. Wiring обоих wrappers проверен29 focused
+checks, включая восстановление APPDATA. В CI новые чистые fixtures выполняются
+только в Android job. [Реальный preflight](evidence/shorebird29-android-environment-local-preflight.json),
+[wiring](evidence/shorebird29-android-environment-wiring.json).
+
 Актуальный отказ Android в CI39263632874 (`a5f38ef`): Gradle собрал AAB,
 но Flutter остановился на итоговой проверке debug symbols нативных библиотек.
 Отдельная зашифрованная диагностика успешно сохранена CI и прочитана локально;

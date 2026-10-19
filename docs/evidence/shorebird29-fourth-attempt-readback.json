@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "runId": 39269602856,
+  "sourceCommit": "e3a993934e90ba4b3465e965c86af01464b295ff",
+  "finalAfterCompletedRunReadback": true,
+  "releaseId": 908884,
+  "version": "0.1.8+29",
+  "platforms": [
+    {
+      "windows": "active"
+    }
+  ],
+  "cloudMutationPerformed": false
+}

@@ -18,6 +18,7 @@ $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'notice-inputs.ps1')
 . (Join-Path $PSScriptRoot 'shorebird-pipeline-lib.ps1')
 . (Join-Path $PSScriptRoot 'demo-android-lib.ps1')
+. (Join-Path $PSScriptRoot 'shorebird-android-environment.ps1')
 $policy = Get-ShorebirdPolicy
 $basePath = [IO.Path]::GetFullPath($BaseReceipt)
 Assert-AuditNoLinks $basePath
@@ -38,7 +39,7 @@ $cli = Get-ShorebirdCli $repository
 $privateRun = New-ShorebirdPrivateDirectory $repository 'patch'
 $output = Join-Path $repository ('artifacts/shorebird/patch-' + $ReleaseVersion + '-' + $Target.ToLowerInvariant() + '-' + [Guid]::NewGuid().ToString('N'))
 $environment = @{}
-foreach ($name in @('PATH','PUB_CACHE','GRADLE_USER_HOME','CI','FLUTTER_STORAGE_BASE_URL','ANDROID_HOME','ANDROID_SDK_ROOT',
+foreach ($name in @('PATH','APPDATA','PUB_CACHE','GRADLE_USER_HOME','CI','FLUTTER_STORAGE_BASE_URL','ANDROID_HOME','ANDROID_SDK_ROOT',
     'FLUTTER_SUPPRESS_ANALYTICS','DART_SUPPRESS_ANALYTICS','EXVPN_FLUTTER_RUNTIME','EXVPN_FLUTTER_BUILD_MODE','EXVPN_ANDROID_PACKAGE_INPUTS',
     'EXVPN_ANDROID_KEYSTORE','EXVPN_ANDROID_KEY_ALIAS','EXVPN_ANDROID_STORE_PASSWORD','EXVPN_ANDROID_KEY_PASSWORD','EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64')) {
     $environment[$name] = [Environment]::GetEnvironmentVariable($name,'Process')
@@ -53,6 +54,13 @@ try {
     $env:FLUTTER_STORAGE_BASE_URL = 'https://download.shorebird.dev'
     $env:PATH = (Join-Path $runtime.SdkRoot 'bin') + [IO.Path]::PathSeparator + $environment.PATH
     $env:EXVPN_FLUTTER_RUNTIME = 'shorebird'; $env:EXVPN_FLUTTER_BUILD_MODE = 'release'
+    if ($Target -ceq 'Android') {
+        $sdk = Get-ReleaseAndroidSdkPath $AndroidSdkPath
+        $env:ANDROID_HOME = $sdk; $env:ANDROID_SDK_ROOT = $sdk
+    }
+    if ($Target -ceq 'Android' -and $env:GITHUB_ACTIONS -ceq 'true') {
+        $null = Initialize-ShorebirdAndroidToolEnvironment -Repository $repository -FlutterSdkRoot $runtime.SdkRoot -AndroidSdkPath $sdk -PrivateDirectory $privateRun
+    }
     # A fresh Windows runner has no package_config yet. Resolve the exact lock
     # before upstream --no-pub builds (its cleanup pub get is too late).
     $phase = 'pub'
@@ -61,8 +69,6 @@ try {
     if ((Get-ShorebirdSourceCommit $repository) -cne $source.sourceCommit) { throw 'shorebird_patch_pub_changed_source' }
     $phase = 'base_lookup'
     if ($Target -ceq 'Android') {
-        $sdk = Get-ReleaseAndroidSdkPath $AndroidSdkPath
-        $env:ANDROID_HOME = $sdk; $env:ANDROID_SDK_ROOT = $sdk
         if (!$env:EXVPN_ANDROID_KEYSTORE -and !$env:EXVPN_ANDROID_STORE_PASSWORD -and !$env:EXVPN_ANDROID_KEY_PASSWORD -and !$env:EXVPN_ANDROID_KEY_ALIAS) {
             $signingRoot = Join-Path $repository '.private/signing/android'
             Assert-AuditNoLinks $signingRoot

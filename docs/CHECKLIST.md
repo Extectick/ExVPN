@@ -52,6 +52,12 @@ bytes не меняются. Патч и откат ещё не проверен
   остановлен Flutter strip-validation; Android cloud platform отсутствует.
   [Фактический отказ](evidence/shorebird29-android-strip-validation.json).
   Подписанный патч не публиковался; критерий остаётся открытым.
+  CI39269602856 (`e3a9939`) дал точные причины: Windows Git long paths,
+  Android analyzer JVM toolsdir с пробелами. Два hosted probe без сборок
+  подтвердили command-scoped Git исправление и запуск того же analyzer
+  через проверенное8.3 имя. Подготовка исправлений не закрывает runtime gate.
+  [Windows](evidence/shorebird29-sdk-longpaths-probe.json),
+  [Android](evidence/shorebird29-android-shortpath-probe.json).
 - [ ] **EXVPN-E6-013** — Применить подписанный Dart-патч на обеих платформах.
   Критерий: реальные platform-specific patch IDs/numbers, current/next SDK,
   `uiRevision` 0→1 после полного запуска; APK/EXE и данные неизменны.

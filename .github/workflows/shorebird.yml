@@ -112,6 +112,9 @@ jobs:
           ./scripts/release/prepare-archive-inspector.ps1
       - name: Test pipeline guards without SDK or cloud mutations
         run: ./scripts/release/test-shorebird-pipeline.ps1
+      - name: Test isolated Android tool environment guards without builds
+        if: matrix.target == 'Android'
+        run: ./scripts/release/test-shorebird-android-environment.ps1
       - name: Analyze and test the reviewed Dart source
         if: inputs.operation != 'recover_base'
         run: |

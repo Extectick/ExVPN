@@ -77,6 +77,14 @@ Assert-Test (!([IO.File]::ReadAllText($diagnosticOutput).Contains($diagnosticFix
 Assert-Test ($exported.preBuildPathLength -eq 9876 -and $exported.tools.processPathLength -eq $env:PATH.Length) 'diagnostic_records_only_before_and_after_path_lengths'
 $diagRelease=Get-Content -LiteralPath (Join-Path $diagnosticRoot 'scripts/release/shorebird-release.ps1') -Raw
 Assert-Test ($diagRelease.Contains('Get-ShorebirdBaseForwardingArguments $Target ($env:GITHUB_ACTIONS -ceq ''true'')') -and $diagRelease.Contains('try{$null=Write-ShorebirdAndroidFailureDiagnostic')) 'actual_wrapper_uses_ci_forwarding_and_best_effort_failure_diagnostic'
+foreach($wrapper in @('shorebird-release.ps1','shorebird-patch.ps1')){
+    $wrapperPath=Join-Path $diagnosticRoot ('scripts/release/'+$wrapper)
+    $wrapperText=Get-Content -LiteralPath $wrapperPath -Raw
+    $wrapperTokens=$null;$wrapperErrors=$null
+    $wrapperAst=[Management.Automation.Language.Parser]::ParseFile($wrapperPath,[ref]$wrapperTokens,[ref]$wrapperErrors)
+    $ciGate=@($wrapperAst.FindAll({param($node)$node -is [Management.Automation.Language.IfStatementAst] -and $node.Clauses[0].Item1.Extent.Text -ceq '$Target -ceq ''Android'' -and $env:GITHUB_ACTIONS -ceq ''true''' -and $node.Clauses[0].Item2.Extent.Text.Contains('Initialize-ShorebirdAndroidToolEnvironment')},$true))
+    Assert-Test (!$wrapperErrors.Count -and $ciGate.Count -eq 1 -and $wrapperText.Contains("'shorebird-android-environment.ps1'") -and $wrapperText.Contains("'APPDATA'") -and $wrapperText.IndexOf('Initialize-ShorebirdAndroidToolEnvironment') -lt $wrapperText.IndexOf('pub get --offline')) 'both_wrappers_initialize_same_ci_android_environment_before_pub_and_restore_appdata'
+}
 if($AndroidBuildDiagnosticsOnly){
     Write-Host "Shorebird Android build diagnostics: $script:checks focused checks PASS; no SDK, keys, cloud or builds."
     $global:LASTEXITCODE=0

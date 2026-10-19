@@ -24,6 +24,7 @@ $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'shorebird-preview-lib.ps1')
 . (Join-Path $PSScriptRoot 'demo-android-lib.ps1')
 . (Join-Path $PSScriptRoot 'shorebird-runtime-notices.ps1')
+. (Join-Path $PSScriptRoot 'shorebird-android-environment.ps1')
 $sourceCommit = Get-ShorebirdSourceCommit $repository
 $compiledSourceCommit=$sourceCommit;$recoveryProof=$null;$recoveryEquivalence=$null
 if($RecoverWindowsBase){
@@ -109,7 +110,7 @@ $stage = Join-Path $privateRun 'public'
 New-Item -ItemType Directory -Path $stage | Out-Null
 $lockHash = (Get-FileHash (Join-Path $app 'pubspec.lock') -Algorithm SHA256).Hash
 $configHash = (Get-FileHash (Join-Path $app 'shorebird.yaml') -Algorithm SHA256).Hash
-$environmentNames = @('PATH','PUB_CACHE','GRADLE_USER_HOME','CI','FLUTTER_SUPPRESS_ANALYTICS',
+$environmentNames = @('PATH','APPDATA','PUB_CACHE','GRADLE_USER_HOME','CI','FLUTTER_SUPPRESS_ANALYTICS',
     'DART_SUPPRESS_ANALYTICS','FLUTTER_STORAGE_BASE_URL','ANDROID_HOME','ANDROID_SDK_ROOT',
     'GOTOOLCHAIN','GOPATH','GOCACHE','GOPROXY','GOSUMDB','GONOSUMDB','GOWORK',
     'JAVA_HOME','EXVPN_ANDROID_PACKAGE_INPUTS','EXVPN_FLUTTER_RUNTIME','EXVPN_FLUTTER_BUILD_MODE',
@@ -161,6 +162,9 @@ try {
         $env:ANDROID_SDK_ROOT = $AndroidSdkPath
     }
     $env:PATH = (Join-Path $runtime.SdkRoot 'bin') + [IO.Path]::PathSeparator + $savedEnvironment.PATH
+    if ($Target -ceq 'Android' -and $env:GITHUB_ACTIONS -ceq 'true') {
+        $null = Initialize-ShorebirdAndroidToolEnvironment -Repository $repository -FlutterSdkRoot $runtime.SdkRoot -AndroidSdkPath $AndroidSdkPath -PrivateDirectory $privateRun
+    }
     & $flutter pub get --offline --enforce-lockfile *> (Join-Path $privateRun 'pub-private.log')
     if ($LASTEXITCODE -ne 0) { throw 'Pinned Flutter dependency resolution failed; inspect private build log.' }
     if ($Target -eq 'Android') {
