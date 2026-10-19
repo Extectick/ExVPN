@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-20",
+  "candidateCommit": "f98b75d38a656fc6a708cac9ba692ad7502c47c2",
+  "qaBuildCommit": "12c2caa653df7cc04170b55c1f33c16a8abd313b",
+  "qaHelperSha256": "750792ff11b9279b9bf48e9b504915d7b603605464f35243e60adeb1a0cc2e39",
+  "nativeTreesMatchCandidate": true,
+  "scope": "Controller harness with production TUN/WFP, not installed SCM/UI",
+  "computerUse": false,
+  "hostNetworkChanged": false,
+  "checks": {
+    "primaryToBackup": true,
+    "primaryAndBackupIpv4Https200": true,
+    "primaryAndBackupIpv6Https200": true,
+    "primaryAndBackupFreshAandAAAA": true,
+    "healthyExcludedDirectIpv4": true,
+    "allOutageProtectedIpv4Ipv6Blocked": true,
+    "allOutageFreshDnsUnresolved": true,
+    "cooldownTunRetained": true,
+    "cooldownExcludedDirectIpv4": true,
+    "cleanupPassed": true
+  },
+  "guard": {
+    "samples": 538,
+    "unarmed": 0,
+    "readErrors": 0,
+    "allOutageSamples": 405,
+    "adapterAbsentDuringReplacement": 6
+  },
+  "focusedCooldown": {
+    "utcStart": "2026-10-19T20:49:13.0243122Z",
+    "utcEnd": "2026-10-19T20:49:13.6693896Z",
+    "httpStatus": 200,
+    "durationMs": 534,
+    "directIpHashMatchesBaseline": true,
+    "beforeSequence": 204,
+    "afterSequence": 207,
+    "stateBefore": "blocked",
+    "stateAfter": "blocked",
+    "profileBefore": "qa-primary",
+    "profileAfter": "qa-primary",
+    "adapterIndexBefore": 209,
+    "adapterIndexAfter": 209,
+    "guardArmedBeforeAfter": true,
+    "generationNotExposed": true,
+    "adapterIdentity": "interface_index_not_LUID",
+    "guardSamples": 243,
+    "cleanupPassed": true
+  },
+  "dnsObservation": {
+    "method": "calibrated_pktmon_physical_component22_ports53_853",
+    "rawCountersEmpty": true,
+    "observedMatchingOutboundPackets": 0,
+    "observedMatchingInboundPackets": 0,
+    "preControlOutbound": 5,
+    "preControlInbound": 5,
+    "postControl": {
+      "componentId": 22,
+      "ports": [
+        53,
+        853
+      ],
+      "outbound": 1,
+      "inbound": 1,
+      "replyTransactionMatched": true,
+      "passed": true
+    },
+    "payloadPcapAvailable": false,
+    "scope": "Observed port53/853 counters only; no payload attribution or complete DNS-leak proof"
+  },
+  "preservedFailures": {
+    "initialRuntimeFailure": "TUN was removed during all-outage cooldown; fixed in ec0e865",
+    "originalPostfixCoordinatorPassed": false,
+    "sequentialExcludedProbeFailed": true,
+    "sequentialDurationMs": 4,
+    "sequentialTimestampUnavailable": true,
+    "candidateRecreationOverlapPossible": true,
+    "coldFirstRequestFailuresArchived": true,
+    "strictColdSslStreamPassed": true,
+    "coldTlsCauseProven": false
+  },
+  "limitations": [
+    "Windows can recreate TUN between candidates; direct connections can briefly break during replacement.",
+    "Windows native IPv6 underlay was unavailable; IPv6 HTTPS traversed VPN over IPv4 underlay.",
+    "Faults used two controlled relays to one real remote endpoint, not two independent VPS failures.",
+    "Controller observations do not establish installed SCM, network-change recovery or late-cancel runtime acceptance.",
+    "Cold first-request failures remain unclassified; exact direct-target calibration preceded accepted matrix.",
+    "Physical Android and full E1/stable acceptance remain open."
+  ]
+}
