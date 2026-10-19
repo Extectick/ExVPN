@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS_INDEPENDENT_ACCEPTED_LOCAL_BASE_IMPORT",
+  "verifiedAtUtc": "2026-10-19T17:24:04.525098Z",
+  "commonBaseRunId": 39293255636,
+  "workflowCommit": "fe36b9da097c7072ee1aa25aec592d07ca9109cd",
+  "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+  "origin": "local_accepted_import",
+  "ciCompiled": false,
+  "releaseId": 908884,
+  "version": "0.1.8+29",
+  "retentionDays": 90,
+  "runtimeAcceptanceEvidenceRequiredSeparately": true,
+  "sdkOrBuildOrSigningOperations": 0,
+  "shorebirdCloudMutations": 0,
+  "temporaryDraftReleaseId": 417544674,
+  "temporaryTag": "qa-shorebird29-base-import-20261020-f67eb71354",
+  "temporaryCleanupPending": false,
+  "provenanceSha256": "3d422bdeea0b7cdd840b3704014f2da6948dfdfe97a589ead5521c8f51ec4a58",
+  "bases": [
+    {
+      "receiptSha256": "b0562e74722c3f7730e3c80424bca89e96e5e7041bee8fedf694308a40933d57",
+      "expiresAtUtc": "2027-01-17T17:20:23Z",
+      "compiledSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+      "artifactDigest": "sha256:686212dfb4f35d439968fbd89298b296c99140ab7b1deedf09c769d933175b3a",
+      "artifactName": "shorebird-base-Android-5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+      "sourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+      "target": "Android",
+      "existingReceiptGuardsPassed": true,
+      "binaryHashes": {
+        "ExVPN-0.1.8-29-android.aab": "b2f8d4f52d9b6e245fbb5718c24890231a1fa2f6f0926172f29712a6bea342cb",
+        "ExVPN-0.1.8-29-android.apk": "d7b519748a0a2d348c57a031a8606047f8d3e7791a6ff5ea3c4b159fd3fcf389"
+      },
+      "fullFilemapSha256Passed": true,
+      "reparsePaths": 0,
+      "exactFileSetPassed": true,
+      "artifactId": 12207650582,
+      "filemapRecords": 437,
+      "files": 438
+    },
+    {
+      "receiptSha256": "5c90dc1230236266545eec71e420426ed6654b95f93486ecc637609bff0bf4f7",
+      "expiresAtUtc": "2027-01-17T17:20:23Z",
+      "compiledSourceCommit": "e8cba9fc7f849013c804b02d2c401b07a907d9e8",
+      "artifactDigest": "sha256:e00e81230a5496f9ef3d4fc4a1886033c297c10b22b4508f13c94af1f28f2ae3",
+      "artifactName": "shorebird-base-Windows-5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+      "sourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+      "target": "Windows",
+      "existingReceiptGuardsPassed": true,
+      "binaryHashes": {
+        "ExVPN-0.1.8-29-windows-x64-development.exe": "8429328151c42ed136d90086a470ed9b4fa893807d21023b6d87aed8bc11fd5d"
+      },
+      "fullFilemapSha256Passed": true,
+      "reparsePaths": 0,
+      "exactFileSetPassed": true,
+      "artifactId": 12204989794,
+      "filemapRecords": 287,
+      "files": 288
+    }
+  ],
+  "temporaryCleanup": {
+    "immutableV018TagUnchanged": true,
+    "readback404": true,
+    "tagDeleted": true,
+    "draftDeleted": true,
+    "completedAtUtc": "2026-10-19T17:24:41.4296527Z"
+  }
+}

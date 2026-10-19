@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "status": "PASS_SERVER_CHANNEL_ISOLATION",
+  "recordedAtUtc": "2026-10-19T16:57:15.997585+00:00",
+  "updaterSourceCommit": "70ff1e336798474e39586d3f5ac2ca386ef32d9e",
+  "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+  "protocolSource": "https://github.com/shorebirdtech/updater/blob/70ff1e336798474e39586d3f5ac2ca386ef32d9e/library/src/network.rs",
+  "protocolLines": [
+    13,
+    67,
+    237,
+    268,
+    296,
+    305
+  ],
+  "releaseVersion": "0.1.8+29",
+  "appId": "ea97a683-02e5-4d86-9aa1-779d6b4bc81e",
+  "platform": "windows",
+  "arch": "x86_64",
+  "endpoint": "https://api.shorebird.dev/api/v1/patches/check",
+  "requestMethod": "POST",
+  "authenticated": false,
+  "sameContextExceptChannel": true,
+  "currentPatchField": "omitted_native_base_None",
+  "publicKeySha256": "b275456f18ac7037d511ae414f73f719f419177bac0443942ade6a1ccb4fb859",
+  "results": {
+    "beta": {
+      "httpStatus": 200,
+      "responseSha256": "6498a7647f0a0e8ad19af781cbe63b2cb5a782cd1137de935cf5bebddbfa1ba1",
+      "patchAvailable": true,
+      "patchNumber": 1,
+      "patchSha256": "53eb1821370a6f07c37b7a46d7fe18b8bd0dcb487a2cb9a1e9e9dfa79ece2337",
+      "rsaSignatureVerified": true,
+      "rollbackCount": 0
+    },
+    "stable": {
+      "httpStatus": 200,
+      "responseSha256": "446e92c5f0649053247e693d4b3ea2f24b225830250e2645b97f38b8de104c6e",
+      "patchAvailable": false,
+      "patchNumber": null,
+      "rollbackCount": 0
+    }
+  },
+  "patchDownloads": 0,
+  "eventPosts": 0,
+  "cloudMutations": 0,
+  "deviceActions": 0,
+  "clientTrackChanges": 0,
+  "limits": [
+    "Server selection evidence only; actual signed apply/cold restart/rollback is a separate device gate."
+  ]
+}

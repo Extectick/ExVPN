@@ -1,5 +1,39 @@
 # ExVPN — архитектура
 
+## Дополнение: реальная Shorebird-база и Dart-патчи 0.1.8+29
+
+Cloud registration, приёмка установочного пакета, применение Dart-патча и
+публичная доставка проверяются раздельно. У баз C7 (`5bddc777`) release **908884**,
+strict RSA public pin и `auto_update: false`. Подписка не изменяет ключи или track.
+
+Windows receipt сохраняет различие: `compiledSourceCommit=e8cba9fc…` для
+восстановленных 283 cloud UI files и `sourceCommit=5bddc777…` для упаковки.
+Эквивалентность компилируемых входов доказана до recovery; свежие service/helper
+bytes привязаны к собственному payload. Android `compiledSourceCommit` и
+`sourceCommit` равны C7. После успешного единственного upload Android упаковка
+завершена отдельным audit/promotion хвостом над неизменными APK/AAB и свежими
+JVM XML. Повторного Flutter build/upload в этом хвосте не было.
+
+Базовые AOT, движок, JNI, APK signer, notices, SBOM и полные filemaps проверены;
+резервные деревья сохраняют те же receipts и sealed patch inputs. Совместимый
+патч source `0d9fdf22` прошёл строгий guard Dart-only без native/assets overrides.
+У одной версии базы номера различаются по платформам: Windows **1 / 731624**,
+Android **2 / 731631**; rollback обязан учитывать оба фактических номера.
+
+Серверный beta/stable ответ и проверка RSA не заменяют runtime. Actual cold
+restart подтвердил current/next Windows **1/1**, Android **2/2** и `uiRevision=1`
+при прежних базовых пакетах и данных. На Android один изменённый байт cached AOT отвергнут native проверкой подписи
+до загрузки. Полное SDK state/cache восстановлено с bytes/owner/mode/SELinux/
+pointers/tombstones, затем снова подтверждён patch2/ui1. Облачный rollback обоих
+номеров и холодный запуск подтвердили полный цикл `uiRevision` **0→1→0**. Null/base snapshot
+сам по себе этого не доказывает. Native/engine/plugin/asset изменения требуют
+нового полного базового пакета. E1 и стабильная VPN-приёмка — отдельные gates.
+
+[Runtime gate](evidence/shorebird29-runtime-qa.json), [roundtrip](evidence/shorebird29-roundtrip.json).
+Неизменные принятые пакеты могут переноситься в CI по hash/filemap; происхождение
+`local_accepted_import` сохраняется отдельно от CI compilation.
+
+
 ## Дополнение: восстановление упаковки Shorebird-базы, 2026-10-19
 
 Успешная регистрация базы в Shorebird и приёмка установочного пакета — разные

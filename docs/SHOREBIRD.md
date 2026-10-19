@@ -9,219 +9,94 @@ build wrappers, SDK/signing pins, dependencies, native, assets и build identity
 Изменение одних helpers не считается Dart-патчем. 298 pipeline guards PASS;
 общий Full приложения и сборки не повторялись.
 
-## Реальный цикл 0.1.8+29, 2026-10-19 — в работе
+## Реальный цикл 0.1.8+29 — подписанный OTA roundtrip принят, 2026-10-20
 
-CI39276484132 (`2158474`) подтвердил Windows packaging audit и SDK longpaths
-исправление. Android остановлен в раннем preflight до сборки приложения:
-`.NET GetFullPath` внутри проверки пути разворачивает корректное DOS8.3 имя
-обратно в путь с пробелами. Это воспроизведено локально без SDK/сборки.
-Требуется сохранять буквальное короткое имя отдельно от физической проверки
-каталога и file IDs. Readback после завершения: release908884 содержит только
-Windows; Android release и Dart-патчи ещё не опубликованы.
-[Причина](evidence/shorebird29-shortpath-normalization.json),
-[облако](evidence/shorebird29-sixth-attempt-readback.json).
-Helper теперь проверяет физический путь отдельно и сохраняет буквальное
-Win32 имя SDK и analyzer для Flutter/Dart.38 focused checks PASS, включая
-реальный ProgramFiles с пробелами; один existing-SDK preflight PASS за5,4с.
-Сохранены no-reparse, held file IDs, source/hash/config проверки. Сборок,
-облачных операций и действий с устройствами0; Full не повторялся.
-[Preflight](evidence/shorebird29-literal-alias-preflight.json).
+Приняты обе локальные официальные базы source **`5bddc777` (C7)**, release
+**908884**. CLI **1.6.129**, Flutter **5bef02a**, engine **4b936a0**, прежние APK
+signer и RSA public pin сохранены. Actual apply уже подтверждён на Windows и
+Android emulator. Повреждённый кэш и облачный rollback обоих номеров приняты;
+публичная доставка ожидает отдельного workflow и download/feed audit.
 
-Уточнение CI39269602856 (`e3a9939`): Android AAB содержит engine debug metadata
-для обеих ABI. Реальный отказ — `apkanalyzer.bat` из SDK с пробелами в пути:
-некавыченный `toolsdir` JVM option приводит к `ClassNotFoundException: Files`.
-Strip-validation не отключается; исправляется путь запуска инструмента.
-Readback после завершения снова подтвердил отсутствие Android registration.
-[Причина](evidence/shorebird29-android-analyzer-path.json),
-[readback](evidence/shorebird29-fourth-attempt-readback.json).
+| Артефакт | Подтверждённое состояние |
+|---|---|
+| Android | APK/AAB C7; прежний cert `2a43…7093`, APK v2; 437 receipt records, 427 notices, 199 Shorebird notice files; fresh JVM 47 tests / 7 suites |
+| Windows | 283 UI files из исходного cloud E8, source упаковки C7; 730 NSIS payload files, 199 Shorebird notice files; развитие service/helper не объявляется byte-equivalent старой установке |
+| Общие проверки | Strict key/policy, APK/AAB AOT binding, pinned engine transform, JNI, notices, SBOM и filemaps приняты; обе базы физически скопированы в защищённый локальный backup с внешним SHA manifest |
 
-Windows prepare того же run остановился после восстановления кэша SDK.
-Read-only probe39272145620 доказал: Git по умолчанию помечает34 длинных путей
-как изменённые; только `-c core.longpaths=true` возвращает0 изменений и пустой
-diff при том же pinned HEAD. Кэш и исходники не исправлялись/не удалялись.
-SDK Git helper получает этот параметр на время команды, сохраняя проверку
-настоящих изменений. [Наблюдение](evidence/shorebird29-sdk-longpaths-probe.json).
-С исправленным helper прошли177 notice-input и43 updater-notice checks,
-включая прежний отказ при реальном изменении SDK; Full не повторялся.
-[Проверка](evidence/shorebird29-sdk-longpaths-fix.json).
+Android после успешного первого upload завершён package-only recovery над
+сохранёнными APK/AAB. Исходные gates runtime/notices/AOT/signature/identity/Maven/
+Preview audit/source/filemaps сохранены; JVM взят из независимой свежей XML
+сверки. Повторных Flutter build/upload для promotion не было.
+[Подтверждённые hashes и происхождение](evidence/shorebird29-cloud-package-patch.json).
 
-Hosted probe39273468103 запустил именно pinned Dart Process: полный путь
-SDK с пробелами воспроизвёл отказ `Files`, а DOS8.3 имя того же физического
-каталога и того же analyzer (volume/file IDs совпали) дало exit0 и metadata.
-Ни SDK batch/source, ни подписи, ни strip-проверки не менялись; сборок0.
-CI Android получает изолированный Flutter config с этим проверенным именем
-и выбранным JDK; preflight выполняется до долгой сборки. То же окружение
-нужно release и patch. [Воспроизведение](evidence/shorebird29-android-shortpath-probe.json).
-Общий helper прошёл29 focused guard checks и один реальный локальный preflight
-(8,8с): fresh private Flutter config, pinned Dart → actual analyzer → synthetic
-metadata, exit0. SDK/source/signing identities не менялись, окружение
-восстановлено; app/native builds=0. Wiring обоих wrappers проверен29 focused
-checks, включая восстановление APPDATA. В CI новые чистые fixtures выполняются
-только в Android job. [Реальный preflight](evidence/shorebird29-android-environment-local-preflight.json),
-[wiring](evidence/shorebird29-android-environment-wiring.json).
-CI39275503636 остановился на устаревшем negative fixture recovery-allowlist:
-он всё ещё запрещал проверенный patch wrapper. Оба native/UI/cloud build
-шага были skipped. Ожидание обновлено на новый явно непроверенный соседний
-wrapper; полный набор285 pipeline guards прошёл (не общий Full приложения).
-[Проверка](evidence/shorebird29-recovery-fixture-fix.json). При изменении
-recovery-allowlist нужен весь pipeline script, focused diagnostics его не заменяет.
+Подписанные beta-патчи source **`0d9fdf22`** содержат изменение доступности
+заголовка Home и `uiRevision` 0→1; SemVer/build базы прежние. Guard принял только
+три Dart/test файла, без native/assets overrides:
 
-Актуальный отказ Android в CI39263632874 (`a5f38ef`): Gradle собрал AAB,
-но Flutter остановился на итоговой проверке debug symbols нативных библиотек.
-Отдельная зашифрованная диагностика успешно сохранена CI и прочитана локально;
-ключ диагностики отделён от ключей приложения и патчей. После завершения run
-readback подтвердил Windows active и отсутствие Android registration.
-Причина внутри `apkanalyzer`/debug metadata пока уточняется отдельным hosted
-probe без сборки приложения. Проверка strip не отключается, SDK pins прежние.
-[Отказ](evidence/shorebird29-android-strip-validation.json),
-[облако после run](evidence/shorebird29-third-attempt-readback.json).
-Windows-пакет этого run прошёл аудит, но ещё не установлен; установленный
-ранний пакет ниже не считается runtime-проверкой новых служебных bytes.
-Standalone probe39268311413 (`4593b3e`) подтвердил exit0 и наличие synthetic
-debug metadata в `apkanalyzer files list` для обоих доступных Java contexts.
-Application/native builds=0; ключи и подписки не использовались. Это исключает
-общий отказ установленного инструмента, но ещё не объясняет содержимое AAB.
-[Проверка](evidence/shorebird29-hosted-analyzer-probe.json).
-Следующий CI Android передаёт Flutter `--verbose`; raw trace остаётся
-приватным и сохраняется только зашифрованным. При отказе сохраняются лишь
-18 фиксированных native/debug paths AAB, hashes/sizes, признаки ELF sections
-двух engine JAR и скалярные сведения об инструментах. Новые27 focused checks
-прошли с Actions exit0; полный набор и сетевые тесты повторно не запускались.
-[Проверка инструментария](evidence/shorebird29-aab-diagnostics-guards.json).
+| Платформа | Patch number | Patch ID |
+|---|---:|---:|
+| Windows x64 | 1 | 731624 |
+| Android arm64/x64 | 2 | 731631 |
 
-Windows-база cloud release908884 установлена из audited CI39254177224:
-NSIS exit0, 731 payload files и 283 cloud UI files совпали, прежние подписки
-и оформление сохранены. Реальный SDK сообщил `available=true`, beta,
-current/next=null, `uiRevision=0`. Это базовый snapshot, применение подписанного
-патча и откат ещё не подтверждены.
-[Windows runtime](evidence/shorebird29-windows-base-runtime.json).
+Full перед QA-патчем: **12/12 PASS, 374 app tests, 235,6 с**, fingerprint
+неизменен. Серверная проверка в одинаковом контексте Windows x64 и Android x64:
+beta возвращает свой патч с проверенной RSA, stable не возвращает патч.
+[Windows](evidence/shorebird29-server-channel-windows.json),
+[Android](evidence/shorebird29-server-channel-android.json). Она не изменяла track
+клиента и не выполняла update/restart. Отдельно проверен Android ARM64
+[server-context/RSA](evidence/shorebird29-server-channel-android-arm64.json).
 
-Android раннего CI39254177224 завершился nonzero внутри официального CLI; readback
-подтвердил только Windows, Android не зарегистрирован. Приватные inner logs
-на ephemeral runner не сохранились; точная причина этого отказа неизвестна.
-[Отказ](evidence/shorebird29-android-ci-attempt.json). Для следующего вызова
-добавлены bounded JSON error-code/exit-code и фиксированные stderr/stage markers;
-raw сообщения, ключи и download URL в CI artifacts не передаются.
+Реальный SDK после холодного запуска показал Windows current/next **1/1**,
+Android **2/2**, `uiRevision=1`; базовые bytes и пользовательские данные сохранены.
+[Actual apply](evidence/shorebird29-device-apply.json). **E6-012 подтверждён**.
+Неизменяемый tag `v0.1.8` закреплён на C7, публичного release пока нет.
 
-Отдельный локальный Android dry-run из989329b успешно собрал AAB и APK, cloud
-не изменялся. Проверка упаковки обнаружила отсутствие только собственного
-Git metadata файла `.gitattributes` (20bytes) из430 sealed records; остальные
-assets и оба JNI совпали. Эта запись удаляется из описи лицензий; все198
-upstream/source notice records и282 dependency records остаются прежними.
-Строгая сверка конечных APK bytes не ослабляется. Windows UI не пересобирается.
+На Android один байт cached AOT отвергнут при native проверке подписи, SDK
+загрузил базу/ui0. Затем восстановлены оба SDK roots целиком, включая bytes,
+modes, UID/GID, SELinux, pointers, tombstones и downloads; снова исполнен
+patch2/ui1. После облачного rollback №2 Android и №1 Windows реальные SDK
+вернулись к current/next=null и `uiRevision=0`. Подписки, оформление, UID и
+базовые APK/EXE/AOT неизменны. Патчи №1/№2 отозваны намеренно после QA.
+[Полный roundtrip](evidence/shorebird29-roundtrip.json),
+[publisher gate](evidence/shorebird29-runtime-qa.json).
+**E6-004, E6-012–014 приняты. E7-013 ожидает публичной доставки.**
+Физический Android, E1, точный post-link SBOM, Windows Authenticode и стабильная
+VPN-приёмка остаются открытыми.
 
-Пользователь поручил выпустить настоящую Android/Windows базу, подписанный
-Dart-патч и проверить откат. Версия базы — **0.1.8+29 / beta**. CLI 1.6.129,
-Flutter 5bef02a, engine 4b936a0 и существующие APK/RSA ключи сохраняются.
-Будущие совместимые Dart/UI изменения должны проходить patch workflow;
-native/assets/plugins/engine изменения требуют нового полного базового пакета.
+Отдельное ограничение CI39278332213: Windows recovery принят, Android остановлен
+до app build/upload в analyzer preflight: буквальные SDK aliases/file IDs
+сохранены, analyzer exit0, но `expectedMetadataListed=false`. Вывод analyzer на
+ephemeral runner не сохранился, точная причина неизвестна. Это не доказательство
+отказа фактически собранного локального APK. Фактический локальный выпуск
+использовал прежние SDK pins и strip-validation; повторного cloud upload не было.
 
-OAuth CLI подтверждён, тариф free, overage=0. Через официальный OpenAPI и
-`shorebird api` создана служебная учётная запись роли `developer`; её ключ
-действителен до 2027-10-19 и сохранён через `gh` в protected environment
-`demo-release` как `SHOREBIRD_TOKEN`. Там же сохранён существующий RSA patch key
-после проверки против public pin. Локальная резервная копия CI token защищена
-DPAPI и ACL; значения ключей/учётные данные в Git не входят. Платный план
-и новые signing identities не создавались.
+Локальные patch-сборки сохраняют точные bytes assets своей базы. Два textassets
+`assets/flags/countries.txt` и `assets/licenses/FlagIcons.txt` имеют CRLF в
+принятой Windows-базе и LF в Android. Перед Windows patch выполнена только
+эквивалентная newline-нормализация checkout к bytes базы с чистым Git/index;
+перед Android восстановлен LF. `--allow-asset-diffs` не применялся. Из shared
+build cache удалены только stale web-generated `AssetManifest.bin.json` и
+`NOTICES`, не исходники. CI Android analyzer preflight остаётся отдельно
+неподтверждённым: synthetic subprocess exit0 без ожидаемой metadata; точная
+причина исходного отказа не установлена.
 
-Android QA владеет только emulator-5582; Windows QA — установленным ExVPN.
-Сетевая VPN-матрица не повторяется. Решающий OTA gate: неизменные bytes
-APK/EXE/base + реальные current/next номера SDK + Dart `uiRevision` 0→1→0
-после холодного запуска. Нулевой/base snapshot сам по себе не доказывает
-здоровую native-конфигурацию updater. Общая Android/Windows cloud/runtime
-приёмка ещё не завершена; EXVPN-E6-004 остаётся открыт.
+Принятые локальные базы переданы в CI без пересборки: import run
+**39293255636**, artifact names `shorebird-base-{Android,Windows}-5bddc7770acd5446ca0c579857f9d1c7b2b1ada3`.
+Независимый повторный download подтвердил исходные receipts, exact 438/288 files,
+все filemap/binary hashes. Это `local_accepted_import`, **не CI compilation**;
+Windows compiled E8 / packaging C7 и Android compiled C7 сохранены. Срок CI
+хранения — 90 дней, до 2027-01-17T17:20:23Z; protected local backup остаётся.
+[Import proof](evidence/shorebird29-base-ci-import.json). Временные draft/tag
+удалены только после независимой сверки; immutable `v0.1.8` не менялся.
+Будущие patch/publish используют этот `base_run_id` вместе с отдельными actual
+runtime receipts. Для чтения draft понадобился ephemeral builtin token
+`contents:write`; единственный import job выполнял только GET, без SDK, signing,
+cloud release mutations или environment secrets.
 
-Подготовка принята 2026-10-19: final Full **12/12 PASS за 120,30 с**,
-373 app tests, source fingerprint неизменен.
-[Full](evidence/fast-validation-shorebird28.json),
-[pipeline guards](evidence/shorebird28-pipeline.json),
-[runtime notices closure](evidence/shorebird28-notice-closure.json).
-Первый Full выявил устаревший список suite dispatch (25 вместо29) после
-добавления OTA-проверок; список расширен без удаления прежних наборов.
-Подготовлены отдельные `shorebird.yml` (base/patch/rollback) и
-`shorebird-publish.yml` (публикация тех же bytes после реальной приёмки).
-Патч сохраняет версию базы, требует чистый Git и только допустимые Dart-изменения;
-изменения native/assets/dependencies отклоняются. Оба фактических номера патчей
-проверяются перед откатом. CI сохраняет обезличенную cloud recovery-квитанцию
-даже при последующей ошибке упаковки; повтор требует readback.
+Full точного patch source0d9f:12/12 PASS,374app tests,235,6с;
+[receipt](evidence/shorebird29-accepted-patch-full.json). Компиляция AOT нужна и
+при OTA; пользователю доставляется signed delta, не новый APK/EXE.
 
-Попытка base CI39239871468 (`0b45f9c`, source tag `v0.1.7`) отказала до
-native/package build и cloud registration. Причина воспроизведена локальным
-prepare без сборки приложения: CLI1.6.129 не поддерживает `shorebird flutter
-precache`. Нужно вызвать `flutter.bat precache` из строго закреплённого SDK.
-Тег не перемещается; подготовка исправляется для **0.1.8+29**. Реальные пакеты
-или патчи 0.1.7 в этом цикле не опубликованы.
-[Фактический отказ CI и локальное воспроизведение](evidence/shorebird28-sdk-prepare-failure.json).
-
-Исправленный prepare фактически выполнен последовательно для Windows и Android:
-оба `ready/complete`, CLI/Flutter/engine pins совпали. Приложение не собиралось,
-cloud API не вызывался. [Проверка SDK](evidence/shorebird29-sdk-prepare.json),
-[101 targeted guards](evidence/shorebird29-prepare-guards.json). Публичный отчёт
-CI теперь содержит только фиксированные phase/errorCode; raw diagnostics остаются
-приватными. Тег 0.1.8 создаётся после успешной сборки и аудита базы.
-
-Итоговый Full для исправленной 0.1.8+29: **12/12 PASS за 126,30 с**,
-373 app tests, source fingerprint неизменен.
-[Отчёт](evidence/fast-validation-shorebird29.json). Нативная сетевая приёмка
-не повторялась. Android +26 сохранён opaque backup на принадлежащем QA emulator;
-Windows +27 штатно вышел через tray/Dart flush, служба сохранена. Проверенная
-смена темы и возврат доказали обычный Roaming namespace; shadow не переносится.
-
-Base run39242872001 отказал ещё до SDK: оба runner получили101 PASS, но
-test script оставил LASTEXITCODE от намеренно ошибочного внешнего fixture.
-Исправлены только success-exit двух тестовых драйверов; фактическая Actions
-обёртка теперь даёт0 при101+34 PASS, а проваленный assertion по-прежнему1.
-[Проверка](evidence/shorebird29-actions-exit.json). SDK/package/cloud в этом run
-не запускались, версия0.1.8+29 ещё не занята. Состав и поведение продукта
-не менялись; уже пройденный Full не повторялся ради exit-state драйвера.
-
-Base run39243607109 (`265c3f0`) прошёл Checks, SDK preparation и native build,
-но release guard отказал из-за изменённого checkout до сборки UI и обращения
-к cloud registration. Причина изменения пока не установлена. Добавлены ранние
-clean gates и ограниченная публичная квитанция с относительными путями/хешами;
-отказ при грязном дереве сохраняется. Отдельная операция `diagnose` запускает
-только Windows Checks без Shorebird SDK, native build, signing или публикации.
-123 targeted synthetic checks через Actions harness дали exit0; Full и native
-сборки для этой диагностики не повторялись.
-[Проверка guard и диагностического режима](evidence/shorebird29-source-diagnosis.json).
-
-Свежий локальный fixture точного дерева265c3f0 воспроизвёл изменение шести
-generated plugin registrant/CMake файлов Linux/Windows сразу после обычного
-Flutter `pub get`. Исходные blob и результат имеют одинаковый код; меняются
-CRLF→LF, `git diff` пуст, но `status` остаётся M. Для этих шести точных путей
-закреплён `text eol=lf`. Контрольная fresh checkout→pub get воспроизводит отказ;
-после attrs тот же цикл чистый, raw SHA-256 файлов не изменился. Ничего не
-добавлялось в ignore, release guard не ослаблен. Новые тесты приложения или
-native сборки не запускались ради изменения формата checkout.
-[Контроль и исправление](evidence/shorebird29-eol-fix.json).
-
-CI diagnose39246721973 независимо подтвердил ровно эти шесть файлов
-([квитанция](evidence/shorebird29-ci-source-receipt.json)); последующий
-base39247684410 прошёл clean gates обеих платформ. Windows был собран и
-зарегистрирован как release908884, затем package audit отказал; Android
-остановился в notice collector до вызова release. Причина: inventory требует
-raw SHA60089d1c crate-pin JSON, а Git хранил нормализованный blob2a19db06.
-Для этого единственного checksum-pinned файла закреплены исходные raw bytes
-через `-text`; `-whitespace` отключает только style-предупреждения о его CRLF.
-SHA и содержание JSON остаются строго проверяемыми, зависимости не меняются.
-Fresh commit/archive/checkout и offline source notice validation двух платформ
-прошли. [Проверка байтов](evidence/shorebird29-cratepin-eol.json).
-
-Облачный Windows release прочитан обратно, его win_archive4043762 скачан и
-проверен по hash/size; 283 извлечённых файла побайтно совпали с архивом.
-Повторная сборка/загрузка UI не выполняется. Подготавливается explicit recovery
-упаковки: отдельный compiledSourceCommit=e8cba9f и новый sourceCommit упаковки,
-с отказом при любых различиях компилируемых исходников, SDK, ключей или assets.
-Доставка пользователям, signed patch и runtime rollback пока не подтверждены.
-[Фактический отказ и восстановление исходных bytes](evidence/shorebird29-packaging-recovery.json).
-
-Recovery implementation source freeze прошёл targeted guards: 192 pipeline,
-34 publication,177+43 notice inputs,220 runtime notice,41 Maven; parse и
-Actions child exit0. Общий Full затем прошёл **12/12 за140,41с**, без изменения
-source fingerprint. [Guards](evidence/shorebird29-recovery-guards.json),
-[Full](evidence/fast-validation-shorebird29-recovery.json). Review cold-cache
-пути потребовал отдельного locked app dependency resolve перед offline wrapper;
-это CI preparation, повторная полная проверка продукта для него не требуется.
 
 ## Проект и клиент, 2026-10-17
 
@@ -541,68 +416,17 @@ Windows — пять, включая подпись издателя. Выбор
 с Maven-графом и не закрывает лицензионные обязательства.
 [AAB metadata](evidence/android-aab-metadata-build17.json).
 
-## Оставшаяся интеграция
+## Оставшиеся ограничения после 0.1.8
 
-Для native updater отдельно сохранён exact Cargo.lock inventory:
-257 registry crates и 3 workspace nodes. Это консервативный исходный набор,
-а не список доказанно слинкованных зависимостей. Все три engine +16 содержат
-один Rust source marker; подходящий source найден, установленный локальный
-Rust другой версии для notices не использован. Полные crate notices и Rust
-runtime aggregate остаются открытыми.
-[Source inventory и границы](evidence/shorebird-updater-source-inventory.json).
-
-Проект ExVPN привязан, доступ и локальные ключи подготовлены. Облачные релизы
-и патчи ещё не созданы. Обычные development APK/Windows-пакеты ExVPN
-не принимают Dart OTA; наличие updater package этого не меняет.
-
-Дальнейший порядок:
-
-1. Завершить полный native/linker и Maven inventory и проверку лицензионных
-   обязательств. Хеши нового engine, payload, notices и build/version уже
-   связаны с точными пакетами +16; обычный Flutter binary переиспользовать нельзя.
-2. Сохранить и проверить резервную копию отдельной пары RSA для патчей. При `shorebird release`
-   обязательно передать `--public-key-path`; при `shorebird patch` —
-   соответствующий `--private-key-path`. Это отдельные ключи от Ed25519 данных,
-   подписи APK и Windows Authenticode.
-3. Установить полный подписанный beta-пакет, затем проверить подписанный
-   Dart hotfix на Android и Windows. Отказ неправильной/отсутствующей подписи,
-   изоляция каналов и rollback должны подтверждаться работающим приложением.
-4. Не применять перезапуск автоматически при активном VPN. Изменения Go,
-   Kotlin, C++, plugins, разрешений и Flutter engine доставлять полным пакетом.
-5. Проверить реализованный экран фактической идентичности патча на целевых
-   Android/Windows пакетах; unit/widget tests не подтверждают engine runtime.
-
-`release --dry-run` также требует проекта/учётных данных и не считается
-офлайн-проверкой без обращения к сервису. Подготовка CLI не подтверждает
-воспроизводимость будущего Shorebird-пакета, его notices или магазинную приёмку.
-
-Источники: [закреплённый CLI](https://github.com/shorebirdtech/shorebird/tree/9fe1370bdd1d2f117cc08c57ae416b794ed92440),
-[подпись патчей](https://docs.shorebird.dev/code-push/guides/patch-signing/).
-
-Финальный Full metadata-fix b9d43ab: **12/12 PASS за347,2с**,373 app tests, source unchanged; [отчёт](evidence/fast-validation-shorebird29-metadata.json). Повторная сетевая матрица не запускалась.
-
-Второй recovery CI39259774343: AndroidCLI сообщил process_exit70 на AAB,
-markerunknown; exact cause пока неизвестна. Final readback после завершения
-снова подтвердил только Windows active/Android absent. Windows отказал до
-native/cloud из-за изменённого SDK checkout в восстановленном cache; удалена
-только доказанная hosted Windows SDK cache entry, SDK pins/guards не менялись.
-[CLI](evidence/shorebird29-android-cli-second-attempt.json),
-[readback](evidence/shorebird29-second-attempt-readback.json),
-[cache](evidence/shorebird29-windows-sdk-cache.json).
-
-Read-only аудит локальных APK/AAB выявил отдельную ошибку AOT-reader:
-case-insensitive JAR validator отклонял допустимые Android resource names.
-Оба Android архива теперь читает прежний строгий case-sensitive ZIP validator;
-exact duplicates, traversal, links и file/directory collisions отвергаются.
-Фактические2ABI AOT в старых диагностических APK/AAB совпали; pinned engine
-подтверждён через verified NDK strip. Это не приёмка будущих CI release bytes.
-[Факты](evidence/shorebird29-android-archive-binding.json).
-
-Для следующего CLI failure CI сохраняет только bounded encrypted stdout/stderr
-хвосты: AES-256-GCM/RSA-OAEP-SHA256, отдельный diagnosticRSA3072 public key.
-Private diagnostic key остаётся локально под DPAPI и не используется для
-подписи приложения/патчей. Raw private logs не публикуются, отсутствие ключа
-или ошибка диагностики не заменяет исходный отказ CLI. 256 targeted pipeline
-checks, включая4AOT и14crypto regression fixtures, PASS; прежний Full не повторялся
-ради этих двух проверяющих инструментов.
-[Guards](evidence/shorebird29-aot-and-ci-diagnostics-guards.json).
+- Физический Android и E1: настоящий VPN/security acceptance не заменён OTA QA.
+- Точный post-link состав Rust/SBOM и stable audit остаются отдельными gates;
+  принятые packages содержат закреплённый консервативный комплект notices.
+- Windows Authenticode отложен пользователем, пакеты публикуются как Preview.
+- Hosted Android analyzer preflight CI39278332213 не принят: исходный отказ
+  не воспроизведён, дополнительная диагностика остановлена до сборок. Реальные
+  локальные signed release/patch/rollback проверены; CI import не называется сборкой.
+- Перед следующим CI patch использовать `base_run_id=39293255636`, C7 и ту же
+  версию0.1.8+29. Артефакты Actions истекают2027-01-17; защищённые локальные
+  базовые receipts/patch-inputs сохранены и допускают повторный hash-bound import.
+- Native/plugins/engine/permissions/assets обновляются полным пакетом. Перезапуск
+  интерфейса не выполняется автоматически при активном VPN.

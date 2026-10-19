@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "testedSourceCommit": "0d9fdf2236aeeb27085120341526827229e42b45",
+  "mode": "Full",
+  "result": "passed",
+  "durationSeconds": 235.6,
+  "appTests": 374,
+  "passedLanes": 12,
+  "sourceFingerprintBefore": "4f0dde5f1b9251f44baaeac88627d2e34dd93023b15822e3657139a8f304ecf3",
+  "sourceFingerprintAfter": "4f0dde5f1b9251f44baaeac88627d2e34dd93023b15822e3657139a8f304ecf3",
+  "sourceUnchanged": true,
+  "laterMaintenanceSourceCommit": "4a2262f3870cc1025d5d5e34e6576e40cc388a14",
+  "laterApplicationPackageNativeSourcesUnchanged": true,
+  "laterPipelineGuardsPassed": 298,
+  "fullSuiteRepeatedForMaintenance": false
+}

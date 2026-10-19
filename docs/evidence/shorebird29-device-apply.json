@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS_ACTUAL_SIGNED_APPLY_REJECT_RESTORE_ROLLBACK",
+  "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+  "patchSourceCommit": "0d9fdf2236aeeb27085120341526827229e42b45",
+  "releaseId": 908884,
+  "windows": {
+    "actualSdkRead": true,
+    "diagnosticsFromNewDartCode": true,
+    "next": 1,
+    "proofSha256": "acc521d33aceb9acf672b77093a7d89181fef285576b88ee34b373dbe4fe3b03",
+    "uiRevision": 1,
+    "current": 1,
+    "baseAndUserDataUnchangedConfirmedByCoordinator": true,
+    "nativeInitializationGateProven": true
+  },
+  "android": {
+    "proofSha256": "55c5b8ef9b9ace50a19f5615703cc8ac3246846b5aef99c30b9dff00ec6244ab",
+    "next": 2,
+    "sameApkAndUid": true,
+    "nativeInitializationProven": true,
+    "uiRevision": 1,
+    "coldPidReplacementVerified": true,
+    "current": 2
+  },
+  "negativeCacheRejectionConfirmed": true,
+  "deviceRollbackConfirmed": true,
+  "publicPreviewConfirmed": false,
+  "stableAccepted": false
+}

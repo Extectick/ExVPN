@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS_PACKAGES_SIGNED_APPLY_REJECT_RESTORE_ROLLBACK",
+  "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+  "version": "0.1.8+29",
+  "releaseId": 908884,
+  "cloudPlatforms": {
+    "android": "active",
+    "windows": "active"
+  },
+  "origin": "local_official_release_and_recovery",
+  "android": {
+    "fileCount": 437,
+    "signature": {
+      "verified": true,
+      "trustedSignerMatched": true,
+      "v2Verified": true,
+      "debug": false,
+      "certificateSha256": "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093"
+    },
+    "jvm": {
+      "task": ":app:testReleaseUnitTest",
+      "freshReports": true,
+      "tests": 47,
+      "suites": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "buildReceiptSha256": "b0562e74722c3f7730e3c80424bca89e96e5e7041bee8fedf694308a40933d57",
+    "compiledSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+    "aabSha256": "b2f8d4f52d9b6e245fbb5718c24890231a1fa2f6f0926172f29712a6bea342cb",
+    "apkSha256": "d7b519748a0a2d348c57a031a8606047f8d3e7791a6ff5ea3c4b159fd3fcf389",
+    "noticeFiles": 427,
+    "shorebirdNotices": 199,
+    "apkBytes": 140276475
+  },
+  "windows": {
+    "actualUiFiles": 283,
+    "payloadFiles": 730,
+    "shorebirdNotices": 199,
+    "buildReceiptSha256": "5c90dc1230236266545eec71e420426ed6654b95f93486ecc637609bff0bf4f7",
+    "installerSha256": "8429328151c42ed136d90086a470ed9b4fa893807d21023b6d87aed8bc11fd5d",
+    "compiledSourceCommit": "e8cba9fc7f849013c804b02d2c401b07a907d9e8",
+    "installerBytes": 50443268,
+    "fileCount": 287
+  },
+  "backup": {
+    "manifestSha256": "f62e34df2c8b92b03993a83015cfd60ccdfa3ee4435e65be050f1e3f4f23f14c",
+    "windowsFiles": 288,
+    "androidFiles": 438,
+    "physicalCopyVerified": true,
+    "protectedCurrentUserAndSystemOnly": true
+  },
+  "patches": [
+    {
+      "target": "Windows",
+      "patchNumber": 1,
+      "patchId": 731624,
+      "releaseId": 908884,
+      "version": "0.1.8+29",
+      "track": "beta",
+      "source": {
+        "baseCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+        "sourceCommit": "0d9fdf2236aeeb27085120341526827229e42b45",
+        "paths": [
+          "apps/exvpn/lib/src/home_screen.dart",
+          "apps/exvpn/lib/ui_revision.dart",
+          "apps/exvpn/test/widget_test.dart"
+        ],
+        "onlyDartProductionChanges": true
+      },
+      "signed": true,
+      "published": true,
+      "nativeDiffsAllowed": false,
+      "assetDiffsAllowed": false,
+      "receiptSha256": "a4bef52395c329522fec88852bfda7e16081c20bc61ba3287d0c00cd1f37cf7f",
+      "artifactHashes": [
+        {
+          "platform": "windows",
+          "arch": "x86_64",
+          "sha256": "53eb1821370a6f07c37b7a46d7fe18b8bd0dcb487a2cb9a1e9e9dfa79ece2337",
+          "bytes": 103084
+        }
+      ],
+      "deviceApplyConfirmedByThisEvidence": true
+    },
+    {
+      "target": "Android",
+      "patchNumber": 2,
+      "patchId": 731631,
+      "releaseId": 908884,
+      "version": "0.1.8+29",
+      "track": "beta",
+      "source": {
+        "baseCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+        "sourceCommit": "0d9fdf2236aeeb27085120341526827229e42b45",
+        "paths": [
+          "apps/exvpn/lib/src/home_screen.dart",
+          "apps/exvpn/lib/ui_revision.dart",
+          "apps/exvpn/test/widget_test.dart"
+        ],
+        "onlyDartProductionChanges": true
+      },
+      "signed": true,
+      "published": true,
+      "nativeDiffsAllowed": false,
+      "assetDiffsAllowed": false,
+      "receiptSha256": "ed5a2feb2402a6c8f2ccd81cf3b46175aab3f5db7fc416ae419e038ad36ef9fd",
+      "artifactHashes": [
+        {
+          "platform": "android",
+          "arch": "aarch64",
+          "sha256": "fe1d9c17b6a57aef4e93dd1643c4af3d3d0e2c75dc207d0f74d28b4a4b3a740e",
+          "bytes": 87098
+        },
+        {
+          "platform": "android",
+          "arch": "x86_64",
+          "sha256": "b9ee8254510510e17220e96cc3e1ee11572ad5cedc3f6af83f2788a0f87408f0",
+          "bytes": 85562
+        }
+      ],
+      "deviceApplyConfirmedByThisEvidence": true
+    }
+  ],
+  "full": {
+    "appTests": 374,
+    "sourceFingerprint": "4f0dde5f1b9251f44baaeac88627d2e34dd93023b15822e3657139a8f304ecf3",
+    "status": "passed",
+    "lanes": 12,
+    "durationSeconds": 235.6,
+    "summarySha256": "2426156c769c795165af07bca042b193916460e03ae66a212f9e8ffdb6b2a8bb",
+    "sourceUnchanged": true
+  },
+  "gates": {
+    "physicalAndroid": false,
+    "windowsAuthenticode": false,
+    "stableReleaseAccepted": false,
+    "E1Complete": false,
+    "publicPreviewDownloadAudit": null,
+    "negativeCacheRejection": true,
+    "deviceRollback": true,
+    "deviceApply": true,
+    "baseRuntime": true
+  },
+  "immutableSourceTag": {
+    "publicReleaseConfirmed": false,
+    "remoteConfirmedByCoordinator": true,
+    "name": "v0.1.8",
+    "sourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3"
+  }
+}

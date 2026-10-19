@@ -16,5 +16,7 @@
   "sdkInvocations": 0,
   "applicationBuilds": 0,
   "fullApplicationSuiteRepeated": false,
-  "sourceState": "working tree; commit pending"
+  "sourceState": "committed",
+  "commit": "4a2262f3870cc1025d5d5e34e6576e40cc388a14",
+  "actualCloudRollbackReadbackVerified": true
 }

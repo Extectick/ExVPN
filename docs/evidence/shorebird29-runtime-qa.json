@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.8+29",
+  "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+  "baseReceipts": {
+    "Android": "b0562e74722c3f7730e3c80424bca89e96e5e7041bee8fedf694308a40933d57",
+    "Windows": "5c90dc1230236266545eec71e420426ed6654b95f93486ecc637609bff0bf4f7"
+  },
+  "platforms": [
+    {
+      "target": "Android",
+      "artifactSha256": "d7b519748a0a2d348c57a031a8606047f8d3e7791a6ff5ea3c4b159fd3fcf389",
+      "patchNumber": 2,
+      "patchId": 731631,
+      "applyVerified": true,
+      "rollbackVerified": true,
+      "appliedCurrentPatch": 2,
+      "rollbackCurrentPatch": 0,
+      "dataPreserved": true,
+      "updaterAvailable": true,
+      "baseUiRevision": 0,
+      "appliedUiRevision": 1,
+      "rollbackUiRevision": 0
+    },
+    {
+      "target": "Windows",
+      "artifactSha256": "8429328151c42ed136d90086a470ed9b4fa893807d21023b6d87aed8bc11fd5d",
+      "patchNumber": 1,
+      "patchId": 731624,
+      "applyVerified": true,
+      "rollbackVerified": true,
+      "appliedCurrentPatch": 1,
+      "rollbackCurrentPatch": 0,
+      "dataPreserved": true,
+      "updaterAvailable": true,
+      "baseUiRevision": 0,
+      "appliedUiRevision": 1,
+      "rollbackUiRevision": 0
+    }
+  ]
+}

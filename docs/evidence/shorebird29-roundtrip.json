@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "recordedLocalDate": "2026-10-20",
+  "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+  "patchSourceCommit": "0d9fdf2236aeeb27085120341526827229e42b45",
+  "maintenanceSourceCommit": "4a2262f3870cc1025d5d5e34e6576e40cc388a14",
+  "releaseId": 908884,
+  "runtimeQaSha256": "2f676ce8b6b5e2cc0d1da9f181dc134033cb768cb70815dd7bb984282c1468f4",
+  "platforms": [
+    {
+      "target": "Android",
+      "artifactSha256": "d7b519748a0a2d348c57a031a8606047f8d3e7791a6ff5ea3c4b159fd3fcf389",
+      "patchNumber": 2,
+      "patchId": 731631,
+      "applyVerified": true,
+      "rollbackVerified": true,
+      "appliedCurrentPatch": 2,
+      "rollbackCurrentPatch": 0,
+      "dataPreserved": true,
+      "updaterAvailable": true,
+      "baseUiRevision": 0,
+      "appliedUiRevision": 1,
+      "rollbackUiRevision": 0
+    },
+    {
+      "target": "Windows",
+      "artifactSha256": "8429328151c42ed136d90086a470ed9b4fa893807d21023b6d87aed8bc11fd5d",
+      "patchNumber": 1,
+      "patchId": 731624,
+      "applyVerified": true,
+      "rollbackVerified": true,
+      "appliedCurrentPatch": 1,
+      "rollbackCurrentPatch": 0,
+      "dataPreserved": true,
+      "updaterAvailable": true,
+      "baseUiRevision": 0,
+      "appliedUiRevision": 1,
+      "rollbackUiRevision": 0
+    }
+  ],
+  "androidNegativeCache": {
+    "oneByteMutationVerified": true,
+    "strictBootSignatureRejection": true,
+    "durableBadReason": "ValidationFailed",
+    "validationLogMarkers": 1,
+    "signatureFailureLogMarkers": 3,
+    "rejectedToBaseUiRevision": 0,
+    "fullSdkRootsRestored": 2,
+    "fullSdkEntriesRestored": 9,
+    "bytesModesOwnersContextsPointersTombstonesDownloadsRestored": true,
+    "restoredCurrentPatch": 2,
+    "restoredUiRevision": 1,
+    "userDataUnchanged": true
+  },
+  "cloudRollback": {
+    "schemaVersion": 1,
+    "action": "rollback-all",
+    "version": "0.1.8+29",
+    "androidPatchNumber": 2,
+    "windowsPatchNumber": 1,
+    "published": true,
+    "platformCoverage": [
+      "android",
+      "windows"
+    ],
+    "receipts": [
+      {
+        "schemaVersion": 1,
+        "action": "rollback",
+        "version": "0.1.8+29",
+        "appId": "ea97a683-02e5-4d86-9aa1-779d6b4bc81e",
+        "releaseId": 908884,
+        "track": "beta",
+        "patchNumber": 2,
+        "patchId": 731631,
+        "platforms": [
+          "android"
+        ],
+        "published": true,
+        "changed": true,
+        "cloudReadbackVerified": true,
+        "deviceRollbackVerified": false,
+        "activation": "next cold launch after explicit client check"
+      },
+      {
+        "schemaVersion": 1,
+        "action": "rollback",
+        "version": "0.1.8+29",
+        "appId": "ea97a683-02e5-4d86-9aa1-779d6b4bc81e",
+        "releaseId": 908884,
+        "track": "beta",
+        "patchNumber": 1,
+        "patchId": 731624,
+        "platforms": [
+          "windows"
+        ],
+        "published": true,
+        "changed": true,
+        "cloudReadbackVerified": true,
+        "deviceRollbackVerified": false,
+        "activation": "next cold launch after explicit client check"
+      }
+    ],
+    "deviceRollbackVerified": false
+  },
+  "proofs": {
+    "android": "3d86e68ca25751783c97fc95ff48c1f6b7a23ac720a95a07f4a9f98b5e8c94cf",
+    "windows": "e7ee5e9e414b82d1361b1ecd7b33788a9ee22ab4792b138aa2c2ea47e394a416"
+  },
+  "computerUse": false,
+  "physicalAndroidVerified": false,
+  "fullVpnMatrixRepeated": false,
+  "stableReady": false
+}

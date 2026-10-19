@@ -6,77 +6,34 @@
 
 ## Сводка этапов
 
-Цикл **0.1.8+29 / Shorebird beta**, 2026-10-19: база/упаковка989329b;
-исправление Android notice metadata — b9d43ab. Последний Full12/12 PASS за347,2с,373 app tests, fingerprint unchanged; [отчёт](evidence/fast-validation-shorebird29-metadata.json).
-Служебный developer API key и существующий RSA signing key сохранены через `gh`
-в protected environment `demo-release`. SDK pins не менялись; реальные базы,
-подписанный патч и откат ниже пока не приняты. [Методика](SHOREBIRD.md).
-Подготовка 0.1.7: final Full 12/12 PASS, 120,30 с, source fingerprint неизменен;
-[отчёт](evidence/fast-validation-shorebird28.json). Реальные cloud/device gates
-ещё не заменяются этой отметкой.
-Его CI39239871468 остановился на неподдерживаемой команде подготовки SDK,
-до сборок и облака; [точное наблюдение](evidence/shorebird28-sdk-prepare-failure.json).
-Тег `v0.1.7` сохранён; исправленная база — 0.1.8+29.
-Исправленная подготовка Windows/Android SDK фактически PASS без сборки приложения;
-итоговый Full0.1.8 **12/12 PASS за 126,30 с**, source unchanged.
-[SDK](evidence/shorebird29-sdk-prepare.json),
-[Full](evidence/fast-validation-shorebird29.json). Cloud/runtime пункты открыты.
+Цикл **0.1.8+29 / Shorebird beta**, 2026-10-20: базовый commit `5bddc777`,
+Dart-патч `0d9fdf22`, исправление CLI-отката `4a2262f3`. Настоящий SDK Windows
+**0→1→0**, Android **0→2→0**, `uiRevision` **0→1→0**, прежние пакеты и данные
+подтверждены. Один повреждённый байт Android cached AOT отвергнут подписью;
+полный SDK state восстановлен и patch2 повторно исполнен до общего отката.
+Full Dart-патча: **12/12 PASS,374 app tests,235,6с**; maintenance:298 guards PASS.
+[Runtime](evidence/shorebird29-runtime-qa.json), [roundtrip](evidence/shorebird29-roundtrip.json),
+[проверки](evidence/shorebird29-accepted-patch-full.json).
 
-CI39243607109 прошёл Checks/SDK/native, затем clean-source guard остановил
-release до UI build и cloud registration. Причина dirty checkout выясняется
-отдельным Windows-only `diagnose`, без повторной native сборки. Добавленные
-ранние gates и safe receipt проверены 123 synthetic checks/Actions exit0.
-[Доказательство](evidence/shorebird29-source-diagnosis.json).
-Локальный fresh fixture установил CRLF→LF в шести Flutter-generated файлах;
-точные `text eol=lf` attrs сохранили исходные bytes и чистоту после pub get.
-[Воспроизведение и узкое исправление](evidence/shorebird29-eol-fix.json).
-Обе clean gates затем прошли в CI39247684410. Windows cloud release908884
-зарегистрирован, но package audit отказал из-за raw crate-pin hash; Android
-отказал в notice collector до release. Fresh checkout raw-byte fix проверен;
-Windows cloud archive восстановлен без пересборки UI, recovery упаковки в работе.
-[Наблюдения](evidence/shorebird29-packaging-recovery.json). Пункты ниже открыты.
-
-Windows CI39254177224 принят и установлен поверх+27:731 payload files,
-283 UI files, прежние подписки/оформление, beta SDK available=true/current=null/
-next=null/uiRevision0 подтверждены. [Runtime](evidence/shorebird29-windows-base-runtime.json).
-Android в том же CI отказал внутриCLI; readback оставил только Windows active.
-Локальный dry-run затем собрал AAB/APK, но audit обнаружил пропущенный упаковщиком
-20-byte Git metadata file. Удаляется только эта запись; upstream license/source
-bytes не меняются. Патч и откат ещё не проверены; общие пункты не закрыты.
-
-- [ ] **EXVPN-E6-012** — Опубликовать настоящую Shorebird-базу 0.1.8+29
-  Android/Windows. Критерий: один build/upload на платформу, прежний APK signer,
-  strict RSA public pin, проверенные runtime notices/AOT и cloud receipts;
-  установленная база читает настоящий updater. Зависимость: E6-004.
-  2026-10-19, `a5f38ef`: Windows packaging audit PASS, Android после Gradle
-  остановлен Flutter strip-validation; Android cloud platform отсутствует.
-  [Фактический отказ](evidence/shorebird29-android-strip-validation.json).
-  Подписанный патч не публиковался; критерий остаётся открытым.
-  CI39269602856 (`e3a9939`) дал точные причины: Windows Git long paths,
-  Android analyzer JVM toolsdir с пробелами. Два hosted probe без сборок
-  подтвердили command-scoped Git исправление и запуск того же analyzer
-  через проверенное8.3 имя. Подготовка исправлений не закрывает runtime gate.
-  [Windows](evidence/shorebird29-sdk-longpaths-probe.json),
-  [Android](evidence/shorebird29-android-shortpath-probe.json).
-  CI39276484132 (`2158474`): Windows audit PASS; Android preflight отказал
-  до app build, поскольку `.NET GetFullPath` снова раскрыл короткий SDK path.
-  [Наблюдение](evidence/shorebird29-shortpath-normalization.json),
-  [readback](evidence/shorebird29-sixth-attempt-readback.json).
-- [ ] **EXVPN-E6-013** — Применить подписанный Dart-патч на обеих платформах.
-  Критерий: реальные platform-specific patch IDs/numbers, current/next SDK,
-  `uiRevision` 0→1 после полного запуска; APK/EXE и данные неизменны.
-  Недействительный патч отклоняется в локальном управляемом стенде без публикации.
-  Зависимость: E6-012.
-- [ ] **EXVPN-E6-014** — Проверить облачный откат Android/Windows к базе.
-  Критерий: отозваны оба фактических номера, current/next и `uiRevision` 1→0
-  после полного запуска на прежних пакетах; данные сохранены.
-  Зависимость: E6-013.
-- [ ] **EXVPN-E7-013** — Доставить принятую Shorebird-базу через существующие
-  Preview release и оба подписанных full-update feed без повторной сборки.
-  Критерий: immutable source tag, реальные QA evidence, публичные bytes/подписи
-  и ссылки проверены; будущие совместимые Dart/UI выпуски используют patch flow.
-  Зависимости: E6-012–014. Windows Authenticode и физическая Android-приёмка
-  остаются отдельными открытыми критериями стабильного выпуска.
+- [x] **EXVPN-E6-012** — Настоящая Shorebird-база Android/Windows0.1.8+29.
+  2026-10-20, commits `5bddc777` / `0d9fdf22`: cloud908884, прежний APK signer,
+  strict RSA pin, runtime notices/AOT/JNI/SBOM/filemaps и реальные SDK приняты.
+  Windows compiled UI source E8 / packaging source C7 явно разделены.
+  [Пакеты](evidence/shorebird29-cloud-package-patch.json).
+- [x] **EXVPN-E6-013** — Подписанный Dart-патч применён на обеих платформах.
+  2026-10-20, `0d9fdf22`: Windows №1/id731624, Android №2/id731631; actual SDK
+  current/next1/1 и2/2/ui1 после холодного запуска. Android tampered cached AOT
+  отклонён native подписью, полный SDK restore доказан. RSA/beta/stable проверены
+  для Windows x64 и Android x64/arm64. [Roundtrip](evidence/shorebird29-roundtrip.json).
+- [x] **EXVPN-E6-014** — Облачный откат обоих фактических номеров к базе.
+  2026-10-20, `4a2262f3`: cloud readback и холодные SDK current/next=null/ui0
+  на обеих платформах; данные и пакеты сохранены. SDK null нормализован в0
+  только в publisher gate. [Runtime](evidence/shorebird29-runtime-qa.json).
+- [ ] **EXVPN-E7-013** — Публичный Preview и два подписанных full-update feed.
+  Immutable tag `v0.1.8` закреплён на C7. Принятые bytes импортированы в Actions
+  run39293255636 без SDK/build/upload в Shorebird; [import](evidence/shorebird29-ci-base-import.json).
+  Ожидаются publish workflow и независимые публичные hash/signature/feed проверки.
+  Физический Android, E1, полный stable audit и Windows Authenticode открыты.
 
 Выпуск **0.1.6+27**, 2026-10-19: итоговый Full **12/12 PASS за 126,78 с**,
 373 app tests, fingerprint неизменен; tag `v0.1.6`, исходники `ae35c9a`.
@@ -579,7 +536,12 @@ offline 8,339 с, без Gradle/сети. Root сверил 57 inputs и вос�
 - [ ] **EXVPN-E6-001** — Реализовать четыре идентичности версий и beta/stable. Зависимости: E3–E5. Критерий: SemVer/build, core pin, data revision и Dart patch показаны независимо; проверены совместимость и запрет downgrade вне политики отката.
 - [ ] **EXVPN-E6-002** — Реализовать signed manifest Ed25519 и SHA-256 файлов данных. Зависимость: E6-001. Критерий: неверная подпись/хеш, несовместимость, выход пути, обрыв и нехватка места отклоняются до активации.
 - [ ] **EXVPN-E6-003** — Добавить staging, атомарную активацию и последний рабочий набор. Зависимость: E6-002. Критерий: обновление не прерывает активный VPN; сбой на каждом шаге сохраняет работоспособность; rollback новой подписанной ревизией проверен.
-- [ ] **EXVPN-E6-004** — Подключить Shorebird и включить обязательную подпись патчей. Зависимость: доступ к сервису/ключам и E6-001. Критерий: реальный release → signed patch → update → rollback Android/Windows, каналы изолированы; native change требует полного выпуска.
+- [x] **EXVPN-E6-004** — Подключить Shorebird и включить обязательную подпись патчей. Зависимость: доступ к сервису/ключам и E6-001. Критерий: реальный release → signed patch → update → rollback Android/Windows, каналы изолированы; native change требует полного выпуска.
+  Принято2026-10-20, база `5bddc777`, patch `0d9fdf22`, rollback helper `4a2262f3`:
+  реальные signed update/restart/rollback Android и Windows, RSA/channel checks,
+  native rejection tampered cache и сохранение данных. [Runtime](evidence/shorebird29-runtime-qa.json).
+  E1/физический Android/Authenticode/stable не закрываются этим OTA gate.
+
   Дополнение 2026-10-17: Windows +16 прошёл отдельный cold reopen → versions
   → normal Exit с фактическим кодом 0 за 227,199 с. Cleanup PASS, payload,
   сеть, служба, storage и 20 backups сохранены. Root сверил 130 файлов.
