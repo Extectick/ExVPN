@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "date": "2026-10-20",
+  "candidateCommit": "f98b75d38a656fc6a708cac9ba692ad7502c47c2",
+  "version": "0.1.9+30",
+  "platform": "Windows Sandbox",
+  "computerUse": false,
+  "hostNetworkChanged": false,
+  "controllerHarnessSubstitutedForInstalledService": false,
+  "installer": {
+    "existingHostUpgradeOptInPreservation": "not exercised here",
+    "length": 50467921,
+    "normalUserInstallExitCode": 0,
+    "ciRun": "39319816470",
+    "networkTestingOptIn": true,
+    "deliveredUiFilesHashMatched": 283,
+    "serviceSha256": "6aaf9233b7dfa6fc6b8eca7719d1003b4fe9198226687428e3e838ff0204a4fc",
+    "sha256": "2654cfb590c42d4ac2078cb659fb6c06520b988ab1300a4158ed6cd12eeb4440",
+    "strictBuildUpgradeCheckPreserved": true,
+    "defaultFreshInstallNetworkingEnabled": false,
+    "userStorePreservedAcrossOwnedUninstall": true
+  },
+  "runtime": {
+    "serviceProcessId": 6180,
+    "backupNumericIpv6HttpStatus": 200,
+    "actualApprovedUiUsed": true,
+    "twoIndependentVpsFailuresSimulated": false,
+    "serviceName": "ExVPNService",
+    "fault": "guest-only owned firewall rule blocked primary service endpoint; backup endpoint distinct",
+    "backupHealthHttpStatus": 204,
+    "serviceAccount": "LocalSystem",
+    "primary": {
+      "utc": "2026-10-19T21:17:49.8447481Z",
+      "serviceRunning": true,
+      "serviceProcessId": 6180,
+      "uiProcessPresent": true,
+      "primaryConnected": true,
+      "backupConnected": false,
+      "guardArmed": true,
+      "guardReadFailed": false,
+      "adapterPresent": true,
+      "adapterGuid": "{8F02B3E2-5693-6779-1DEE-8D7C9B1AAB22}",
+      "adapterIndex": 209
+    },
+    "primaryHealthHttpStatus": 204,
+    "uiRemainedPresent": true,
+    "primaryNumericIpv4HttpStatus": 200,
+    "backup": {
+      "utc": "2026-10-19T21:18:37.6647848Z",
+      "serviceRunning": true,
+      "serviceProcessId": 6180,
+      "uiProcessPresent": true,
+      "primaryConnected": false,
+      "backupConnected": true,
+      "guardArmed": true,
+      "guardReadFailed": false,
+      "adapterPresent": true,
+      "adapterGuid": "{8F02B3E2-5693-6779-1DEE-8D7C9B1AAB22}",
+      "adapterIndex": 209
+    },
+    "physicalIpv6UnderlayAvailable": false,
+    "primaryIpv4DifferentFromDirect": true
+  },
+  "cleanup": {
+    "tunRemoved": true,
+    "actualServiceStillRunning": true,
+    "ownedFaultAbsent": true,
+    "directEgressMatchesEarlierBaseline": true,
+    "routesAndDnsBaselineRestored": true,
+    "guardUnarmed": true,
+    "directHttpsHttpStatus": 200
+  },
+  "passed": true,
+  "limits": [
+    "Explicit NETWORK_TESTING=1 was used only in the disposable stand; default fresh preview installation remains fail closed.",
+    "Primary and backup service-owned connections were observed using endpoint-match booleans; no provider endpoint or credential is published.",
+    "This bounded installed-service smoke does not repeat the accepted controller DNS/exclusion/full-exhaustion matrix.",
+    "Sampled adapter/guard observations do not prove uninterrupted adapter identity across all switches.",
+    "Native IPv6 underlay, late cancellation, underlay loss and physical Android are separate gates.",
+    "SDK signed-patch and rollback proof is recorded separately."
+  ]
+}
