@@ -762,7 +762,7 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
 
 ## E7 — Общая beta
 
-- [ ] **EXVPN-E6-017** — Независимая доставка подписанных Dart-патчей и быстрые сборки.
+- [x] **EXVPN-E6-017** — Независимая доставка подписанных Dart-патчей и быстрые сборки.
   Критерий: одна база Android/Windows 0.1.10+32 со всеми текущими UI-изменениями;
   реальные independent apply/cold launch/withdraw/cold rollback, неизменные
   APK/EXE и пользовательские данные; replay/signature/compatibility отказ закрыт;
@@ -771,9 +771,13 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   AOT-only патчи Windows 38,52 с / Android двух ABI 69,05 с без Cloud/Gradle/CMake.
   Реальные SDK/UI 2→3→2 и patch null→1→null подтверждены в Sandbox и x64 AVD,
   данные и APK/EXE неизменны. Перезапуски ручные; автоматический handoff и физический
-  Android не приняты. Публичная проверка ожидается.
+  Android не приняты. Опубликована [0.1.10+32 Preview](https://github.com/Extectick/ExVPN/releases/tag/v0.1.10);
+  независимое скачивание 20 assets подтвердило хеши, Android signer, оба feeds,
+  каталог 6 и два комплекта AOT для будущих patch jobs. Источники `f99ea90`,
+  патч `440fc3d`, runtime-доказательства `0975de4`; E6-008 и E1 остаются открытыми.
   [План](INDEPENDENT_OTA_PLAN.md), [runtime](evidence/independent32-runtime.json),
-  [ограничения](evidence/independent32-scope.json). Рабочее дерево; commit ожидается.
+  [ограничения](evidence/independent32-scope.json),
+  [публичный аудит](evidence/independent32-public-download-audit.json).
 
 - [x] **EXVPN-E7-006** — Не пересобирать native-пакеты в CI при доказанных QA-only изменениях, сохранив все тесты. Зависимость: E7-001, E7-005. Критерий: консервативный selector отклоняет неизвестные изменения/ошибки Git, Android выполняет самостоятельные JVM tests без APK/JNI, фактический QA-only GitHub run проходит обе платформы без выгрузки native artifacts; product/PR/manual run остаётся полным.
   Доказательство 2026-10-17: [run 38991041038](https://github.com/Extectick/ExVPN/actions/runs/38991041038) на [8b24160](https://github.com/Extectick/ExVPN/commit/8b24160fd06dff2daff1651da20c769804cb1da6) прошёл обе платформы: Windows 374 с, Android 773 с. Actual selector и повторная проверка подтвердили QA-only; 6/6 exact cache HIT, 8 свежих JVM tests, 143-task graph, отсутствие native outputs и 0 uploaded artifacts. [Отчёт](evidence/ci-qa-only-build12.json). Полный +12 run также прошёл обе платформы: [cold-cache отчёт](evidence/ci-build12-cold-cache.json). Разные объёмы workflow не сравниваются как контролируемый benchmark.

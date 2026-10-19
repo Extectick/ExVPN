@@ -81,12 +81,15 @@ decoder; canonical-проверка подписанного каталога с
   метадатой доставки, со всеми текущими UI-правками. Windows Authenticode открыт.
 - [x] Реальный independent patch → cold launch → withdrawal → cold rollback
   на Android-эмуляторе и Windows Sandbox, сохранение данных и байтов базы.
-- [ ] Публичные пакеты и собственные feeds проверены скачиванием/подписями.
+- [x] Публичные пакеты и собственные feeds проверены скачиванием/подписями.
 
 Приёмка 2026-10-20: [реальные SDK-состояния](evidence/independent32-runtime.json),
 [область, скорость и ограничения](evidence/independent32-scope.json),
 [12/12 Full](evidence/fast-validation-v0.1.10-base32.json).
-База `f99ea90`, UI-патч `440fc3d`; рабочее дерево доказательств, commit ожидается.
+База `f99ea90`, UI-патч `440fc3d`, runtime-доказательства `0975de4`.
+[Выпуск 0.1.10+32](https://github.com/Extectick/ExVPN/releases/tag/v0.1.10)
+опубликован; независимый [аудит публичных файлов](evidence/independent32-public-download-audit.json)
+подтвердил 20 assets, 19 checksums, оба подписанных feeds, каталог 6 и capsules.
 Обе активации и откаты подтверждены после полного ручного перезапуска.
 Windows automatic handoff вернул `handoff_failed` (E6-008 открыт); на Android
 нужен холодный запуск. Отзыв дошёл через GitHub CDN примерно за пять минут,
