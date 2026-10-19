@@ -2,6 +2,23 @@
 
 ## Подписанные патчи через GitHub Actions, 2026-10-20
 
+Оба signed-patch job прошли [run39309178502](https://github.com/Extectick/ExVPN/actions/runs/39309178502)
+на `8acc0af0a830267a1470b171b81544e92ffc5c87`: Windows **№3 / id731963**,
+Android **№4 / id731975**, база **0.1.8+29 / release908884** прежняя.
+RSA4096 и совпадение server AOT hash с CI receipt проверены для Windows x64
+и Android x64/ARM64; stable не получает эти beta-патчи. В обоих job прошли
+160 input checks; прежний Full 374/12 переиспользован по неизменным Dart inputs,
+JNI/service build steps пропущены. Windows job занял 478 с, Android — 976 с.
+Это выпуск Dart OTA: новый базовый релиз и установочные пакеты не публиковались.
+Размеры патчей: Windows — 86 951 B, Android — 100 464 B / 99 231 B (ARM64/x64).
+
+Фактические SDK применили новые номера: Windows current/next **3/3**, Android
+**4/4**, uiRevision **1**, restartRequired=false; APK/UID и Windows base/native
+bytes прежние. Android — эмулятор 5582. Новый Windows-процесс наблюдался извне,
+причина перезапуска и exit0 не доказывались; свежая byte continuity данных
+пользователя не заявляется из-за ошибки вспомогательного capture script.
+[Полные квитанции и ограничения](evidence/shorebird29-ci-patch-delivery.json).
+
 Hosted Android preflight принят на `20f4f0b`:
 [run39302667891](https://github.com/Extectick/ExVPN/actions/runs/39302667891).
 Анализатор SDK возвращает пять полных Windows temp-путей с обратными слешами;

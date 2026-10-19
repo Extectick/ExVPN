@@ -1,0 +1,908 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-10-19T19:36:20.3244650Z",
+  "status": "PASS_GITHUB_ACTIONS_SIGNED_PATCHES_AND_ACTUAL_SDK_APPLY",
+  "version": "0.1.8+29",
+  "track": "beta",
+  "releaseId": 908884,
+  "sourceCommit": "8acc0af0a830267a1470b171b81544e92ffc5c87",
+  "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+  "baseRunId": 39293255636,
+  "baseOrigin": "local_accepted_import",
+  "runId": 39309178502,
+  "runUrl": "https://github.com/Extectick/ExVPN/actions/runs/39309178502",
+  "conclusion": "success",
+  "androidPreflight": {
+    "schemaVersion": 1,
+    "status": "completed",
+    "phase": "complete",
+    "errorCode": null,
+    "pathCheck": "complete",
+    "failureReason": null,
+    "diagnosticEncrypted": false,
+    "shortPathAvailable": true,
+    "shortPathContainsSpace": false,
+    "sdkDirectoryIdentityMatched": true,
+    "literalSdkAliasPreserved": true,
+    "literalAnalyzerAliasPreserved": true,
+    "analyzerFileIdentityMatched": true,
+    "heldIdentitiesRechecked": true,
+    "sourcePinsMatched": true,
+    "privateSettingsExact": true,
+    "processAppDataOnlyChanged": true,
+    "dartVersionMatched": true,
+    "dartSha256": "40730e2e18ddab75d145ccae891805769512fc90bb34b64744dbecf3574186bd",
+    "analyzerSha256": "7603a0a7ec99140c08918c35a1d8c3c85a795d40956d3897cce1dc6b45b87fa4",
+    "settingsSha256": "56b86dfddfbffcfb380d7e9dbde80d8a601cf77b7848592265e9193ed47fea5c",
+    "syntheticExitCode": 0,
+    "expectedMetadataListed": true,
+    "childTempBound": true,
+    "rootMatched": true,
+    "analyzerStdoutBytes": 897,
+    "analyzerStderrBytes": 0,
+    "analyzerStdoutSha256": "1768575c07598aebc14c432059b234927cfbd37ccd8dbd4237e8f3c726ee93ad",
+    "analyzerStderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "applicationBuilds": 0,
+    "nativeBuilds": 0,
+    "rawLogsExported": false
+  },
+  "platforms": [
+    {
+      "githubArtifact": {
+        "digest": "sha256:2439067e9fbf10fd20438b01ad097529833f82d95291a4b33c808e2ba63fe68b",
+        "expires_at": "2027-01-17T19:13:38Z",
+        "id": 12214424541,
+        "name": "shorebird-patch-Windows-8acc0af0a830267a1470b171b81544e92ffc5c87",
+        "size_in_bytes": 1734
+      },
+      "patchReceiptSha256": "2e0c09155e0478f724f189ef2d217f077ece75bedcdd8c324169e0032a6e4178",
+      "patchReceipt": {
+        "schemaVersion": 1,
+        "action": "patch",
+        "version": "0.1.8+29",
+        "target": "Windows",
+        "track": "beta",
+        "appId": "ea97a683-02e5-4d86-9aa1-779d6b4bc81e",
+        "published": true,
+        "signed": true,
+        "publicKeySha256": "b275456f18ac7037d511ae414f73f719f419177bac0443942ade6a1ccb4fb859",
+        "releaseId": 908884,
+        "patchNumber": 3,
+        "patchId": 731963,
+        "artifacts": [
+          {
+            "platform": "windows",
+            "arch": "x86_64",
+            "sha256": "3e013e98d40cd73734dbc68da2cd2ea08e63ffe0ef80bc521c22d438271d7656",
+            "bytes": 86951
+          }
+        ],
+        "baseReceiptSha256": "5c90dc1230236266545eec71e420426ed6654b95f93486ecc637609bff0bf4f7",
+        "source": {
+          "baseCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+          "sourceCommit": "8acc0af0a830267a1470b171b81544e92ffc5c87",
+          "paths": [
+            ".github/workflows/shorebird.yml",
+            "apps/exvpn/lib/src/home_screen.dart",
+            "apps/exvpn/lib/ui_revision.dart",
+            "apps/exvpn/test/widget_test.dart",
+            "docs/ARCHITECTURE.md",
+            "docs/CHECKLIST.md",
+            "docs/PLAN.md",
+            "docs/SHOREBIRD.md",
+            "docs/evidence/release-v0.1.8.json",
+            "docs/evidence/shorebird29-accepted-patch-full.json",
+            "docs/evidence/shorebird29-ci-base-import.json",
+            "docs/evidence/shorebird29-ci-pin-transport.json",
+            "docs/evidence/shorebird29-ci-preflight.json",
+            "docs/evidence/shorebird29-ci-unified-inputs.json",
+            "docs/evidence/shorebird29-cloud-package-patch.json",
+            "docs/evidence/shorebird29-device-apply.json",
+            "docs/evidence/shorebird29-rollback-arguments.json",
+            "docs/evidence/shorebird29-roundtrip.json",
+            "docs/evidence/shorebird29-runtime-qa.json",
+            "docs/evidence/shorebird29-server-channel-android-arm64.json",
+            "docs/evidence/shorebird29-server-channel-android.json",
+            "docs/evidence/shorebird29-server-channel-windows.json",
+            "scripts/release/shorebird-android-environment.ps1",
+            "scripts/release/shorebird-patch-inputs.ps1",
+            "scripts/release/shorebird-patch.ps1",
+            "scripts/release/shorebird-pipeline-lib.ps1",
+            "scripts/release/shorebird-rollback.ps1",
+            "scripts/release/test-shorebird-android-environment.ps1",
+            "scripts/release/test-shorebird-patch-inputs.ps1",
+            "scripts/release/test-shorebird-pipeline.ps1"
+          ],
+          "onlyDartProductionChanges": true
+        },
+        "runtime": {
+          "schema": 1,
+          "kind": "shorebird",
+          "target": "Windows",
+          "buildMode": "release",
+          "flutterVersion": "3.47.7",
+          "flutterRevision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+          "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+          "dartVersion": "3.13.5",
+          "pin": {
+            "path": "scripts/bootstrap/shorebird.lock.json",
+            "sha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305"
+          },
+          "cli": {
+            "version": "1.6.129",
+            "revision": "9fe1370bdd1d2f117cc08c57ae416b794ed92440",
+            "entrypointSha256": "078304c0dafde2e57bdfa86232136f54291609811e4dd997a852629f15e8f641",
+            "dependencyLockSha256": "5788be4fc7149239309a313f4fc06af4ef4560dca887517d62881c0b26137bae"
+          }
+        },
+        "nativeDiffsAllowed": false,
+        "assetDiffsAllowed": false,
+        "deviceApplyVerified": false,
+        "textAssetInputs": [
+          {
+            "sourceRawSha256": "e5a903c768c72cad7bd9c1164598fe4821a7b5cfd9298555beedda6717f7d7df",
+            "baseRawSha256": "e5a903c768c72cad7bd9c1164598fe4821a7b5cfd9298555beedda6717f7d7df",
+            "path": "apps/exvpn/assets/flags/countries.txt",
+            "normalizedSha256": "29944d7a2d398ac583d11fc4c21378a6f86094c449121ecf104d96cd714018b8"
+          },
+          {
+            "sourceRawSha256": "fc0231ccb89981e55d600f3015d8ae43adea79b2cf636da976b643d476b10336",
+            "baseRawSha256": "fc0231ccb89981e55d600f3015d8ae43adea79b2cf636da976b643d476b10336",
+            "path": "apps/exvpn/assets/licenses/FlagIcons.txt",
+            "normalizedSha256": "8f1195d55a2fd315a07d812328470ca9ba2abb78c8d317ff19619d5125e00cea"
+          }
+        ],
+        "androidSealPins": [],
+        "runtimePinInput": {
+          "sourceRawSha256": "93bebdbf5644d5c25386f60dafb456f01fe6add3be09a427e93afe7d447ae3e7",
+          "baseRawSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305",
+          "path": "scripts/bootstrap/shorebird.lock.json",
+          "normalizedSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305"
+        }
+      },
+      "serverSignatureChecks": [
+        {
+          "schema": 1,
+          "status": "PASS_SERVER_CHANNEL_ISOLATION",
+          "recordedAtUtc": "2026-10-20T02:22:17.642492+07:00",
+          "updaterSourceCommit": "70ff1e336798474e39586d3f5ac2ca386ef32d9e",
+          "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+          "protocolSource": "https://github.com/shorebirdtech/updater/blob/70ff1e336798474e39586d3f5ac2ca386ef32d9e/library/src/network.rs",
+          "protocolLines": [
+            13,
+            67,
+            237,
+            268,
+            296,
+            305
+          ],
+          "releaseVersion": "0.1.8+29",
+          "appId": "ea97a683-02e5-4d86-9aa1-779d6b4bc81e",
+          "platform": "windows",
+          "arch": "x86_64",
+          "endpoint": "https://api.shorebird.dev/api/v1/patches/check",
+          "requestMethod": "POST",
+          "authenticated": false,
+          "sameContextExceptChannel": true,
+          "currentPatchField": "omitted_native_base_None",
+          "publicKeySha256": "b275456f18ac7037d511ae414f73f719f419177bac0443942ade6a1ccb4fb859",
+          "results": {
+            "beta": {
+              "httpStatus": 200,
+              "responseSha256": "14051b2d73952f83f49531f11ea03e7500a2d7868602a908dc409390f53ac8ac",
+              "patchAvailable": true,
+              "patchNumber": 3,
+              "patchSha256": "3e013e98d40cd73734dbc68da2cd2ea08e63ffe0ef80bc521c22d438271d7656",
+              "rsaSignatureVerified": true,
+              "rollbackCount": 2
+            },
+            "stable": {
+              "httpStatus": 200,
+              "responseSha256": "22a006e7241054e41b32464c3ace203da7d6736a14d79888223902d667780549",
+              "patchAvailable": false,
+              "patchNumber": null,
+              "rollbackCount": 2
+            }
+          },
+          "patchDownloads": 0,
+          "eventPosts": 0,
+          "cloudMutations": 0,
+          "deviceActions": 0,
+          "clientTrackChanges": 0,
+          "limits": [
+            "Server selection evidence only; actual signed apply/cold restart/rollback is a separate device gate."
+          ]
+        }
+      ],
+      "ciJob": {
+        "nativeBuildStepsSkipped": true,
+        "conclusion": "success",
+        "target": "Windows",
+        "seconds": 478.0,
+        "inputChecks": 160,
+        "jobId": 118254048919,
+        "reusedFull": true
+      },
+      "runtime": {
+        "schemaVersion": 1,
+        "recordedAtUtc": "2026-10-19T19:31:42.0367023Z",
+        "status": "PASS_ACTUAL_CI_SIGNED_WINDOWS_PATCH_APPLY",
+        "platform": "windows",
+        "version": "0.1.8+29",
+        "track": "beta",
+        "ciRunId": 39309178502,
+        "ciJobId": 118254048919,
+        "patchSourceCommit": "8acc0af0a830267a1470b171b81544e92ffc5c87",
+        "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+        "baseCompiledSourceCommit": "e8cba9fc7f849013c804b02d2c401b07a907d9e8",
+        "releaseId": 908884,
+        "patchNumber": 3,
+        "patchId": 731963,
+        "patchReceiptSha256": "2e0c09155e0478f724f189ef2d217f077ece75bedcdd8c324169e0032a6e4178",
+        "serverChannelReceiptSha256": "e9af944a36b2fb1d46d27168628e135d02f7dc217d9f96e24cf06d9e51d14bf1",
+        "rsa4096SignatureAndCiAotVerifiedByCoordinator": true,
+        "ciAotSha256": "3e013e98d40cd73734dbc68da2cd2ea08e63ffe0ef80bc521c22d438271d7656",
+        "baseReceiptSha256": "5c90dc1230236266545eec71e420426ed6654b95f93486ecc637609bff0bf4f7",
+        "actualInstalledInstallerSha256": "8429328151c42ed136d90086a470ed9b4fa893807d21023b6d87aed8bc11fd5d",
+        "base": {
+          "version": "0.1.8+29",
+          "uiRevision": 0,
+          "available": true,
+          "current": null,
+          "next": null,
+          "restartRequired": false,
+          "track": "beta",
+          "vpnPhase": "disconnected",
+          "storageAvailable": true,
+          "nativeInitializationProven": false
+        },
+        "staged": {
+          "version": "0.1.8+29",
+          "uiRevision": 0,
+          "available": true,
+          "current": null,
+          "next": 3,
+          "restartRequired": true,
+          "track": "beta",
+          "vpnPhase": "disconnected",
+          "storageAvailable": true,
+          "nativeInitializationProven": false
+        },
+        "applied": {
+          "version": "0.1.8+29",
+          "uiRevision": 1,
+          "available": true,
+          "current": 3,
+          "next": 3,
+          "restartRequired": false,
+          "track": "beta",
+          "vpnPhase": "disconnected",
+          "storageAvailable": true,
+          "nativeInitializationProven": false
+        },
+        "markerTransition": "0_to_1",
+        "sdkCurrentTransition": "null_to_3",
+        "actualSdkApplyVerified": true,
+        "originalBinding": {
+          "pid": 63728,
+          "start": 639280274224485147,
+          "sha256": "b954f16bc700420c2c811a1c0c94354492c9e2a9a72d11ce1be0315489e47a32"
+        },
+        "appliedBinding": {
+          "pid": 34688,
+          "start": 639280348860147534,
+          "sha256": "b954f16bc700420c2c811a1c0c94354492c9e2a9a72d11ce1be0315489e47a32"
+        },
+        "processChanged": true,
+        "restartOrigin": "observed_external_or_automatic_not_initiated_by_agent",
+        "oldProcessExitCode": null,
+        "normalExitZeroProven": false,
+        "agentRestartCount": 0,
+        "agentCheckCount": 1,
+        "agentDownloadCount": 1,
+        "installedHashes": {
+          "ui": "b954f16bc700420c2c811a1c0c94354492c9e2a9a72d11ce1be0315489e47a32",
+          "engine": "86f3f52fcb20ca308dfa73cbea24b1627c9d18107a24a20cd877545429cc8250",
+          "dartBase": "95f037238365d22b51386191901fc19e23979bc2e4702b47e2be276da714a042",
+          "service": "4005aa0280c988fe68fd9920a185b9bc8d837f5939330a4c4d760dfd17844cb2",
+          "helper": "6f252d8a68aaf44bdada4984be22f5715280171785364f84964195cdc0b6cc42"
+        },
+        "installedBaseBytesMatchAcceptedC7": true,
+        "nativeBytesMatchAcceptedC7": true,
+        "serviceRunning": true,
+        "serviceFixedIdentityMatched": true,
+        "serviceProcessUnchanged": true,
+        "freshOpaqueUserDataContinuity": {
+          "earlierPackagedNamespaceRejected": true,
+          "decryptionPerformed": false,
+          "status": "unknown",
+          "namespaceSubstitutionPerformed": false,
+          "preservationNotReclaimedByThisRun": true,
+          "reason": "local_capture_helper_exception"
+        },
+        "evidenceFiles": [
+          {
+            "sha256": "2e0c09155e0478f724f189ef2d217f077ece75bedcdd8c324169e0032a6e4178",
+            "path": "patch.json"
+          },
+          {
+            "sha256": "d388d5c7017272d2d8f9f25adfe57dbed42734e68ed78a623bc4d97e0a83e61f",
+            "path": "verified.json"
+          },
+          {
+            "sha256": "d0ccdda839f43f560184547ae617f0a7d57f273b723aabce0d7f3e0054bda4e8",
+            "path": "base-sdk.json"
+          },
+          {
+            "sha256": "5a05b5032feb9e403e6e24c4b1df98817ec4f7c376897f4108a5669a95a40b9f",
+            "path": "staged-sdk.json"
+          },
+          {
+            "sha256": "75567134e00e6ac247fcd9dfa30e6c3d8f1eac6ecc8c68ea8d3d451eb54cb94a",
+            "path": "applied-sdk.json"
+          },
+          {
+            "sha256": "6e7ae6b204e147c4c91ff28c20c6e825fd07598a3986983514d08a3408b2abff",
+            "path": "original-binding.json"
+          },
+          {
+            "sha256": "7860f0949f0e66747cd0628a2bf8e494160d505606641b83330b8b0a7457e6a4",
+            "path": "rebound-binding.json"
+          },
+          {
+            "sha256": "17561e2e703f21cd5649343dbe067b9f687b0a36eccdc524dad0294428770d15",
+            "path": "check-action.json"
+          },
+          {
+            "sha256": "9b0d0c7846664e06f0d701879ff792247c8e9704e9a99aa179c20db9e5c081fb",
+            "path": "download-action.json"
+          }
+        ],
+        "vpnPhase": "disconnected",
+        "fullPackageUpdateInvoked": false,
+        "dataUpdateInvoked": false,
+        "manualServiceControlIssued": false,
+        "hostNetworkSettingsChanged": false,
+        "processKilled": false,
+        "rollbackInvoked": false,
+        "corruptPatchTestInvoked": false,
+        "cloudMutationPerformedByQa": false,
+        "SDKBuildInvoked": false,
+        "ComputerUseUsed": false,
+        "leftOnIdleHome": true,
+        "finalNativePopupOpen": false
+      },
+      "runtimeEvidenceSha256": "ae3e38f3f41714194aec968b9fc5ae1db2672be63cd277b8af7fc046491f1099",
+      "target": "Windows"
+    },
+    {
+      "githubArtifact": {
+        "digest": "sha256:ea8369eaf77720fc43b7a3e9a35047614db03e79c3209959eac864bf97c1f878",
+        "expires_at": "2027-01-17T19:13:38Z",
+        "id": 12215174359,
+        "name": "shorebird-patch-Android-8acc0af0a830267a1470b171b81544e92ffc5c87",
+        "size_in_bytes": 3721
+      },
+      "patchReceiptSha256": "33ee8b45d777ae1f71430a8a1d2e2ce6848771c7b7e90a4f45116df9a7e6c884",
+      "patchReceipt": {
+        "schemaVersion": 1,
+        "action": "patch",
+        "version": "0.1.8+29",
+        "target": "Android",
+        "track": "beta",
+        "appId": "ea97a683-02e5-4d86-9aa1-779d6b4bc81e",
+        "published": true,
+        "signed": true,
+        "publicKeySha256": "b275456f18ac7037d511ae414f73f719f419177bac0443942ade6a1ccb4fb859",
+        "releaseId": 908884,
+        "patchNumber": 4,
+        "patchId": 731975,
+        "artifacts": [
+          {
+            "platform": "android",
+            "arch": "aarch64",
+            "sha256": "56f562d2a6e7a42664f9ad6ed8d66369a3f7ef9688ef17081f2506e799294a24",
+            "bytes": 100464
+          },
+          {
+            "platform": "android",
+            "arch": "x86_64",
+            "sha256": "08ffa8a60a3382cfc53af18aca55d9092caac6ee9b9683d7e89d566949957fdd",
+            "bytes": 99231
+          }
+        ],
+        "baseReceiptSha256": "b0562e74722c3f7730e3c80424bca89e96e5e7041bee8fedf694308a40933d57",
+        "source": {
+          "baseCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+          "sourceCommit": "8acc0af0a830267a1470b171b81544e92ffc5c87",
+          "paths": [
+            ".github/workflows/shorebird.yml",
+            "apps/exvpn/lib/src/home_screen.dart",
+            "apps/exvpn/lib/ui_revision.dart",
+            "apps/exvpn/test/widget_test.dart",
+            "docs/ARCHITECTURE.md",
+            "docs/CHECKLIST.md",
+            "docs/PLAN.md",
+            "docs/SHOREBIRD.md",
+            "docs/evidence/release-v0.1.8.json",
+            "docs/evidence/shorebird29-accepted-patch-full.json",
+            "docs/evidence/shorebird29-ci-base-import.json",
+            "docs/evidence/shorebird29-ci-pin-transport.json",
+            "docs/evidence/shorebird29-ci-preflight.json",
+            "docs/evidence/shorebird29-ci-unified-inputs.json",
+            "docs/evidence/shorebird29-cloud-package-patch.json",
+            "docs/evidence/shorebird29-device-apply.json",
+            "docs/evidence/shorebird29-rollback-arguments.json",
+            "docs/evidence/shorebird29-roundtrip.json",
+            "docs/evidence/shorebird29-runtime-qa.json",
+            "docs/evidence/shorebird29-server-channel-android-arm64.json",
+            "docs/evidence/shorebird29-server-channel-android.json",
+            "docs/evidence/shorebird29-server-channel-windows.json",
+            "scripts/release/shorebird-android-environment.ps1",
+            "scripts/release/shorebird-patch-inputs.ps1",
+            "scripts/release/shorebird-patch.ps1",
+            "scripts/release/shorebird-pipeline-lib.ps1",
+            "scripts/release/shorebird-rollback.ps1",
+            "scripts/release/test-shorebird-android-environment.ps1",
+            "scripts/release/test-shorebird-patch-inputs.ps1",
+            "scripts/release/test-shorebird-pipeline.ps1"
+          ],
+          "onlyDartProductionChanges": true
+        },
+        "runtime": {
+          "schema": 1,
+          "kind": "shorebird",
+          "target": "Android",
+          "buildMode": "release",
+          "flutterVersion": "3.47.7",
+          "flutterRevision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+          "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+          "dartVersion": "3.13.5",
+          "pin": {
+            "path": "scripts/bootstrap/shorebird.lock.json",
+            "sha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305"
+          },
+          "cli": {
+            "version": "1.6.129",
+            "revision": "9fe1370bdd1d2f117cc08c57ae416b794ed92440",
+            "entrypointSha256": "078304c0dafde2e57bdfa86232136f54291609811e4dd997a852629f15e8f641",
+            "dependencyLockSha256": "5788be4fc7149239309a313f4fc06af4ef4560dca887517d62881c0b26137bae"
+          }
+        },
+        "nativeDiffsAllowed": false,
+        "assetDiffsAllowed": false,
+        "deviceApplyVerified": false,
+        "textAssetInputs": [
+          {
+            "sourceRawSha256": "e5a903c768c72cad7bd9c1164598fe4821a7b5cfd9298555beedda6717f7d7df",
+            "baseRawSha256": "29944d7a2d398ac583d11fc4c21378a6f86094c449121ecf104d96cd714018b8",
+            "normalizedSha256": "29944d7a2d398ac583d11fc4c21378a6f86094c449121ecf104d96cd714018b8",
+            "path": "apps/exvpn/assets/flags/countries.txt"
+          },
+          {
+            "sourceRawSha256": "fc0231ccb89981e55d600f3015d8ae43adea79b2cf636da976b643d476b10336",
+            "baseRawSha256": "8f1195d55a2fd315a07d812328470ca9ba2abb78c8d317ff19619d5125e00cea",
+            "normalizedSha256": "8f1195d55a2fd315a07d812328470ca9ba2abb78c8d317ff19619d5125e00cea",
+            "path": "apps/exvpn/assets/licenses/FlagIcons.txt"
+          }
+        ],
+        "androidSealPins": [
+          {
+            "sourceRawSha256": "3ff49db0c39fbf6812b27fe1ccbc9019a148cc16a041097eb85cc9bfa8350187",
+            "baseRawSha256": "aa3cf9dcd2f8cf6305e460d43e36ac38192146e8b8abfd1176ae1e3af1dc7c64",
+            "normalizedSha256": "aa3cf9dcd2f8cf6305e460d43e36ac38192146e8b8abfd1176ae1e3af1dc7c64",
+            "path": "apps/exvpn/pubspec.yaml"
+          },
+          {
+            "sourceRawSha256": "b06f1912956fdea682a46048d88d9144edb7c068ef590b60257dcb4ea30d1f0a",
+            "baseRawSha256": "b06f1912956fdea682a46048d88d9144edb7c068ef590b60257dcb4ea30d1f0a",
+            "normalizedSha256": "4ea0cee006de97109e9a1dd65052d8a3a5e95c95943035d584ff0567a70bd74b",
+            "path": "apps/exvpn/pubspec.lock"
+          },
+          {
+            "sourceRawSha256": "0faa4ac84dace5b8668ccc660142d9e1d89eef0967a53ea876e320ee3583d38c",
+            "baseRawSha256": "a82438501108ad6bb92ede6c1bf154964707126b4235a9428b2d53100d029448",
+            "normalizedSha256": "a82438501108ad6bb92ede6c1bf154964707126b4235a9428b2d53100d029448",
+            "path": "apps/exvpn/lib/build_identity.dart"
+          },
+          {
+            "sourceRawSha256": "03c005817efa5a89640ae4abaa08539f6286ba9d96a7c5185b87ed4f6deea0c8",
+            "baseRawSha256": "03c005817efa5a89640ae4abaa08539f6286ba9d96a7c5185b87ed4f6deea0c8",
+            "normalizedSha256": "a9f7ee7c9a2088495057f8406120fcded11bcdc2609fcf818d6862ad6be4a269",
+            "path": "apps/exvpn/android/app/build.gradle.kts"
+          },
+          {
+            "sourceRawSha256": "4f801d9097942dffab6ce418b1c64516bad05637f8cf97581ba47d25fa86b311",
+            "baseRawSha256": "cf56d254881434fad1a438e610944acfc60eb430e44aecb9386ac8eca2d065fe",
+            "normalizedSha256": "cf56d254881434fad1a438e610944acfc60eb430e44aecb9386ac8eca2d065fe",
+            "path": "scripts/bootstrap/toolchain.lock.json"
+          },
+          {
+            "sourceRawSha256": "93bebdbf5644d5c25386f60dafb456f01fe6add3be09a427e93afe7d447ae3e7",
+            "baseRawSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305",
+            "normalizedSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305",
+            "path": "scripts/bootstrap/shorebird.lock.json"
+          },
+          {
+            "sourceRawSha256": "ce513c78f84761eca5b3c5bec3233c68c6070b20f921b6a45c8260e320c23c0a",
+            "baseRawSha256": "16ca16430691bb087e0d5bbc4098d3815258e4e440dc7979ee81d3ba8df15686",
+            "normalizedSha256": "16ca16430691bb087e0d5bbc4098d3815258e4e440dc7979ee81d3ba8df15686",
+            "path": "scripts/release/flutter-runtime-inputs.ps1"
+          },
+          {
+            "sourceRawSha256": "31f2deb1ae6822ba62303baca4f4f6447b476e28a0a23464c7e465dcaf6572c3",
+            "baseRawSha256": "ea18d008fdafb1bab62cb48670e9daf2a6311e8dee7b2b71775f054c7303cbbb",
+            "normalizedSha256": "ea18d008fdafb1bab62cb48670e9daf2a6311e8dee7b2b71775f054c7303cbbb",
+            "path": "scripts/release/android-engine-transform.lock.json"
+          },
+          {
+            "sourceRawSha256": "2b57f4e27f92db9c3814f5d5a04c1072b2e214e61e85cffe9935145caf8b86d8",
+            "baseRawSha256": "dd437c3f491583983eeb32273e5ea9247e35777b7ee1c09aeb3c4df14f13eedd",
+            "normalizedSha256": "dd437c3f491583983eeb32273e5ea9247e35777b7ee1c09aeb3c4df14f13eedd",
+            "path": "native/core/go.mod"
+          },
+          {
+            "sourceRawSha256": "c26e2c0641ad78e98ac686590beb72320b7f14d343c04249a5bbe26b859dea8b",
+            "baseRawSha256": "2a1e7faa304d42881f5add15bd182b4c0952578db5e71fe277fd6bee0e582b9e",
+            "normalizedSha256": "2a1e7faa304d42881f5add15bd182b4c0952578db5e71fe277fd6bee0e582b9e",
+            "path": "native/core/go.sum"
+          },
+          {
+            "sourceRawSha256": "5edf869acf0b5ac2d0adf6502867058f62c9453115c8de8fc6c9c68b39f3990f",
+            "baseRawSha256": "d6f187d33c2c72c99dd0422698913b10d47aebcc9f970e1ddb889e99f12ef03e",
+            "normalizedSha256": "d6f187d33c2c72c99dd0422698913b10d47aebcc9f970e1ddb889e99f12ef03e",
+            "path": "native/android/go.mod"
+          },
+          {
+            "sourceRawSha256": "1c799aad7ad161536305eae162641d593e6e7ec75c4d69cd80fa62dadaa4f03c",
+            "baseRawSha256": "9e8372e013985221e49ceb4f7d0da8fc4547ffc8f2574798f1cb574a91bbb0f1",
+            "normalizedSha256": "9e8372e013985221e49ceb4f7d0da8fc4547ffc8f2574798f1cb574a91bbb0f1",
+            "path": "native/android/go.sum"
+          },
+          {
+            "sourceRawSha256": "032dd7d396fa1476a3e2be1de3e53f2ff3cd807a9efe11333b19889bee7bf9cd",
+            "baseRawSha256": "032dd7d396fa1476a3e2be1de3e53f2ff3cd807a9efe11333b19889bee7bf9cd",
+            "normalizedSha256": "032dd7d396fa1476a3e2be1de3e53f2ff3cd807a9efe11333b19889bee7bf9cd",
+            "path": "native/patches/xray-lifecycle.lock.json"
+          },
+          {
+            "sourceRawSha256": "de9d1e0407b1228cbc4043560ddee9af352f7ead5a32f42a265d33aaf5fa2191",
+            "baseRawSha256": "de9d1e0407b1228cbc4043560ddee9af352f7ead5a32f42a265d33aaf5fa2191",
+            "normalizedSha256": "de9d1e0407b1228cbc4043560ddee9af352f7ead5a32f42a265d33aaf5fa2191",
+            "path": "native/patches/xray-lifecycle.patch"
+          },
+          {
+            "sourceRawSha256": "cd3a45fc0214bdd953109ee2596d8cdff877eb6f2e01369efd563fc49100869d",
+            "baseRawSha256": "48330de9b0e4692fc55574223ad433766f273572db2d06cf4febf06bb82f06d7",
+            "normalizedSha256": "48330de9b0e4692fc55574223ad433766f273572db2d06cf4febf06bb82f06d7",
+            "path": "scripts/release/collect-notices.ps1"
+          },
+          {
+            "sourceRawSha256": "0d283c10c77bc801a1859aacbf494246bb4cdac1d4fd47e1bd1343a66910408f",
+            "baseRawSha256": "ee56054cfc715986a2bba126eba8b244e009d6013f16e85c00700ea7ee1680f2",
+            "normalizedSha256": "ee56054cfc715986a2bba126eba8b244e009d6013f16e85c00700ea7ee1680f2",
+            "path": "scripts/release/notice-inputs.ps1"
+          },
+          {
+            "sourceRawSha256": "1593fa48d2806037a3f7cb7771533aaec14e128046f2bcc29aef87700a4e0ff1",
+            "baseRawSha256": "562b6a96950bae20a6cad92026ffc7718734bf9353bcfc4534f51a68c03ce9c3",
+            "normalizedSha256": "562b6a96950bae20a6cad92026ffc7718734bf9353bcfc4534f51a68c03ce9c3",
+            "path": "scripts/release/artifact-audit-lib.ps1"
+          },
+          {
+            "sourceRawSha256": "d17766015374a30ce8bcf337d51ab58a52669321382cb428f8d044cf9aeb0587",
+            "baseRawSha256": "e57076f3194581929973b21d46e50773fa52573670863157f5f1260657d20da0",
+            "normalizedSha256": "e57076f3194581929973b21d46e50773fa52573670863157f5f1260657d20da0",
+            "path": "scripts/release/android-notice-inputs.ps1"
+          },
+          {
+            "sourceRawSha256": "0e961164ee815fa2048f89ab9bb4c64c5297d88ba767deeb8cab6feacda30116",
+            "baseRawSha256": "2cdb7a5f7a04bbf175365d8aeaa3c3a17d82ae26ac6e589989b5b16e9033fabd",
+            "normalizedSha256": "2cdb7a5f7a04bbf175365d8aeaa3c3a17d82ae26ac6e589989b5b16e9033fabd",
+            "path": "scripts/release/prepare-android-notices.ps1"
+          },
+          {
+            "sourceRawSha256": "84158c3921b87183df40f4cdff1c47218ec3cea6e914a597766965594743a1a9",
+            "baseRawSha256": "eed678902a4c265a4c7d609f133aaa484475a4e2b5ddefc2e76b901a5f8ca06a",
+            "normalizedSha256": "eed678902a4c265a4c7d609f133aaa484475a4e2b5ddefc2e76b901a5f8ca06a",
+            "path": "scripts/release/verify-android-notices.ps1"
+          },
+          {
+            "sourceRawSha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5",
+            "baseRawSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "normalizedSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "path": "LICENSE"
+          },
+          {
+            "sourceRawSha256": "fe1188a0032e5170b2df52bd33026b09da19d8ecd8a88758e572dec86e5ba9a8",
+            "baseRawSha256": "33905cdb55de75c69e13ba437bb47282f148bcd45124559c87b862ed90b7d72b",
+            "normalizedSha256": "33905cdb55de75c69e13ba437bb47282f148bcd45124559c87b862ed90b7d72b",
+            "path": "NOTICE"
+          }
+        ],
+        "runtimePinInput": {
+          "sourceRawSha256": "93bebdbf5644d5c25386f60dafb456f01fe6add3be09a427e93afe7d447ae3e7",
+          "baseRawSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305",
+          "normalizedSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305",
+          "path": "scripts/bootstrap/shorebird.lock.json"
+        }
+      },
+      "serverSignatureChecks": [
+        {
+          "schema": 1,
+          "status": "PASS_SERVER_CHANNEL_ISOLATION",
+          "recordedAtUtc": "2026-10-20T02:28:32.688072+07:00",
+          "updaterSourceCommit": "70ff1e336798474e39586d3f5ac2ca386ef32d9e",
+          "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+          "protocolSource": "https://github.com/shorebirdtech/updater/blob/70ff1e336798474e39586d3f5ac2ca386ef32d9e/library/src/network.rs",
+          "protocolLines": [
+            13,
+            67,
+            237,
+            268,
+            296,
+            305
+          ],
+          "releaseVersion": "0.1.8+29",
+          "appId": "ea97a683-02e5-4d86-9aa1-779d6b4bc81e",
+          "platform": "android",
+          "arch": "x86_64",
+          "endpoint": "https://api.shorebird.dev/api/v1/patches/check",
+          "requestMethod": "POST",
+          "authenticated": false,
+          "sameContextExceptChannel": true,
+          "currentPatchField": "omitted_native_base_None",
+          "publicKeySha256": "b275456f18ac7037d511ae414f73f719f419177bac0443942ade6a1ccb4fb859",
+          "results": {
+            "beta": {
+              "httpStatus": 200,
+              "responseSha256": "b2c9e5b31a05294c1b81ed25a01e48a55183623833161531e0bff7b9aeadab54",
+              "patchAvailable": true,
+              "patchNumber": 4,
+              "patchSha256": "08ffa8a60a3382cfc53af18aca55d9092caac6ee9b9683d7e89d566949957fdd",
+              "rsaSignatureVerified": true,
+              "rollbackCount": 2
+            },
+            "stable": {
+              "httpStatus": 200,
+              "responseSha256": "22a006e7241054e41b32464c3ace203da7d6736a14d79888223902d667780549",
+              "patchAvailable": false,
+              "patchNumber": null,
+              "rollbackCount": 2
+            }
+          },
+          "patchDownloads": 0,
+          "eventPosts": 0,
+          "cloudMutations": 0,
+          "deviceActions": 0,
+          "clientTrackChanges": 0,
+          "limits": [
+            "Server selection evidence only; actual signed apply/cold restart/rollback is a separate device gate."
+          ]
+        },
+        {
+          "schema": 1,
+          "status": "PASS_SERVER_CHANNEL_ISOLATION",
+          "recordedAtUtc": "2026-10-20T02:28:34.92566+07:00",
+          "updaterSourceCommit": "70ff1e336798474e39586d3f5ac2ca386ef32d9e",
+          "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+          "protocolSource": "https://github.com/shorebirdtech/updater/blob/70ff1e336798474e39586d3f5ac2ca386ef32d9e/library/src/network.rs",
+          "protocolLines": [
+            13,
+            67,
+            237,
+            268,
+            296,
+            305
+          ],
+          "releaseVersion": "0.1.8+29",
+          "appId": "ea97a683-02e5-4d86-9aa1-779d6b4bc81e",
+          "platform": "android",
+          "arch": "aarch64",
+          "endpoint": "https://api.shorebird.dev/api/v1/patches/check",
+          "requestMethod": "POST",
+          "authenticated": false,
+          "sameContextExceptChannel": true,
+          "currentPatchField": "omitted_native_base_None",
+          "publicKeySha256": "b275456f18ac7037d511ae414f73f719f419177bac0443942ade6a1ccb4fb859",
+          "results": {
+            "beta": {
+              "httpStatus": 200,
+              "responseSha256": "e05e5db02fa5671dda97dfb623678930009f1a70f086011938b48b1d43f89da3",
+              "patchAvailable": true,
+              "patchNumber": 4,
+              "patchSha256": "56f562d2a6e7a42664f9ad6ed8d66369a3f7ef9688ef17081f2506e799294a24",
+              "rsaSignatureVerified": true,
+              "rollbackCount": 2
+            },
+            "stable": {
+              "httpStatus": 200,
+              "responseSha256": "22a006e7241054e41b32464c3ace203da7d6736a14d79888223902d667780549",
+              "patchAvailable": false,
+              "patchNumber": null,
+              "rollbackCount": 2
+            }
+          },
+          "patchDownloads": 0,
+          "eventPosts": 0,
+          "cloudMutations": 0,
+          "deviceActions": 0,
+          "clientTrackChanges": 0,
+          "limits": [
+            "Server selection evidence only; actual signed apply/cold restart/rollback is a separate device gate."
+          ]
+        }
+      ],
+      "ciJob": {
+        "nativeBuildStepsSkipped": true,
+        "conclusion": "success",
+        "target": "Android",
+        "seconds": 976.0,
+        "inputChecks": 160,
+        "jobId": 118254049160,
+        "reusedFull": true
+      },
+      "runtime": {
+        "schemaVersion": 1,
+        "status": "PASS_ACTUAL_CI_SIGNED_PATCH_APPLIED",
+        "recordedAtUtc": "2026-10-19T19:34:52.8497096Z",
+        "target": "Android",
+        "serial": "emulator-5582",
+        "ciRunId": 39309178502,
+        "ciAndroidJobId": 118254049160,
+        "sourceCommit": "8acc0af0a830267a1470b171b81544e92ffc5c87",
+        "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+        "releaseVersion": "0.1.8+29",
+        "releaseId": 908884,
+        "patchNumber": 4,
+        "patchId": 731975,
+        "track": "beta",
+        "artifactSha256": "d7b519748a0a2d348c57a031a8606047f8d3e7791a6ff5ea3c4b159fd3fcf389",
+        "installedUid": 10169,
+        "receiptIdentityVerified": true,
+        "rsaVerifiedByServerProof": true,
+        "serverAotHashEqualsCiReceipt": true,
+        "actualSdk": {
+          "base": {
+            "version": "0.1.8+29",
+            "uiRevision": 0,
+            "vpnPhase": "disconnected",
+            "available": true,
+            "current": null,
+            "next": null,
+            "restartRequired": false,
+            "track": "beta",
+            "nativeInitializationProven": false
+          },
+          "staged": {
+            "version": "0.1.8+29",
+            "uiRevision": 0,
+            "vpnPhase": "disconnected",
+            "available": true,
+            "current": null,
+            "next": 4,
+            "restartRequired": true,
+            "track": "beta",
+            "nativeInitializationProven": false
+          },
+          "applied": {
+            "version": "0.1.8+29",
+            "uiRevision": 1,
+            "vpnPhase": "disconnected",
+            "available": true,
+            "current": 4,
+            "next": 4,
+            "restartRequired": false,
+            "track": "beta",
+            "nativeInitializationProven": false
+          }
+        },
+        "uiRevisionTransition": [
+          0,
+          0,
+          1
+        ],
+        "actualColdPidReplacement": true,
+        "nativeInitializationProven": true,
+        "applyVerified": true,
+        "apkUnchanged": true,
+        "uidUnchanged": true,
+        "dataPreserved": true,
+        "opaqueFiles": 4,
+        "opaqueBytes": 5481,
+        "opaqueDigest": "42acace7d33a30b8944c2e9824deba056c01d871c3755f58c49fb10a90d9d5e1",
+        "finalState": {
+          "schemaVersion": 1,
+          "serial": "emulator-5582",
+          "homeSettingsTargetFound": true,
+          "exvpnServiceRecords": 0,
+          "adbShellUid": 2000,
+          "vpnDisconnected": true,
+          "appDataCleared": false,
+          "apkInstalls": 0,
+          "cloudMutations": 0
+        },
+        "uiCheckActions": 1,
+        "uiDownloadActions": 1,
+        "apkInstalls": 0,
+        "appBuilds": 0,
+        "nativeBuilds": 0,
+        "cloudMutations": 0,
+        "sourceMutations": 0,
+        "fullTestsRepeated": false,
+        "corruptCacheRepeated": false,
+        "rollbackRepeated": false,
+        "originalEmulator5564Touched": false,
+        "computerUse": false,
+        "stableReady": false,
+        "limits": [
+          "Controlled API30 x86_64 emulator only; physical Android and E1 remain open.",
+          "This receipt confirms CI patch apply only; earlier negative-cache/rollback gates remain separate.",
+          "No success is inferred from null/base SDK alone."
+        ],
+        "evidence": [
+          {
+            "path": "patch.json",
+            "sha256": "33ee8b45d777ae1f71430a8a1d2e2ce6848771c7b7e90a4f45116df9a7e6c884",
+            "bytes": 12175
+          },
+          {
+            "path": "verified.json",
+            "sha256": "3193ac539ced30600b3b545029fb1884bde1dad10745fa7fd26ec25429b3dd06",
+            "bytes": 579
+          },
+          {
+            "path": "base.json",
+            "sha256": "31dc708f40f1dda79285469c05105aa02171b2f47ac4e95779d417da0b173bb1",
+            "bytes": 981
+          },
+          {
+            "path": "staged.json",
+            "sha256": "5b3dadd2ec2b34e77dad396db922b5928d4b5842913e5b90ff403b37d00bf191",
+            "bytes": 1003
+          },
+          {
+            "path": "cold-start.json",
+            "sha256": "ee57e4cb937ea0dd3042606375bfe267708e0cdc1454d5bd6735ae517a520d30",
+            "bytes": 180
+          },
+          {
+            "path": "applied.json",
+            "sha256": "faf2c8c5489d919bd23e66189fc56356f91d787e41deee6d3f9ddacf9df12e89",
+            "bytes": 971
+          },
+          {
+            "path": "data-before.json",
+            "sha256": "cb7c74d5ee601f980cb4375a03582094d0892aaefa5805968116e30eb61216d1",
+            "bytes": 326
+          },
+          {
+            "path": "data-applied.json",
+            "sha256": "149c493050c5ec6dfcc968493b85ddaf7fc81ac70e929be638d5ec61b0030578",
+            "bytes": 370
+          },
+          {
+            "path": "home-idle.json",
+            "sha256": "1f0a305f889a9a6729ba8377140d958e68bca5a3752bb97233fbd5deedb1407f",
+            "bytes": 248
+          }
+        ]
+      },
+      "runtimeEvidenceSha256": "048db2b40dda0083615dd94e5f9a7f07264ba20bcc64f9872ffb34d56ca618ed",
+      "target": "Android"
+    }
+  ],
+  "fullApplicationSuiteRepeated": false,
+  "priorFull": "docs/evidence/shorebird29-accepted-patch-full.json",
+  "jniOrWindowsServiceRebuilt": false,
+  "fullInstallablePackagesPublished": false,
+  "rollbackOrCorruptionRetested": false,
+  "ComputerUseUsed": false,
+  "stableReady": false,
+  "limits": [
+    "Android actual runtime is emulator5582; physical Android remains open.",
+    "Windows restart observed external or automatic; old process exit code unknown. Fresh Windows opaque user-data byte continuity not reclaimed.",
+    "Stable E1/network protection, post-link SBOM and Windows Authenticode remain outside this CI patch task.",
+    "Concurrent native/Dart failover workspace changes are outside CI source8acc0af and these published patches."
+  ]
+}
