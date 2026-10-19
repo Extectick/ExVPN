@@ -2,6 +2,15 @@
 native/patches/*.patch text eol=lf
 native/patches/*.json text eol=lf
 
+# Flutter regenerates these tracked files using LF even on Windows. Explicit
+# checkout bytes keep a fresh pub get clean without ignoring plugin changes.
+apps/exvpn/linux/flutter/generated_plugin_registrant.cc text eol=lf
+apps/exvpn/linux/flutter/generated_plugin_registrant.h text eol=lf
+apps/exvpn/linux/flutter/generated_plugins.cmake text eol=lf
+apps/exvpn/windows/flutter/generated_plugin_registrant.cc text eol=lf
+apps/exvpn/windows/flutter/generated_plugin_registrant.h text eol=lf
+apps/exvpn/windows/flutter/generated_plugins.cmake text eol=lf
+
 # Keep upstream OFL notices byte-for-byte, including their original whitespace.
 apps/exvpn/assets/fonts/NotoSansArabic-OFL.txt -text -whitespace
 apps/exvpn/assets/fonts/NotoSansSC-OFL.txt -text -whitespace

@@ -26,6 +26,9 @@ release до UI build и cloud registration. Причина dirty checkout вы�
 отдельным Windows-only `diagnose`, без повторной native сборки. Добавленные
 ранние gates и safe receipt проверены 123 synthetic checks/Actions exit0.
 [Доказательство](evidence/shorebird29-source-diagnosis.json).
+Локальный fresh fixture установил CRLF→LF в шести Flutter-generated файлах;
+точные `text eol=lf` attrs сохранили исходные bytes и чистоту после pub get.
+[Воспроизведение и узкое исправление](evidence/shorebird29-eol-fix.json).
 
 - [ ] **EXVPN-E6-012** — Опубликовать настоящую Shorebird-базу 0.1.8+29
   Android/Windows. Критерий: один build/upload на платформу, прежний APK signer,

@@ -1,0 +1,184 @@
+{
+  "schema": 1,
+  "originalSourceCommit": "265c3f07974334f54544740232de2ac0322e7121",
+  "fixtureOnly": true,
+  "controlFreshClean": true,
+  "controlPubgetReproducedSixDirty": true,
+  "fixedFreshAndPubgetClean": true,
+  "fixedRawBytesUnchanged": true,
+  "fixChangedPaths": [
+    ".gitattributes"
+  ],
+  "rules": [
+    "apps/exvpn/linux/flutter/generated_plugin_registrant.cc",
+    "apps/exvpn/linux/flutter/generated_plugin_registrant.h",
+    "apps/exvpn/linux/flutter/generated_plugins.cmake",
+    "apps/exvpn/windows/flutter/generated_plugin_registrant.cc",
+    "apps/exvpn/windows/flutter/generated_plugin_registrant.h",
+    "apps/exvpn/windows/flutter/generated_plugins.cmake"
+  ],
+  "phases": [
+    {
+      "phase": "control-fresh-checkout-autocrlf-true",
+      "status": [],
+      "eol": [
+        "i/lf    w/crlf  attr/                 \tapps/exvpn/linux/flutter/generated_plugin_registrant.cc",
+        "i/lf    w/crlf  attr/                 \tapps/exvpn/linux/flutter/generated_plugin_registrant.h",
+        "i/lf    w/crlf  attr/                 \tapps/exvpn/linux/flutter/generated_plugins.cmake",
+        "i/lf    w/crlf  attr/                 \tapps/exvpn/windows/flutter/generated_plugin_registrant.cc",
+        "i/lf    w/crlf  attr/                 \tapps/exvpn/windows/flutter/generated_plugin_registrant.h",
+        "i/lf    w/crlf  attr/                 \tapps/exvpn/windows/flutter/generated_plugins.cmake"
+      ],
+      "files": [
+        {
+          "path": "apps/exvpn/linux/flutter/generated_plugin_registrant.cc",
+          "sha256": "ded1efcd5accca11bbb4bff03f5231a79fab8ce9ce84ea64ad4219b3d53fa037"
+        },
+        {
+          "path": "apps/exvpn/linux/flutter/generated_plugin_registrant.h",
+          "sha256": "3e4cf762b2bb67328e807ada539ead7bfc68cf7203d15f54267c519c94735099"
+        },
+        {
+          "path": "apps/exvpn/linux/flutter/generated_plugins.cmake",
+          "sha256": "57ae7402210fb4478e5032fccfb6403300e2368a9b67f4283fca68158335eaf0"
+        },
+        {
+          "path": "apps/exvpn/windows/flutter/generated_plugin_registrant.cc",
+          "sha256": "3277b66dd5dc6b6cd2dc4f51fe2ca1188412298f5d49aef55bda8b2afbdf03c9"
+        },
+        {
+          "path": "apps/exvpn/windows/flutter/generated_plugin_registrant.h",
+          "sha256": "bac28d0d2535578bf27db13b937aa03e7790f98619a322914624c1c4e7cdcc6b"
+        },
+        {
+          "path": "apps/exvpn/windows/flutter/generated_plugins.cmake",
+          "sha256": "07c2ce7de443d7b9aa7eeb3bac2fd846f08e2eb59db63cfac15d672d112a327b"
+        }
+      ]
+    },
+    {
+      "phase": "control-after-pubget",
+      "status": [
+        " M apps/exvpn/linux/flutter/generated_plugin_registrant.cc",
+        " M apps/exvpn/linux/flutter/generated_plugin_registrant.h",
+        " M apps/exvpn/linux/flutter/generated_plugins.cmake",
+        " M apps/exvpn/windows/flutter/generated_plugin_registrant.cc",
+        " M apps/exvpn/windows/flutter/generated_plugin_registrant.h",
+        " M apps/exvpn/windows/flutter/generated_plugins.cmake"
+      ],
+      "eol": [
+        "i/lf    w/lf    attr/                 \tapps/exvpn/linux/flutter/generated_plugin_registrant.cc",
+        "i/lf    w/lf    attr/                 \tapps/exvpn/linux/flutter/generated_plugin_registrant.h",
+        "i/lf    w/lf    attr/                 \tapps/exvpn/linux/flutter/generated_plugins.cmake",
+        "i/lf    w/lf    attr/                 \tapps/exvpn/windows/flutter/generated_plugin_registrant.cc",
+        "i/lf    w/lf    attr/                 \tapps/exvpn/windows/flutter/generated_plugin_registrant.h",
+        "i/lf    w/lf    attr/                 \tapps/exvpn/windows/flutter/generated_plugins.cmake"
+      ],
+      "files": [
+        {
+          "path": "apps/exvpn/linux/flutter/generated_plugin_registrant.cc",
+          "sha256": "2d820ff616e2228f699316fa2329d173ddbe6b98bbd7faca780daf329e4efacb"
+        },
+        {
+          "path": "apps/exvpn/linux/flutter/generated_plugin_registrant.h",
+          "sha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb"
+        },
+        {
+          "path": "apps/exvpn/linux/flutter/generated_plugins.cmake",
+          "sha256": "9b0a3121ceab17166a6bdd0bf114dc7478c95b0c99e50c19d3257f89f36bafdb"
+        },
+        {
+          "path": "apps/exvpn/windows/flutter/generated_plugin_registrant.cc",
+          "sha256": "384b2836e0f01867036cc70a4c622775fad3dda23cf6c9093eb5c9fdf793cc09"
+        },
+        {
+          "path": "apps/exvpn/windows/flutter/generated_plugin_registrant.h",
+          "sha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a"
+        },
+        {
+          "path": "apps/exvpn/windows/flutter/generated_plugins.cmake",
+          "sha256": "01cb8fe76e1560c04f199b09893edf70f89d65d5c29784ddc00796142806627a"
+        }
+      ]
+    },
+    {
+      "phase": "fix-fresh-checkout-eol-lf",
+      "status": [],
+      "eol": [
+        "i/lf    w/lf    attr/text eol=lf      \tapps/exvpn/linux/flutter/generated_plugin_registrant.cc",
+        "i/lf    w/lf    attr/text eol=lf      \tapps/exvpn/linux/flutter/generated_plugin_registrant.h",
+        "i/lf    w/lf    attr/text eol=lf      \tapps/exvpn/linux/flutter/generated_plugins.cmake",
+        "i/lf    w/lf    attr/text eol=lf      \tapps/exvpn/windows/flutter/generated_plugin_registrant.cc",
+        "i/lf    w/lf    attr/text eol=lf      \tapps/exvpn/windows/flutter/generated_plugin_registrant.h",
+        "i/lf    w/lf    attr/text eol=lf      \tapps/exvpn/windows/flutter/generated_plugins.cmake"
+      ],
+      "files": [
+        {
+          "path": "apps/exvpn/linux/flutter/generated_plugin_registrant.cc",
+          "sha256": "2d820ff616e2228f699316fa2329d173ddbe6b98bbd7faca780daf329e4efacb"
+        },
+        {
+          "path": "apps/exvpn/linux/flutter/generated_plugin_registrant.h",
+          "sha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb"
+        },
+        {
+          "path": "apps/exvpn/linux/flutter/generated_plugins.cmake",
+          "sha256": "9b0a3121ceab17166a6bdd0bf114dc7478c95b0c99e50c19d3257f89f36bafdb"
+        },
+        {
+          "path": "apps/exvpn/windows/flutter/generated_plugin_registrant.cc",
+          "sha256": "384b2836e0f01867036cc70a4c622775fad3dda23cf6c9093eb5c9fdf793cc09"
+        },
+        {
+          "path": "apps/exvpn/windows/flutter/generated_plugin_registrant.h",
+          "sha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a"
+        },
+        {
+          "path": "apps/exvpn/windows/flutter/generated_plugins.cmake",
+          "sha256": "01cb8fe76e1560c04f199b09893edf70f89d65d5c29784ddc00796142806627a"
+        }
+      ]
+    },
+    {
+      "phase": "fix-after-pubget",
+      "status": [],
+      "eol": [
+        "i/lf    w/lf    attr/text eol=lf      \tapps/exvpn/linux/flutter/generated_plugin_registrant.cc",
+        "i/lf    w/lf    attr/text eol=lf      \tapps/exvpn/linux/flutter/generated_plugin_registrant.h",
+        "i/lf    w/lf    attr/text eol=lf      \tapps/exvpn/linux/flutter/generated_plugins.cmake",
+        "i/lf    w/lf    attr/text eol=lf      \tapps/exvpn/windows/flutter/generated_plugin_registrant.cc",
+        "i/lf    w/lf    attr/text eol=lf      \tapps/exvpn/windows/flutter/generated_plugin_registrant.h",
+        "i/lf    w/lf    attr/text eol=lf      \tapps/exvpn/windows/flutter/generated_plugins.cmake"
+      ],
+      "files": [
+        {
+          "path": "apps/exvpn/linux/flutter/generated_plugin_registrant.cc",
+          "sha256": "2d820ff616e2228f699316fa2329d173ddbe6b98bbd7faca780daf329e4efacb"
+        },
+        {
+          "path": "apps/exvpn/linux/flutter/generated_plugin_registrant.h",
+          "sha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb"
+        },
+        {
+          "path": "apps/exvpn/linux/flutter/generated_plugins.cmake",
+          "sha256": "9b0a3121ceab17166a6bdd0bf114dc7478c95b0c99e50c19d3257f89f36bafdb"
+        },
+        {
+          "path": "apps/exvpn/windows/flutter/generated_plugin_registrant.cc",
+          "sha256": "384b2836e0f01867036cc70a4c622775fad3dda23cf6c9093eb5c9fdf793cc09"
+        },
+        {
+          "path": "apps/exvpn/windows/flutter/generated_plugin_registrant.h",
+          "sha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a"
+        },
+        {
+          "path": "apps/exvpn/windows/flutter/generated_plugins.cmake",
+          "sha256": "01cb8fe76e1560c04f199b09893edf70f89d65d5c29784ddc00796142806627a"
+        }
+      ]
+    }
+  ],
+  "productSourcesChanged": false,
+  "SDKPreparationPerformed": false,
+  "noFurtherTests": true
+}
