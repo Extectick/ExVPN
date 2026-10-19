@@ -1,0 +1,231 @@
+{
+  "schema": 1,
+  "date": "2026-10-20",
+  "scope": "controlled_android_api30_emulator_real_tun_primary_backup",
+  "version": "0.1.9+30",
+  "sourceCommit": "f98b75d38a656fc6a708cac9ba692ad7502c47c2",
+  "shorebirdRelease": 910468,
+  "apkSha256": "c7e62ed64784c3718229103c0bd938bdd142d95fe497dec41ec64f7517e05eb5",
+  "buildReceiptSha256": "6b5faa40e99576d0d3a370b5095b4994dc9ef5b503612366a08d907468a81973",
+  "serial": "emulator-5582",
+  "api": 30,
+  "uid": 10169,
+  "computerUse": false,
+  "hostNetworkChanged": false,
+  "topology": {
+    "primaryAndBackup": "two_independently_stoppable_transparent_tcp_relays_to_valid_remote_xhttp_reality_profile",
+    "providerMutated": false,
+    "tlsValidationRelaxed": false,
+    "underlayIpv6Available": false,
+    "ipv6CarriedInsideTunnelOverIpv4": true
+  },
+  "primary": {
+    "protectedUid": 10167,
+    "https204": true,
+    "httpsIpv4": true,
+    "httpsIpv6": true,
+    "dnsAnswers": 4,
+    "vpnTransport": true,
+    "protectedEgressDiffersFromDirect": true,
+    "excludedUid": 10168,
+    "excludedEgressMatchesDirect": true
+  },
+  "failover": {
+    "uiBackgrounded": true,
+    "nativeServiceStayedActive": true,
+    "primaryRelayStopped": true,
+    "backupRelayCountersIncreased": true,
+    "observedRecoveryUpperBoundMs": 27966,
+    "httpsIpv4": true,
+    "httpsIpv6": true,
+    "dnsAnswers": 4,
+    "sameAndroidVpnNetworkId": 113,
+    "sameTunInterface": "tun0",
+    "networkIdentityObservations": [
+      {
+        "step": "primary-native-before-probes",
+        "vpnCount": 1,
+        "networkId": 113,
+        "observedUnixMs": 1792443766545
+      },
+      {
+        "step": "after-primary-stop-native",
+        "vpnCount": 1,
+        "networkId": 113,
+        "observedUnixMs": 1792443810304
+      },
+      {
+        "step": "backup-native-stable",
+        "vpnCount": 1,
+        "networkId": 113,
+        "observedUnixMs": 1792443862019
+      },
+      {
+        "step": "both-down-native-immediate",
+        "vpnCount": 1,
+        "networkId": 113,
+        "observedUnixMs": 1792443862252
+      },
+      {
+        "step": "both-down-after-probe-timeout",
+        "vpnCount": 1,
+        "networkId": 113,
+        "observedUnixMs": 1792443973106
+      },
+      {
+        "step": "all-down-final-native",
+        "vpnCount": 1,
+        "networkId": 113,
+        "observedUnixMs": 1792444490948
+      },
+      {
+        "step": "actual-disconnect-native",
+        "vpnCount": 0,
+        "networkId": null,
+        "observedUnixMs": 1792444901251
+      }
+    ],
+    "primaryRelayUploadDelta": 26379,
+    "primaryRelayDownloadDelta": 55103,
+    "backupRelayUploadDelta": 42242,
+    "backupRelayDownloadDelta": 95248
+  },
+  "allOutage": {
+    "bothRelaysStopped": true,
+    "protectedIpv4Blocked": true,
+    "protectedIpv6Blocked": true,
+    "protectedProbeUid": 10167,
+    "excludedNumericIpv4Https": true,
+    "excludedEgressMatchesDirect": true,
+    "excludedProbeUid": 10168,
+    "unknownOwnerUid": 2000,
+    "unknownOwnerNumericHttpsBlocked": true,
+    "sameNetwork113Retained": true,
+    "minimalIndependentHelperUsed": true
+  },
+  "dns": {
+    "parser": "PARSED",
+    "rawPackets": 394,
+    "rawPcapSha256": "392fe652006bfa86f1d9463f3f115b454f05f530738ada051d6af168f099c9e1",
+    "freshProtectedNonceUnderlayQueries": 0,
+    "preControlQueries": 2,
+    "preControlResponses": 2,
+    "postControlQueries": 2,
+    "postControlResponses": 2,
+    "connectedFailoverIntervalMs": 95527,
+    "connectedFailoverBoundsCovered": true,
+    "wholeAttemptBoundsCovered": false,
+    "wholeAttemptUdp53": 14,
+    "systemDnsFixedCategory": "android_connectivitycheck",
+    "systemDnsPacketsCorrelated": 14,
+    "systemLogUid": 1073,
+    "systemLogProcess": "com.android.networkstack.process",
+    "packetUidAvailable": false,
+    "attribution": "fixed_domain_and_time_correlated_system_log",
+    "clockOffsetHostMinusGuestMs": 1316,
+    "dropAccounting": "classic_pcap_has_no_drop_counter",
+    "allUidLeakproofClaim": false
+  },
+  "cleanup": {
+    "explicitDisconnectConfirmed": true,
+    "nativeVpnAbsent": true,
+    "directHttpsRestored": true,
+    "directEgressHashRestored": true,
+    "fourUserFilesRestoredByteExact": true,
+    "permissionsAndSelinuxRestored": true,
+    "original29ShorebirdStateRestored": false,
+    "originalQaHelperApksRestored": true,
+    "ownedFixtureProcessesStopped": true,
+    "ownedReverseMappingsRemoved": true,
+    "guestWifiPrivateDnsRestored": true,
+    "userDataUnchangedAfterSignedPatchApply": true
+  },
+  "invalidAttempts": [
+    {
+      "id": "instrumentation_watchdog",
+      "result": "preserved_not_acceptance",
+      "description": "Network probes hit host watchdog during all-outage; independent minimal helpers supplied final outcomes"
+    },
+    {
+      "id": "first_disconnect_postcontrol",
+      "result": "invalid_not_disconnected",
+      "description": "ADB transport timeout preceded unconfirmed tap; native no-VPN proof absent; later fresh tap and postcontrol accepted"
+    },
+    {
+      "id": "whole_capture_end_bounds",
+      "result": "not_accepted",
+      "description": "Final marker after last packet; independently marked narrower failover interval plus separate postcontrol used"
+    }
+  ],
+  "limitations": [
+    "API30 emulator only; physical Android not tested",
+    "No native-underlay IPv6 leak positive control; tunneled IPv6 HTTPS verified",
+    "PCAP exposes no UID or drop counter; system DNS source is log/domain/time correlation",
+    "No blanket all-UID DNS leakproof claim",
+    "No new public WireGuard/HTTPS/SOCKS5 Android per-protocol device acceptance",
+    "Link sleep/resume and service-crash/OS-lockdown matrix not repeated",
+    "Direct baseline is outside ExVPN on the emulator host underlay; third-party host VPN processes were left untouched"
+  ],
+  "proofs": [
+    {
+      "id": "primary-phase.json",
+      "sha256": "e7302e1349784870dad066d622d88ba708ac1ac1d1f63a0c5b9b4bc2cf2914ee"
+    },
+    {
+      "id": "backup-phase.json",
+      "sha256": "e855c4929d406e700bd12bbeafd1340f7d0077b26706ee2f7b897c6cd6bd3b71"
+    },
+    {
+      "id": "failover-summary.json",
+      "sha256": "eb51a1c42fffc013ee7845ff76b314bb614289deea2bc916c82e10b038563d28"
+    },
+    {
+      "id": "observed-vpn-network-identities.json",
+      "sha256": "faab21268ed890e751ebce5fbdda45c217793b4e9c8be393f3dce4867c41f84a"
+    },
+    {
+      "id": "focused-all-down-excluded-minimal.json",
+      "sha256": "e3c20d348c927cf04a6857e42804b4a2d9f78fd858b5350b44e4d5ece6455d2b"
+    },
+    {
+      "id": "all-down-protected-minimal-numeric4.json",
+      "sha256": "35a6eaf3758a4d9ee7be08fd801a944230ab1ed416b2f2ee3d7996c70ac3edbc"
+    },
+    {
+      "id": "all-down-protected-minimal-numeric6.json",
+      "sha256": "35a6eaf3758a4d9ee7be08fd801a944230ab1ed416b2f2ee3d7996c70ac3edbc"
+    },
+    {
+      "id": "runtime-failover.pcap",
+      "sha256": "392fe652006bfa86f1d9463f3f115b454f05f530738ada051d6af168f099c9e1"
+    },
+    {
+      "id": "runtime-pcap-report.json",
+      "sha256": "fc7c7559b1c2e020cd08035c9661c9a5c558a1c9ca331292f05d91b8914069a3"
+    },
+    {
+      "id": "runtime-pcap-narrowed-report.json",
+      "sha256": "4a5ac650f435459b002b92fca8cb0f4126a89cc18f98d06050a0c0ceeea581ac"
+    },
+    {
+      "id": "runtime-postvalid-control.pcap",
+      "sha256": "c4e681a903410d9488a81b79b786c45e1387365a0be503c6404428053c0fd9a6"
+    },
+    {
+      "id": "runtime-postvalid-pcap-report.json",
+      "sha256": "07ab3dc96130b4d7060105672ae371cdc5d39cda72097dd8425ef5ea1a3fe855"
+    },
+    {
+      "id": "dns-origin-correlation-calibrated.json",
+      "sha256": "9d8141d15cce06129c68a7464db9c7cef31027025920a3c500375e6d802fbcff"
+    },
+    {
+      "id": "cleanup-userdata.json",
+      "sha256": "8ce82b7236e0f60fb32c5ce15eb2980b6b9bc3e1e1160cd60d059f87b123c0f9"
+    },
+    {
+      "id": "sdk-applied-continuity.json",
+      "sha256": "bf75818875cc40d34420d192fb86aef3c2d4f9cacf6b94fe8b7bc569ccd9af6d"
+    }
+  ]
+}
