@@ -134,7 +134,10 @@ func TestAutomaticSweepCooldownClearAndStaleEpoch(t *testing.T) {
 	if !c.Handle(automaticRequest(t, first, backup)).OK {
 		t.Fatal("request")
 	}
-	waitRecoveryCondition(t, func() bool { return starts.Load() >= 2 && c.Status().State == "blocked" })
+	waitRecoveryCondition(t, func() bool {
+		s := c.Status()
+		return starts.Load() >= 2 && (s.State == "blocked" || s.State == "reconnecting") && s.GuardActive && s.ConnectedAt == 0
+	})
 	time.Sleep(12 * time.Millisecond)
 	if starts.Load() != 2 {
 		t.Fatal("exhausted group ignored cooldown")
