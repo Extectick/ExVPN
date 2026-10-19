@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'services/vpn_controller.dart';
+import 'services/subscription_loader.dart';
 import 'src/desktop_layout.dart';
 import 'src/home_screen.dart';
 import 'src/appearance.dart';
@@ -54,6 +55,18 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
   int _homeGeneration = 0;
   String _previewVersion = '0.1.0';
   bool _restartCurtain = false;
+  final _previewLoader = SubscriptionLoader();
+
+  Future<SubscriptionDocument> _previewDocument(String source) async {
+    if (Uri.tryParse(source)?.host != 'demo.exvpn.invalid') {
+      return _previewLoader.loadDocument(source);
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 180));
+    return SubscriptionDocument.fromText(
+      '#profile-title: ExVPN Demo\n'
+      'vless://00000000-0000-4000-8000-000000000001@node.example.invalid:443?security=tls&type=ws#Demo',
+    );
+  }
 
   void _startAppUpdate() {
     if (_appUpdate?.phase == AppUpdatePhase.downloading ||
@@ -157,6 +170,7 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
 
   @override
   void dispose() {
+    _previewLoader.close();
     _updateTimer?.cancel();
     _vpn.dispose();
     _bridge.dispose();
@@ -256,6 +270,7 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
                                 ),
                                 previewPowerAction: _togglePreviewPower,
                                 previewRefreshAction: _previewRefreshAll,
+                                previewDocumentLoader: _previewDocument,
                                 latencyProbe: _previewLatency,
                                 appUpdate: _appUpdate,
                                 onAppUpdate: _startAppUpdate,

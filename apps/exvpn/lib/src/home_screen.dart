@@ -15,6 +15,7 @@ import 'power_button.dart';
 import '../services/vpn_controller.dart';
 import '../services/subscription_persistence.dart';
 import '../services/subscription_refresh.dart';
+import '../services/subscription_loader.dart' show SubscriptionDocument;
 import '../services/server_latency.dart';
 import 'desktop_layout.dart';
 import 'sliding_segments.dart';
@@ -43,6 +44,7 @@ class HomeScreen extends StatefulWidget {
     this.initialDesktopLayout,
     this.previewVersion,
     this.previewBuild,
+    this.previewDocumentLoader,
   });
   final AppController controller;
   final ThemeMode themeMode;
@@ -61,6 +63,7 @@ class HomeScreen extends StatefulWidget {
   final DesktopLayout? initialDesktopLayout;
   final String? previewVersion;
   final int? previewBuild;
+  final Future<SubscriptionDocument> Function(String)? previewDocumentLoader;
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -156,6 +159,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       group: group,
       persistence: widget.persistence,
       fullscreen: _desktop && _layout == DesktopLayout.minimal,
+      documentLoader: widget.previewDocumentLoader,
     ),
   );
 

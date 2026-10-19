@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
+import 'package:flutter/services.dart';
 
 import '../services/subscription_loader.dart';
 import '../services/subscription_persistence.dart';
 import '../services/qr_import.dart';
+import '../services/qr_sources.dart';
 import 'app_strings.dart';
 import 'subscription_issues_dialog.dart';
 import 'sliding_segments.dart';
@@ -19,6 +23,7 @@ class ImportDialog extends StatefulWidget {
     this.qrReader,
     this.loader,
     this.fullscreen = false,
+    this.documentLoader,
   });
   final AppController controller;
   final SubscriptionGroup? group;
@@ -26,6 +31,7 @@ class ImportDialog extends StatefulWidget {
   final Future<String?> Function()? qrReader;
   final SubscriptionLoader? loader;
   final bool fullscreen;
+  final Future<SubscriptionDocument> Function(String)? documentLoader;
   @override
   State<ImportDialog> createState() => _ImportDialogState();
 }
@@ -40,36 +46,191 @@ class _ImportDialogState extends State<ImportDialog> {
   String? _error;
   bool _qrRead = false;
   bool _qrMode = false;
-  bool _showName = false;
+  bool _nameEdited = false;
+  bool _nameLoading = false;
+  Timer? _nameDebounce;
+  int _sourceRevision = 0;
+  String _observedInput = '';
+  String? _cachedSource;
+  SubscriptionDocument? _cachedDocument;
   @override
   void initState() {
     super.initState();
     _loader = widget.loader ?? SubscriptionLoader();
     _name.text = widget.group?.name ?? '';
+    _input.addListener(_sourceChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _pasteInitialLink());
   }
 
   @override
   void dispose() {
+    _nameDebounce?.cancel();
+    _input.removeListener(_sourceChanged);
     _name.dispose();
     _input.dispose();
     _loader.close();
     super.dispose();
   }
 
-  Future<void> _readQr() async {
+  bool _isSubscriptionLink(String value) {
+    if (value.length > 8192 || RegExp(r'[\x00-\x20\x7f]').hasMatch(value)) {
+      return false;
+    }
+    final uri = Uri.tryParse(value);
+    return uri != null &&
+        uri.scheme == 'https' &&
+        uri.host.isNotEmpty &&
+        uri.userInfo.isEmpty &&
+        !uri.hasFragment;
+  }
+
+  Future<void> _pasteInitialLink() async {
+    if (!mounted || widget.group != null) return;
+    try {
+      final value = (await Clipboard.getData(Clipboard.kTextPlain))?.text
+          ?.trim();
+      if (!mounted ||
+          _loading ||
+          _input.text.isNotEmpty ||
+          value == null ||
+          !_isSubscriptionLink(value)) {
+        return;
+      }
+      _input.text = value;
+    } catch (_) {
+      // Browser clipboard access may require a user gesture. Manual paste stays available.
+    }
+  }
+
+  Future<SubscriptionDocument> _loadDocument(String value) =>
+      (widget.documentLoader ?? _loader.loadDocument)(value);
+
+  void _sourceChanged() {
+    // Selection/focus notifications are not edits and must not refetch metadata.
+    if (_observedInput == _input.text) return;
+    _observedInput = _input.text;
+    _nameDebounce?.cancel();
+    final revision = ++_sourceRevision;
+    _cachedSource = null;
+    _cachedDocument = null;
+    _nameLoading = false;
+    if (!_nameEdited && widget.group == null) _name.clear();
+    if (!_link) {
+      final document = SubscriptionDocument.fromText(_input.text);
+      _useProviderName(document.providerName);
+    } else if (_isSubscriptionLink(_input.text.trim())) {
+      _nameDebounce = Timer(
+        const Duration(milliseconds: 500),
+        () => _resolveName(revision),
+      );
+    }
+    if (mounted) setState(() {});
+  }
+
+  void _useProviderName(String? name) {
+    if (!_nameEdited && widget.group == null) _name.text = name ?? '';
+  }
+
+  Future<void> _resolveName(int revision) async {
+    if (!mounted || _loading || revision != _sourceRevision) return;
+    final source = _input.text.trim();
+    setState(() => _nameLoading = true);
+    try {
+      final document = await _loadDocument(source);
+      if (!mounted || revision != _sourceRevision || _loading) return;
+      _cachedSource = source;
+      _cachedDocument = document;
+      _useProviderName(document.providerName);
+    } catch (_) {
+      // Optional metadata must not turn a name lookup into an import error.
+    } finally {
+      if (mounted && revision == _sourceRevision) {
+        setState(() => _nameLoading = false);
+      }
+    }
+  }
+
+  void _useQrValue(String value) {
+    if (!mounted) return;
+    setState(() {
+      _link = _isSubscriptionLink(value.trim());
+      _qrMode = false;
+      _qrRead = true;
+      _input.text = value;
+    });
+  }
+
+  Future<void> _openCamera() => showDialog<void>(
+    context: context,
+    useRootNavigator: false,
+    builder: (cameraContext) => Dialog(
+      insetPadding: widget.fullscreen
+          ? EdgeInsets.zero
+          : const EdgeInsets.all(20),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(widget.fullscreen ? 0 : 20),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox(
+        width: 440,
+        height: widget.fullscreen ? MediaQuery.sizeOf(context).height : 360,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      context.tr('Сканировать QR'),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: context.tr('Закрыть'),
+                    onPressed: () => Navigator.pop(cameraContext),
+                    icon: const Icon(CupertinoIcons.xmark, size: 18),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: qrCameraView(
+                onDetected: (value) {
+                  Navigator.pop(cameraContext);
+                  _useQrValue(value);
+                },
+                onClose: () => Navigator.pop(cameraContext),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Future<void> _readQr({bool clipboard = false}) async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final value = await (widget.qrReader ?? pickQrText)();
-      if (!mounted || value == null) return;
-      setState(() {
-        _input.text = value;
-        _link = Uri.tryParse(value)?.scheme.toLowerCase() == 'https';
-        _qrRead = true;
-        _qrMode = false;
-      });
+      final value = widget.qrReader != null
+          ? await widget.qrReader!()
+          : clipboard
+          ? await readQrClipboard()
+          : await pickQrText();
+      if (!mounted) return;
+      if (value == null) {
+        if (clipboard) {
+          setState(() => _error = 'В буфере нет изображения с QR-кодом.');
+        }
+        return;
+      }
+      _useQrValue(value);
     } on QrImportException catch (error) {
       if (!mounted) return;
       setState(
@@ -102,6 +263,7 @@ class _ImportDialogState extends State<ImportDialog> {
       _loading = true;
       _error = null;
     });
+    _nameDebounce?.cancel();
     try {
       final group = widget.group == null
           ? null
@@ -114,7 +276,9 @@ class _ImportDialogState extends State<ImportDialog> {
       }
       if (group != null) widget.controller.discardPendingUpdate(group.id);
       final document = _link
-          ? await _loader.loadDocument(_input.text.trim())
+          ? _cachedSource == _input.text.trim() && _cachedDocument != null
+                ? _cachedDocument!
+                : await _loadDocument(_input.text.trim())
           : SubscriptionDocument.fromText(_input.text);
       if (!mounted) return;
       if (group != null &&
@@ -128,7 +292,7 @@ class _ImportDialogState extends State<ImportDialog> {
       }
       final result = group == null
           ? widget.controller.addSubscription(
-              name: _name.text.trim(),
+              name: _nameEdited ? _name.text.trim() : '',
               raw: document.body,
               providerName: document.providerName,
               sourceUrl: _link ? _input.text.trim() : null,
@@ -273,6 +437,44 @@ class _ImportDialogState extends State<ImportDialog> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      TextField(
+                        key: const Key('subscription-name'),
+                        controller: _name,
+                        enabled: !_loading && widget.group == null,
+                        maxLength: 80,
+                        onChanged: (value) {
+                          _nameEdited = value.trim().isNotEmpty;
+                          if (!_nameEdited && _cachedDocument != null) {
+                            _useProviderName(_cachedDocument!.providerName);
+                          }
+                        },
+                        decoration: InputDecoration(
+                          labelText: context.tr('Название подписки'),
+                          hintText: context.tr('Необязательно'),
+                          prefixIcon: const Icon(CupertinoIcons.tag, size: 18),
+                          suffixIcon: _nameLoading
+                              ? const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: SizedBox.square(
+                                    dimension: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1.5,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                          counterText: '',
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 14,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       LayoutBuilder(
                         builder: (context, constraints) =>
                             SlidingSegments<String>(
@@ -306,38 +508,86 @@ class _ImportDialogState extends State<ImportDialog> {
                                       _qrMode = value == 'qr';
                                       if (!_qrMode) _link = value == 'link';
                                       _error = null;
+                                      if (!_qrMode &&
+                                          _link &&
+                                          _cachedSource != _input.text.trim() &&
+                                          _isSubscriptionLink(
+                                            _input.text.trim(),
+                                          )) {
+                                        _nameDebounce?.cancel();
+                                        final revision = _sourceRevision;
+                                        _nameDebounce = Timer(
+                                          const Duration(milliseconds: 500),
+                                          () => _resolveName(revision),
+                                        );
+                                      }
                                     }),
                             ),
                       ),
                       const SizedBox(height: 16),
                       if (_qrMode)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 22,
-                            horizontal: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: scheme.surfaceContainerHighest.withValues(
-                              alpha: .35,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                CupertinoIcons.qrcode,
-                                size: 36,
-                                color: scheme.onSurfaceVariant,
-                              ),
-                              const SizedBox(height: 12),
-                              TextButton.icon(
+                              PopupMenuButton<String>(
                                 key: const Key('qr-import-button'),
-                                onPressed: _loading ? null : _readQr,
-                                icon: const Icon(
-                                  CupertinoIcons.photo,
-                                  size: 18,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
-                                label: Text(context.tr('QR из изображения')),
+                                tooltip: context.tr('QR из изображения'),
+                                enabled: !_loading,
+                                onSelected: (source) =>
+                                    _readQr(clipboard: source == 'clipboard'),
+                                itemBuilder: (context) => [
+                                  PopupMenuItem(
+                                    value: 'file',
+                                    child: Text(context.tr('Выбрать файл')),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'clipboard',
+                                    child: Text(context.tr('Из буфера обмена')),
+                                  ),
+                                ],
+                                child: Container(
+                                  width: 64,
+                                  height: 64,
+                                  decoration: BoxDecoration(
+                                    color: scheme.primary.withValues(
+                                      alpha: .08,
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Icon(
+                                    CupertinoIcons.photo,
+                                    size: 27,
+                                    color: scheme.primary,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              IconButton.filledTonal(
+                                key: const Key('qr-camera-button'),
+                                tooltip: context.tr('Сканировать QR'),
+                                onPressed: _loading ? null : _openCamera,
+                                constraints: const BoxConstraints.tightFor(
+                                  width: 64,
+                                  height: 64,
+                                ),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: scheme.primary.withValues(
+                                    alpha: .08,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                icon: Icon(
+                                  CupertinoIcons.camera,
+                                  size: 27,
+                                  color: scheme.primary,
+                                ),
                               ),
                             ],
                           ),
@@ -389,43 +639,6 @@ class _ImportDialogState extends State<ImportDialog> {
                           ),
                         ),
                       const SizedBox(height: 8),
-                      if (widget.group == null)
-                        if (_showName)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: TextField(
-                              controller: _name,
-                              enabled: !_loading,
-                              maxLength: 80,
-                              key: const Key('subscription-name'),
-                              decoration: InputDecoration(
-                                labelText: context.tr('Название подписки'),
-                                hintText: context.tr('Необязательно'),
-                                counterText: '',
-                                isDense: true,
-                              ),
-                            ),
-                          )
-                        else
-                          Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: TextButton.icon(
-                              onPressed: _loading
-                                  ? null
-                                  : () => setState(() => _showName = true),
-                              icon: const Icon(CupertinoIcons.pencil, size: 15),
-                              label: Text(
-                                context.tr('Название подписки'),
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                              style: TextButton.styleFrom(
-                                foregroundColor: scheme.onSurfaceVariant,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 2,
-                                ),
-                              ),
-                            ),
-                          ),
                       if (_error != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 10),
