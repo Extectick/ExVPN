@@ -14,8 +14,8 @@ function Get-ShorebirdPatchInputHash([byte[]]$Bytes) {
     [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($Bytes)).ToLowerInvariant()
 }
 
-function Get-ShorebirdPatchTextHash([byte[]]$Bytes) {
-    if($Bytes.Length -eq 0 -or $Bytes.Length -gt 64KB){throw 'shorebird_patch_text_asset_size_invalid'}
+function Get-ShorebirdPatchTextHash([byte[]]$Bytes,[long]$MaximumBytes=64KB) {
+    if($Bytes.Length -eq 0 -or $Bytes.Length -gt $MaximumBytes){throw 'shorebird_patch_text_asset_size_invalid'}
     try {$text=[Text.UTF8Encoding]::new($false,$true).GetString($Bytes)} catch {throw 'shorebird_patch_text_asset_utf8_invalid'}
     $normalized=$text.Replace("`r`n","`n")
     if($normalized.Contains("`r")){throw 'shorebird_patch_text_asset_newlines_invalid'}
@@ -30,10 +30,10 @@ function Assert-ShorebirdPatchInputFile([string]$Path,[long]$MaximumBytes) {
     $item
 }
 
-function Get-ShorebirdPatchInputBlob([string]$Repository,[string]$Commit,[string]$Path) {
+function Get-ShorebirdPatchInputBlob([string]$Repository,[string]$Commit,[string]$Path,[long]$MaximumBytes=64KB) {
     $object=$Commit+':'+$Path
     $size=Invoke-ShorebirdPatchInputGit $Repository @('cat-file','-s',$object)
-    if($size -cnotmatch '\A[1-9][0-9]*\z' -or [long]$size -gt 64KB){throw 'shorebird_patch_asset_blob_size_invalid'}
+    if($size -cnotmatch '\A[1-9][0-9]*\z' -or [long]$size -gt $MaximumBytes){throw 'shorebird_patch_asset_blob_size_invalid'}
     $start=[Diagnostics.ProcessStartInfo]::new()
     $start.FileName=(Get-Command git -CommandType Application -ErrorAction Stop|Select-Object -First 1).Source
     $start.UseShellExecute=$false;$start.CreateNoWindow=$true
@@ -101,7 +101,7 @@ function Enter-ShorebirdPatchTextAssetsLease {
     param([Parameter(Mandatory)][string]$Repository,[Parameter(Mandatory)][ValidateSet('Android','Windows')][string]$Target,
         [Parameter(Mandatory)][string]$BaseReceiptPath,[Parameter(Mandatory)]$BaseReceipt,
         [Parameter(Mandatory)][ValidatePattern('^[a-f0-9]{40}$')][string]$SourceCommit,
-        [Parameter(Mandatory)][string]$PrivateDirectory)
+        [Parameter(Mandatory)][string]$PrivateDirectory,[switch]$PlanOnly)
     $repositoryRoot=[IO.Path]::GetFullPath($Repository).TrimEnd('\','/')
     if([IO.Path]::GetFullPath((Invoke-ShorebirdPatchInputGit $repositoryRoot @('rev-parse','--show-toplevel'))).TrimEnd('\','/') -ine $repositoryRoot){throw 'shorebird_patch_asset_repository_invalid'}
     Assert-ShorebirdPatchInputSource $repositoryRoot $SourceCommit
@@ -152,9 +152,78 @@ function Enter-ShorebirdPatchTextAssetsLease {
     # Validate both complete plans before the first source write.
     foreach($entry in $entries){if((Get-AuditSha256 $entry.path) -cne $entry.originalHash -or (Get-ShorebirdPatchInputIndex $repositoryRoot $entry.relative) -cne $entry.index){throw 'shorebird_patch_asset_plan_changed'}}
     if((Get-AuditSha256 $BaseReceiptPath) -cne $receiptHash){throw 'shorebird_patch_asset_receipt_changed'}
+    if($PlanOnly){return $lease}
     $lease.active=$true
     try {
         foreach($entry in $entries){
+            if($entry.originalHash -cne $entry.baseHash){$entry.restoreRequired=$true;[IO.File]::WriteAllBytes($entry.path,$entry.baseBytes)}
+            $lease.summary+=@{path=$entry.relative;sourceRawSha256=$entry.originalHash;baseRawSha256=$entry.baseHash;normalizedSha256=$entry.normalizedHash}
+        }
+    } catch {Restore-ShorebirdPatchTextAssetsLease $lease;throw}
+    $lease
+}
+
+function Get-ShorebirdPatchAndroidPinPaths {
+    @('apps/exvpn/pubspec.yaml','apps/exvpn/pubspec.lock','apps/exvpn/lib/build_identity.dart',
+      'apps/exvpn/android/app/build.gradle.kts','scripts/bootstrap/toolchain.lock.json',
+      'scripts/bootstrap/shorebird.lock.json','scripts/release/flutter-runtime-inputs.ps1',
+      'scripts/release/android-engine-transform.lock.json','native/core/go.mod','native/core/go.sum',
+      'native/android/go.mod','native/android/go.sum','native/patches/xray-lifecycle.lock.json',
+      'native/patches/xray-lifecycle.patch','scripts/release/collect-notices.ps1','scripts/release/notice-inputs.ps1',
+      'scripts/release/artifact-audit-lib.ps1','scripts/release/android-notice-inputs.ps1',
+      'scripts/release/prepare-android-notices.ps1','scripts/release/verify-android-notices.ps1','LICENSE','NOTICE')
+}
+
+function Enter-ShorebirdPatchAndroidInputsLease {
+    param([Parameter(Mandatory)][string]$Repository,[Parameter(Mandatory)][string]$BaseReceiptPath,
+        [Parameter(Mandatory)]$BaseReceipt,
+        [Parameter(Mandatory)][ValidatePattern('^[a-f0-9]{40}$')][string]$SourceCommit,
+        [Parameter(Mandatory)][string]$PrivateDirectory)
+    # Build every asset and source-pin plan while the original checkout is
+    # clean. Never nest an Enter call after the first transport-byte write.
+    $lease=Enter-ShorebirdPatchTextAssetsLease -Repository $Repository -Target Android -BaseReceiptPath $BaseReceiptPath -BaseReceipt $BaseReceipt -SourceCommit $SourceCommit -PrivateDirectory $PrivateDirectory -PlanOnly
+    $baseRoot=[IO.Path]::GetFullPath([IO.Path]::GetDirectoryName($BaseReceiptPath)).TrimEnd('\','/')
+    $sealPath=Get-ShorebirdPatchReceiptFile $baseRoot $BaseReceipt 'patch-inputs/seal.json' 4MB
+    $sealHash=Get-AuditSha256 $sealPath
+    $seal=Get-Content -LiteralPath $sealPath -Raw|ConvertFrom-Json -AsHashtable
+    $paths=@(Get-ShorebirdPatchAndroidPinPaths)
+    if($seal.schema -ne 1 -or $seal.appVersion -cne $BaseReceipt.version -or $seal.pins -isnot [Collections.IList] -or $seal.pins.Count -ne $paths.Count){throw 'shorebird_patch_android_seal_invalid'}
+    $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach($record in $seal.pins){
+        if($record.path -isnot [string] -or $record.path -cnotin $paths -or !$seen.Add($record.path) -or $record.sha256 -isnot [string] -or $record.sha256 -cnotmatch '\A[a-f0-9]{64}\z'){throw 'shorebird_patch_android_seal_pin_set_invalid'}
+    }
+    $runtimeRelative='scripts/bootstrap/shorebird.lock.json'
+    $runtimePin=@($seal.pins|Where-Object path -CEQ $runtimeRelative)[0]
+    if($BaseReceipt.runtime.identity.pin.path -cne $runtimeRelative -or $runtimePin.sha256 -cne $BaseReceipt.runtime.identity.pin.sha256 -or
+        $seal.runtime.identity.pin.path -cne $runtimeRelative -or $seal.runtime.identity.pin.sha256 -cne $runtimePin.sha256){throw 'shorebird_patch_android_runtime_pin_mismatch'}
+    foreach($relative in $paths){
+        $record=@($seal.pins|Where-Object path -CEQ $relative)[0]
+        $path=Join-Path $lease.repository $relative
+        $item=Assert-ShorebirdPatchInputFile $path 512KB
+        $original=[IO.File]::ReadAllBytes($path)
+        $index=Get-ShorebirdPatchInputIndex $lease.repository $relative
+        $normalized=Get-ShorebirdPatchTextHash $original 512KB
+        foreach($revision in @($SourceCommit,$BaseReceipt.sourceCommit)){
+            $blob=Get-ShorebirdPatchInputBlob $lease.repository $revision $relative 512KB
+            if((Get-ShorebirdPatchTextHash $blob 512KB) -cne $normalized){throw 'shorebird_patch_android_pin_semantic_change'}
+        }
+        $lfText=[Text.UTF8Encoding]::new($false,$true).GetString($original).Replace("`r`n","`n")
+        $raw=$null
+        foreach($text in @($lfText,$lfText.Replace("`n","`r`n"))){
+            $candidate=[Text.UTF8Encoding]::new($false).GetBytes($text)
+            if((Get-ShorebirdPatchInputHash $candidate) -ceq $record.sha256){$raw=$candidate;break}
+        }
+        if($null -eq $raw){throw 'shorebird_patch_android_pin_hash_unmatched'}
+        $lease.entries.Add([ordered]@{path=$path;relative=$relative;original=$original;originalHash=(Get-ShorebirdPatchInputHash $original);mtime=$item.LastWriteTimeUtc;index=$index;baseBytes=[byte[]]$raw;baseHash=$record.sha256;normalizedHash=$normalized;restoreRequired=$false;maximumBytes=512KB})
+    }
+    # Recheck the complete 24-file plan and all anchors before any write.
+    foreach($entry in $lease.entries){if((Get-AuditSha256 $entry.path) -cne $entry.originalHash -or (Get-ShorebirdPatchInputIndex $lease.repository $entry.relative) -cne $entry.index){throw 'shorebird_patch_asset_plan_changed'}}
+    if((Get-AuditSha256 $BaseReceiptPath) -cne $lease.receiptSha256 -or (Get-AuditSha256 $sealPath) -cne $sealHash){throw 'shorebird_patch_asset_receipt_changed'}
+    Assert-ShorebirdPatchInputSource $lease.repository $SourceCommit
+    $lease.boundFiles=@(@{path=$sealPath;sha256=$sealHash})
+    $lease.active=$true
+    try {
+        foreach($entry in $lease.entries){
             if($entry.originalHash -cne $entry.baseHash){$entry.restoreRequired=$true;[IO.File]::WriteAllBytes($entry.path,$entry.baseBytes)}
             $lease.summary+=@{path=$entry.relative;sourceRawSha256=$entry.originalHash;baseRawSha256=$entry.baseHash;normalizedSha256=$entry.normalizedHash}
         }
@@ -221,7 +290,8 @@ function Restore-ShorebirdPatchTextAssetsLease($Lease) {
     try {
         foreach($entry in $Lease.entries){
             try {
-                $null=Assert-ShorebirdPatchInputFile $entry.path 64KB
+                $maximumBytes=if($entry.Contains('maximumBytes')){$entry.maximumBytes}else{64KB}
+                $null=Assert-ShorebirdPatchInputFile $entry.path $maximumBytes
                 $currentHash=Get-AuditSha256 $entry.path
                 if($currentHash -cne $entry.baseHash){
                     $failure=$true
@@ -239,6 +309,7 @@ function Restore-ShorebirdPatchTextAssetsLease($Lease) {
             } catch {$failure=$true}
         }
         if((Get-AuditSha256 $Lease.receiptPath) -cne $Lease.receiptSha256){$failure=$true}
+        if($Lease.Contains('boundFiles')){foreach($file in $Lease.boundFiles){if((Get-AuditSha256 $file.path) -cne $file.sha256){$failure=$true}}}
         Assert-ShorebirdPatchInputSource $Lease.repository $Lease.sourceCommit
         if($failure){throw 'shorebird_patch_asset_restore_failed'}
         $Lease.restored=$true

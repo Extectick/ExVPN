@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "status": "FOCUSED_FIX_ACCEPTED_PENDING_HOSTED_MATRIX",
+  "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+  "failedRuns": [
+    39302907109,
+    39304724757
+  ],
+  "failuresBeforeAotAndCloud": true,
+  "fix": {
+    "schemaVersion": 1,
+    "utc": "2026-10-20T02:12:35.655961+07:00",
+    "sourceHead": "6f5deb71d2ea8343e8b68afa4dcd9eb1b29027b2",
+    "ownedFiles": [
+      {
+        "path": "scripts/release/shorebird-patch.ps1",
+        "sha256": "d33d4e904bfcf82ecd48a24615cbde1355deb63418f9da122d64cdd09c66c5ff"
+      },
+      {
+        "path": "scripts/release/shorebird-patch-inputs.ps1",
+        "sha256": "b132e0cdb6a3bb826351295a38b109968f628471fbae52118c124027c16afad1"
+      },
+      {
+        "path": "scripts/release/test-shorebird-patch-inputs.ps1",
+        "sha256": "65a5f1abf4bc9ff446a319cf910750585090e92fb2f3333f4d8adf0bf50549d7"
+      }
+    ],
+    "focusedCommand": "pwsh -NoProfile -File scripts/release/test-shorebird-patch-inputs.ps1 -AndroidLeaseOnly",
+    "focusedChecks": 75,
+    "result": "passed",
+    "old79NotRepeated": true,
+    "ASTFiles": 3,
+    "diffCheck": "passed",
+    "newContract": "Single Android 22 sealed text pins plus 2 assets planned and validated before first write; exact filemap-bound raw newline bytes active through verifier/official patch; all24 restored before final runtime/source checks",
+    "maximumSourcePinBytes": 524288,
+    "actualMaxC7PinBytes": 159488,
+    "actualC7BindingProof": "artifacts/qa/shorebird-ci-readiness/android-seal-pin-transport.json",
+    "sourceGuardChanged": false,
+    "indexOrConfigMutated": false,
+    "pinnedRuntimeOrNoticeHelperEdited": false,
+    "SDKOrBuildInvoked": false,
+    "cloudInvoked": false,
+    "installedStandTouched": false,
+    "independentReadOnlyReview": "windows_update_helper: no concrete blocker",
+    "limitations": [
+      "Focused pure synthetic fixtures; next hosted CI must validate SDK/Gradle/cloud against the exact accepted base."
+    ]
+  },
+  "sealTransportProofSha256": "5a3fbf24ced410f9d659806a76fbfb00f04e2b2a76350fc2042a9c05d045898c",
+  "sealPinCount": 22,
+  "literalBaseLfPins": 20,
+  "literalBaseCrlfPins": 2,
+  "unifiedAndroidFiles": 24,
+  "fixedTextAssets": 2,
+  "indexOrGitConfigChanged": false,
+  "sourceGuardExemptions": false,
+  "upstreamDiffOverrides": false,
+  "pinnedRuntimeOrNoticeHelpersChanged": false,
+  "independentReview": "no concrete blocker",
+  "applicationFullRepeated": false,
+  "packagesRebuiltLocally": false
+}

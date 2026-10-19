@@ -43,15 +43,18 @@ foreach ($name in @('PATH','APPDATA','PUB_CACHE','GRADLE_USER_HOME','CI','FLUTTE
     $environment[$name] = [Environment]::GetEnvironmentVariable($name,'Process')
 }
 $keyPath = $null; $passwordBytes = $null; $textAssetLease = $null; $runtimePinLease = $null
-$runtime = $null; $actualRuntimeEvidence = $null; $cli = $null; $phase = 'runtime_inputs'
+$runtime = $null; $actualRuntimeEvidence = $null; $runtimePinInput = $null; $cli = $null; $phase = 'runtime_inputs'
 $recoveryPath = $null; $cloudPatchVerified = $false
 Push-Location $app
 try {
     $runtimePinLease = Enter-ShorebirdPatchRuntimePinLease -Repository $repository -BaseReceiptPath $basePath -BaseReceipt $base -SourceCommit $source.sourceCommit -PrivateDirectory $privateRun
-    $runtime = Get-ReleaseFlutterRuntime -Repository $repository -Target $Target -FlutterRuntime shorebird -FlutterBuildMode release
-    $actualRuntimeEvidence = $runtime.Evidence
-    Assert-ReleaseFlutterRuntimeEvidence $actualRuntimeEvidence $base.runtime
-    $cli = Get-ShorebirdCli $repository
+    $runtimePinInput = $runtimePinLease.summary
+    try {
+        $runtime = Get-ReleaseFlutterRuntime -Repository $repository -Target $Target -FlutterRuntime shorebird -FlutterBuildMode release
+        $actualRuntimeEvidence = $runtime.Evidence
+        Assert-ReleaseFlutterRuntimeEvidence $actualRuntimeEvidence $base.runtime
+        $cli = Get-ShorebirdCli $repository
+    } finally { Restore-ShorebirdPatchRuntimePinLease $runtimePinLease }
     $env:CI = 'true'; $env:FLUTTER_SUPPRESS_ANALYTICS = 'true'; $env:DART_SUPPRESS_ANALYTICS = 'true'
     $env:PUB_CACHE = Join-Path $repository '.tools/cache/pub'
     $env:GRADLE_USER_HOME = Join-Path $repository '.tools/cache/gradle'
@@ -102,8 +105,6 @@ try {
             Assert-AuditNoLinks $cached
             if ((Get-AuditSha256 $cached) -cne (Get-AuditSha256 $sealed)) { throw 'shorebird_patch_cached_jni_mismatch' }
         }
-        & (Join-Path $PSScriptRoot 'verify-android-notices.ps1') -InputDirectory $env:EXVPN_ANDROID_PACKAGE_INPUTS -ExpectedVersion $version -FlutterRuntime shorebird -FlutterBuildMode release *> (Join-Path $privateRun 'inputs.log')
-        if (!$?) { throw 'shorebird_patch_base_inputs_invalid' }
     }
     $cloud = Invoke-ShorebirdJson $cli @('releases','info',"--app-id=$($policy.appId)","--release-version=$version") 'releases info' $privateRun 'base'
     Assert-ShorebirdCloudRelease $cloud.release $version $Target $base.releaseId
@@ -112,11 +113,23 @@ try {
     $env:EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64 = $null
     $phase = 'patch'
     $arguments = Get-ShorebirdPatchArguments $Target $version $public.path $keyPath -PublishCloud:$PublishCloud
-    $textAssetLease = Enter-ShorebirdPatchTextAssetsLease -Repository $repository -Target $Target -BaseReceiptPath $basePath -BaseReceipt $base -SourceCommit $source.sourceCommit -PrivateDirectory $privateRun
-    if ($PublishCloud) {
-        $recoveryPath=Write-ShorebirdRecovery -Repository $repository -Action patch -Version $version -Target $Target -SourceCommit $source.sourceCommit -BaseSourceCommit $base.sourceCommit -ReleaseId $base.releaseId -Status attempting -CloudOutcome unknown -Phase $phase
+    $textAssetLease = if ($Target -ceq 'Android') {
+        Enter-ShorebirdPatchAndroidInputsLease -Repository $repository -BaseReceiptPath $basePath -BaseReceipt $base -SourceCommit $source.sourceCommit -PrivateDirectory $privateRun
+    } else {
+        Enter-ShorebirdPatchTextAssetsLease -Repository $repository -Target $Target -BaseReceiptPath $basePath -BaseReceipt $base -SourceCommit $source.sourceCommit -PrivateDirectory $privateRun
     }
-    try { $result = Invoke-ShorebirdJson $cli $arguments 'patch' $privateRun 'patch' }
+    try {
+        if ($Target -ceq 'Android') {
+            $phase = 'android_inputs'
+            & (Join-Path $PSScriptRoot 'verify-android-notices.ps1') -InputDirectory $env:EXVPN_ANDROID_PACKAGE_INPUTS -ExpectedVersion $version -FlutterRuntime shorebird -FlutterBuildMode release *> (Join-Path $privateRun 'inputs.log')
+            if (!$?) { throw 'shorebird_patch_base_inputs_invalid' }
+        }
+        $phase = 'patch'
+        if ($PublishCloud) {
+            $recoveryPath=Write-ShorebirdRecovery -Repository $repository -Action patch -Version $version -Target $Target -SourceCommit $source.sourceCommit -BaseSourceCommit $base.sourceCommit -ReleaseId $base.releaseId -Status attempting -CloudOutcome unknown -Phase $phase
+        }
+        $result = Invoke-ShorebirdJson $cli $arguments 'patch' $privateRun 'patch'
+    }
     finally { Restore-ShorebirdPatchTextAssetsLease $textAssetLease }
     $patchNumber = $null; $patchId = $null; $artifacts = @()
     if ($PublishCloud) {
@@ -146,9 +159,11 @@ try {
         }
     } elseif (!$result.dry_run -or $result.release_id -ne $base.releaseId -or $result.release_version -cne $version) { throw 'shorebird_patch_dry_run_invalid' }
     $phase = 'final_inputs'
-    $actualRuntimeEvidence = (Get-ReleaseFlutterRuntime -Repository $repository -Target $Target -FlutterRuntime shorebird -FlutterBuildMode release).Evidence
-    Assert-ReleaseFlutterRuntimeEvidence $actualRuntimeEvidence $runtime.Evidence
-    Restore-ShorebirdPatchRuntimePinLease $runtimePinLease
+    $runtimePinLease = Enter-ShorebirdPatchRuntimePinLease -Repository $repository -BaseReceiptPath $basePath -BaseReceipt $base -SourceCommit $source.sourceCommit -PrivateDirectory $privateRun
+    try {
+        $actualRuntimeEvidence = (Get-ReleaseFlutterRuntime -Repository $repository -Target $Target -FlutterRuntime shorebird -FlutterBuildMode release).Evidence
+        Assert-ReleaseFlutterRuntimeEvidence $actualRuntimeEvidence $runtime.Evidence
+    } finally { Restore-ShorebirdPatchRuntimePinLease $runtimePinLease }
     $after = Assert-ShorebirdPatchSource $repository $base.sourceCommit
     if ($after.sourceCommit -cne $source.sourceCommit) { throw 'shorebird_patch_source_changed' }
     Assert-ShorebirdReceiptFiles $basePath $base
@@ -159,8 +174,9 @@ try {
         patchNumber=$patchNumber;patchId=$patchId;artifacts=$artifacts
         baseReceiptSha256=Get-AuditSha256 $basePath;source=$source;runtime=$runtime.Identity
         nativeDiffsAllowed=$false;assetDiffsAllowed=$false;deviceApplyVerified=$false
-        textAssetInputs=$textAssetLease.summary
-        runtimePinInput=$runtimePinLease.summary
+        textAssetInputs=@($textAssetLease.summary|Where-Object {$_.path.StartsWith('apps/exvpn/assets/',[StringComparison]::Ordinal)})
+        androidSealPins=@($textAssetLease.summary|Where-Object {$_.path -cnotlike 'apps/exvpn/assets/*'})
+        runtimePinInput=$runtimePinInput
     } | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $output 'patch.json') -Encoding utf8NoBOM
     if ($recoveryPath) {
         $null=Write-ShorebirdRecovery -Repository $repository -Action patch -Version $version -Target $Target -SourceCommit $source.sourceCommit -BaseSourceCommit $base.sourceCommit -ReleaseId $base.releaseId -PatchId $patchId -PatchNumber $patchNumber -Status ready -CloudOutcome registered -Phase $phase -Path $recoveryPath
