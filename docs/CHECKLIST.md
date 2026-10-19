@@ -53,6 +53,19 @@
 
 ## Сводка этапов
 
+- [x] **EXVPN-E6-016** — Принять и опубликовать новую Shorebird-базу0.1.9+30
+  после расширения native-протоколов. Проверено2026-10-20: base `f98b75d`,
+  CI39319816470, signed patches Windows1/732154 и Android2/732166 из `1be30d5`,
+  cloud rollback39328414028. На обеих платформах реально наблюдались UI1→UI2→UI1
+  и current/next, данные и байты базы сохранены; холодные запуски подтверждены,
+  автоматический Windows restart не заявляется. Коммитыb6556b0/f3c6238.
+  [SDK гейт](evidence/shorebird30-runtime-qa.json),
+  [публичный аудит](evidence/shorebird30-public-download-audit.json),
+  [Preview](https://github.com/Extectick/ExVPN/releases/tag/v0.1.9).
+  Публикационный CI получил403 на историческом target commit; завершён тот же
+  скрипт через локальный авторизованный gh без пересборки и новых прав CI.
+  Полная E1/stable-приёмка этим пунктом не закрывается.
+
 - [x] **EXVPN-E6-015** — Выпускать подписанные Android/Windows Dart-патчи через
   GitHub Actions поверх принятой базы 0.1.8+29. Критерий: hosted Android preflight
   принят без отключения strip/signature/native/assets guards; оба CI job публикуют

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.9+30",
+  "publicUrl": "https://github.com/Extectick/ExVPN/releases/tag/v0.1.9",
+  "baseSourceCommit": "f98b75d38a656fc6a708cac9ba692ad7502c47c2",
+  "releaseAssetCount": 18,
+  "checksumFilesVerified": 17,
+  "githubAssetDigestsVerified": true,
+  "sameAcceptedCiBytes": true,
+  "androidPinnedSignerVerified": true,
+  "runtimeEvidenceBound": true,
+  "feeds": [
+    {
+      "platform": "windows-x64",
+      "signatureVerified": true,
+      "version": "0.1.9+30",
+      "artifactSha256": "2654cfb590c42d4ac2078cb659fb6c06520b988ab1300a4158ed6cd12eeb4440"
+    },
+    {
+      "platform": "android",
+      "signatureVerified": true,
+      "version": "0.1.9+30",
+      "artifactSha256": "c7e62ed64784c3718229103c0bd938bdd142d95fe497dec41ec64f7517e05eb5"
+    }
+  ],
+  "stableReady": false,
+  "passed": true
+}
