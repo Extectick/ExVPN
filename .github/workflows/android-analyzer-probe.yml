@@ -15,7 +15,6 @@ jobs:
   probe:
     if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/codex/shorebird29-analyzer-diagnostic'
     runs-on: windows-2025
-    environment: demo-release
     timeout-minutes: 15
     defaults:
       run:
@@ -45,7 +44,7 @@ jobs:
           if ($env:CACHE_HIT -cne 'true') { throw 'analyzer_diagnostic_exact_cache_required' }
       - name: Reproduce exact C7 helper once and encrypt analyzer stdout and stderr
         env:
-          EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64: ${{ secrets.EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64 }}
+          EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64: MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAyccgQ4ngl+vUKLfMo9e96VR8vxV0WgO+DuTzRti1ZCF5f4KX+rYd5Asru55aZ4amkta/MREE0EDp7PN6PDRYCaLmj/Y6p1i0x+rlt6HqNXcJCeW7kd0yuM/fku9yVNCiMjyv8S6Eytyp2Og+HDh0xNI6dLFIQ1lLbSQ11V+qiyN2mxNugcLcQRQt8XELhGZprdU9waWN+qyQGf2Y11qCOiqk8rAbHe80KihQkQIsrCbzU9HKDd9BVY3KY8holHdPUCZ/qFugJVYLWC+ln691OAJpO0D442nS2EUiGHH7d4po9DXyKR1IpZZgTWgi+hicJ4KMxcBJcpHGZ0HSEj+lVdO1ihCP8dTCkPFASsqGgVf+vzg83lvw61EUCkiH/FaQHirLJVjboPXkebqSztK1ac6vnhI0C+TA3A9N+UUzasU2q38b6+SdFqS856/9LTbfzI2vbG5+9NUw0avo5NuQn3t5CAJ6m5/Re/Y0Uo5VWCGqQyBX6GHPnkZWKx0dC9ldAgMBAAE=
         run: |
           $ErrorActionPreference='Stop'
           $PSNativeCommandUseErrorActionPreference=$false
@@ -75,6 +74,8 @@ jobs:
               if([IO.File]::ReadAllText((Join-Path $flutter 'bin/cache/engine-dart-sdk.stamp')).Trim() -cne '4b936a0c03e13389ddfb1ac48823f187964975c2'){throw 'analyzer_diagnostic_cached_dart_wrong_pin'}
               if(!$env:JAVA_HOME_21_X64 -or !(Test-Path -LiteralPath (Join-Path $env:JAVA_HOME_21_X64 'bin/java.exe')) -or !$env:ANDROID_HOME){throw 'analyzer_diagnostic_host_tools_missing'}
               if(!$env:EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64){throw 'analyzer_diagnostic_public_key_missing'}
+              $publicDer=[Convert]::FromBase64String($env:EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64)
+              if([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($publicDer)).ToLowerInvariant() -cne '8bb551311e6e2db332be22cf81a32e0f6f0615e5f00e89e2a67ecbc55438b788'){throw 'analyzer_diagnostic_public_key_identity_mismatch'}
               $env:JAVA_HOME=$env:JAVA_HOME_21_X64
               $private=New-ShorebirdPrivateDirectory $repository 'analyzer-diagnostic'
               try {
