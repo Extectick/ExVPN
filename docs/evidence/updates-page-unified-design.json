@@ -49,5 +49,6 @@
     "Browser download and relaunch are visual simulations; no package downloaded or installed.",
     "Windows installed runtime and physical Android visual acceptance not repeated.",
     "Android Dart auto-restart still requires native lifecycle support; existing cold-start application remains."
-  ]
+  ],
+  "implementationCommit": "1eb2c42f240ec372dfc1ed984952956bc31395cf"
 }

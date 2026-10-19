@@ -23,7 +23,7 @@
 targeted analyzer чист. Проверены тёмный medium, светлый minimal и переход
 загрузка→перезапуск→«Проверить» в браузере. Нативные APK/EXE, Full и CI в этом
 дизайн-цикле не запускались. [Квитанция](evidence/updates-page-unified-design.json),
-снимки `design/screenshots/updates-unified/`. Рабочее дерево; commit ожидается.
+снимки `design/screenshots/updates-unified/`. Исходники: [1eb2c42](https://github.com/Extectick/ExVPN/commit/1eb2c42f240ec372dfc1ed984952956bc31395cf); проверки и снимки приняты.
 
 Изменения ниже включены в **0.1.6+27** от 2026-10-19, source `ae35c9a`.
 [Windows/Android выпуск](https://github.com/Extectick/ExVPN/releases/tag/v0.1.6)
