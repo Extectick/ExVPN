@@ -1,5 +1,20 @@
 # ExVPN — архитектура
 
+## Независимый Dart OTA, 2026-10-20
+
+База 0.1.10+31 компилируется с `EXVPN_OTA_PROVIDER=exvpn` и fingerprint защищённых
+native/assets/plugins/dependencies. Встроенный updater настроен на фиксированный
+loopback endpoint; auto_update=false, strict RSA4096. Dart-адаптер держит socket
+весь срок процесса, проверяет собственный Ed25519-каталог, срок/последовательность/
+совместимость/ABI/отзыв, сохраняет high-water и проверяет diff до передачи SDK.
+FFI выполняется последовательно вне UI isolate; timeout блокирует дальнейшие
+SDK calls и сохраняет владение портом. Занятый порт отключает OTA, а не VPN.
+Каталог и code assets публикуются раздельно, патчи неизменяемые; события SDK
+не сохраняются и не пересылаются. Native proxy bypass касается только процесса.
+Старые базы сохраняют прежнюю политику Shorebird Cloud; новый режим явный.
+Это собственный совместимый адаптер, не официальный self-host Shorebird.
+[Контракт и приёмка](INDEPENDENT_OTA_PLAN.md).
+
 ## Настройка Kill Switch и ограниченный журнал, 2026-10-20
 
 Опциональный `ConnectionProtectionBridge` возвращает supported/nullable enabled/

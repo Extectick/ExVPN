@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "date": "2026-10-20",
+  "version": "0.1.10+31",
+  "full": {
+    "lanes": 12,
+    "report": "fast-validation-v0.1.10.json",
+    "seconds": 116.77,
+    "sourceUnchanged": true,
+    "appTests": 445
+  },
+  "followups": {
+    "cacheTargetX64Fixture": 25,
+    "publicationPowerShell": 68,
+    "publicationPython": 3,
+    "aotCheckoutPolicyFixtures": 61,
+    "sourceTextChangedOnlyLineEndings": true,
+    "fullNotRepeatedAfterToolingFollowups": true,
+    "catalogPython": 16
+  },
+  "runtimeAccepted": false,
+  "published": false
+}

@@ -61,11 +61,12 @@ function Get-ShorebirdBasePublicFile([string]$Root,$Base,[string]$Name) {
     [ordered]@{path=$path;asset=$asset}
 }
 
-function Get-ShorebirdPublicBase([string]$Repository,[string]$ReceiptPath,[string]$Version,[string]$BaseCommit,[string]$Target) {
+function Get-ShorebirdPublicBase([string]$Repository,[string]$ReceiptPath,[string]$Version,[string]$BaseCommit,[string]$Target,[switch]$Independent) {
     Assert-AuditNoLinks $ReceiptPath
     if ((Get-Item -LiteralPath $ReceiptPath).Length -gt 4MB) { throw 'shorebird_base_receipt_oversized' }
     $base=Get-Content -LiteralPath $ReceiptPath -Raw | ConvertFrom-Json -AsHashtable
-    Assert-ShorebirdBaseReceipt $base $Version $Target
+    if ($Independent) { Assert-IndependentBaseReceipt $base $Version $Target }
+    else { Assert-ShorebirdBaseReceipt $base $Version $Target }
     Assert-ShorebirdReceiptFiles $ReceiptPath $base
     if ($base.sourceCommit -cne $BaseCommit -or !$base.sourceLockUnchanged -or !$base.updaterPolicyVerified -or $base.stableReady -ne $false -or
         $base.publicKeySha256 -cne (Get-ShorebirdPublicKey $Repository).sha256) { throw 'shorebird_public_base_identity_failed' }
@@ -83,6 +84,52 @@ function Get-ShorebirdPublicBase([string]$Repository,[string]$ReceiptPath,[strin
         @($sbom.metadata.component.hashes | Where-Object { $_.alg -ceq 'SHA-256' -and $_.content -ceq $binary.asset.sha256 }).Count -ne 1 -or
         @($sbom.compositions | Where-Object aggregate -CEQ 'incomplete').Count -ne 1) { throw 'shorebird_public_sbom_binding_failed' }
     [ordered]@{target=$Target;root=$root;base=$base;receiptPath=[IO.Path]::GetFullPath($ReceiptPath);receiptSha256=Get-AuditSha256 $ReceiptPath;binary=$binary;audit=$audit;auditFile=$auditFile;sbomFile=$sbomFile;notices=(Get-ShorebirdBasePublicFile $root $base "$stem-notices.zip")}
+}
+
+function Assert-IndependentBaseReceipt($Receipt,[string]$Version,[string]$Target) {
+    $policy=Get-ShorebirdPolicy
+    if (!$Receipt -or $Receipt.schemaVersion -ne 2 -or $Receipt.action -cne 'base' -or
+        $Receipt.delivery -cne 'independent' -or $Receipt.published -ne $false -or $null -ne $Receipt.releaseId -or
+        $Receipt.version -cne $Version -or $Receipt.target -cne $Target -or $Receipt.track -cne 'beta' -or
+        $Receipt.appId -cne $policy.appId -or $Receipt.auditAccepted -ne $true -or
+        $Receipt.sourceCommit -cnotmatch '^[a-f0-9]{40}$' -or $Receipt.compiledSourceCommit -cne $Receipt.sourceCommit -or $null -ne $Receipt.recoveryProof -or
+        $Receipt.publicKeySha256 -cnotmatch '^[a-f0-9]{64}$' -or $Receipt.autoUpdate -ne $false -or
+        $Receipt.patchVerification -cne 'strict' -or $Receipt.runtime.identity.kind -cne 'shorebird' -or
+        $Receipt.runtime.identity.target -cne $Target -or $Receipt.runtime.identity.buildMode -cne 'release' -or
+        $Receipt.runtime.identity.flutterRevision -cne $policy.flutterRevision -or $Receipt.runtime.identity.engineRevision -cne $policy.engineRevision -or
+        $Receipt.runtime.identity.cli.revision -cne $policy.cliRevision -or $Receipt.packagedRuntime.engineBytesBound -ne $true -or
+        $Receipt.sourceLockUnchanged -ne $true -or $Receipt.updaterPolicyVerified -ne $true -or $Receipt.stableReady -ne $false) { throw 'independent_base_receipt_invalid' }
+    Assert-ShorebirdPatchArtifacts $Receipt.baseAot $Target
+}
+
+function Assert-IndependentCompiledPolicy([string]$Text,[string]$EncodedKey) {
+    # Narrow adapter endpoint is the ONLY extra field permitted in this mode.
+    $lines=@($Text -split '\r?\n')
+    $endpoints=@($lines | Where-Object { $_ -cmatch '^base_url:' })
+    if ($endpoints.Count -ne 1 -or $endpoints[0] -cne 'base_url: http://127.0.0.1:57791') { throw 'independent_compiled_endpoint_invalid' }
+    $legacy=(@($lines | Where-Object { $_ -cnotmatch '^base_url:' }) -join "`n")
+    Assert-ShorebirdCompiledPolicy $legacy $EncodedKey
+}
+
+function Assert-IndependentRuntimeGate($Evidence,[string]$Version,[string]$BaseCommit,$Receipts,$Artifacts) {
+    if ($Evidence.schemaVersion -ne 1 -or $Evidence.delivery -cne 'independent' -or $Evidence.version -cne $Version -or
+        $Evidence.baseSourceCommit -cne $BaseCommit -or $Evidence.compiledSourceCommit -cne $BaseCommit -or @($Evidence.platforms).Count -ne 2) { throw 'independent_runtime_gate_identity_failed' }
+    $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $safe=@()
+    foreach ($record in $Evidence.platforms) {
+        $target=$record.target
+        if ($target -cnotin @('Android','Windows') -or !$seen.Add($target) -or $Evidence.baseReceipts[$target] -cne $Receipts[$target] -or
+            $record.artifactSha256 -cne $Artifacts[$target] -or $record.patchNumber -le 0 -or $record.patchNumber -gt [int]::MaxValue -or
+            $record.applyVerified -ne $true -or $record.rollbackVerified -ne $true -or $record.appliedCurrentPatch -ne $record.patchNumber -or
+            $record.rollbackCurrentPatch -ne 0 -or $record.dataPreserved -ne $true -or $record.updaterAvailable -ne $true -or
+            $record.baseUiRevision -lt 0 -or $record.appliedUiRevision -le $record.baseUiRevision -or $record.rollbackUiRevision -ne $record.baseUiRevision -or
+            $record.applyCatalogRevision -le 0 -or $record.rollbackCatalogRevision -le $record.applyCatalogRevision -or
+            $record.applyCatalogSha256 -cnotmatch '^[a-f0-9]{64}$' -or $record.rollbackCatalogSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+            $record.applyCatalogSha256 -ceq $record.rollbackCatalogSha256 -or $record.patchDiffSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+            $record.patchAotSha256 -cnotmatch '^[a-f0-9]{64}$' -or $record.signedCatalogVerified -ne $true -or $record.signatureVerified -ne $true) { throw 'independent_runtime_gate_platform_failed' }
+        $safe+=[ordered]@{target=$target;artifactSha256=$record.artifactSha256;patchNumber=$record.patchNumber;applyVerified=$true;rollbackVerified=$true;appliedCurrentPatch=$record.patchNumber;rollbackCurrentPatch=0;dataPreserved=$true;updaterAvailable=$true;baseUiRevision=$record.baseUiRevision;appliedUiRevision=$record.appliedUiRevision;rollbackUiRevision=$record.baseUiRevision;applyCatalogRevision=$record.applyCatalogRevision;rollbackCatalogRevision=$record.rollbackCatalogRevision;applyCatalogSha256=$record.applyCatalogSha256;rollbackCatalogSha256=$record.rollbackCatalogSha256;patchDiffSha256=$record.patchDiffSha256;patchAotSha256=$record.patchAotSha256;signedCatalogVerified=$true;signatureVerified=$true}
+    }
+    [ordered]@{schemaVersion=1;delivery='independent';version=$Version;baseSourceCommit=$BaseCommit;compiledSourceCommit=$BaseCommit;baseReceipts=$Receipts;platforms=$safe}
 }
 
 function Assert-ShorebirdFileMaps($Actual,$Expected) {

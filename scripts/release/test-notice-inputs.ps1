@@ -736,6 +736,13 @@ $wrapperFinally=@($updaterAst.FindAll({param($node) $node -is [Management.Automa
     $null -ne $node.Finally -and $node.Finally.Extent.Text.Contains('$savedEnvironment.Keys') -and
     @($node.Finally.Statements | Where-Object { $_.Extent.Text -ceq 'Pop-Location' }).Count -eq 1},$false))
 if ($wrapperFinally.Count -ne 1) { throw 'Expected exactly one actual wrapper environment cleanup.' }
+# The legacy fixture leases no updater config. Load the real no-op cleanup
+# branch too, rather than invoking an extracted finally without its helper.
+$restoreUpdater=@($updaterAst.FindAll({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Restore-IndependentUpdaterConfig'},$false))
+if ($restoreUpdater.Count -ne 1) { throw 'Expected one actual updater config restorer.' }
+. ([scriptblock]::Create($restoreUpdater[0].Extent.Text))
+$script:independentConfigLeased=$false
+$Independent=$false
 $sdkEnvironmentBefore=@{}
 foreach ($name in @('ANDROID_HOME','ANDROID_SDK_ROOT')) { $sdkEnvironmentBefore[$name]=[Environment]::GetEnvironmentVariable($name,'Process') }
 try {

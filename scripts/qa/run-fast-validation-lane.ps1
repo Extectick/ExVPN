@@ -150,6 +150,9 @@ switch ($Lane) {
         Invoke-ScriptCheck 'scripts/release/test-build-demo-android.ps1'
         Invoke-ScriptCheck 'scripts/windows/test-ci-msvc-runtime.ps1'
         Invoke-ScriptCheck 'scripts/windows/test-prepare-nsis.ps1'
+        Invoke-ScriptCheck 'scripts/build/test-native-cache.ps1'
+        Invoke-ScriptCheck 'scripts/ota/test-ui-patch.ps1'
+        Invoke-ScriptCheck 'scripts/ota/test-independent-publication.ps1'
         break
     }
 }

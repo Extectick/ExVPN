@@ -762,6 +762,15 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
 
 ## E7 — Общая beta
 
+- [ ] **EXVPN-E6-017** — Независимая доставка подписанных Dart-патчей и быстрые сборки.
+  Критерий: одна база Android/Windows 0.1.10+31 со всеми текущими UI-изменениями;
+  реальные independent apply/cold launch/withdraw/cold rollback, неизменные
+  APK/EXE и пользовательские данные; replay/signature/compatibility отказ закрыт;
+  AOT-only workflow без Cloud API и source-bound cache service/JNI.
+  Подготовка 2026-10-20: 23 Dart adapter/catalog теста, 59 AOT, 68 publication,
+  24 cache и 16 Python catalog fixtures PASS; runtime и публикация ожидаются.
+  [План](INDEPENDENT_OTA_PLAN.md). Рабочее дерево; commit ожидается.
+
 - [x] **EXVPN-E7-006** — Не пересобирать native-пакеты в CI при доказанных QA-only изменениях, сохранив все тесты. Зависимость: E7-001, E7-005. Критерий: консервативный selector отклоняет неизвестные изменения/ошибки Git, Android выполняет самостоятельные JVM tests без APK/JNI, фактический QA-only GitHub run проходит обе платформы без выгрузки native artifacts; product/PR/manual run остаётся полным.
   Доказательство 2026-10-17: [run 38991041038](https://github.com/Extectick/ExVPN/actions/runs/38991041038) на [8b24160](https://github.com/Extectick/ExVPN/commit/8b24160fd06dff2daff1651da20c769804cb1da6) прошёл обе платформы: Windows 374 с, Android 773 с. Actual selector и повторная проверка подтвердили QA-only; 6/6 exact cache HIT, 8 свежих JVM tests, 143-task graph, отсутствие native outputs и 0 uploaded artifacts. [Отчёт](evidence/ci-qa-only-build12.json). Полный +12 run также прошёл обе платформы: [cold-cache отчёт](evidence/ci-build12-cold-cache.json). Разные объёмы workflow не сравниваются как контролируемый benchmark.
   Дополнение 2026-10-17: 131 selector/graph/JUnit fixtures PASS; десять точных диагностических файлов добавлены в allowlist, соседние/смешанные изменения сохраняют полную сборку. Добавлены закреплённые CI-кеши архивов SDK, Go и Pub с обязательной повторной проверкой. [Правила](CI.md); исходники [dfaf4ad](https://github.com/Extectick/ExVPN/commit/dfaf4ad5fb83a0ae3d8606a2189187803e713042).

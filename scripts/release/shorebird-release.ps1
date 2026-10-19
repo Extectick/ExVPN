@@ -13,10 +13,15 @@ param(
     [string]$AndroidSdkPath = '',
     [Parameter(Mandatory)][ValidatePattern('^\d+\.\d+\.\d+\+[1-9]\d*$')][string]$ReleaseVersion,
     [switch]$PublishCloud,
-    [switch]$RecoverWindowsBase
+    [switch]$RecoverWindowsBase,
+    [switch]$Independent,
+    [string]$IndependentBaseFingerprint = ''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+if ($Independent -and ($PublishCloud -or $RecoverWindowsBase)) { throw 'independent_base_cloud_operation_forbidden' }
+if ($Independent -and $IndependentBaseFingerprint -cnotmatch '^[a-f0-9]{64}$') { throw 'independent_base_fingerprint_missing' }
+if (!$Independent -and $IndependentBaseFingerprint) { throw 'independent_base_switch_required' }
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'flutter-runtime-inputs.ps1')
 . (Join-Path $PSScriptRoot 'notice-inputs.ps1')
@@ -26,6 +31,10 @@ $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'shorebird-runtime-notices.ps1')
 . (Join-Path $PSScriptRoot 'shorebird-android-environment.ps1')
 . (Join-Path $PSScriptRoot 'shorebird-android-release-config.ps1')
+if ($Independent) {
+    . (Join-Path $repository 'scripts/ota/aot-inputs.ps1')
+    if ((Get-ExvpnOtaInputsFingerprint @(Get-ExvpnOtaProtectedInputs $repository)) -cne $IndependentBaseFingerprint) { throw 'independent_base_fingerprint_mismatch' }
+}
 $sourceCommit = Get-ShorebirdSourceCommit $repository
 $compiledSourceCommit=$sourceCommit;$recoveryProof=$null;$recoveryEquivalence=$null
 if($RecoverWindowsBase){
@@ -39,7 +48,7 @@ function Read-ExVpnUpdaterConfig([string]$Text, [switch]$Compiled) {
     # Deliberately accept only this project's flat config, not arbitrary YAML.
     # Quoted/indented keys, aliases, extra endpoints and multiline values fail.
     $allowed = @('app_id', 'auto_update', 'patch_verification')
-    if ($Compiled) { $allowed += 'patch_public_key' }
+    if ($Compiled) { $allowed += 'patch_public_key'; if ($Independent) { $allowed += 'base_url' } }
     $values = @{}
     foreach ($line in ($Text -split '\r?\n')) {
         if ($line -match '^\s*(#.*)?$') { continue }
@@ -59,6 +68,7 @@ function Read-ExVpnUpdaterConfig([string]$Text, [switch]$Compiled) {
         throw 'Incomplete or unsupported updater policy.'
     }
     if ($Compiled -and $values.patch_public_key -cnotmatch '^[A-Za-z0-9+/]+={0,2}$') { throw 'Invalid packaged public key encoding.' }
+    if ($Compiled -and $Independent -and $values.base_url -cne 'http://127.0.0.1:57791') { throw 'independent_base_endpoint_mismatch' }
     $values
 }
 function Assert-ExVpnShorebirdCache([string]$CliRoot, [string]$CliRevision, [string]$FlutterRevision) {
@@ -86,20 +96,25 @@ $pin = Get-Content -Raw (Join-Path $repository 'scripts/bootstrap/shorebird.lock
 $runtime = Get-ReleaseFlutterRuntime -Repository $repository -Target $Target -FlutterRuntime shorebird -FlutterBuildMode release
 $flutter = Join-Path $runtime.SdkRoot 'bin/flutter.bat'
 $shorebird = Join-Path $repository ".tools/$($pin.cli.folder)/bin/shorebird.ps1"
-Assert-ExVpnShorebirdCache (Join-Path $repository ".tools/$($pin.cli.folder)") $pin.cli.revision $pin.flutter.revision
+if (!$Independent) { Assert-ExVpnShorebirdCache (Join-Path $repository ".tools/$($pin.cli.folder)") $pin.cli.revision $pin.flutter.revision }
 $app = Join-Path $repository 'apps/exvpn'
 $version = Get-NoticeAppVersion ([IO.File]::ReadAllText((Join-Path $app 'pubspec.yaml'))) ([IO.File]::ReadAllText((Join-Path $app 'lib/build_identity.dart')))
 if ($version -cne $ReleaseVersion) { throw 'shorebird_source_version_mismatch' }
 $versionParts = $version.Split('+')
-$null = Get-ShorebirdCli $repository
+if (!$Independent) { $null = Get-ShorebirdCli $repository }
 $publicKeyPath = Join-Path $repository 'config/signing/shorebird-beta-public.pem'
 $publicKey = [Security.Cryptography.RSA]::Create()
 try {
     $publicKey.ImportFromPem([IO.File]::ReadAllText($publicKeyPath))
     if ($publicKey.KeySize -lt 3072) { throw 'The beta patch verification key is too small.' }
+    if ($Independent -and $publicKey.KeySize -ne 4096) { throw 'independent_base_rsa4096_required' }
     $compiledPublicKey = [Convert]::ToBase64String($publicKey.ExportRSAPublicKey())
 } finally { $publicKey.Dispose() }
 $sourceConfig = [IO.File]::ReadAllText((Join-Path $app 'shorebird.yaml'))
+$sourceConfigBytes = [IO.File]::ReadAllBytes((Join-Path $app 'shorebird.yaml'))
+$sourceConfigMtime = (Get-Item -LiteralPath (Join-Path $app 'shorebird.yaml')).LastWriteTimeUtc
+$independentConfigLeased = $false
+$independentConfigHash = $null
 $appId = (Read-ExVpnUpdaterConfig $sourceConfig).app_id
 if ($appId -cne 'ea97a683-02e5-4d86-9aa1-779d6b4bc81e') {
     throw 'The beta updater configuration does not match the reviewed project policy.'
@@ -135,6 +150,14 @@ function Assert-CompiledUpdater([string]$Text) {
     if ($compiled.app_id -cne $appId -or $compiled.patch_public_key -cne $compiledPublicKey) {
         throw 'Packaged Shorebird key or updater policy differs from the expected beta base.'
     }
+}
+function Restore-IndependentUpdaterConfig {
+    if (!$script:independentConfigLeased) { return }
+    $path = Join-Path $app 'shorebird.yaml'
+    if ((Get-AuditSha256 $path) -cne $script:independentConfigHash) { throw 'independent_config_lease_modified' }
+    [IO.File]::WriteAllBytes($path,$sourceConfigBytes)
+    [IO.File]::SetLastWriteTimeUtc($path,$sourceConfigMtime)
+    $script:independentConfigLeased = $false
 }
 function Assert-ZipUpdater([string]$Path, [string]$EntryPath) {
     $zip = [IO.Compression.ZipFile]::OpenRead($Path)
@@ -231,6 +254,32 @@ try {
             uiFiles=$recoveredFiles.Count;uiTreeSha256=(Get-AuditTextHash ($tree | ConvertTo-Json -Depth 5 -Compress))
             sourceEquivalence=$recoveryEquivalence;uiBuildPerformed=$false;cloudUploadPerformed=$false}
         Assert-ShorebirdRecoveryProof $recoveryProof $sourceCommit
+    } elseif ($Independent) {
+        $phase='independent_base';$subphase='compiled_updater_lease'
+        # The legacy source policy remains unchanged. Only the packaged asset
+        # receives the local adapter endpoint and the pinned native RSA key.
+        $compiledConfig="app_id: $appId`nauto_update: false`npatch_verification: strict`nbase_url: http://127.0.0.1:57791`npatch_public_key: $compiledPublicKey`n"
+        Assert-CompiledUpdater $compiledConfig
+        [IO.File]::WriteAllText((Join-Path $app 'shorebird.yaml'),$compiledConfig,[Text.UTF8Encoding]::new($false))
+        $independentConfigHash=Get-AuditSha256 (Join-Path $app 'shorebird.yaml')
+        $independentConfigLeased=$true
+        $defines=@('--dart-define=EXVPN_DEMO=false','--dart-define=EXVPN_DART_UPDATE_TRACK=beta',
+            '--dart-define=EXVPN_OTA_PROVIDER=exvpn',"--dart-define=EXVPN_OTA_BASE_FINGERPRINT=$IndependentBaseFingerprint")
+        $releaseStartedUtc=[datetime]::UtcNow
+        $releaseProcessPathLength=$(if($env:PATH){$env:PATH.Length}else{0})
+        if ($Target -ceq 'Android') {
+            $subphase='aab'
+            & $flutter build appbundle --release --pub --target=lib/main.dart --target-platform=android-arm64,android-x64 @defines *> (Join-Path $privateRun 'independent-aab.log')
+            if ($LASTEXITCODE -ne 0) { throw 'independent_base_aab_failed' }
+            $subphase='apk'
+            & $flutter build apk --release --pub --target=lib/main.dart --target-platform=android-arm64,android-x64 @defines *> (Join-Path $privateRun 'independent-apk.log')
+            if ($LASTEXITCODE -ne 0) { throw 'independent_base_apk_failed' }
+        } else {
+            $subphase='windows'
+            & $flutter build windows --release --no-pub --target=lib/main.dart @defines *> (Join-Path $privateRun 'independent-windows.log')
+            if ($LASTEXITCODE -ne 0) { throw 'independent_base_windows_failed' }
+        }
+        Restore-IndependentUpdaterConfig
     } else {
     $arguments = @('release', $Target.ToLowerInvariant(), "--flutter-version=$($pin.flutter.revision)",
         "--public-key-path=$publicKeyPath", '--dart-define=EXVPN_DART_UPDATE_TRACK=beta','--dart-define=EXVPN_DEMO=false')
@@ -327,6 +376,10 @@ try {
     } else {
         $subphase='windows_ui_binding'
         $ui = if($RecoverWindowsBase){$recoveredUi}else{Join-Path $app 'build/windows/x64/runner/Release'}
+        if ($Independent) {
+            $windowsRegistrant=Join-Path $app 'windows/flutter/generated_plugin_registrant.cc'
+            if ([IO.File]::ReadAllText($windowsRegistrant) -match 'IntegrationTestPlugin|integration_test') { throw 'independent_windows_development_plugin_present' }
+        }
         $null = Get-AuditTreeFiles $ui
         Assert-CompiledUpdater ([IO.File]::ReadAllText((Join-Path $ui 'data/flutter_assets/shorebird.yaml')))
         $baseAot = @([ordered]@{platform='windows';arch='x86_64';sha256=(Get-AuditSha256 (Join-Path $ui 'data/app.so'));bytes=(Get-Item -LiteralPath (Join-Path $ui 'data/app.so')).Length})
@@ -361,6 +414,7 @@ try {
     $subphase='promotion'
     [ordered]@{
         schemaVersion=2; action='base'; version=$version; target=$Target; track='beta'; published=([bool]$PublishCloud -or [bool]$RecoverWindowsBase)
+        delivery=$(if ($Independent) {'independent'} else {'shorebird_cloud'})
         appId=$appId; sourceCommit=$sourceCommit; releaseId=$(if ($cloudRelease) { $cloudRelease.id } else { $null })
         compiledSourceCommit=$compiledSourceCommit;recoveryProof=$recoveryProof
         auditAccepted=$true; stableReady=$false
@@ -398,7 +452,10 @@ try {
     throw "shorebird_base_failed phase=$phase subphase=$subphase code=$safeErrorCode; private diagnostics retained; inspect cloud registration before retry"
 } finally {
     Pop-Location
-    try { if ($hookOwned) { Remove-DemoAndroidOwnedHook $hook $hookHash } }
+    try {
+        Restore-IndependentUpdaterConfig
+        if ($hookOwned) { Remove-DemoAndroidOwnedHook $hook $hookHash }
+    }
     finally {
         if ($passwordBytes) { [Security.Cryptography.CryptographicOperations]::ZeroMemory($passwordBytes) }
         foreach ($name in $savedEnvironment.Keys) {

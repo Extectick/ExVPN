@@ -1,0 +1,259 @@
+name: ExVPN independent signed updates
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        options: [base, patch, publish_base]
+        required: true
+      version:
+        description: Exact native base SemVer+build; UI patches retain it
+        type: string
+        required: true
+      target:
+        type: choice
+        options: [Both, Android, Windows]
+        default: Both
+      base_run_id:
+        description: Successful independent base run (patch/publish)
+        type: string
+      base_source_commit:
+        description: Immutable base source SHA (patch/publish)
+        type: string
+      patch_number:
+        description: Positive independent patch number (patch only)
+        type: string
+      runtime_evidence:
+        description: Tracked sanitized proof of both signed apply/rollback cycles
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: exvpn-independent-ota
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/main' && inputs.operation != 'publish_base'
+    name: Independent ${{ inputs.operation }} ${{ matrix.target }}
+    runs-on: windows-2025
+    environment: demo-release
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(inputs.target == 'Android' && '["Android"]' || inputs.target == 'Windows' && '["Windows"]' || '["Android","Windows"]') }}
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      EXVPN_OPERATION: ${{ inputs.operation }}
+      EXVPN_TARGET: ${{ matrix.target }}
+      EXVPN_VERSION: ${{ inputs.version }}
+      EXVPN_BASE_SHA: ${{ inputs.base_source_commit }}
+      EXVPN_BASE_RUN_ID: ${{ inputs.base_run_id }}
+      EXVPN_PATCH_NUMBER: ${{ inputs.patch_number }}
+      CI: 'true'
+      GOTOOLCHAIN: local
+      FLUTTER_SUPPRESS_ANALYTICS: 'true'
+      DART_SUPPRESS_ANALYTICS: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Validate explicit operation identity
+        run: |
+          if ($env:EXVPN_VERSION -cnotmatch '^\d+\.\d+\.\d+\+[1-9]\d*$') { throw 'ota_version_invalid' }
+          if ($env:EXVPN_OPERATION -ceq 'patch' -and ($env:EXVPN_BASE_SHA -cnotmatch '^[a-f0-9]{40}$' -or $env:EXVPN_BASE_RUN_ID -cnotmatch '^[1-9]\d*$' -or $env:EXVPN_PATCH_NUMBER -cnotmatch '^[1-9]\d{0,8}$')) { throw 'ota_patch_identity_invalid' }
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .tools/downloads/go1.27.2.windows-amd64.zip
+            .tools/downloads/flutter_windows_3.47.7-stable.zip
+            .tools/cache/pub
+            .tools/cache/shorebird-pub
+            .tools/cache/go/pkg/mod
+            .tools/cache/go-build
+            .tools/cache/gradle
+            .tools/cache/native-outputs-v1
+          key: exvpn-independent-inputs-v1-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/*.lock.json', 'apps/exvpn/pubspec.lock', 'native/**/go.sum') }}-${{ hashFiles('native/**', 'scripts/core/**', 'scripts/bootstrap/**', 'scripts/build/**', 'scripts/windows/build.ps1') }}
+          restore-keys: |
+            exvpn-independent-inputs-v1-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/*.lock.json', 'apps/exvpn/pubspec.lock', 'native/**/go.sum') }}-
+            exvpn-shorebird-inputs-v1-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/*.lock.json', 'apps/exvpn/pubspec.lock', 'native/**/go.sum') }}-
+      - name: Restore exact pinned runtime SDK
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools/shorebird-1.6.129
+          key: exvpn-shorebird-sdk-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/shorebird.lock.json') }}
+      - name: Prepare base build tools only
+        if: inputs.operation == 'base'
+        run: |
+          ./scripts/bootstrap/bootstrap.ps1
+          if (!$env:JAVA_HOME_21_X64 -or !$env:ANDROID_HOME) { throw 'ota_runner_jdk_sdk_missing' }
+          "JAVA_HOME=$env:JAVA_HOME_21_X64" >> $env:GITHUB_ENV
+          if ($env:EXVPN_TARGET -ceq 'Android') {
+            & (Join-Path $env:ANDROID_HOME 'cmdline-tools/latest/bin/sdkmanager.bat') 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358' 'ndk;27.1.12297006'
+            if ($LASTEXITCODE -ne 0) { throw 'ota_android_sdk_failed' }
+          }
+          ./scripts/release/prepare-archive-inspector.ps1
+      - name: Validate independent update contracts
+        run: |
+          ./scripts/ota/test-ui-patch.ps1
+          ./scripts/ota/test-independent-publication.ps1
+      - name: Prepare pinned SDK without an account
+        run: ./scripts/release/prepare-shorebird.ps1 -Target $env:EXVPN_TARGET
+      - name: Download exact independent base and AOT inputs
+        if: inputs.operation == 'patch'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: independent-base-${{ matrix.target }}-${{ inputs.base_source_commit }}
+          path: artifacts/independent-base
+          run-id: ${{ inputs.base_run_id }}
+          github-token: ${{ github.token }}
+      - name: Resolve exact dependencies using pinned runtime
+        run: |
+          . ./scripts/release/flutter-runtime-inputs.ps1
+          $runtime=Get-ReleaseFlutterRuntime -Repository (Get-Location).Path -Target $env:EXVPN_TARGET -FlutterRuntime shorebird -FlutterBuildMode release
+          $env:PUB_CACHE=Join-Path (Get-Location).Path '.tools/cache/pub'
+          Push-Location apps/exvpn
+          try {
+            & (Join-Path $runtime.SdkRoot 'bin/flutter.bat') pub get --enforce-lockfile
+            if ($LASTEXITCODE -ne 0) { throw 'ota_locked_pub_failed' }
+          } finally { Pop-Location }
+      - name: Reuse or build Android JNI for a new base only
+        if: inputs.operation == 'base' && matrix.target == 'Android'
+        run: ./native/android/build.ps1
+      - name: Reuse or build Windows service for a new base only
+        if: inputs.operation == 'base' && matrix.target == 'Windows'
+        run: |
+          ./scripts/windows/build.ps1
+          ./scripts/windows/prepare-wintun.ps1
+      - name: Build independent base or sign AOT only
+        env:
+          EXVPN_ANDROID_KEYSTORE_BASE64: ${{ inputs.operation == 'base' && matrix.target == 'Android' && secrets.EXVPN_ANDROID_KEYSTORE_BASE64 || '' }}
+          EXVPN_ANDROID_STORE_PASSWORD: ${{ inputs.operation == 'base' && matrix.target == 'Android' && secrets.EXVPN_ANDROID_STORE_PASSWORD || '' }}
+          EXVPN_ANDROID_KEY_PASSWORD: ${{ inputs.operation == 'base' && matrix.target == 'Android' && secrets.EXVPN_ANDROID_STORE_PASSWORD || '' }}
+          EXVPN_ANDROID_KEY_ALIAS: exvpn
+          EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64: ${{ inputs.operation == 'patch' && secrets.EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64 || '' }}
+        run: |
+          . ./scripts/release/flutter-runtime-inputs.ps1
+          . ./scripts/release/shorebird-pipeline-lib.ps1
+          $repository=(Get-Location).Path
+          $private=New-ShorebirdPrivateDirectory $repository 'independent-ci'
+          $keystore=Join-Path $private 'android.p12'
+          $rsaPath=Join-Path $private 'patch-private.pem'
+          $rsa=$null; $raw=$null
+          try {
+            if ($env:EXVPN_OPERATION -ceq 'base') {
+              if ($env:EXVPN_TARGET -ceq 'Android') {
+                if (!$env:EXVPN_ANDROID_KEYSTORE_BASE64 -or !$env:EXVPN_ANDROID_STORE_PASSWORD) { throw 'ota_android_signing_missing' }
+                [IO.File]::WriteAllBytes($keystore,[Convert]::FromBase64String($env:EXVPN_ANDROID_KEYSTORE_BASE64))
+                $env:EXVPN_ANDROID_KEYSTORE_BASE64=$null
+                $env:EXVPN_ANDROID_KEYSTORE=$keystore
+              }
+              $result=./scripts/ota/build-base.ps1 -Target $env:EXVPN_TARGET -ReleaseVersion $env:EXVPN_VERSION
+              $output=$result.OutputDirectory
+            } else {
+              $bases=@(Get-ChildItem artifacts/independent-base -File -Recurse -Filter base-receipt.json)
+              if ($bases.Count -ne 1) { throw 'ota_base_receipt_ambiguous' }
+              $base=Get-Content -LiteralPath $bases[0].FullName -Raw | ConvertFrom-Json
+              if ($base.sourceCommit -cne $env:EXVPN_BASE_SHA -or $base.version -cne $env:EXVPN_VERSION -or $base.target -cne $env:EXVPN_TARGET) { throw 'ota_base_input_identity_failed' }
+              if (!$env:EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64) { throw 'ota_patch_signing_missing' }
+              $raw=[Convert]::FromBase64String($env:EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64)
+              $rsa=[Security.Cryptography.RSA]::Create(); $read=0
+              $rsa.ImportPkcs8PrivateKey($raw,[ref]$read)
+              if ($read -ne $raw.Length -or $rsa.KeySize -ne 4096) { throw 'ota_patch_key_invalid' }
+              [IO.File]::WriteAllText($rsaPath,$rsa.ExportPkcs8PrivateKeyPem(),[Text.UTF8Encoding]::new($false))
+              $env:PUB_CACHE=Join-Path $repository '.tools/cache/pub'
+              $result=./scripts/ota/build-ui-patch.ps1 -BaseReceipt $bases[0].FullName -Target $env:EXVPN_TARGET -PatchNumber ([int]$env:EXVPN_PATCH_NUMBER) -PrivateKeyPath $rsaPath | ConvertFrom-Json
+              $output=Split-Path -Parent $result.receipt
+            }
+            "EXVPN_OTA_OUTPUT=$output" >> $env:GITHUB_ENV
+          } finally {
+            if ($rsa) { $rsa.Dispose() }
+            if ($raw) { [Security.Cryptography.CryptographicOperations]::ZeroMemory($raw) }
+            $env:EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64=$null
+            $env:EXVPN_ANDROID_KEYSTORE=$null
+            $env:EXVPN_ANDROID_STORE_PASSWORD=$null
+            $env:EXVPN_ANDROID_KEY_PASSWORD=$null
+            foreach ($path in @($keystore,$rsaPath)) { if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path } }
+          }
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: independent-${{ inputs.operation }}-${{ matrix.target }}-${{ github.sha }}
+          path: ${{ env.EXVPN_OTA_OUTPUT }}
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 90
+
+  publish:
+    if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/main' && inputs.operation == 'publish_base'
+    runs-on: windows-2025
+    environment: demo-release
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      EXVPN_VERSION: ${{ inputs.version }}
+      EXVPN_BASE_SHA: ${{ inputs.base_source_commit }}
+      EXVPN_BASE_RUN_ID: ${{ inputs.base_run_id }}
+      EXVPN_QA_PATH: ${{ inputs.runtime_evidence }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Validate immutable publication identity
+        run: |
+          if ($env:EXVPN_VERSION -cnotmatch '^\d+\.\d+\.\d+\+[1-9]\d*$' -or $env:EXVPN_BASE_SHA -cnotmatch '^[a-f0-9]{40}$' -or $env:EXVPN_BASE_RUN_ID -cnotmatch '^[1-9]\d*$' -or $env:EXVPN_QA_PATH -cnotmatch '^docs/evidence/[a-z0-9][a-z0-9-]*\.json$') { throw 'ota_public_inputs_invalid' }
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: independent-base-*-${{ inputs.base_source_commit }}
+          path: artifacts/independent-base
+          run-id: ${{ inputs.base_run_id }}
+          github-token: ${{ github.token }}
+      - name: Prepare package inspectors
+        run: |
+          ./scripts/release/prepare-archive-inspector.ps1
+          if (!$env:JAVA_HOME_21_X64 -or !$env:ANDROID_HOME) { throw 'ota_inspectors_missing' }
+          "JAVA_HOME=$env:JAVA_HOME_21_X64" >> $env:GITHUB_ENV
+          & (Join-Path $env:ANDROID_HOME 'cmdline-tools/latest/bin/sdkmanager.bat') 'build-tools;36.0.0'
+          if ($LASTEXITCODE -ne 0) { throw 'ota_inspectors_failed' }
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13.16'
+          architecture: x64
+      - name: Install pinned full-feed signing dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: --require-hashes --no-deps -r scripts/release/windows-feed-requirements.txt
+          if ($LASTEXITCODE -ne 0) { throw 'ota_signing_dependencies_failed' }
+          python -m pip check
+          if ($LASTEXITCODE -ne 0) { throw 'ota_signing_closure_failed' }
+      - name: Validate publication gates
+        run: |
+          ./scripts/ota/test-independent-publication.ps1
+          python scripts/ota/test-catalog.py
+          if ($LASTEXITCODE -ne 0) { throw 'ota_catalog_contract_failed' }
+      - name: Publish the same APK/EXE bytes and both signed feeds
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXVPN_WINDOWS_UPDATE_SEED_BASE64: ${{ secrets.EXVPN_WINDOWS_UPDATE_SEED_BASE64 }}
+        run: |
+          $paths=@(Get-ChildItem artifacts/independent-base -File -Recurse -Filter build.json)
+          if ($paths.Count -ne 2) { throw 'ota_public_base_set_invalid' }
+          $byTarget=@{}
+          foreach ($path in $paths) {
+            $base=Get-Content -LiteralPath $path.FullName -Raw | ConvertFrom-Json
+            if ($base.target -cnotin @('Android','Windows') -or $base.delivery -cne 'independent' -or $byTarget.ContainsKey($base.target)) { throw 'ota_public_target_invalid' }
+            $byTarget[$base.target]=$path.FullName
+          }
+          ./scripts/ota/publish-base.ps1 -ReleaseVersion $env:EXVPN_VERSION -BaseSourceCommit $env:EXVPN_BASE_SHA -AndroidBaseReceipt $byTarget.Android -WindowsBaseReceipt $byTarget.Windows -RuntimeEvidence $env:EXVPN_QA_PATH -Publish

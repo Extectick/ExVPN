@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-20",
+  "version": "0.1.10+31",
+  "scope": "Read-only review of supplied pinned runtime/tool license notices and primary vendor statements; not a general legal-compliance certification.",
+  "pins": {
+    "cli": "9fe1370bdd1d2f117cc08c57ae416b794ed92440",
+    "flutter": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+    "engine": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+    "dartFork": "45acf5f57d5b0c1a85ccc5d47998a702977d63e7",
+    "dartUpstream": "04bcd1036cdc799ac6564988f159ee454d42c822",
+    "updater": "70ff1e336798474e39586d3f5ac2ca386ef32d9e"
+  },
+  "files": [
+    {
+      "path": ".tools/shorebird-1.6.129/COPYRIGHT",
+      "sha256": "912322d37b6b86281ca5435c5f8c7962ec0e0ea0d26307c4a420a5fb02f887af",
+      "size": 196,
+      "license": "MIT OR Apache-2.0",
+      "sourceUrl": "https://github.com/shorebirdtech/shorebird/blob/9fe1370bdd1d2f117cc08c57ae416b794ed92440/COPYRIGHT"
+    },
+    {
+      "path": ".tools/shorebird-1.6.129/LICENSE-APACHE",
+      "sha256": "95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc",
+      "size": 9722,
+      "license": "Apache-2.0",
+      "sourceUrl": "https://github.com/shorebirdtech/shorebird/blob/9fe1370bdd1d2f117cc08c57ae416b794ed92440/LICENSE-APACHE"
+    },
+    {
+      "path": ".tools/shorebird-1.6.129/LICENSE-MIT",
+      "sha256": "1847e0e0698142ed4347c1441a9fa81c8fbddd44b1d8bbcd5e3647f991759d7f",
+      "size": 1035,
+      "license": "MIT",
+      "sourceUrl": "https://github.com/shorebirdtech/shorebird/blob/9fe1370bdd1d2f117cc08c57ae416b794ed92440/LICENSE-MIT"
+    },
+    {
+      "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/LICENSE",
+      "sha256": "a3a9fd82f800a47377f7d3f60c60a5c91cae0495be8f329031e1448ce0f5dab9",
+      "size": 1544,
+      "license": "BSD-3-Clause",
+      "sourceUrl": "https://github.com/shorebirdtech/flutter/blob/5bef02a16146a0effc07da4acccaafe90a2739ce/LICENSE"
+    },
+    {
+      "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/engine/src/flutter/LICENSE",
+      "sha256": "0b1949a190148858a1ad558d451ec37f6ae7e80f379bde355cf6224103327e35",
+      "size": 1544,
+      "license": "BSD-3-Clause",
+      "sourceUrl": "https://github.com/shorebirdtech/flutter/blob/5bef02a16146a0effc07da4acccaafe90a2739ce/engine/src/flutter/LICENSE"
+    },
+    {
+      "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/bin/cache/dart-sdk/LICENSE",
+      "sha256": "7a7f86f552f9926e7d8dd418730bab72206c126e7c4bab282b901a9e3bf1c7af",
+      "size": 1528,
+      "license": "BSD-3-Clause",
+      "sourceUrl": "https://github.com/dart-lang/sdk/blob/04bcd1036cdc799ac6564988f159ee454d42c822/LICENSE"
+    },
+    {
+      "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/bin/cache/pkg/sky_engine/LICENSE",
+      "sha256": "3c0040023a5789bf56d6bf41fd44f08b21758523d41f128fb7dd6beb398d1191",
+      "size": 1269349,
+      "license": "Third-party license collection",
+      "sourceUrl": "https://download.shorebird.dev/flutter_infra_release/flutter/4b936a0c03e13389ddfb1ac48823f187964975c2/sky_engine.zip"
+    },
+    {
+      "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/bin/cache/artifacts/engine/windows-x64-release/license.windows_flutter.md",
+      "sha256": "f08b5e36e312d723de5aec49c0bb95354776d5c66a8ad319abc2b9aece544ac7",
+      "size": 578,
+      "license": "Archive notice referring to sky_engine LICENSE",
+      "sourceUrl": "https://download.shorebird.dev/flutter_infra_release/flutter/4b936a0c03e13389ddfb1ac48823f187964975c2/windows-x64-release/windows-x64-flutter.zip"
+    },
+    {
+      "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/bin/cache/artifacts/engine/android-arm64-release/license.flutter_jar_zip.md",
+      "sha256": "a1670a436c16906be30993bf6f81170c33575100fbd8d9ecbd163a272c7d9c8b",
+      "size": 594,
+      "license": "Archive notice referring to sky_engine LICENSE",
+      "sourceUrl": "https://download.shorebird.dev/flutter_infra_release/flutter/4b936a0c03e13389ddfb1ac48823f187964975c2/android-arm64-release/flutter.jar"
+    },
+    {
+      "path": "scripts/release/licenses/shorebird-updater-70ff1e336798474e39586d3f5ac2ca386ef32d9e/LICENSE-MIT",
+      "sha256": "1847e0e0698142ed4347c1441a9fa81c8fbddd44b1d8bbcd5e3647f991759d7f",
+      "size": 1035,
+      "license": "MIT",
+      "sourceUrl": "https://github.com/shorebirdtech/updater/blob/70ff1e336798474e39586d3f5ac2ca386ef32d9e/LICENSE-MIT"
+    },
+    {
+      "path": "scripts/release/licenses/shorebird-updater-70ff1e336798474e39586d3f5ac2ca386ef32d9e/LICENSE-APACHE",
+      "sha256": "95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc",
+      "size": 9722,
+      "license": "Apache-2.0",
+      "sourceUrl": "https://github.com/shorebirdtech/updater/blob/70ff1e336798474e39586d3f5ac2ca386ef32d9e/LICENSE-APACHE"
+    }
+  ],
+  "observations": [
+    "The supplied Dart and Flutter LICENSE files expressly permit source and binary redistribution, with or without modification, subject to their conditions.",
+    "BSD-3-Clause does not impose a corresponding-source distribution requirement.",
+    "Pinned Windows, Android and gen_snapshot archive notices identify sky_engine/LICENSE as the bundle license collection.",
+    "The CLI and native updater offer MIT or Apache-2.0 licensing.",
+    "No cloud endpoint, active-account, paid-subscription or self-host prohibition was found in the inspected bundled licenses.",
+    "Official documentation does not offer or support self-hosting. Lack of product support is not itself a redistribution restriction.",
+    "This review does not certify every transitive license or replace the existing artifact notice/SBOM release gates."
+  ],
+  "conditions": [
+    "Retain applicable copyright notices, license conditions and warranty disclaimers in binary distributions.",
+    "Preserve required third-party notices and comply with the selected MIT or Apache-2.0 terms and component-specific conditions.",
+    "Do not imply endorsement by upstream authors or grant trademark rights."
+  ],
+  "primaryStatements": [
+    {
+      "url": "https://handbook.shorebird.dev/departments/engineering/#licensing-philosophy",
+      "finding": "The vendor states that Code Town code is licensed Apache-2.0 or MIT at the user option."
+    },
+    {
+      "url": "https://docs.shorebird.dev/code-push/system-architecture/",
+      "finding": "The vendor describes its Dart SDK fork as private. The compiler and runtime cannot presently be rebuilt entirely from public upstream source."
+    },
+    {
+      "url": "https://docs.shorebird.dev/code-push/faq/#can-you-self-host-shorebird",
+      "finding": "The vendor has no current on-prem/self-host offering or plans."
+    },
+    {
+      "url": "https://shorebird.dev/legal/Terms%20of%20Service%20-%20Shorebird%20Code%20Push.pdf",
+      "effective": "2025-08-15",
+      "finding": "Sections E, G and I separately govern Services licensing, termination and proprietary materials. Their broad Services definition has no explicit open-source carve-out; this evidence does not claim an individual contractual waiver or unlimited vendor-service rights."
+    }
+  ],
+  "limitations": [
+    "Delivery is independent of the hosted account/API; compiler and prebuilt runtime remain a pinned vendor dependency.",
+    "The private Dart fork cannot be audited or rebuilt from public sources in this review. Closed source alone does not establish a proprietary redistribution restriction.",
+    "No individual vendor confirmation about contractual scope was requested or obtained.",
+    "The assessment covers runtime embedded in ExVPN and local compiler use; it grants no rights to vendor cloud services or branding."
+  ],
+  "offlineContinuity": {
+    "status": "Checksum inventory only; no SDK archive was created or uploaded.",
+    "preserve": [
+      "Complete pinned SDK checkout and cache outside public Git; no credentials.",
+      "Exact CLI patch.exe and full license/notices collections.",
+      "Per-platform base receipt and extracted base AOT snapshots; these are required for future compatible patches."
+    ],
+    "toolSha256": [
+      {
+        "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/bin/cache/dart-sdk/bin/dart.exe",
+        "sha256": "40730e2e18ddab75d145ccae891805769512fc90bb34b64744dbecf3574186bd",
+        "size": 4710400
+      },
+      {
+        "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/bin/cache/flutter_tools.snapshot",
+        "sha256": "04252403722eedf63e6c108fbacf7d9c94d1ed322eeaa25fffbc29471425b63e",
+        "size": 46221536
+      },
+      {
+        "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/bin/cache/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot",
+        "sha256": "4bcd9523fc635c0ee3b0ab968230ae58597b400530e516eba4c7ecf390800724",
+        "size": 16639088
+      },
+      {
+        "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/bin/cache/dart-sdk/bin/dartaotruntime.exe",
+        "sha256": "193aa1dcd6be205e65cef1dfbabb0567270fae0a69f914a09dc3ccc23f2e03c9",
+        "size": 4670464
+      },
+      {
+        "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/bin/cache/artifacts/engine/common/flutter_patched_sdk_product/platform_strong.dill",
+        "sha256": "1ae5541b4d93fb1de5a6af4a6bcfde4430f5fe5d03ad42f35a2da2acfa02fd0e",
+        "size": 10395032
+      },
+      {
+        "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/bin/cache/artifacts/engine/windows-x64-release/gen_snapshot.exe",
+        "sha256": "d23fcbdb972fb2193bfa1e603341c61b91ec9f95b471d7d0cf2969ce4af98a88",
+        "size": 4528640
+      },
+      {
+        "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/bin/cache/artifacts/engine/android-arm64-release/windows-x64/gen_snapshot.exe",
+        "sha256": "6f1d2ff405faa4e6949c1967e294bf7fd196aa08dc769f492b544ab213baa933",
+        "size": 4675584
+      },
+      {
+        "path": ".tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce/bin/cache/artifacts/engine/android-x64-release/windows-x64/gen_snapshot.exe",
+        "sha256": "4974b1d99841410e88b69bb715275c2c53a3df1fc12158dc47632afca7b562d5",
+        "size": 4632576
+      },
+      {
+        "path": ".tools/shorebird-1.6.129/bin/cache/artifacts/patch/patch.exe",
+        "sha256": "32fba848388c6461b0a8b2cd3715fa106bba314202f1f8be5301cae9eb051746",
+        "size": 694272
+      }
+    ]
+  }
+}

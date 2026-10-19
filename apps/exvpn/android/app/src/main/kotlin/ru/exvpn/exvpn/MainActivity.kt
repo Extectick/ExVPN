@@ -7,9 +7,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.VpnService
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.system.Os
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -19,6 +21,18 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 class MainActivity : FlutterActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // Before Flutter starts its updater: bypass inherited proxies only for
+        // our fixed local protocol bridge, without changing system proxy policy.
+        for (name in listOf("NO_PROXY", "no_proxy")) {
+            val existing = Os.getenv(name).orEmpty()
+            val value = if (existing.split(',').any { it == "127.0.0.1" }) existing
+                else if (existing.isEmpty()) "127.0.0.1" else "$existing,127.0.0.1"
+            Os.setenv(name, value, true)
+        }
+        super.onCreate(savedInstanceState)
+    }
+
     private var qrPicker: QrImagePicker? = null
     private var qrChannel: MethodChannel? = null
     private var appUpdates: AndroidAppUpdates? = null

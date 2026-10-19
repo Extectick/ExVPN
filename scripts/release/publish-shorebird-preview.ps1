@@ -10,7 +10,8 @@ param(
     [Parameter(Mandatory)][string]$WindowsBaseReceipt,
     [Parameter(Mandatory)][string]$RuntimeEvidence,
     [string]$AndroidSdkPath='',
-    [switch]$PublishCloud
+    [switch]$PublishCloud,
+    [switch]$Independent
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
@@ -33,16 +34,16 @@ if ($PublishCloud -and $env:GITHUB_ACTIONS -ceq 'true' -and
     ($env:GITHUB_REPOSITORY -cne $repo -or $env:GITHUB_REF -cne 'refs/heads/main' -or $env:GITHUB_EVENT_NAME -cne 'workflow_dispatch' -or $env:GITHUB_SHA -cne $head)) { throw 'shorebird_public_requires_main_dispatch' }
 if ($PublishCloud -and (!$env:EXVPN_WINDOWS_UPDATE_SEED_BASE64 -or !$env:GH_TOKEN)) { throw 'shorebird_public_dual_feed_signing_required' }
 $bases=@{
-    Android=(Get-ShorebirdPublicBase $repository $AndroidBaseReceipt $ReleaseVersion $BaseSourceCommit Android)
-    Windows=(Get-ShorebirdPublicBase $repository $WindowsBaseReceipt $ReleaseVersion $BaseSourceCommit Windows)
+    Android=(Get-ShorebirdPublicBase $repository $AndroidBaseReceipt $ReleaseVersion $BaseSourceCommit Android -Independent:$Independent)
+    Windows=(Get-ShorebirdPublicBase $repository $WindowsBaseReceipt $ReleaseVersion $BaseSourceCommit Windows -Independent:$Independent)
 }
-if ($bases.Android.base.releaseId -ne $bases.Windows.base.releaseId) { throw 'shorebird_public_cloud_release_ids_differ' }
+if (!$Independent -and $bases.Android.base.releaseId -ne $bases.Windows.base.releaseId) { throw 'shorebird_public_cloud_release_ids_differ' }
 Assert-AuditNoLinks $RuntimeEvidence
 if ((Get-Item -LiteralPath $RuntimeEvidence).Length -gt 1MB) { throw 'shorebird_runtime_gate_oversized' }
 $proof=Get-Content -LiteralPath $RuntimeEvidence -Raw | ConvertFrom-Json -AsHashtable
 $receiptHashes=@{Android=$bases.Android.receiptSha256;Windows=$bases.Windows.receiptSha256}
 $artifactHashes=@{Android=$bases.Android.binary.asset.sha256;Windows=$bases.Windows.binary.asset.sha256}
-$safeProof=Assert-ShorebirdRuntimeGate $proof $ReleaseVersion $BaseSourceCommit $receiptHashes $artifactHashes
+$safeProof=if ($Independent) { Assert-IndependentRuntimeGate $proof $ReleaseVersion $BaseSourceCommit $receiptHashes $artifactHashes } else { Assert-ShorebirdRuntimeGate $proof $ReleaseVersion $BaseSourceCommit $receiptHashes $artifactHashes }
 $privateRun=New-ShorebirdPrivateDirectory $repository 'public-preview'
 $stage=Join-Path $privateRun 'public'
 New-Item -ItemType Directory -Path $stage | Out-Null
@@ -57,7 +58,9 @@ try {
     $identity=ConvertFrom-DemoAndroidIdentity (Invoke-AuditTool (Join-Path $sdk 'build-tools/36.0.0/aapt2.exe') @('dump','badging',$apk)) $ReleaseVersion
     if (($signature | ConvertTo-Json -Compress) -cne ($bases.Android.base.signature | ConvertTo-Json -Compress) -or
         ($identity | ConvertTo-Json -Compress) -cne ($bases.Android.base.android | ConvertTo-Json -Compress)) { throw 'shorebird_public_android_identity_changed' }
-    Assert-ShorebirdCompiledPolicy ([Text.UTF8Encoding]::new($false,$true).GetString((Read-AuditZipBytes $apk 'assets/flutter_assets/shorebird.yaml' 16KB))) $public.encoded
+    $androidPolicy=[Text.UTF8Encoding]::new($false,$true).GetString((Read-AuditZipBytes $apk 'assets/flutter_assets/shorebird.yaml' 16KB))
+    if ($Independent) { Assert-IndependentCompiledPolicy $androidPolicy $public.encoded }
+    else { Assert-ShorebirdCompiledPolicy $androidPolicy $public.encoded }
     $apkFiles=Get-AuditZipFiles $apk -Apk
     $androidNoticeRoot=Join-Path $privateRun 'android-notices'
     $actualAndroidNotices=Expand-ShorebirdNoticeZip $apk 'assets/exvpn_notices/' $androidNoticeRoot $apkFiles
@@ -74,7 +77,9 @@ try {
     $unpacked=Join-Path $privateRun 'windows-installer'
     $null=Expand-AuditNsis $inspector.executable $installer $unpacked $listing
     $payload=Join-Path $unpacked $listing.prefix
-    Assert-ShorebirdCompiledPolicy ([IO.File]::ReadAllText((Join-Path $payload 'ui/data/flutter_assets/shorebird.yaml'))) $public.encoded
+    $windowsPolicy=[IO.File]::ReadAllText((Join-Path $payload 'ui/data/flutter_assets/shorebird.yaml'))
+    if ($Independent) { Assert-IndependentCompiledPolicy $windowsPolicy $public.encoded }
+    else { Assert-ShorebirdCompiledPolicy $windowsPolicy $public.encoded }
     foreach ($path in @('data/app.so','flutter_windows.dll')) {
         if ((Get-AuditSha256 (Join-Path $payload "ui/$path")) -cne (Get-AuditSha256 (Join-Path $bases.Windows.root "ui/$path"))) { throw 'shorebird_public_windows_runtime_changed' }
     }
@@ -113,6 +118,7 @@ try {
             runtimeQaSha256=$qaHash;notices=$base.notices.asset;flutterRuntime=$base.base.packagedRuntime
             signature=$(if ($target -ceq 'Android') {$signature} else {$null})
         }
+        if ($Independent) { $build['otaProvider']='exvpn' }
         $build | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath (Join-Path $folder "$stem-build.json") -Encoding utf8NoBOM
         Assert-ShorebirdPublicBuild $build $ReleaseVersion $BaseSourceCommit $base.binary.asset.file $base.binary.asset.sha256 $base.binary.asset.bytes
     }
@@ -150,6 +156,7 @@ $notes=Invoke-ShorebirdGit $repository @('show',"${BaseSourceCommit}:docs/releas
 [IO.File]::WriteAllText((Join-Path $delivery 'RELEASE.md'),$notes + "`n",[Text.UTF8Encoding]::new($false))
 $assets=@(Get-ChildItem -LiteralPath $delivery -File | ForEach-Object { Get-DemoAssetRecord $_.FullName })
 $manifest=[ordered]@{schema=1;version=$parts[0];build=[int]$parts[1];channel='beta';tag=$tag;sourceCommit=$BaseSourceCommit;prerelease=$true;stableReady=$false;runtime='shorebird';dartOtaAvailable=$true;runtimeQaSha256=$qaHash;assets=$assets}
+if ($Independent) { $manifest['otaProvider']='exvpn' }
 $manifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $delivery 'release-manifest.json') -Encoding utf8NoBOM
 $assets+=Get-DemoAssetRecord (Join-Path $delivery 'release-manifest.json')
 $assets | Sort-Object file | ForEach-Object { "$($_.sha256)  $($_.file)" } | Set-Content -LiteralPath (Join-Path $delivery 'SHA256SUMS.txt') -Encoding ascii

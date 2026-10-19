@@ -4,6 +4,12 @@
 
 ## Основные компоненты
 
+Независимая доставка 0.1.10+31 сохраняет прежние pinned Flutter/engine/updater,
+`cryptography`/`crypto` и Python cryptography 46.0.5. Новых зависимостей нет.
+Собственные адаптер, каталог и build scripts — Apache-2.0. Открытый updater
+и diff tool используются с прежними лицензиями/исходниками и полным набором
+notices; самостоятельная доставка не отменяет обязательств этих компонентов.
+
 Кандидат 0.1.9+30, 2026-10-20: SOCKS/HTTP и userspace WireGuard используют
 уже закреплённые пакеты Xray, WireGuard Go и gVisor. Новых Go/Dart dependencies
 и обновления ядра нет. WireGuard Go `v0.0.0-20250521234502-f333402bd9cb` и
