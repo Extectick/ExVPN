@@ -763,7 +763,7 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
 ## E7 — Общая beta
 
 - [ ] **EXVPN-E6-017** — Независимая доставка подписанных Dart-патчей и быстрые сборки.
-  Критерий: одна база Android/Windows 0.1.10+31 со всеми текущими UI-изменениями;
+  Критерий: одна база Android/Windows 0.1.10+32 со всеми текущими UI-изменениями;
   реальные independent apply/cold launch/withdraw/cold rollback, неизменные
   APK/EXE и пользовательские данные; replay/signature/compatibility отказ закрыт;
   AOT-only workflow без Cloud API и source-bound cache service/JNI.

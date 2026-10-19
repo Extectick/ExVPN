@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-20",
+  "version": "0.1.10+31",
+  "baseSourceCommit": "701568ecbf691c384535d049d0296a6066e1d340",
+  "baseUiRevision": 2,
+  "fullPackagesPublished": false,
+  "runtimeAccepted": false,
+  "platforms": ["Windows Sandbox", "Android emulator x86_64"],
+  "observed": {
+    "updaterAvailable": true,
+    "signedCatalog2Consumed": true,
+    "applyCatalogSha256": "926728d5aa1b9452b537b89aebfbe15d3a6c52c8a08da4ca4429174c36874e29",
+    "actualPatchApplied": false,
+    "androidNativeCheckHttpStatus": 400,
+    "syntheticCompactHttpStatus": 200,
+    "dataPreserved": true
+  },
+  "cause": {
+    "pinnedHttpClient": "ureq 3.3.0",
+    "serialization": "serde_json::to_vec_pretty",
+    "source": "https://github.com/algesten/ureq/blob/3.3.0/src/send_body.rs",
+    "adapterFault": "Unsigned SDK requests incorrectly used the canonical compact signed-catalog decoder."
+  },
+  "remediation": {
+    "withdrawalCatalogRevision": 3,
+    "patchNumberRevoked": 1,
+    "signedCatalogParserUnchanged": true,
+    "requestParserPreservesOriginalSyntaxAndDuplicateKeyRejection": true,
+    "targetBase": "0.1.10+32",
+    "reasonForNewBase": "The rejected base cannot securely bootstrap its own request-parser correction."
+  }
+}

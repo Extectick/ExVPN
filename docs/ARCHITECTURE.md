@@ -2,7 +2,7 @@
 
 ## Независимый Dart OTA, 2026-10-20
 
-База 0.1.10+31 компилируется с `EXVPN_OTA_PROVIDER=exvpn` и fingerprint защищённых
+База 0.1.10+32 компилируется с `EXVPN_OTA_PROVIDER=exvpn` и fingerprint защищённых
 native/assets/plugins/dependencies. Встроенный updater настроен на фиксированный
 loopback endpoint; auto_update=false, strict RSA4096. Dart-адаптер держит socket
 весь срок процесса, проверяет собственный Ed25519-каталог, срок/последовательность/
