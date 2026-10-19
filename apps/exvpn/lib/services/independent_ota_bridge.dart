@@ -14,6 +14,51 @@ import 'independent_ota_catalog.dart';
 
 typedef IndependentOtaFetch = Future<Uint8List> Function(Uri uri, int limit);
 
+/// The pinned native client's ureq serializes requests with pretty JSON. This
+/// wire format is separate from the canonical signed catalog representation.
+@visibleForTesting
+Map<String, dynamic> decodeIndependentOtaWireRequest(List<int> bytes) {
+  const limit = 16 * 1024;
+  if (bytes.isEmpty || bytes.length > limit) {
+    throw const IndependentOtaFailure('request_invalid');
+  }
+  try {
+    // Validate before removing whitespace: malformed tokens such as `1 2`
+    // must never be repaired into a valid number by normalization.
+    final original = jsonDecode(utf8.decode(bytes));
+    if (original is! Map<String, dynamic>) {
+      throw const IndependentOtaFailure('request_invalid');
+    }
+    final compact = <int>[];
+    var inString = false;
+    var escaped = false;
+    for (final byte in bytes) {
+      if (inString) {
+        compact.add(byte);
+        if (escaped) {
+          escaped = false;
+        } else if (byte == 0x5c) {
+          escaped = true;
+        } else if (byte == 0x22) {
+          inString = false;
+        }
+      } else if (byte == 0x22) {
+        inString = true;
+        compact.add(byte);
+      } else if (byte != 0x20 && byte != 0x09 && byte != 0x0a && byte != 0x0d) {
+        compact.add(byte);
+      }
+    }
+    // Preserve canonical values and duplicate-key rejection after accepting
+    // only insignificant JSON whitespace outside strings.
+    return decodeIndependentOtaJson(compact, limit);
+  } on IndependentOtaFailure {
+    rethrow;
+  } catch (_) {
+    throw const IndependentOtaFailure('request_invalid');
+  }
+}
+
 Future<Uint8List> fetchIndependentOtaBytes(Uri uri, int limit) async {
   final bytes = BytesBuilder(copy: false);
   await AndroidHttpsUpdateTransport().fetch(
@@ -272,7 +317,7 @@ class IndependentOtaBridge {
       } else if (!_disabled &&
           request.method == 'POST' &&
           request.uri.path == '/api/v1/patches/check') {
-        final query = decodeIndependentOtaJson(await _body(request), 16 * 1024);
+        final query = decodeIndependentOtaWireRequest(await _body(request));
         final response = responseFor(query);
         request.response.headers.contentType = ContentType.json;
         request.response.write(jsonEncode(response));

@@ -241,6 +241,68 @@ void main() {
       await bridge.closeForTests();
       await temp.delete(recursive: true);
     });
+    test('pinned native pretty JSON request succeeds over real HTTP', () async {
+      await bridge.prepare('beta', download: true);
+      // ureq 3.3.0 SendBody::from_json uses serde_json::to_vec_pretty.
+      // Option::None omits current_patch_number in the pinned Rust request.
+      final rustBody =
+          '''{
+  "app_id": "$independentOtaAppId",
+  "channel": "beta",
+  "release_version": "$version",
+  "platform": "windows",
+  "arch": "x86_64",
+  "client_id": "synthetic-client"
+}''';
+      final client = HttpClient();
+      try {
+        final request = await client.post(
+          '127.0.0.1',
+          bridge.boundPort,
+          '/api/v1/patches/check',
+        );
+        request.headers.contentType = ContentType.json;
+        request.write(rustBody);
+        final response = await request.close();
+        expect(response.statusCode, 200);
+        final body = jsonDecode(await response.transform(utf8.decoder).join());
+        expect(body['patch_available'], true);
+        expect(body['patch']['number'], 1);
+      } finally {
+        client.close(force: true);
+      }
+    });
+    test('wire whitespace never changes strings or repairs invalid JSON', () {
+      final withWhitespace = query()
+        ..['client_id'] = 'synthetic a b\t"\\client';
+      final pretty = const JsonEncoder.withIndent('  ').convert(withWhitespace);
+      expect(
+        decodeIndependentOtaWireRequest(utf8.encode(pretty)),
+        withWhitespace,
+      );
+      for (final invalid in [
+        '{"current_patch_number":1 2}',
+        '{"client_id":"a" "b"}',
+        '{"client_id":"first","client_id":"second"}',
+        '{"current_patch_number":1e0}',
+        '{"client_id":"unescaped\nnewline"}',
+        '[]',
+      ]) {
+        expect(
+          () => decodeIndependentOtaWireRequest(utf8.encode(invalid)),
+          throwsA(isA<IndependentOtaFailure>()),
+          reason: invalid,
+        );
+      }
+      expect(
+        () => decodeIndependentOtaWireRequest([0x7b, 0xff, 0x7d]),
+        throwsA(isA<IndependentOtaFailure>()),
+      );
+      expect(
+        () => decodeIndependentOtaWireRequest(List.filled(16 * 1024 + 1, 0x20)),
+        throwsA(isA<IndependentOtaFailure>()),
+      );
+    });
     test(
       'SDK wire check and verified diff served, unknown ABI denied',
       () async {
