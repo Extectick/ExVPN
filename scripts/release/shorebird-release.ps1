@@ -127,7 +127,7 @@ New-Item -ItemType Directory -Path $stage | Out-Null
 $lockHash = (Get-FileHash (Join-Path $app 'pubspec.lock') -Algorithm SHA256).Hash
 $configHash = (Get-FileHash (Join-Path $app 'shorebird.yaml') -Algorithm SHA256).Hash
 $environmentNames = @('PATH','APPDATA','PUB_CACHE','GRADLE_USER_HOME','CI','FLUTTER_SUPPRESS_ANALYTICS',
-    'DART_SUPPRESS_ANALYTICS','FLUTTER_STORAGE_BASE_URL','ANDROID_HOME','ANDROID_SDK_ROOT',
+    'DART_SUPPRESS_ANALYTICS','FLUTTER_STORAGE_BASE_URL','SHOREBIRD_PUBLIC_KEY','ANDROID_HOME','ANDROID_SDK_ROOT',
     'GOTOOLCHAIN','GOPATH','GOCACHE','GOPROXY','GOSUMDB','GONOSUMDB','GOWORK',
     'JAVA_HOME','EXVPN_ANDROID_PACKAGE_INPUTS','EXVPN_FLUTTER_RUNTIME','EXVPN_FLUTTER_BUILD_MODE',
     'EXVPN_DEMO_MAVEN_GRAPH',
@@ -258,6 +258,10 @@ try {
         $phase='independent_base';$subphase='compiled_updater_lease'
         # The legacy source policy remains unchanged. Only the packaged asset
         # receives the local adapter endpoint and the pinned native RSA key.
+        # Pinned Flutter compiles the key from this public-only environment
+        # input, ignoring patch_public_key in the source YAML. Restore it with
+        # the other process environment values even when build/audit fails.
+        $env:SHOREBIRD_PUBLIC_KEY=$compiledPublicKey
         $compiledConfig="app_id: $appId`nauto_update: false`npatch_verification: strict`nbase_url: http://127.0.0.1:57791`npatch_public_key: $compiledPublicKey`n"
         Assert-CompiledUpdater $compiledConfig
         [IO.File]::WriteAllText((Join-Path $app 'shorebird.yaml'),$compiledConfig,[Text.UTF8Encoding]::new($false))

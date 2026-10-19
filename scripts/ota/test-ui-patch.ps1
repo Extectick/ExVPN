@@ -126,6 +126,27 @@ $releasePath = Join-Path $root 'scripts/release/shorebird-release.ps1'
 $releaseErrors=$null; $releaseTokens=$null
 $releaseAst=[Management.Automation.Language.Parser]::ParseFile($releasePath,[ref]$releaseTokens,[ref]$releaseErrors)
 Check (@($releaseErrors).Count -eq 0) 'release_wrapper_syntax'
+$environmentAssignment=@($releaseAst.FindAll({param($node) $node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left -is [Management.Automation.Language.VariableExpressionAst] -and $node.Left.VariablePath.UserPath -ceq 'environmentNames'},$true))
+Check ($environmentAssignment.Count -eq 1 -and @($environmentAssignment[0].Right.FindAll({param($node) $node -is [Management.Automation.Language.StringConstantExpressionAst] -and $node.Value -ceq 'SHOREBIRD_PUBLIC_KEY'},$true)).Count -eq 1) 'public_compile_key_environment_captured'
+$publicKeyAssignment=@($releaseAst.FindAll({param($node) $node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left -is [Management.Automation.Language.VariableExpressionAst] -and $node.Left.VariablePath.UserPath -ceq 'env:SHOREBIRD_PUBLIC_KEY'},$true))
+Check ($publicKeyAssignment.Count -eq 1 -and $publicKeyAssignment[0].Right.Extent.Text -ceq '$compiledPublicKey' -and $builder -match 'ExportRSAPublicKey\(\)') 'compile_environment_contains_public_key_only'
+$environmentRestore=@($releaseAst.FindAll({param($node) $node -is [Management.Automation.Language.ForEachStatementAst] -and $node.Condition.Extent.Text -ceq '$savedEnvironment.Keys'},$true))
+Check ($environmentRestore.Count -eq 1) 'release_environment_restorer_found'
+$publicKeyEnvironmentBefore=[Environment]::GetEnvironmentVariable('SHOREBIRD_PUBLIC_KEY','Process')
+$compiledPublicKey='synthetic-public-key'
+try {
+    [Environment]::SetEnvironmentVariable('SHOREBIRD_PUBLIC_KEY','existing-public-key','Process')
+    $savedEnvironment=@{SHOREBIRD_PUBLIC_KEY='existing-public-key'}
+    & ([scriptblock]::Create($publicKeyAssignment[0].Extent.Text))
+    Check ($env:SHOREBIRD_PUBLIC_KEY -ceq $compiledPublicKey) 'public_compile_key_passed_to_flutter'
+    & ([scriptblock]::Create($environmentRestore[0].Extent.Text))
+    Check ($env:SHOREBIRD_PUBLIC_KEY -ceq 'existing-public-key') 'prior_public_compile_key_restored'
+    $savedEnvironment=@{SHOREBIRD_PUBLIC_KEY=$null}
+    try { & ([scriptblock]::Create($publicKeyAssignment[0].Extent.Text)); throw 'synthetic-build-failure' }
+    catch { if($_.Exception.Message -cne 'synthetic-build-failure'){throw} }
+    finally { & ([scriptblock]::Create($environmentRestore[0].Extent.Text)) }
+    Check ($null -eq [Environment]::GetEnvironmentVariable('SHOREBIRD_PUBLIC_KEY','Process')) 'public_compile_key_removed_after_failure'
+} finally { [Environment]::SetEnvironmentVariable('SHOREBIRD_PUBLIC_KEY',$publicKeyEnvironmentBefore,'Process') }
 $baseErrors=$null; $baseTokens=$null
 $null=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'build-base.ps1'),[ref]$baseTokens,[ref]$baseErrors)
 Check (@($baseErrors).Count -eq 0) 'base_wrapper_syntax'
