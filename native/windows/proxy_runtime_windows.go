@@ -141,7 +141,11 @@ func startSystemProxy(ctx context.Context, profile exvpn.Profile, resolution *en
 	}
 	port := reservation.Addr().(*net.TCPAddr).Port
 	_ = reservation.Close()
-	encoded, err := BuildSystemProxyConfig(profile, port)
+	compiledProfile := profile
+	if profile.Protocol == "wireguard" && resolution != nil && len(resolution.addresses) > 0 {
+		compiledProfile.Server = resolution.addresses[0].Unmap().String()
+	}
+	encoded, err := BuildSystemProxyConfig(compiledProfile, port)
 	if err != nil {
 		return nil, Code("config_rejected")
 	}

@@ -33,6 +33,12 @@ func BuildConfig(p exvpn.Profile, endpointIP string, uids []int) ([]byte, error)
 	if err != nil {
 		return nil, err
 	}
+	if p.TCPOnly() {
+		// Conservative TCP-only policy: even selected direct applications lose
+		// non-DNS UDP in this profile. Never turn UDP ASSOCIATE or an unknown
+		// remote relay into a direct fallback. DNS still precedes this block.
+		rules = append(rules[:2], append([]map[string]any{{"type": "field", "inboundTag": []string{"vpn"}, "network": "udp", "outboundTag": "blocked"}}, rules[2:]...)...)
+	}
 	rules = append([]map[string]any{{"type": "field", "inboundTag": []string{"healthcheck"}, "outboundTag": "proxy"}}, rules...)
 	config["routing"] = map[string]any{"domainStrategy": "AsIs", "rules": rules}
 	config["inbounds"] = []any{map[string]any{"tag": "vpn", "protocol": "tun", "settings": map[string]any{
@@ -66,6 +72,10 @@ func BuildConfigWithRouting(p exvpn.Profile, endpointIP, mode string, uids []int
 	active := mode == exvpn.RoutingInclude || (mode == exvpn.RoutingExclude && len(uids) > 0)
 	if active {
 		rules[2] = map[string]any{"type": "field", "inboundTag": []string{"vpn"}, "network": "tcp,udp", "outboundTag": exvpn.ApplicationPolicyTag}
+	}
+	if p.TCPOnly() {
+		// Keep the same conservative UDP restriction with the owned dispatcher.
+		rules = append(rules[:2], append([]map[string]any{{"type": "field", "inboundTag": []string{"vpn"}, "network": "udp", "outboundTag": "blocked"}}, rules[2:]...)...)
 	}
 	data, err := BuildConfig(p, endpointIP, nil)
 	if err != nil {

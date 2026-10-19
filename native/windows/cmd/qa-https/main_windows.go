@@ -21,7 +21,7 @@ import (
 func main() {
 	mode := flag.String("mode", "numeric", "numeric, health, dns-tun or hold")
 	flag.Parse()
-	if (*mode != "health" && *mode != "numeric" && *mode != "dns-tun" && *mode != "hold") || flag.NArg() != 0 {
+	if (*mode != "health" && *mode != "numeric" && *mode != "numeric6" && *mode != "dns-tun" && *mode != "hold") || flag.NArg() != 0 {
 		fmt.Println(`{"error":"invalid_mode"}`)
 		return
 	}
@@ -45,6 +45,9 @@ func main() {
 		return
 	}
 	target := "https://1.1.1.1/cdn-cgi/trace"
+	if *mode == "numeric6" {
+		target = "https://[2606:4700:4700::1111]/cdn-cgi/trace"
+	}
 	if *mode == "health" {
 		target = "https://www.gstatic.com/generate_204"
 	}

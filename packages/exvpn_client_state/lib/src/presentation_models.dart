@@ -43,8 +43,17 @@ final class ServerEntry {
       ProxyProtocol.trojan => 'Trojan',
       ProxyProtocol.shadowsocks => 'Shadowsocks',
       ProxyProtocol.hysteria2 => 'Hysteria2',
+      ProxyProtocol.socks5 =>
+        profile.tls.enabled ? 'SOCKS5' : 'SOCKS5 · без TLS',
+      ProxyProtocol.http =>
+        profile.tls.enabled ? 'HTTPS CONNECT' : 'HTTP · без TLS',
+      ProxyProtocol.wireguard => 'WireGuard',
     };
-    final labels = <String>[protocol];
+    final labels = <String>[
+      protocol,
+      if ({ProxyProtocol.socks5, ProxyProtocol.http}.contains(profile.protocol))
+        'TCP',
+    ];
     if (profile.transport.type != 'tcp') {
       labels.add(profile.transport.type.toUpperCase());
     }

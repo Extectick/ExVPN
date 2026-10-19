@@ -109,6 +109,7 @@ final class ServerLatencyController extends ChangeNotifier {
     // Check this before a custom probe as well: a TCP timeout must not label a
     // healthy UDP-only endpoint as unreachable.
     if (profile.protocol == ProxyProtocol.hysteria2 ||
+        profile.protocol == ProxyProtocol.wireguard ||
         !_tcpTransports.contains(profile.transport.type)) {
       return const LatencySample(null, 'latency_transport_unsupported');
     }

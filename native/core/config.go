@@ -101,6 +101,9 @@ func BuildProbeConfig(p Profile, opts ProbeOptions) ([]byte, error) {
 		return nil, CodeError("probe_invalid_listener")
 	}
 	rules, _ := (RoutingPolicy{}).Rules("probe")
+	if p.TCPOnly() {
+		rules = append([]object{{"type": "field", "inboundTag": []string{"probe"}, "network": "udp", "outboundTag": "blocked"}}, rules...)
+	}
 	c := object{
 		"log":      object{"loglevel": "none", "access": "none", "error": "none", "dnsLog": false},
 		"dns":      object{"tag": "dns-query", "servers": []string{"https://1.1.1.1/dns-query"}, "disableFallback": true, "queryStrategy": "UseIP"},
@@ -149,6 +152,10 @@ func outbound(p Profile) object {
 		tls := object{"serverName": p.TLS.ServerName, "allowInsecure": false}
 		if len(p.TLS.ALPN) > 0 {
 			tls["alpn"] = p.TLS.ALPN
+		} else if p.Protocol == "http" {
+			// HTTPS CONNECT defaults to HTTP/1.1. Advertising implicit h2 to
+			// HTTP/1.1-only proxy servers makes a valid TLS session unusable.
+			tls["alpn"] = []string{"http/1.1"}
 		}
 		if p.TLS.Fingerprint != "" {
 			tls["fingerprint"] = p.TLS.Fingerprint
@@ -203,6 +210,8 @@ func outbound(p Profile) object {
 	case "hysteria2":
 		protocol = "hysteria"
 		settings = object{"version": 2, "address": p.Server, "port": p.Port}
+	case "socks5", "http", "wireguard":
+		protocol, settings = additionalOutbound(p)
 	}
 	result := object{"tag": "proxy", "protocol": protocol, "settings": settings, "streamSettings": stream}
 	if p.PacketEncoding == "xudp" {

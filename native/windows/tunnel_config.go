@@ -55,7 +55,14 @@ func buildTunnelConfigWithRouting(p exvpn.Profile, policy ApplicationRoutingPoli
 	} else if resolution != nil {
 		return nil, Code("bootstrap_mapping_invalid")
 	}
-	b, err := exvpn.BuildProbeConfig(p, probe)
+	compiledProfile := p
+	if p.Protocol == "wireguard" && resolution != nil {
+		// WireGuard resolves peer endpoints during device initialization, before
+		// its own encrypted DNS is reachable. Only the trusted bootstrap address
+		// may become the peer; never fall back to system or provider DNS.
+		compiledProfile.Server = resolution.addresses[0].Unmap().String()
+	}
+	b, err := exvpn.BuildProbeConfig(compiledProfile, probe)
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +106,13 @@ func buildTunnelConfigWithRouting(p exvpn.Profile, policy ApplicationRoutingPoli
 		rules[2] = object{"type": "field", "inboundTag": []string{"vpn"}, "network": "tcp,udp", "outboundTag": applicationPolicyTag}
 	}
 	probeRules, _ := (exvpn.RoutingPolicy{}).Rules("probe")
+	if p.TCPOnly() {
+		// Deliberately precedes application exclusions: TCP-only proxy profiles
+		// block all non-DNS UDP, including selected direct applications, rather
+		// than authorize an unverified SOCKS relay or a direct fallback.
+		rules = append(rules[:2], append([]object{{"type": "field", "inboundTag": []string{"vpn"}, "network": "udp", "outboundTag": "blocked"}}, rules[2:]...)...)
+		probeRules = append([]object{{"type": "field", "inboundTag": []string{"probe"}, "network": "udp", "outboundTag": "blocked"}}, probeRules...)
+	}
 	rules = append(rules, probeRules...)
 	c["routing"] = object{"domainStrategy": "AsIs", "rules": rules}
 	c["stats"] = object{}

@@ -59,6 +59,8 @@ func main() {
 	interfaceIndex := flag.Int("interface-index", 0, "Guest physical default-route interface, before TUN creation")
 	routingMode := flag.String("routing-mode", "exclude", "disabled, exclude or include; excluded-probe.exe is selected")
 	fixtureProcess := flag.Bool("fixture-process", false, "Internal isolated fixture child; never starts a client tunnel")
+	automaticFailover := flag.Bool("automatic-failover", false, "Exercise production automatic selection in disposable guest")
+	remoteRelay := flag.Bool("remote-relay", false, "Use private fixed remote profile through isolated TCP relays")
 	flag.Parse()
 	if !*confirm || flag.NArg() != 0 || !validRoutingMode(*routingMode) || validateGuest() != nil {
 		fmt.Println("disposable_system_guest_required")
@@ -71,13 +73,25 @@ func main() {
 		return
 	}
 	if *fixtureProcess {
+		if *remoteRelay {
+			if runRemoteRelayProcess(*interfaceIndex) != nil {
+				os.Exit(1)
+			}
+			return
+		}
 		if runFixtureProcess(*interfaceIndex) != nil {
 			os.Exit(1)
 		}
 		return
 	}
 	_ = os.WriteFile(filepath.Join(outputRoot, "guard-error.json"), []byte(`{"operation":"none"}`), 0600)
-	if err := run(*interfaceIndex, *routingMode); err != nil {
+	var runError error
+	if *automaticFailover {
+		runError = runAutomaticFailover(*interfaceIndex, *remoteRelay)
+	} else {
+		runError = run(*interfaceIndex, *routingMode)
+	}
+	if err := runError; err != nil {
 		// All errors returned by run are fixed codes; never expose Xray errors.
 		writeReport(object{"phase": "failed", "code": err.Error(), "routingMode": *routingMode})
 		os.Exit(1)

@@ -1,7 +1,76 @@
+import 'dart:convert';
 import 'profile_extensions.dart';
 export 'profile_extensions.dart';
 
-enum ProxyProtocol { vless, vmess, trojan, shadowsocks, hysteria2 }
+enum ProxyProtocol {
+  vless,
+  vmess,
+  trojan,
+  shadowsocks,
+  hysteria2,
+  socks5,
+  http,
+  wireguard,
+}
+
+/// One remote WireGuard peer. Never contains OS routes, DNS or hooks.
+final class WireGuardOptions {
+  WireGuardOptions({
+    required this.privateKey,
+    required this.publicKey,
+    required List<String> addresses,
+    this.preSharedKey,
+    this.mtu = 1420,
+    this.keepAlive = 0,
+    List<int> reserved = const [],
+  }) : addresses = List.unmodifiable(addresses),
+       reserved = List.unmodifiable(reserved) {
+    if (!isValid) throw const FormatException('Invalid WireGuard options');
+  }
+  final String privateKey;
+  final String publicKey;
+  final String? preSharedKey;
+  final List<String> addresses;
+  final int mtu;
+  final int keepAlive;
+  final List<int> reserved;
+  bool get isValid {
+    bool key(String value) {
+      try {
+        final b = base64.decode(value);
+        return b.length == 32 && b.any((x) => x != 0);
+      } on FormatException {
+        return false;
+      }
+    }
+
+    return key(privateKey) &&
+        key(publicKey) &&
+        (preSharedKey == null || key(preSharedKey!)) &&
+        addresses.isNotEmpty &&
+        addresses.length <= 2 &&
+        addresses.toSet().length == addresses.length &&
+        addresses.every(_validTunnelCIDR) &&
+        mtu >= 1280 &&
+        mtu <= 1420 &&
+        keepAlive >= 0 &&
+        keepAlive <= 120 &&
+        (reserved.isEmpty || reserved.length == 3) &&
+        reserved.every((x) => x >= 0 && x <= 255);
+  }
+
+  Map<String, Object?> toJson() => {
+    'privateKey': privateKey,
+    'publicKey': publicKey,
+    if (preSharedKey != null) 'preSharedKey': preSharedKey,
+    'addresses': addresses,
+    'mtu': mtu,
+    if (keepAlive != 0) 'keepAlive': keepAlive,
+    if (reserved.isNotEmpty) 'reserved': reserved,
+  };
+  @override
+  String toString() => 'WireGuardOptions(<redacted>)';
+}
 
 /// Normalized transport. No arbitrary provider configuration is executable.
 final class Transport {
@@ -97,6 +166,8 @@ final class ConnectionProfile {
     this.flow,
     this.encryption,
     this.packetEncoding,
+    this.username,
+    this.wireguard,
   });
   final String id;
   final String name;
@@ -109,6 +180,8 @@ final class ConnectionProfile {
   final String? flow;
   final VlessEncryption? encryption;
   final String? packetEncoding;
+  final String? username;
+  final WireGuardOptions? wireguard;
   final Transport transport;
   final TlsOptions tls;
 
@@ -120,6 +193,8 @@ final class ConnectionProfile {
     'port': port,
     if (uuid != null) 'uuid': uuid,
     if (password != null) 'password': password,
+    if (username != null) 'username': username,
+    if (wireguard != null) 'wireguard': wireguard!.toJson(),
     if (cipher != null) 'cipher': cipher,
     if (flow != null) 'flow': flow,
     if (packetEncoding != null) 'packetEncoding': packetEncoding,
@@ -130,4 +205,32 @@ final class ConnectionProfile {
 
   @override
   String toString() => 'ConnectionProfile(<redacted>)';
+}
+
+bool _validTunnelCIDR(String value) {
+  final pieces = value.split('/');
+  if (pieces.length != 2) return false;
+  final prefix = int.tryParse(pieces[1]);
+  if (prefix == null || prefix < 1) return false;
+  final ip = pieces[0];
+  if (ip.contains(':')) {
+    if (prefix > 128 ||
+        !RegExp(r'^[0-9a-fA-F:]+$').hasMatch(ip) ||
+        ip.split('::').length > 2) {
+      return false;
+    }
+    final groups = ip.split(':').where((x) => x.isNotEmpty).toList();
+    return groups.every((x) => x.length <= 4) &&
+        !(groups.isNotEmpty && groups.first.toLowerCase().startsWith('ff')) &&
+        (ip.contains('::') ? groups.length < 8 : groups.length == 8) &&
+        groups.any((x) => int.parse(x, radix: 16) != 0);
+  }
+  final octets = ip.split('.');
+  return prefix <= 32 &&
+      octets.length == 4 &&
+      octets.every(
+        (x) => RegExp(r'^\d{1,3}$').hasMatch(x) && int.parse(x) <= 255,
+      ) &&
+      octets.any((x) => int.parse(x) != 0) &&
+      (int.parse(octets.first) < 224 || int.parse(octets.first) > 239);
 }

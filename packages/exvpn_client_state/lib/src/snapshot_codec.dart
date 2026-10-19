@@ -84,6 +84,8 @@ ConnectionProfile _profile(Object? value) {
     'flow',
     'encryption',
     'packetEncoding',
+    'username',
+    'wireguard',
     'transport',
     'tls',
   });
@@ -94,6 +96,42 @@ ConnectionProfile _profile(Object? value) {
       .where((v) => v.name == protocolName)
       .firstOrNull;
   if (protocol == null) _invalidSnapshot();
+  WireGuardOptions? wireguard;
+  if (p['wireguard'] != null) {
+    final w = _object(p['wireguard'], {
+      'privateKey',
+      'publicKey',
+      'preSharedKey',
+      'addresses',
+      'mtu',
+      'reserved',
+      'keepAlive',
+    });
+    final addresses = w['addresses'];
+    final reserved = w['reserved'] ?? <Object>[];
+    if (addresses is! List ||
+        addresses.isEmpty ||
+        addresses.length > 2 ||
+        addresses.any((x) => x is! String) ||
+        reserved is! List ||
+        (reserved.isNotEmpty && reserved.length != 3)) {
+      _invalidSnapshot();
+    }
+    wireguard = WireGuardOptions(
+      privateKey: _text(w['privateKey'], max: 128),
+      publicKey: _text(w['publicKey'], max: 128),
+      preSharedKey: _optional(w['preSharedKey'], max: 128),
+      addresses: addresses.cast<String>(),
+      mtu: _integer(w['mtu'], 1280, 1420),
+      keepAlive: w['keepAlive'] == null ? 0 : _integer(w['keepAlive'], 0, 120),
+      reserved: reserved.map((x) => _integer(x, 0, 255)).toList(),
+    );
+  }
+  if ((wireguard != null) != (protocol == ProxyProtocol.wireguard) ||
+      (p['username'] != null &&
+          !{ProxyProtocol.socks5, ProxyProtocol.http}.contains(protocol))) {
+    _invalidSnapshot();
+  }
   final t = _object(p['transport'], {
     'type',
     'path',
@@ -142,6 +180,37 @@ ConnectionProfile _profile(Object? value) {
     'alpn',
     'reality',
   });
+  final tcpProxy = {
+    ProxyProtocol.socks5,
+    ProxyProtocol.http,
+  }.contains(protocol);
+  if ((tcpProxy || protocol == ProxyProtocol.wireguard) &&
+      (type != 'tcp' ||
+          t.length != 1 ||
+          [
+            'uuid',
+            'cipher',
+            'flow',
+            'encryption',
+            'packetEncoding',
+          ].any(p.containsKey))) {
+    _invalidSnapshot();
+  }
+  if (tcpProxy &&
+      ((p['username'] == null) != (p['password'] == null) ||
+          (p['username'] != null &&
+              (_text(p['username'], max: 255).isEmpty ||
+                  _text(p['password'], max: 255).isEmpty)) ||
+          tls['reality'] != null)) {
+    _invalidSnapshot();
+  }
+  if (protocol == ProxyProtocol.wireguard &&
+      (p['password'] != null ||
+          p['username'] != null ||
+          tls['enabled'] != false ||
+          tls.length != 1)) {
+    _invalidSnapshot();
+  }
   RealityOptions? reality;
   if ((encryption != null && protocol != ProxyProtocol.vless) ||
       (sudoku != null &&
@@ -166,6 +235,8 @@ ConnectionProfile _profile(Object? value) {
     port: _integer(p['port'], 1, 65535),
     uuid: _optional(p['uuid'], max: 128),
     password: _optional(p['password']),
+    username: _optional(p['username'], max: 255),
+    wireguard: wireguard,
     cipher: _optional(p['cipher'], max: 128),
     flow: _optional(p['flow'], max: 128),
     encryption: encryption,

@@ -40,6 +40,10 @@ type fixtureMessage struct {
 }
 
 func readFixtureMessage(line []byte) (fixtureMessage, error) {
+	return readFixtureMessageMode(line, false)
+}
+
+func readFixtureMessageMode(line []byte, remote bool) (fixtureMessage, error) {
 	var message fixtureMessage
 	if len(line) > 8192 {
 		return message, errors.New("fixture_protocol_failed")
@@ -51,7 +55,7 @@ func readFixtureMessage(line []byte) (fixtureMessage, error) {
 	}
 	if message.Kind == "ready" && message.Profile != nil && message.Counters == nil {
 		p := message.Profile
-		if p.ID == "qa-vless" && p.Protocol == "vless" && p.Server == "127.0.0.1" && p.Port > 0 && p.Transport.Type == "tcp" {
+		if p.ID == "qa-vless" && p.Protocol == "vless" && p.Server == "127.0.0.1" && p.Port > 0 && (p.Transport.Type == "tcp" || remote) {
 			if _, err := exvpn.Compile(*p); err == nil {
 				return message, nil
 			}
@@ -100,11 +104,18 @@ func (f *isolatedFixture) Close() error {
 }
 
 func startIsolatedFixture(interfaceIndex int) (*isolatedFixture, exvpn.Profile, error) {
+	return startIsolatedFixtureMode(interfaceIndex, false)
+}
+
+func startIsolatedFixtureMode(interfaceIndex int, remote bool) (*isolatedFixture, exvpn.Profile, error) {
 	executable, err := os.Executable()
 	if err != nil {
 		return nil, exvpn.Profile{}, err
 	}
 	command := exec.Command(executable, "-confirm-disposable-guest", "-fixture-process", "-interface-index", strconv.Itoa(interfaceIndex))
+	if remote {
+		command.Args = append(command.Args, "-remote-relay")
+	}
 	command.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	command.Stderr = io.Discard
 	input, err := command.StdinPipe()
@@ -141,7 +152,7 @@ func startIsolatedFixture(interfaceIndex int) (*isolatedFixture, exvpn.Profile, 
 				preamble++
 				continue
 			}
-			message, err := readFixtureMessage(line)
+			message, err := readFixtureMessageMode(line, remote)
 			if err != nil || (!started && message.Kind != "ready") || (started && message.Kind != "stats") {
 				_ = input.Close()
 				break

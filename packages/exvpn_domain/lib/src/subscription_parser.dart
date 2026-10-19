@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 
 import 'profile.dart';
+part 'additional_protocols.dart';
 
 enum ImportIssueCode {
   empty,
@@ -56,6 +57,7 @@ final class SubscriptionParser {
       return ImportResult([], [const ImportIssue(0, ImportIssueCode.empty)]);
     }
     try {
+      if (text.startsWith('[Interface]')) return _wireguardConfig(text);
       if (!text.contains('://') &&
           !text.startsWith('{') &&
           !text.startsWith('[')) {
@@ -113,6 +115,14 @@ final class SubscriptionParser {
     if (text.startsWith('vmess://')) return _vmess(text);
     if (text.startsWith('ss://')) return _shadowsocks(text);
     final uri = Uri.parse(text);
+    if ({
+      'socks',
+      'socks5',
+      'http',
+      'https',
+    }.contains(uri.scheme.toLowerCase())) {
+      return _proxyLink(uri);
+    }
     final protocol = switch (uri.scheme.toLowerCase()) {
       'vless' => ProxyProtocol.vless,
       'trojan' => ProxyProtocol.trojan,
@@ -340,6 +350,9 @@ final class SubscriptionParser {
   /// Translate only explicitly supported remote endpoint fields. Provider
   /// routes, DNS, interfaces and detours never enter the normalized contract.
   Map<String, Object?> _singBox(Map<String, Object?> node) {
+    if ({'socks', 'http', 'wireguard'}.contains(node['type'])) {
+      return _additionalSingBox(node);
+    }
     _checkKeys(node, {
       'type',
       'tag',
@@ -468,6 +481,9 @@ final class SubscriptionParser {
   }
 
   ConnectionProfile _outbound(Map<String, Object?> node) {
+    if ({'socks', 'http', 'wireguard'}.contains(node['protocol'])) {
+      return _additionalOutbound(node);
+    }
     _checkKeys(node, {
       'tag',
       'protocol',
@@ -779,7 +795,17 @@ final class SubscriptionParser {
     String? flow,
     VlessEncryption? encryption,
     String? packetEncoding,
+    String? username,
+    WireGuardOptions? wireguard,
   }) {
+    _validateAdditional(
+      protocol,
+      transport,
+      tls,
+      username,
+      password,
+      wireguard,
+    );
     if ((packetEncoding != null &&
             (packetEncoding != 'xudp' || protocol != ProxyProtocol.vless)) ||
         (transport.wsEarlyDataHeaderName != null &&
@@ -899,6 +925,8 @@ final class SubscriptionParser {
       'port': port,
       'uuid': uuid?.toLowerCase(),
       'password': password,
+      'username': ?username,
+      if (wireguard != null) 'wireguard': wireguard.toJson(),
       'cipher': cipher,
       'flow': flow,
       'packetEncoding': ?packetEncoding,
@@ -914,6 +942,8 @@ final class SubscriptionParser {
       port: port,
       uuid: uuid,
       password: password,
+      username: username,
+      wireguard: wireguard,
       cipher: cipher,
       flow: flow,
       packetEncoding: packetEncoding,

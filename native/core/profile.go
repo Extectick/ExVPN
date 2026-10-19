@@ -21,19 +21,21 @@ type CodeError string
 func (e CodeError) Error() string { return string(e) }
 
 type Profile struct {
-	ID             string    `json:"id"`
-	Name           string    `json:"name"`
-	Protocol       string    `json:"protocol"`
-	Server         string    `json:"server"`
-	Port           int       `json:"port"`
-	UUID           string    `json:"uuid,omitempty"`
-	Password       string    `json:"password,omitempty"`
-	Cipher         string    `json:"cipher,omitempty"`
-	Flow           string    `json:"flow,omitempty"`
-	Encryption     string    `json:"encryption,omitempty"`
-	PacketEncoding string    `json:"packetEncoding,omitempty"`
-	Transport      Transport `json:"transport"`
-	TLS            TLS       `json:"tls"`
+	ID             string            `json:"id"`
+	Name           string            `json:"name"`
+	Protocol       string            `json:"protocol"`
+	Server         string            `json:"server"`
+	Port           int               `json:"port"`
+	UUID           string            `json:"uuid,omitempty"`
+	Password       string            `json:"password,omitempty"`
+	Cipher         string            `json:"cipher,omitempty"`
+	Flow           string            `json:"flow,omitempty"`
+	Encryption     string            `json:"encryption,omitempty"`
+	PacketEncoding string            `json:"packetEncoding,omitempty"`
+	Username       string            `json:"username,omitempty"`
+	WireGuard      *WireGuardOptions `json:"wireguard,omitempty"`
+	Transport      Transport         `json:"transport"`
+	TLS            TLS               `json:"tls"`
 }
 
 type Transport struct {
@@ -76,7 +78,7 @@ func DecodeProfile(r io.Reader) (Profile, error) {
 	if json.Unmarshal(b, &envelope) != nil {
 		return Profile{}, CodeError("profile_invalid_schema")
 	}
-	if !onlyKeys(envelope, "id", "name", "protocol", "server", "port", "uuid", "password", "cipher", "flow", "encryption", "packetEncoding", "transport", "tls") {
+	if !onlyKeys(envelope, "id", "name", "protocol", "server", "port", "uuid", "password", "cipher", "flow", "encryption", "packetEncoding", "username", "wireguard", "transport", "tls") {
 		return Profile{}, CodeError("profile_invalid_schema")
 	}
 	for _, key := range []string{"protocol", "server", "port", "transport", "tls"} {
@@ -218,7 +220,7 @@ func (p Profile) Validate() error {
 	if !clean(p.ID, 128) || !clean(p.Name, 256) || !clean(p.Password, 4096) {
 		return bad("invalid_text")
 	}
-	if !oneOf(p.Protocol, "vless", "vmess", "trojan", "shadowsocks", "hysteria2") {
+	if !oneOf(p.Protocol, "vless", "vmess", "trojan", "shadowsocks", "hysteria2", "socks5", "http", "wireguard") {
 		return bad("unsupported_protocol")
 	}
 	if oneOf(p.Protocol, "vless", "vmess") && !uuidPattern.MatchString(p.UUID) {
@@ -250,7 +252,7 @@ func (p Profile) Validate() error {
 	if p.UUID != "" && !oneOf(p.Protocol, "vless", "vmess") {
 		return bad("unexpected_uuid")
 	}
-	if p.Password != "" && !oneOf(p.Protocol, "trojan", "shadowsocks", "hysteria2") {
+	if p.Password != "" && !oneOf(p.Protocol, "trojan", "shadowsocks", "hysteria2", "socks5", "http") {
 		return bad("unexpected_password")
 	}
 	if p.Cipher != "" && !oneOf(p.Protocol, "shadowsocks", "vmess") {
@@ -340,5 +342,5 @@ func (p Profile) Validate() error {
 			return bad("invalid_reality_spider")
 		}
 	}
-	return nil
+	return p.validateAdditional()
 }
