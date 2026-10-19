@@ -30,12 +30,12 @@ jobs:
           ref: 5bddc7770acd5446ca0c579857f9d1c7b2b1ada3
           persist-credentials: false
           fetch-depth: 1
-      - name: Restore exact pinned Android Shorebird SDK cache; stop on miss; never save
+      - name: Restore explicit same-pin Windows SDK fallback for Android analyzer only; stop on miss; never save
         id: sdk
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .tools/shorebird-1.6.129
-          key: exvpn-shorebird-sdk-v1-${{ runner.os }}-${{ runner.arch }}-Android-${{ hashFiles('scripts/bootstrap/shorebird.lock.json') }}
+          key: exvpn-shorebird-sdk-v1-${{ runner.os }}-${{ runner.arch }}-Windows-${{ hashFiles('scripts/bootstrap/shorebird.lock.json') }}
           fail-on-cache-miss: true
       - name: Prove exact cache hit
         env:
