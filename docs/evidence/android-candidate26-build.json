@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "recordedAtUtc": "2026-10-19T06:40:09Z",
+  "scope": "local signed Android release candidate build only",
+  "sourceCommit": "c7e169a3c483b2b4ac4f2ee0703ebd388c2857db",
+  "sourceClean": true,
+  "version": "0.1.5+26",
+  "flutterRuntime": "ordinary",
+  "syntheticProfiles": false,
+  "artifact": {
+    "path": "V:\\GitProjects\\ExVPN\\artifacts\\preview\\android\\ExVPN-0.1.5-26-android.apk",
+    "file": "ExVPN-0.1.5-26-android.apk",
+    "bytes": 134393531,
+    "sha256": "deb66851d3bea6788faf3e229f1129e61b3bdc9c0c7351ac0f7bb452f0d8ef4f"
+  },
+  "package": {
+    "package": "ru.exvpn.exvpn",
+    "version": "0.1.5+26",
+    "minimumSdk": 30,
+    "targetSdk": 36,
+    "debuggable": false
+  },
+  "signature": {
+    "verified": true,
+    "trustedSignerMatched": true,
+    "v2Verified": true,
+    "debug": false,
+    "certificateSha256": "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093"
+  },
+  "nativeCompilePassed": true,
+  "jvm": {
+    "task": ":app:testReleaseUnitTest",
+    "freshReports": true,
+    "tests": 47,
+    "suites": 7,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "packageInputsSealSha256": "6c3d6597915938a3706de2d421647228ff37ec83774d60c697790b865801e84d",
+  "stableReady": false,
+  "runtime": {
+    "executed": false,
+    "emulatorTouched": false,
+    "physicalDeviceTouched": false
+  },
+  "audit": {
+    "path": "V:\\GitProjects\\ExVPN\\artifacts\\preview\\android\\android-audit.json",
+    "complete": false,
+    "releaseReady": false,
+    "findings": [
+      {
+        "code": "android_gradle_maven_runtime_inventory_missing",
+        "subject": "",
+        "severity": "blocker"
+      },
+      {
+        "code": "dart_flutter_runtime_link_inventory_incomplete",
+        "subject": "",
+        "severity": "blocker"
+      },
+      {
+        "code": "license_expressions_and_distribution_obligations_not_fully_reviewed",
+        "subject": "",
+        "severity": "blocker"
+      }
+    ]
+  },
+  "buildReceiptPath": "V:\\GitProjects\\ExVPN\\artifacts\\preview\\android\\android-build.json",
+  "previousCandidatePreservedAt": "V:\\GitProjects\\ExVPN\\artifacts\\qa\\android25-before-updater-26",
+  "limits": [
+    "No APK install/startup/upgrade or VPN runtime performed by this build owner.",
+    "Local APK hash is not the public CI artifact hash.",
+    "Preview audit has existing inventory and license-review blockers; stable acceptance remains open."
+  ]
+}

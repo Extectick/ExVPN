@@ -4,7 +4,16 @@
 source fingerprint unchanged. [Full](evidence/fast-validation-v0.1.5.json).
 Windows handoff regression и Android signed APK updater проверены на уровне
 поведения и отказов. Native сборки, системная установка и публичные feeds
-проверяются отдельно; этот прогон их не заменяет. Рабочее дерево; commit ожидается.
+проверяются отдельно; этот прогон их не заменяет. Исходники:
+[c7e169a3](https://github.com/Extectick/ExVPN/commit/c7e169a3c483b2b4ac4f2ee0703ebd388c2857db).
+
+0.1.5+26 опубликован: source CI39210164029 и release CI39210171570 успешны.
+Все 15 публичных assets, 14 checksum entries, APK release signer, 47 JVM tests,
+notices/SBOM и оба подписанных Windows/Android feed прошли независимый аудит.
+[Аудит](evidence/release-v0.1.5.json),
+[локальная Android сборка](evidence/android-candidate26-build.json).
+Локальный и публичный APK имеют разные хеши; install/upgrade проверяется на
+публичном APK отдельно. Это Preview, не закрытие E1 или полной приёмки E6/E7.
 
 Публикация 0.1.4+25: source CI39145319784 и release CI39145366138 на исходниках
 576a392 успешны для Android и Windows. Скачаны все 15 публичных assets,

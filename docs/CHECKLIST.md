@@ -818,22 +818,32 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   0.1.3+24: правильный пакет 0.1.4+25 скачан, но staging 40 ошибочно сравнивался
   с 39. Prepare-only воспроизвёл отказ без commit/выхода/установки. Native
   regression tests и vet PASS; установленное исправление ещё не проверено.
-  Рабочее дерево; commit ожидается.
+  Исходники: [c7e169a3](https://github.com/Extectick/ExVPN/commit/c7e169a3c483b2b4ac4f2ee0703ebd388c2857db).
+  [Диагноз](evidence/windows-update-0.1.5-diagnosis.json).
 - [ ] **EXVPN-E6-009** — Добавить Android полные APK updates. Критерий: отдельный
   подписанный feed, platform/domain/expiry/build/compatibility и HTTPS/size/hash
   проверки; private staging; native package/version/release signer PIN; явное
   разрешение источника и системная установка; отмена/повтор не блокируют UI.
-  Настоящее обновление с сохранением данных проверено в эмуляторе отдельно от
+  Требуется реальное обновление с сохранением данных в эмуляторе отдельно от
   unit-тестов; физическое устройство остаётся общей приёмкой. Предыдущие ordinary
-  APK не имели full backend, нужен один ручной bootstrap. Реализация продолжается.
-  Рабочее дерево; commit ожидается.
+  APK не имели full backend, нужен один ручной bootstrap. Реализация c7e169a3
+  прошла Full и 47 JVM tests; signed APK/feed опубликованы. Runtime ещё открыт.
+  [Сборка](evidence/android-candidate26-build.json), [доставка](evidence/release-v0.1.5.json).
 - [ ] **EXVPN-E7-010** — Выпустить 0.1.5+26 Preview с исправленным updater.
   Критерий: Full после заморозки исходников, Android/Windows сборки, runtime gates,
   новый immutable tag, обе CI платформы, опубликованные файлы и оба подписанных
   feed проверены скачиванием. Windows Authenticode и E1 не закрываются этим выпуском.
   2026-10-19: Full 12/12 PASS, 366 app tests, 216,79 с, source unchanged;
-  [отчёт](evidence/fast-validation-v0.1.5.json). Native сборки и runtime ещё
-  проверяются. Пока не опубликован. Рабочее дерево; commit ожидается.
+  [отчёт](evidence/fast-validation-v0.1.5.json). Native сборки, immutable tag
+  v0.1.5 на c7e169a3 и публичная доставка проверены; runtime ещё открыт.
+- [x] **EXVPN-E7-011** — Проверить публичную доставку 0.1.5+26 отдельно от установки.
+  Критерий: обе CI-платформы, source/tag, все файлы и checksums, APK signer,
+  notices/SBOM и оба Ed25519 feed соответствуют фактическим пакетам. Проверено
+  2026-10-19: source CI39210164029 и release CI39210171570 PASS; 15 assets,
+  14 checksum entries, 226 notice-файлов, APK SDK30/36, 47 JVM tests, подпись
+  Android и оба domain-separated feed PASS. Windows unsigned, Preview.
+  Исходники: c7e169a3. [Доказательство](evidence/release-v0.1.5.json).
+  Установленный handoff, настоящий Android upgrade и E1 сюда не входят.
 
 ## Цикл 0.1.4 — подписки и разрешения, 2026-10-18
 
