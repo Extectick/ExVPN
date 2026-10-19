@@ -1,0 +1,282 @@
+{
+  "schema": 1,
+  "recordedAtUtc": "2026-10-19T21:10:31.469965+00:00",
+  "purpose": "Sanitized CI base and signed patch provenance only; not runtime acceptance.",
+  "version": "0.1.9+30",
+  "track": "beta",
+  "sourceCommit": "f98b75d38a656fc6a708cac9ba692ad7502c47c2",
+  "baseWorkflowRunId": 39319816470,
+  "releaseId": 910468,
+  "cloudAccepted": true,
+  "runtimeAcceptancePending": true,
+  "publicReleasePublished": false,
+  "stableReady": false,
+  "bases": [
+    {
+      "target": "Android",
+      "receiptPath": "artifacts/shorebird30-ci/Android/build.json",
+      "receiptSha256": "6b5faa40e99576d0d3a370b5095b4994dc9ef5b503612366a08d907468a81973",
+      "cloudAccepted": true,
+      "auditAccepted": true,
+      "stableReady": false,
+      "baseAot": [
+        {
+          "platform": "android",
+          "arch": "aarch64",
+          "sha256": "c393b36e81814a2f97990781100d91f98c7cedbf86dd85072e4ae630bf74e3e0",
+          "bytes": 7406472
+        },
+        {
+          "platform": "android",
+          "arch": "x86_64",
+          "sha256": "1137d343197c4968ab4dbc030f3739c1f7a7c5e1b9ed3b186d2662c1ad845122",
+          "bytes": 7668616
+        }
+      ],
+      "artifacts": [
+        {
+          "file": "android-audit.json",
+          "sha256": "0c9550639f54eda0f00c4b24546aca3c9d11cea6b4c63f32736dbd519ab22b8d",
+          "bytes": 29205,
+          "matchesBuildReceipt": true
+        },
+        {
+          "file": "android-maven-notices.json",
+          "sha256": "b1aeb50d23d00b97da0fe6c0fcf9a3cc1d7bb18354e37fba77eb69500bf96aa0",
+          "bytes": 1358,
+          "matchesBuildReceipt": true
+        },
+        {
+          "file": "android-maven-notices.zip",
+          "sha256": "7279b26cf2f2ea47c318dbdbb3bb263dacb2ffa9aca6a9cb9a320204b3e22672",
+          "bytes": 171997,
+          "matchesBuildReceipt": true
+        },
+        {
+          "file": "android-notices.zip",
+          "sha256": "e2d79170956b4f882b117bc5e76fc127a7702dbc82a93764007e152f76b6fe8c",
+          "bytes": 2281296,
+          "matchesBuildReceipt": true
+        },
+        {
+          "file": "android-sbom.cdx.json",
+          "sha256": "23358b04d579fdde8c56507ddd3cd4dd23ec92abbd23c7036cfa5b9c1d68921e",
+          "bytes": 605790,
+          "matchesBuildReceipt": true
+        },
+        {
+          "file": "build.json",
+          "sha256": "6b5faa40e99576d0d3a370b5095b4994dc9ef5b503612366a08d907468a81973",
+          "bytes": 102150
+        },
+        {
+          "file": "ExVPN-0.1.9-30-android.aab",
+          "sha256": "bf996aef32fe3ad5e1354929598b47a641c165998e0e3e9003178d626d2c629f",
+          "bytes": 80509232,
+          "matchesBuildReceipt": true
+        },
+        {
+          "file": "ExVPN-0.1.9-30-android.apk",
+          "sha256": "c7e62ed64784c3718229103c0bd938bdd142d95fe497dec41ec64f7517e05eb5",
+          "bytes": 140326163,
+          "matchesBuildReceipt": true
+        }
+      ],
+      "runtimeIdentity": {
+        "schema": 1,
+        "kind": "shorebird",
+        "target": "Android",
+        "buildMode": "release",
+        "flutterVersion": "3.47.7",
+        "flutterRevision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+        "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+        "dartVersion": "3.13.5",
+        "pin": {
+          "path": "scripts/bootstrap/shorebird.lock.json",
+          "sha256": "93bebdbf5644d5c25386f60dafb456f01fe6add3be09a427e93afe7d447ae3e7"
+        },
+        "cli": {
+          "version": "1.6.129",
+          "revision": "9fe1370bdd1d2f117cc08c57ae416b794ed92440",
+          "entrypointSha256": "078304c0dafde2e57bdfa86232136f54291609811e4dd997a852629f15e8f641",
+          "dependencyLockSha256": "5788be4fc7149239309a313f4fc06af4ef4560dca887517d62881c0b26137bae"
+        }
+      },
+      "engineBytesBound": true,
+      "sourceLockUnchanged": true,
+      "otaPolicy": {
+        "publicKeySha256": "b275456f18ac7037d511ae414f73f719f419177bac0443942ade6a1ccb4fb859",
+        "patchVerification": "strict",
+        "autoUpdate": false,
+        "updaterPolicyVerified": true
+      },
+      "nativePackageSigning": {
+        "verified": true,
+        "trustedSignerMatched": true,
+        "debug": false,
+        "certificateSha256": [
+          "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093"
+        ]
+      },
+      "runtimeAcceptancePending": true,
+      "android": {
+        "package": "ru.exvpn.exvpn",
+        "version": "0.1.9+30",
+        "minimumSdk": 30,
+        "targetSdk": 36,
+        "debuggable": false
+      },
+      "apkSigning": {
+        "verified": true,
+        "trustedSignerMatched": true,
+        "v2Verified": true,
+        "debug": false,
+        "certificateSha256": "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093"
+      },
+      "jvm": {
+        "task": ":app:testReleaseUnitTest",
+        "freshReports": true,
+        "tests": 52,
+        "suites": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "releaseConfiguration": {
+        "configurationOnly": true,
+        "artifactBytesUnchanged": true,
+        "protectedInputsUnchanged": true,
+        "releaseRegistrantVerified": true
+      }
+    },
+    {
+      "target": "Windows",
+      "receiptPath": "artifacts/shorebird30-ci/Windows/build.json",
+      "receiptSha256": "fd679d2b61730d9312d1670efe464ff847d9c2decc4eb06f095df824ea41edca",
+      "cloudAccepted": true,
+      "auditAccepted": true,
+      "stableReady": false,
+      "baseAot": [
+        {
+          "platform": "windows",
+          "arch": "x86_64",
+          "sha256": "2ea7fadfe845093d5aa8dd7da8f2bcf127f8517a7bbada3b7bbd53105e516fda",
+          "bytes": 8225672
+        }
+      ],
+      "artifacts": [
+        {
+          "file": "build.json",
+          "sha256": "fd679d2b61730d9312d1670efe464ff847d9c2decc4eb06f095df824ea41edca",
+          "bytes": 50961
+        },
+        {
+          "file": "ExVPN-0.1.9-30-windows-x64-development.exe",
+          "sha256": "2654cfb590c42d4ac2078cb659fb6c06520b988ab1300a4158ed6cd12eeb4440",
+          "bytes": 50467921,
+          "matchesBuildReceipt": true
+        },
+        {
+          "file": "windows-audit.json",
+          "sha256": "04206c7a97bb7212671789a3d49758a73b86f7b11e1f7b4a4e194d9cfdea6231",
+          "bytes": 19675,
+          "matchesBuildReceipt": true
+        },
+        {
+          "file": "windows-notices.zip",
+          "sha256": "d2fe763ef586cba821a8b782a9c475e5c5f4e63429685749f3e5333d5b5c20d6",
+          "bytes": 2322415,
+          "matchesBuildReceipt": true
+        },
+        {
+          "file": "windows-sbom.cdx.json",
+          "sha256": "c00cc087e744ff08d468a83bcf68d058fbcd5c8cd06d0efab4a8d1f4618548b1",
+          "bytes": 577748,
+          "matchesBuildReceipt": true
+        }
+      ],
+      "runtimeIdentity": {
+        "schema": 1,
+        "kind": "shorebird",
+        "target": "Windows",
+        "buildMode": "release",
+        "flutterVersion": "3.47.7",
+        "flutterRevision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+        "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+        "dartVersion": "3.13.5",
+        "pin": {
+          "path": "scripts/bootstrap/shorebird.lock.json",
+          "sha256": "93bebdbf5644d5c25386f60dafb456f01fe6add3be09a427e93afe7d447ae3e7"
+        },
+        "cli": {
+          "version": "1.6.129",
+          "revision": "9fe1370bdd1d2f117cc08c57ae416b794ed92440",
+          "entrypointSha256": "078304c0dafde2e57bdfa86232136f54291609811e4dd997a852629f15e8f641",
+          "dependencyLockSha256": "5788be4fc7149239309a313f4fc06af4ef4560dca887517d62881c0b26137bae"
+        }
+      },
+      "engineBytesBound": true,
+      "sourceLockUnchanged": true,
+      "otaPolicy": {
+        "publicKeySha256": "b275456f18ac7037d511ae414f73f719f419177bac0443942ade6a1ccb4fb859",
+        "patchVerification": "strict",
+        "autoUpdate": false,
+        "updaterPolicyVerified": true
+      },
+      "nativePackageSigning": {
+        "verified": false,
+        "trustedSignerMatched": false,
+        "debug": false,
+        "certificateSha256": [],
+        "classification": "unsigned-development-installer"
+      },
+      "runtimeAcceptancePending": true
+    }
+  ],
+  "patches": [
+    {
+      "target": "Windows",
+      "workflowRunId": 39320947039,
+      "receiptPath": "artifacts/shorebird30-patch-ci/Windows/patch.json",
+      "receiptSha256": "9ec5113813b5eba76f576c0c5cfa08b6cb064180a8fc3d20a8006dbd3c46123f",
+      "cloudAccepted": true,
+      "signed": true,
+      "publicKeySha256": "b275456f18ac7037d511ae414f73f719f419177bac0443942ade6a1ccb4fb859",
+      "releaseId": 910468,
+      "patchNumber": 1,
+      "patchId": 732154,
+      "artifacts": [
+        {
+          "platform": "windows",
+          "arch": "x86_64",
+          "sha256": "8a4c0c8c761ec96fa73d62b67f9e087a1a24e684fb9d3100b836b282f1f4959d",
+          "bytes": 299
+        }
+      ],
+      "baseReceiptSha256": "fd679d2b61730d9312d1670efe464ff847d9c2decc4eb06f095df824ea41edca",
+      "source": {
+        "baseCommit": "f98b75d38a656fc6a708cac9ba692ad7502c47c2",
+        "sourceCommit": "1be30d5c597ccb7d84036eca36c2fc7378490636",
+        "paths": [
+          "apps/exvpn/lib/ui_revision.dart",
+          "docs/ARCHITECTURE.md",
+          "docs/TESTING_WORKFLOW.md",
+          "docs/evidence/fast-validation-v0.1.9-final.json",
+          "docs/releases/0.1.9.md"
+        ],
+        "onlyDartProductionChanges": true
+      },
+      "nativeDiffsAllowed": false,
+      "assetDiffsAllowed": false,
+      "deviceApplyVerifiedAtReceipt": false,
+      "runtimeAcceptancePending": true
+    }
+  ],
+  "androidPatchReceiptAvailable": false,
+  "limitations": [
+    "Cloud registration and signed Dart patch receipts do not prove SDK apply, cold restart or rollback.",
+    "Windows installer has no verified Authenticode publisher signature; Dart patch signing is separate.",
+    "Real TUN, IPv4/IPv6, DNS, exclusions and persistent guard acceptance remain separate runtime gates.",
+    "No Android patch receipt is recorded until an actual artifact is available."
+  ]
+}
