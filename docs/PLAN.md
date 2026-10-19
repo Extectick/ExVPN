@@ -8,7 +8,9 @@
 более плотные серверы и единый прогресс на всю площадь кнопки обновления.
 Full 12/12, 418 app tests, браузер dark/medium и light/minimal приняты.
 После финального уточнения высоты — 8 targeted updater tests, analyze и browser
-bounding assertion; кнопку зафиксировали на 56 px без повтора остальных suites.
+bounding assertion; последним уточнением кнопку снизили до 40 px, сохранив
+штатный LinearProgressIndicator и одинаковый размер во всех состояниях.
+[Компактная кнопка](evidence/updates-compact-action.json); остальные suites не повторялись.
 Windows native-переключение и Android системный handoff покрыты source-тестами;
 новая база, installed runtime и реальные WFP/DPAPI/OS настройки ещё не приняты.
 E1, EXVPN-E5-010 и EXVPN-E4-007 открыты; бинарники/версия/feed не менялись.

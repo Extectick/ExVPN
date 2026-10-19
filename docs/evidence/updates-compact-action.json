@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-20",
+  "status": "PASS_COMPACT_UI_AND_BROWSER",
+  "implementationCommit": "d1caebe0b6a15eea865736f770e2d6ccee0c88ac",
+  "scope": "Update action presentation only; existing updater state machine and native code unchanged.",
+  "logicalHeight": 40,
+  "previousLogicalHeight": 56,
+  "frameworkComponent": "Flutter Material LinearProgressIndicator",
+  "sameHeightAcrossStates": true,
+  "visibleLoadingText": false,
+  "newDependencies": 0,
+  "validation": {
+    "updaterWidgetTests": 8,
+    "darkLightTextScaleGeometryCases": 4,
+    "targetedAnalyzer": "2 files clean",
+    "fullSuiteRepeated": false
+  },
+  "browser": {
+    "theme": "dark",
+    "layout": "medium",
+    "beforeHeightCssPx": 30.607650756835938,
+    "duringHeightCssPx": 30.607650756835938,
+    "sameBounds": true,
+    "syntheticOnly": true
+  },
+  "screenshots": [
+    {
+      "path": "design/screenshots/updates-compact/available-dark.png",
+      "sha256": "676feebee99a033919f116a8e8a347f02698cb055809415a0afaf36e74fca809"
+    },
+    {
+      "path": "design/screenshots/updates-compact/downloading-dark.png",
+      "sha256": "92893b27a77bc05377b257d7e942086c696dce2b70a2997d0976f1c90a680ee5"
+    }
+  ],
+  "sourceSha256": {
+    "apps/exvpn/lib/src/updates_sheet.dart": "c0e3f6a2b081a3a9816d175c4fdfa180698487bf96785fb51bc7a0bd154b5577",
+    "apps/exvpn/test/updates_sheet_test.dart": "7c2ddf37891f4fd33fa68f334cfc72943dc1260bfde96cab9b4cc1fac5001063"
+  },
+  "nativePackagesBuilt": 0,
+  "webPreviewBuilds": 1,
+  "installations": 0,
+  "published": false
+}

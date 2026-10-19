@@ -265,12 +265,16 @@ PID, netId и временем в querylog. VPN не запускался; пр�
   Общий Full **12/12 PASS, 418 app tests, 115,73 с**, fingerprint неизменен;
   дополнительно 11 targeted logs tests, Android 9 JVM и Windows pure/race/vet.
   После последнего замечания о высоте изменены только updater UI и его тест:
-  56 px во всех состояниях, 8 targeted tests/analyzer PASS, из них 4 новые
+  Сначала 56 px во всех состояниях, 8 targeted tests/analyzer PASS, из них 4 новые
   геометрические регрессии dark/light × text scale 1/1,5; browser bounding height PASS.
   Full после этого изолированного уточнения не повторялся.
   В браузере приняты dark/medium, light/minimal, прямой toggle в макете и copy.
   [Доказательства](evidence/settings-protection-logs.json), [просмотр](DESIGN_PREVIEW.md).
-  Исходники: `aecd17d`. Приёмка native ниже остаётся открытой.
+  Последнее уточнение 2026-10-20: высота снижена до 40 px, иконка 18 px,
+  штатный LinearProgressIndicator по всей поверхности; 8 updater tests/analyzer
+  PASS и равные browser bounds до/при загрузке. Другие suites не повторялись.
+  [Квитанция компактности](evidence/updates-compact-action.json).
+  Исходники: `3a8b9b7`, компактность `d1caebe`. Приёмка native ниже остаётся открытой.
 
 - [ ] **EXVPN-E5-010** — Принять переключаемый Windows Kill Switch на новой native-базе.
   Исходники 2026-10-20: default ON, защищённая owner-DPAPI настройка, setter только
