@@ -122,6 +122,11 @@ def main():
             existing_commit = tag_commit(args.asset_tag)
             if existing_commit is not None and existing_commit != source_commit:
                 catalog.bad('immutable_tag_source_mismatch')
+            if existing_commit is None:
+                # A draft release does not create a Git ref. Pin the source
+                # before uploading; never ask GitHub to resolve a moving branch.
+                gh('api', '--method', 'POST', f'repos/{REPO}/git/refs',
+                   '-f', 'ref=refs/tags/' + args.asset_tag, '-f', 'sha=' + source_commit)
             if remote:
                 if remote['target_commitish'] != source_commit or not remote['prerelease']:
                     catalog.bad('immutable_patch_release_invalid')
@@ -129,7 +134,11 @@ def main():
                 gh('release', 'create', args.asset_tag, '--repo', REPO, '--target', source_commit,
                    '--title', f"ExVPN UI {first['version']}", '--notes', 'Signed ExVPN AOT patches. Native base unchanged.',
                    '--draft', '--prerelease', '--latest=false')
-                remote = gh('api', f'repos/{REPO}/releases/tags/{args.asset_tag}', json_result=True)
+                release_id = gh('release', 'view', args.asset_tag, '--repo', REPO,
+                                '--json', 'databaseId', '--jq', '.databaseId')
+                if not release_id.isdecimal():
+                    catalog.bad('github_release_identity_invalid')
+                remote = gh('api', f'repos/{REPO}/releases/{release_id}', json_result=True)
             if tag_commit(args.asset_tag) != source_commit:
                 catalog.bad('immutable_tag_source_mismatch')
             expected_names = set(upload)
@@ -145,7 +154,7 @@ def main():
                     target = staging / name
                     target.write_bytes(source.read_bytes())
                     gh('release', 'upload', args.asset_tag, str(target), '--repo', REPO)
-            remote = gh('api', f'repos/{REPO}/releases/tags/{args.asset_tag}', json_result=True)
+            remote = gh('api', f"repos/{REPO}/releases/{remote['id']}", json_result=True)
             for name, (_, digest, size) in upload.items():
                 digest_asset(remote, name, digest, size)
             if remote['draft']:
