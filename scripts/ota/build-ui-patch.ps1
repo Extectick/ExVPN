@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #Requires -Version 7.2
-[CmdletBinding()]
+[CmdletBinding(DefaultParameterSetName='Pem')]
 param(
     [Parameter(Mandatory)][Alias('BaseReceiptPath')][string]$BaseReceipt,
     [Parameter(Mandatory)][ValidateSet('Android','Windows')][string]$Target,
     [Parameter(Mandatory)][ValidateRange(1,2147483647)][int]$PatchNumber,
-    [Parameter(Mandatory)][string]$PrivateKeyPath,
+    [Parameter(Mandatory,ParameterSetName='Pem')][string]$PrivateKeyPath,
+    [Parameter(Mandatory,ParameterSetName='Protected')][string]$ProtectedPrivateKeyPath,
     [string]$Repository = (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent),
     [string]$OutputDirectory,
     [switch]$PlanOnly
@@ -14,6 +15,56 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'aot-inputs.ps1')
 . (Join-Path $PSScriptRoot 'source-driver.ps1')
+
+function Import-OtaProtectedKeyBytes([byte[]]$Bytes,[Security.Cryptography.RSA]$PublicKey) {
+    $rsa=[Security.Cryptography.RSA]::Create()
+    $accepted=$false
+    try {
+        $read=0
+        try { $rsa.ImportPkcs8PrivateKey($Bytes,[ref]$read) } catch { throw 'ota_private_key_format_invalid' }
+        if($read -ne $Bytes.Length){throw 'ota_private_key_trailing_data'}
+        if($rsa.KeySize -ne 4096 -or [Convert]::ToBase64String($rsa.ExportRSAPublicKey()) -cne [Convert]::ToBase64String($PublicKey.ExportRSAPublicKey())){throw 'ota_signing_key_mismatch'}
+        $accepted=$true
+        $rsa
+    } finally {
+        [Security.Cryptography.CryptographicOperations]::ZeroMemory($Bytes)
+        if(!$accepted){$rsa.Dispose()}
+    }
+}
+
+function Import-OtaSigningKey([string]$Root,[string]$PemPath,[string]$ProtectedPath,[Security.Cryptography.RSA]$PublicKey) {
+    if([bool]$PemPath -eq [bool]$ProtectedPath){throw 'ota_private_key_input_ambiguous'}
+    $path=Resolve-ExvpnOtaPath $Root $(if($ProtectedPath){$ProtectedPath}else{$PemPath})
+    $privateRoot=[IO.Path]::GetFullPath((Join-Path $Root '.private'))+[IO.Path]::DirectorySeparatorChar
+    if(!$path.StartsWith($privateRoot,[StringComparison]::OrdinalIgnoreCase)){throw 'ota_private_key_location_invalid'}
+    $fileBytes=$null;$decryptedBytes=$null;$privateText=$null;$rsa=$null;$accepted=$false
+    try {
+        $stream=[IO.File]::Open($path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        try {
+            if($stream.Length -le 0 -or $stream.Length -gt 65536){throw 'ota_private_key_file_invalid'}
+            $fileBytes=[byte[]]::new([int]$stream.Length)
+            $stream.ReadExactly($fileBytes,0,$fileBytes.Length)
+        } finally { $stream.Dispose() }
+        if($ProtectedPath){
+            try { $decryptedBytes=[Security.Cryptography.ProtectedData]::Unprotect($fileBytes,$null,[Security.Cryptography.DataProtectionScope]::CurrentUser) }
+            catch { throw 'ota_protected_key_decrypt_failed' }
+            # PKCS#8 bytes remain in memory and are cleared by the import helper
+            # on success, wrong key, trailing data, or parse failure.
+            return (Import-OtaProtectedKeyBytes $decryptedBytes $PublicKey)
+        }
+        $privateText=[Text.UTF8Encoding]::new($false,$true).GetString($fileBytes)
+        $rsa=[Security.Cryptography.RSA]::Create()
+        try { $rsa.ImportFromPem($privateText) } catch { throw 'ota_private_key_format_invalid' }
+        if($rsa.KeySize -ne 4096 -or [Convert]::ToBase64String($rsa.ExportRSAPublicKey()) -cne [Convert]::ToBase64String($PublicKey.ExportRSAPublicKey())){throw 'ota_signing_key_mismatch'}
+        $accepted=$true
+        $rsa
+    } finally {
+        $privateText=$null
+        if($fileBytes){[Security.Cryptography.CryptographicOperations]::ZeroMemory($fileBytes)}
+        if($decryptedBytes){[Security.Cryptography.CryptographicOperations]::ZeroMemory($decryptedBytes)}
+        if($rsa -and !$accepted){$rsa.Dispose()}
+    }
+}
 
 function Assert-OtaPinnedTool([string]$Root, [object]$Record, [string]$ExpectedRelative) {
     if ($null -eq $Record -or $Record.path -isnot [string] -or $Record.sha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'ota_tool_pin_missing' }
@@ -84,7 +135,6 @@ $patchTool = Assert-OtaPinnedTool $root $receipt.tools.patch '.tools/shorebird-1
 $publicPath = Assert-OtaPinnedTool $root $receipt.signingPublicKey ''
 $publicKey = [Security.Cryptography.RSA]::Create()
 $privateKey = $null
-$privateText = $null
 try {
     $publicKey.ImportFromPem([IO.File]::ReadAllText($publicPath))
     if ($publicKey.KeySize -ne 4096) { throw 'ota_public_key_invalid' }
@@ -105,14 +155,7 @@ try {
         [ordered]@{schemaVersion=1;version=$receipt.version;target=$Target;patchNumber=$PatchNumber;sourceCommit=$sourceCommit;baseSourceCommit=$receipt.sourceCommit;protectedInputsSha256=$fingerprint;architectures=@($plan | ForEach-Object {$_.key});cloudCalls=$false;nativeBuild=$false} | ConvertTo-Json -Depth 6
         return
     }
-    $privatePath = Resolve-ExvpnOtaPath $root $PrivateKeyPath
-    $privateRoot = [IO.Path]::GetFullPath((Join-Path $root '.private')) + [IO.Path]::DirectorySeparatorChar
-    if (!$privatePath.StartsWith($privateRoot,[StringComparison]::OrdinalIgnoreCase)) { throw 'ota_private_key_location_invalid' }
-    $privateText = [IO.File]::ReadAllText($privatePath)
-    $privateKey = [Security.Cryptography.RSA]::Create()
-    $privateKey.ImportFromPem($privateText)
-    if ($privateKey.KeySize -ne 4096 -or [Convert]::ToBase64String($privateKey.ExportRSAPublicKey()) -cne [Convert]::ToBase64String($publicKey.ExportRSAPublicKey())) { throw 'ota_signing_key_mismatch' }
-    $privateText = $null
+    $privateKey = Import-OtaSigningKey $root $PrivateKeyPath $ProtectedPrivateKeyPath $publicKey
     $id = [Guid]::NewGuid().ToString('N')
     if (!$OutputDirectory) { $OutputDirectory = Join-Path $root ('artifacts/ota/ui-' + $Target.ToLowerInvariant() + '-' + $PatchNumber + '-' + $id) }
     $output = Resolve-ExvpnOtaPath $root $OutputDirectory
@@ -177,7 +220,6 @@ try {
     [IO.File]::WriteAllText($resultPath,($result | ConvertTo-Json -Depth 12),[Text.UTF8Encoding]::new($false))
     [ordered]@{receipt=$resultPath;target=$Target;patchNumber=$PatchNumber;architectures=$artifacts.Count;elapsedSeconds=$result.elapsedSeconds;cloudCalls=$false;nativeBuild=$false} | ConvertTo-Json -Compress
 } finally {
-    $privateText = $null
     if ($null -ne $privateKey) { $privateKey.Dispose() }
     $publicKey.Dispose()
 }
