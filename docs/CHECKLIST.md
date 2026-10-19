@@ -39,7 +39,17 @@
   полный отказ группы, IPv4/IPv6/DNS и исключения во время замены, смена сети,
   отмена без позднего подключения. Требуется новая Shorebird-база: изменения
   Kotlin/Go/C++ нельзя доставить Dart-патчем базы0.1.8+29. Физический Android и
-  общая E1-приёмка остаются открытыми. Установленный клиент не менялся.
+    общая E1-приёмка остаются открытыми. Установленный клиент хоста не менялся.
+    2026-10-20: ограниченные TUN-матрицы приняты для точных CI-пакетов0.1.9+30
+    (`f98b75d`): Android VpnService, Windows production Controller и отдельный
+    установленный SCM/UI. HTTPS IPv4/IPv6, primary→backup, полный отказ группы,
+    числовой прямой IPv4 исключения и bounded DNS observations подтверждены.
+    [Android](evidence/android30-failover-runtime.json),
+    [Windows Controller](evidence/windows30-failover-runtime.json),
+    [Windows SCM](evidence/windows30-installed-runtime.json).
+    Коммиты51079e9/c53094f/aecd17d. Смена underlay, поздняя отмена, физический
+    Android и положительный контроль native IPv6 underlay ещё не приняты;
+    отметка задачи не закрывается этими ограниченными результатами.
 
 ## Сводка этапов
 
