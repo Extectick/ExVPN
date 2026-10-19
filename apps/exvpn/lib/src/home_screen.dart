@@ -894,14 +894,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
       Transform.translate(
         offset: const Offset(-3, 0),
-        child: const Padding(
-          padding: EdgeInsets.only(bottom: 3),
-          child: Text(
-            'ExVPN',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w500,
-              letterSpacing: -.7,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 3),
+          child: Semantics(
+            header: true,
+            child: const Text(
+              'ExVPN',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -.7,
+              ),
             ),
           ),
         ),
