@@ -386,6 +386,25 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # Reuse the exact Windows base cache. Preparation below still verifies
+      # all pinned archive hashes, CLI/SDK revisions and runtime identities.
+      # Restore only: rollback never writes build caches or stores credentials.
+      - name: Restore pinned bootstrap inputs for rollback
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .tools/downloads/go1.27.2.windows-amd64.zip
+            .tools/downloads/flutter_windows_3.47.7-stable.zip
+            .tools/cache/pub
+            .tools/cache/shorebird-pub
+            .tools/cache/go/pkg/mod
+            .tools/cache/go-build
+          key: exvpn-shorebird-inputs-v1-${{ runner.os }}-Windows-${{ hashFiles('scripts/bootstrap/*.lock.json', 'apps/exvpn/pubspec.lock', 'native/**/go.sum') }}
+      - name: Restore exact Shorebird SDK for rollback
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools/shorebird-1.6.129
+          key: exvpn-shorebird-sdk-v1-${{ runner.os }}-${{ runner.arch }}-Windows-${{ hashFiles('scripts/bootstrap/shorebird.lock.json') }}
       - name: Download both base receipts
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:

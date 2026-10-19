@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-20",
+  "scope": "Observed CI timings, not runtime VPN acceptance",
+  "runs": [
+    {
+      "runId": 39319816470,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39319816470",
+      "elapsedSeconds": 1506.0,
+      "jobs": [
+        {
+          "name": "Shorebird base Android",
+          "queueSeconds": 9.0,
+          "durationSeconds": 1496.0,
+          "steps": [
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "seconds": 13.0
+            },
+            {
+              "name": "Run actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+              "seconds": 44.0
+            },
+            {
+              "name": "Cache exact Shorebird checkout and SDK (verified after restore)",
+              "seconds": 37.0
+            },
+            {
+              "name": "Prepare pinned ordinary tools and Android inputs",
+              "seconds": 138.0
+            },
+            {
+              "name": "Test pipeline guards without SDK or cloud mutations",
+              "seconds": 10.0
+            },
+            {
+              "name": "Analyze and test the reviewed Dart source",
+              "seconds": 444.0
+            },
+            {
+              "name": "Prepare exact Shorebird CLI and Flutter",
+              "seconds": 13.0
+            },
+            {
+              "name": "Build Android JNI for base only",
+              "seconds": 108.0
+            },
+            {
+              "name": "Build once and optionally publish signed beta",
+              "seconds": 649.0
+            },
+            {
+              "name": "Upload audited artifacts and sanitized receipts only",
+              "seconds": 17.0
+            }
+          ]
+        },
+        {
+          "name": "Shorebird base Windows",
+          "queueSeconds": 8.0,
+          "durationSeconds": 873.0,
+          "steps": [
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "seconds": 12.0
+            },
+            {
+              "name": "Run actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+              "seconds": 39.0
+            },
+            {
+              "name": "Cache exact Shorebird checkout and SDK (verified after restore)",
+              "seconds": 20.0
+            },
+            {
+              "name": "Prepare pinned ordinary tools and Android inputs",
+              "seconds": 28.0
+            },
+            {
+              "name": "Test pipeline guards without SDK or cloud mutations",
+              "seconds": 11.0
+            },
+            {
+              "name": "Analyze and test the reviewed Dart source",
+              "seconds": 431.0
+            },
+            {
+              "name": "Prepare exact Shorebird CLI and Flutter",
+              "seconds": 14.0
+            },
+            {
+              "name": "Build Windows service for base only",
+              "seconds": 14.0
+            },
+            {
+              "name": "Build once and optionally publish signed beta",
+              "seconds": 281.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 39320947039,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39320947039",
+      "elapsedSeconds": 1995.0,
+      "jobs": [
+        {
+          "name": "Shorebird patch Windows",
+          "queueSeconds": 1026.0,
+          "durationSeconds": 633.0,
+          "steps": [
+            {
+              "name": "Run actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+              "seconds": 37.0
+            },
+            {
+              "name": "Cache exact Shorebird checkout and SDK (verified after restore)",
+              "seconds": 17.0
+            },
+            {
+              "name": "Prepare pinned ordinary tools and Android inputs",
+              "seconds": 30.0
+            },
+            {
+              "name": "Test pipeline guards without SDK or cloud mutations",
+              "seconds": 10.0
+            },
+            {
+              "name": "Test exact patch input byte preservation without builds",
+              "seconds": 103.0
+            },
+            {
+              "name": "Analyze and test the reviewed Dart source",
+              "seconds": 163.0
+            },
+            {
+              "name": "Build once and optionally publish signed beta",
+              "seconds": 233.0
+            }
+          ]
+        },
+        {
+          "name": "Shorebird patch Android",
+          "queueSeconds": 1025.0,
+          "durationSeconds": 969.0,
+          "steps": [
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "seconds": 10.0
+            },
+            {
+              "name": "Run actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+              "seconds": 23.0
+            },
+            {
+              "name": "Cache exact Shorebird checkout and SDK (verified after restore)",
+              "seconds": 27.0
+            },
+            {
+              "name": "Prepare pinned ordinary tools and Android inputs",
+              "seconds": 112.0
+            },
+            {
+              "name": "Test pipeline guards without SDK or cloud mutations",
+              "seconds": 10.0
+            },
+            {
+              "name": "Test exact patch input byte preservation without builds",
+              "seconds": 107.0
+            },
+            {
+              "name": "Analyze and test the reviewed Dart source",
+              "seconds": 184.0
+            },
+            {
+              "name": "Prepare exact Shorebird CLI and Flutter",
+              "seconds": 17.0
+            },
+            {
+              "name": "Build once and optionally publish signed beta",
+              "seconds": 443.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 39328414028,
+      "url": "https://github.com/Extectick/ExVPN/actions/runs/39328414028",
+      "elapsedSeconds": 186.0,
+      "jobs": [
+        {
+          "name": "rollback",
+          "queueSeconds": 6.0,
+          "durationSeconds": 179.0,
+          "steps": [
+            {
+              "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+              "seconds": 10.0
+            },
+            {
+              "name": "Prepare exact CLI",
+              "seconds": 145.0
+            },
+            {
+              "name": "Verify or roll back the exact beta patch",
+              "seconds": 11.0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "optimization": {
+    "change": "Restore exact existing Windows bootstrap and Shorebird caches before rollback preparation",
+    "restoreOnly": true,
+    "pinVerificationUnchanged": true,
+    "nativeBuildsAdded": false,
+    "cloudMutationChecksUnchanged": true,
+    "pipelineGuardsPassed": 376,
+    "androidConfigGuardsPassed": 12,
+    "measuredAfterChange": false,
+    "limitation": "Current rollback ran the old workflow; future cache hit performance not yet measured"
+  }
+}
