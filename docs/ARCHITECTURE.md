@@ -1,5 +1,24 @@
 # ExVPN — архитектура
 
+## Дополнение: полные обновления Android и handoff Windows, 2026-10-19
+
+Full backend теперь различает `exitUi` (Windows) и `installerOpened` (Android).
+Только Windows сохраняет reservation до выхода UI; Android после сохранения
+данных и открытия системного installer освобождает команды и оставляет retry.
+Установка полного пакета на обеих платформах требует авторитетного idle VPN;
+загрузка сама по себе не отключает соединение. Мобильная полоса обновления
+закреплена над прокруткой, как и desktop strip.
+
+Android использует отдельный Ed25519 domain/platform, фиксированный feed,
+private atomic staging и независимую native проверку APK signer/package/version.
+Доступ к cache/file URI не предоставляется подпискам. Открытие окна ОС не
+считается успешным обновлением. [Контракт](ANDROID_APP_UPDATES.md).
+
+Windows generation/validation staging используют один контракт: `handoff-`
+и 16 случайных байт в canonical lowercase hex. Убрано неверное сравнение
+общей длины с 39; строгие физические пути, ACL, source hash, owner identity и
+двухфазный commit сохранены. [Диагностика](evidence/windows-update-0.1.5-diagnosis.json).
+
 ## Дополнение: подписки и системное согласие Android, 2026-10-18
 
 Кандидат **0.1.4+25** использует `SubscriptionDocument`: отдельно недоверенное

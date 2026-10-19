@@ -1,5 +1,11 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+Кандидат 0.1.5+26, 2026-10-19: **12/12 PASS за 216,79 с**, 366 app tests,
+source fingerprint unchanged. [Full](evidence/fast-validation-v0.1.5.json).
+Windows handoff regression и Android signed APK updater проверены на уровне
+поведения и отказов. Native сборки, системная установка и публичные feeds
+проверяются отдельно; этот прогон их не заменяет. Рабочее дерево; commit ожидается.
+
 Публикация 0.1.4+25: source CI39145319784 и release CI39145366138 на исходниках
 576a392 успешны для Android и Windows. Скачаны все 15 публичных assets,
 проверены SHA256SUMS, APK release certificate, notices/SBOM и Windows Ed25519 feed.

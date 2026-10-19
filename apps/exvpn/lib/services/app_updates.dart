@@ -237,6 +237,7 @@ class AppUpdatesController extends ChangeNotifier {
     );
     var handedOff = false;
     var handoffStarted = false;
+    FullUpdateHandoff? outcome;
     try {
       final accepted = await callback(selectedKind, () async {
         if (_disposed || handoffStarted) {
@@ -244,20 +245,36 @@ class AppUpdatesController extends ChangeNotifier {
         }
         handoffStarted = true;
         if (selectedKind == AppUpdateKind.full) {
-          await _full.handoff(_offer!);
+          outcome = await _full.handoff(_offer!);
         } else {
           await _full.restartUi();
+          outcome = FullUpdateHandoff.exitUi;
         }
         handedOff = true;
-        _handoffAccepted = true;
+        _handoffAccepted = outcome == FullUpdateHandoff.exitUi;
       });
       if (_disposed) return;
-      if (!accepted || !handedOff) _restartRefused(selectedKind);
+      if (handedOff && outcome == FullUpdateHandoff.installerOpened) {
+        // The user can return from source permission/installation or cancel it.
+        // Keep the verified package and allow another install attempt; never
+        // manufacture an installed state or reserve the UI indefinitely.
+        _showPrepared();
+      } else if (!accepted || !handedOff) {
+        _restartRefused(selectedKind);
+      }
     } catch (failure) {
       if (_disposed) return;
       // A lifecycle refusal keeps the prepared package. No disconnect or exit
       // occurs here; the guarded caller owns both persistence and native state.
-      if (failure is AppUpdatesFailure && handoffStarted && !handedOff) {
+      if (handedOff && outcome == FullUpdateHandoff.installerOpened) {
+        _showPrepared();
+      } else if (failure is AppUpdatesFailure && handoffStarted && !handedOff) {
+        if (selectedKind == AppUpdateKind.full &&
+            failure.retryDownload &&
+            _offer != null) {
+          _fullReady = false;
+          _retry = _Retry.download;
+        }
         _failed(failure.code);
       } else {
         _restartRefused(selectedKind);

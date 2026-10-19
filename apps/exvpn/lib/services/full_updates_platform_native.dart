@@ -4,9 +4,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'app_updates_types.dart';
+import 'android_full_updates.dart';
 
 FullUpdatesBackend createFullUpdatesBackend() => Platform.isWindows
     ? WindowsFullUpdatesBackend()
+    : Platform.isAndroid
+    ? AndroidFullUpdatesBackend()
     : const DisabledFullUpdatesBackend();
 
 /// The installed helper owns its compiled feed, channel, trusted key and package
@@ -38,8 +41,9 @@ class WindowsFullUpdatesBackend implements FullUpdatesBackend {
   )).offer!;
 
   @override
-  Future<void> handoff(FullUpdateOffer offer) async {
+  Future<FullUpdateHandoff> handoff(FullUpdateOffer offer) async {
     await _run('handoff', version: offer.version);
+    return FullUpdateHandoff.exitUi;
   }
 
   @override

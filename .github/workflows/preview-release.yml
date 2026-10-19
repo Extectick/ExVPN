@@ -168,6 +168,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Manifest signing dependency closure is incomplete.' }
           python scripts/release/test-sign-windows-update.py
           if ($LASTEXITCODE -ne 0) { throw 'Manifest signing checks failed.' }
+          python scripts/release/test-sign-android-update.py
+          if ($LASTEXITCODE -ne 0) { throw 'Android manifest signing checks failed.' }
       - name: Check artifacts and publish immutable prerelease
         env:
           GH_TOKEN: ${{ github.token }}
@@ -179,3 +181,9 @@ jobs:
           EXVPN_RELEASE_VERSION: ${{ inputs.version }}
           EXVPN_WINDOWS_UPDATE_SEED_BASE64: ${{ secrets.EXVPN_WINDOWS_UPDATE_SEED_BASE64 }}
         run: ./scripts/release/publish-windows-feed.ps1 -ReleaseVersion $env:EXVPN_RELEASE_VERSION
+      - name: Publish signed Android beta feed after immutable APK is available
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXVPN_RELEASE_VERSION: ${{ inputs.version }}
+          EXVPN_WINDOWS_UPDATE_SEED_BASE64: ${{ secrets.EXVPN_WINDOWS_UPDATE_SEED_BASE64 }}
+        run: ./scripts/release/publish-windows-feed.ps1 -ReleaseVersion $env:EXVPN_RELEASE_VERSION -Target Android

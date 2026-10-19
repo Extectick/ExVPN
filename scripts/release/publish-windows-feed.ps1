@@ -1,12 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
 #requires -Version 7.0
 [CmdletBinding()]
-param([Parameter(Mandatory)][ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$')][string]$ReleaseVersion)
+param(
+    [Parameter(Mandatory)][ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$')][string]$ReleaseVersion,
+    [ValidateSet('Windows','Android')][string]$Target = 'Windows'
+)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'demo-release-lib.ps1')
-function Get-FeedResumeAsset($Feed,[string]$Commit,[string]$Title,[string]$Notes) {
-    if ($Feed.draft -or !$Feed.prerelease -or $Feed.tag_name -cne 'windows-beta' -or
+function Get-FeedResumeAsset($Feed,[string]$Commit,[string]$Title,[string]$Notes,
+    [string]$Tag = 'windows-beta', [string]$AssetName = 'windows-x64.json') {
+    if ($Feed.draft -or !$Feed.prerelease -or $Feed.tag_name -cne $Tag -or
         $Feed.name -cne $Title -or $Feed.body -cne $Notes) { throw 'preview_feed_existing_identity_mismatch' }
     $assets = @($Feed.assets)
     if ($assets.Count -eq 0) {
@@ -17,15 +21,24 @@ function Get-FeedResumeAsset($Feed,[string]$Commit,[string]$Title,[string]$Notes
         }
         return $null
     }
-    if ($assets.Count -ne 1 -or $assets[0].name -cne 'windows-x64.json' -or
+    if ($assets.Count -ne 1 -or $assets[0].name -cne $AssetName -or
         $assets[0].size -le 0 -or $assets[0].size -gt 32768 -or
         $assets[0].digest -cnotmatch '^sha256:[a-f0-9]{64}$') { throw 'preview_feed_foreign_assets' }
     return $assets[0]
 }
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $repo = 'Extectick/ExVPN'
-$feedTitle = 'ExVPN Windows beta updates'
-$feedNotes = 'Signed Windows beta update feed. Installers are published in immutable version releases. Windows publisher signing and stable acceptance remain pending.'
+$isAndroid = $Target -ceq 'Android'
+$platform = if ($isAndroid) { 'android' } else { 'windows-x64' }
+$platformFolder = if ($isAndroid) { 'android' } else { 'windows' }
+$feedTag = if ($isAndroid) { 'android-beta' } else { 'windows-beta' }
+$feedFile = if ($isAndroid) { 'android.json' } else { 'windows-x64.json' }
+$feedTitle = if ($isAndroid) { 'ExVPN Android beta updates' } else { 'ExVPN Windows beta updates' }
+$feedNotes = if ($isAndroid) {
+    'Signed Android beta update feed. Release-signed APKs are published in immutable version releases. Installation requires Android user approval; stable acceptance remains pending.'
+} else {
+    'Signed Windows beta update feed. Installers are published in immutable version releases. Windows publisher signing and stable acceptance remain pending.'
+}
 $commit = (& git -C $repository rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0 -or $env:GITHUB_REPOSITORY -cne $repo -or
     $env:GITHUB_REF -cne 'refs/heads/main' -or $env:GITHUB_EVENT_NAME -cne 'workflow_dispatch' -or
@@ -34,10 +47,11 @@ if ($LASTEXITCODE -ne 0 -or $env:GITHUB_REPOSITORY -cne $repo -or
 }
 $parts = $ReleaseVersion.Split('+')
 $tag = "v$($parts[0])"
-$folder = Join-Path $repository 'artifacts/preview/windows'
-$build = Get-Content -LiteralPath (Join-Path $folder 'windows-build.json') -Raw | ConvertFrom-Json
+$folder = Join-Path $repository "artifacts/preview/$platformFolder"
+$build = Get-Content -LiteralPath (Join-Path $folder "$platformFolder-build.json") -Raw | ConvertFrom-Json
+$expectedName = if ($isAndroid) { "ExVPN-$($parts[0])-$($parts[1])-android.apk" } else { "ExVPN-$($parts[0])-$($parts[1])-windows-x64-development.exe" }
 if ($build.version -cne $ReleaseVersion -or $build.sourceCommit -cne $commit -or $build.stableReady -or
-    $build.artifact.file -cne "ExVPN-$($parts[0])-$($parts[1])-windows-x64-development.exe") {
+    $build.artifact.file -cne $expectedName) {
     throw 'preview_feed_build_identity_failed'
 }
 $binary = Join-Path $folder $build.artifact.file
@@ -56,7 +70,7 @@ $published = @($release.assets | Where-Object name -CEQ $asset.file)
 if ($release.draft -or !$release.prerelease -or $release.target_commitish -cne $commit -or
     $published.Count -ne 1 -or $published[0].size -ne $asset.bytes -or
     $published[0].digest -cne "sha256:$($asset.sha256)") { throw 'preview_feed_remote_asset_mismatch' }
-$work = Join-Path $repository ('.private/windows-feed-' + [Guid]::NewGuid().ToString('N'))
+$work = Join-Path $repository ('.private/' + $platformFolder + '-feed-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $work | Out-Null
 $seedFile = Join-Path $work 'signing.seed'
 try {
@@ -72,18 +86,18 @@ try {
     [ordered]@{file=$asset.file;version=$parts[0];build=[int]$parts[1];sha256=$asset.sha256} |
         ConvertTo-Json | Set-Content -LiteralPath (Join-Path $work 'artifact.json') -Encoding utf8
     $feeds = @(Invoke-FeedGh @('release','list','--repo',$repo,'--limit','100','--json','tagName') | ConvertFrom-Json)
-    $exists = @($feeds | Where-Object tagName -CEQ 'windows-beta').Count -eq 1
-    $arguments = @((Join-Path $PSScriptRoot 'sign-windows-update.py'), '--artifact', $stagedBinary,
+    $exists = @($feeds | Where-Object tagName -CEQ $feedTag).Count -eq 1
+    $arguments = @((Join-Path $PSScriptRoot 'sign-windows-update.py'), '--platform', $platform, '--artifact', $stagedBinary,
         '--url', "https://github.com/$repo/releases/download/$tag/$($asset.file)",
-        '--seed-file', $seedFile, '--output', (Join-Path $work 'windows-x64.json'))
+        '--seed-file', $seedFile, '--output', (Join-Path $work $feedFile))
     if ($exists) {
-        $existingFeed = Invoke-FeedGh @('api',"repos/$repo/releases/tags/windows-beta") | ConvertFrom-Json
-        $existingAsset = Get-FeedResumeAsset $existingFeed $commit $feedTitle $feedNotes
+        $existingFeed = Invoke-FeedGh @('api',"repos/$repo/releases/tags/$feedTag") | ConvertFrom-Json
+        $existingAsset = Get-FeedResumeAsset $existingFeed $commit $feedTitle $feedNotes $feedTag $feedFile
         if ($null -ne $existingAsset) {
             $previous = Join-Path $work 'previous'
             New-Item -ItemType Directory -Path $previous | Out-Null
-            $null = Invoke-FeedGh @('release','download','windows-beta','--repo',$repo,'--pattern','windows-x64.json','--dir',$previous)
-            $previousPath = Join-Path $previous 'windows-x64.json'
+            $null = Invoke-FeedGh @('release','download',$feedTag,'--repo',$repo,'--pattern',$feedFile,'--dir',$previous)
+            $previousPath = Join-Path $previous $feedFile
             $previousHash = Get-DemoSha256 $previousPath
             if ($existingAsset.size -ne (Get-Item -LiteralPath $previousPath).Length -or
                 $existingAsset.digest -cne "sha256:$previousHash") { throw 'preview_feed_previous_asset_changed' }
@@ -92,26 +106,26 @@ try {
     }
     & python @arguments
     if ($LASTEXITCODE -ne 0) { throw 'preview_feed_signing_refused' }
-    $hash = Get-DemoSha256 (Join-Path $work 'windows-x64.json')
+    $hash = Get-DemoSha256 (Join-Path $work $feedFile)
     if ($exists -and $arguments -ccontains '--previous' -and $hash -ceq $previousHash) {
         # The signer authenticated every field and copied the exact unexpired
         # prior envelope. Do not delete/reupload it or extend its validity.
-        Write-Host "Signed Windows beta feed already advertises identical $ReleaseVersion; no upload needed."
+        Write-Host "Signed $Target beta feed already advertises identical $ReleaseVersion; no upload needed."
         return
     }
     if (!$exists) {
         $notes = Join-Path $work 'feed-notes.md'
         [IO.File]::WriteAllText($notes, $feedNotes)
-        $null = Invoke-FeedGh @('release','create','windows-beta','--repo',$repo,'--target',$commit,
+        $null = Invoke-FeedGh @('release','create',$feedTag,'--repo',$repo,'--target',$commit,
             '--title',$feedTitle,'--notes-file',$notes,'--prerelease','--latest=false')
     }
     # This single signed pointer is intentionally mutable. Version artifacts
     # and their tags are never replaced; concurrency is serialized in workflow.
-    $null = Invoke-FeedGh @('release','upload','windows-beta',(Join-Path $work 'windows-x64.json'),'--repo',$repo,'--clobber')
-    $feed = Invoke-FeedGh @('api',"repos/$repo/releases/tags/windows-beta") | ConvertFrom-Json
-    $manifestAsset = @($feed.assets | Where-Object name -CEQ 'windows-x64.json')
+    $null = Invoke-FeedGh @('release','upload',$feedTag,(Join-Path $work $feedFile),'--repo',$repo,'--clobber')
+    $feed = Invoke-FeedGh @('api',"repos/$repo/releases/tags/$feedTag") | ConvertFrom-Json
+    $manifestAsset = @($feed.assets | Where-Object name -CEQ $feedFile)
     if ($manifestAsset.Count -ne 1 -or $manifestAsset[0].digest -cne "sha256:$hash") { throw 'preview_feed_published_hash_failed' }
-    Write-Host "Signed Windows beta feed now advertises $ReleaseVersion; stable acceptance remains open."
+    Write-Host "Signed $Target beta feed now advertises $ReleaseVersion; stable acceptance remains open."
 } finally {
     if (Test-Path -LiteralPath $seedFile) { Remove-Item -LiteralPath $seedFile }
     $env:EXVPN_WINDOWS_UPDATE_SEED_BASE64 = ''

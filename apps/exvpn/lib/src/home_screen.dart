@@ -591,19 +591,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     ],
   );
 
-  Widget _mobileView() => SingleChildScrollView(
-    key: const PageStorageKey('home-scroll'),
-    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _header(desktop: false),
-        const SizedBox(height: 30),
-        Center(child: _connection(230)),
-        const SizedBox(height: 34),
-        _servers(),
-      ],
-    ),
+  Widget _mobileView() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (widget.appUpdate case final update?)
+        AppUpdateStrip(state: update, onPressed: widget.onAppUpdate ?? () {}),
+      Expanded(
+        child: SingleChildScrollView(
+          key: const PageStorageKey('home-scroll'),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _header(desktop: false),
+              const SizedBox(height: 30),
+              Center(child: _connection(230)),
+              const SizedBox(height: 34),
+              _servers(),
+            ],
+          ),
+        ),
+      ),
+    ],
   );
 
   Widget _minimalView() => Column(

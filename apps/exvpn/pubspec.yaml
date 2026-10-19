@@ -1,7 +1,7 @@
 name: exvpn
 description: ExVPN cross-platform client interface.
 publish_to: none
-version: 0.1.4+25
+version: 0.1.5+26
 environment:
   sdk: '>=3.13.0 <4.0.0'
 dependencies:
@@ -17,6 +17,7 @@ dependencies:
     path: ../../packages/exvpn_updates
   http: ^1.5.0
   crypto: 3.0.7
+  cryptography: 2.9.0
   cupertino_icons: ^1.0.8
   flutter_secure_storage: 11.2.0
   ffi: 2.2.0
@@ -27,7 +28,6 @@ dependencies:
   shorebird_code_push: 2.0.7
 dev_dependencies:
   image: 4.12.0
-  cryptography: 2.9.0
   flutter_test:
     sdk: flutter
   integration_test:

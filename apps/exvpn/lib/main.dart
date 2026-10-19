@@ -65,6 +65,8 @@ class ExVpnApp extends StatefulWidget {
     this.updates,
     this.dartUpdates,
     this.appUpdates,
+    this.fullUpdatesBackend,
+    this.appearanceController,
   });
   final AppController controller;
   final VpnController? vpn;
@@ -73,12 +75,16 @@ class ExVpnApp extends StatefulWidget {
   final DataUpdatesController? updates;
   final DartUpdatesController? dartUpdates;
   final AppUpdatesController? appUpdates;
+
+  /// Optional test/embedder backend; the app still owns the lifecycle barrier.
+  final FullUpdatesBackend? fullUpdatesBackend;
+  final AppearanceController? appearanceController;
   @override
   State<ExVpnApp> createState() => _ExVpnAppState();
 }
 
 class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
-  final _appearance = AppearanceController();
+  late final AppearanceController _appearance;
   SubscriptionPersistence? _persistence;
   DesktopTrayController? _tray;
   final _navigator = GlobalKey<NavigatorState>();
@@ -89,6 +95,7 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    _appearance = widget.appearanceController ?? AppearanceController();
     WidgetsBinding.instance.addObserver(this);
     _appearance.initialize();
     if (widget.store != null) {
@@ -101,6 +108,7 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
     _appUpdates =
         widget.appUpdates ??
         AppUpdatesController(
+          fullBackend: widget.fullUpdatesBackend,
           dartUpdates: _dartUpdates,
           beforeRestart: _beforeRestart,
         );
@@ -138,12 +146,16 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
     AppUpdateKind kind,
     Future<void> Function() handoff,
   ) async {
-    // Native package installation is Windows-only. Android patch activation
-    // waits for the next normal launch; never force-stop an Android VPN/UI.
+    // Android opens the system APK installer without forcing this UI to exit.
+    // Dart patches there still wait for a normal launch. Windows owns a complete
+    // native handoff and explicit UI replacement after persistence is flushed.
     final vpn = widget.vpn;
+    final androidFull =
+        defaultTargetPlatform == TargetPlatform.android &&
+        kind == AppUpdateKind.full;
     if (!mounted ||
         kIsWeb ||
-        defaultTargetPlatform != TargetPlatform.windows ||
+        (defaultTargetPlatform != TargetPlatform.windows && !androidFull) ||
         vpn == null ||
         _navigator.currentState?.canPop() == true) {
       return false;
@@ -159,6 +171,7 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
         return false;
       }
       await handoff();
+      if (androidFull) return true;
       vpn.commitApplicationRestart();
       await WindowsDesktopTray().exitApplication();
       return true;
@@ -171,24 +184,41 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
       phase: AppUpdatePhase.downloading,
       progress: _appUpdates.progress,
     ),
-    AppUpdateStatePhase.restartReady => const AppUpdatePresentation(
+    AppUpdateStatePhase.restartReady => AppUpdatePresentation(
       phase: AppUpdatePhase.ready,
+      label: _androidFullUpdate ? 'Установить обновление' : null,
     ),
-    AppUpdateStatePhase.restarting => const AppUpdatePresentation(
+    AppUpdateStatePhase.restarting => AppUpdatePresentation(
       phase: AppUpdatePhase.restarting,
+      label: _androidFullUpdate ? 'Открываем установщик…' : null,
     ),
     AppUpdateStatePhase.blocked => AppUpdatePresentation(
       phase: AppUpdatePhase.blocked,
       label: _updateBlockedLabel,
     ),
-    AppUpdateStatePhase.failed => const AppUpdatePresentation(
+    AppUpdateStatePhase.failed => AppUpdatePresentation(
       phase: AppUpdatePhase.failed,
+      label: _updateFailureLabel,
     ),
     _ => null,
   };
 
+  bool get _androidFullUpdate =>
+      defaultTargetPlatform == TargetPlatform.android &&
+      _appUpdates.kind == AppUpdateKind.full;
+
+  String? get _updateFailureLabel => switch (_appUpdates.errorCode) {
+    'install_permission_required' => 'Разрешите установку обновлений',
+    'install_cancelled' => 'Установка отменена — повторить',
+    'install_failed' => 'Не удалось установить — повторить',
+    'handoff_failed' => 'Не удалось запустить установку',
+    'apk_invalid' || 'apk_incompatible' => 'Обновление не подходит устройству',
+    _ => null,
+  };
+
   String get _updateBlockedLabel {
-    if (defaultTargetPlatform == TargetPlatform.android) {
+    if (defaultTargetPlatform == TargetPlatform.android &&
+        _appUpdates.kind == AppUpdateKind.patch) {
       return 'Обновление применится при следующем запуске';
     }
     if (_appUpdates.kind == AppUpdateKind.full &&

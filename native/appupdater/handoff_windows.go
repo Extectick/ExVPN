@@ -131,6 +131,66 @@ type workerRequest struct {
 	HelperSHA256  string `json:"helperSha256"`
 }
 
+const (
+	handoffStagePrefix = "handoff-"
+	handoffHelperName  = "exvpn-updater.exe"
+)
+
+func handoffStagePath(root, id string) (string, error) {
+	decoded, err := hex.DecodeString(id)
+	if !localAbsolute(root) || err != nil || len(decoded) != 16 || hex.EncodeToString(decoded) != id {
+		return "", safeError("handoff_failed")
+	}
+	return filepath.Join(root, handoffStagePrefix+id), nil
+}
+
+func validatedHandoffStagePath(root, self string) (string, error) {
+	if !localAbsolute(self) || filepath.Base(self) != handoffHelperName {
+		return "", safeError("handoff_failed")
+	}
+	stage := filepath.Dir(self)
+	name := filepath.Base(stage)
+	if !strings.HasPrefix(name, handoffStagePrefix) {
+		return "", safeError("handoff_failed")
+	}
+	expected, err := handoffStagePath(root, strings.TrimPrefix(name, handoffStagePrefix))
+	if err != nil || !strings.EqualFold(stage, expected) {
+		return "", safeError("handoff_failed")
+	}
+	return stage, nil
+}
+
+// Validate the generated shape before opening anything, then retain the exact
+// physical directory and copied helper with the same private ACL/hash checks
+// used by the worker. Neither name validation nor a matching hash permits an
+// alias, reparse point, hard link, or writable/deletable executable.
+func lockHandoffStage(root, sid, self, expectedHash string) (*os.File, *os.File, error) {
+	stage, err := validatedHandoffStagePath(root, self)
+	if err != nil {
+		return nil, nil, err
+	}
+	directory, err := lockPath(stage, true)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := verifyFileSecurity(directory, sid, false, true); err != nil {
+		directory.Close()
+		return nil, nil, err
+	}
+	helper, err := secureReadFile(self, sid, false)
+	if err != nil {
+		directory.Close()
+		return nil, nil, err
+	}
+	digest, err := hashFile(helper)
+	if err != nil || digest != expectedHash {
+		helper.Close()
+		directory.Close()
+		return nil, nil, safeError("integrity_failed")
+	}
+	return directory, helper, nil
+}
+
 func hashFile(f *os.File) (string, error) {
 	info, err := f.Stat()
 	if err != nil || info.Size() < 1 || info.Size() > 64<<20 {
@@ -193,13 +253,16 @@ func beginHandoff(req request, cfg trustedConfig, existing *store) (response, er
 	if err != nil {
 		return response{}, err
 	}
-	stage := filepath.Join(s.root, "handoff-"+id)
+	stage, err := handoffStagePath(s.root, id)
+	if err != nil {
+		return response{}, err
+	}
 	stageDir, err := ensureOwnedDirectory(stage, s.sid, true)
 	if err != nil {
 		return response{}, err
 	}
 	defer stageDir.Close()
-	childPath := filepath.Join(stage, "exvpn-updater.exe")
+	childPath := filepath.Join(stage, handoffHelperName)
 	dest, err := secureNewFile(childPath, s.sid)
 	if err != nil {
 		return response{}, err
@@ -369,31 +432,13 @@ func runWorker(plan workerRequest, commit func() error) error {
 	if err != nil {
 		return safeError("handoff_failed")
 	}
-	stage := filepath.Dir(self)
-	stageName := filepath.Base(stage)
-	if !strings.EqualFold(filepath.Dir(stage), s.root) || !strings.HasPrefix(stageName, "handoff-") || len(stageName) != 39 || filepath.Base(self) != "exvpn-updater.exe" {
-		return safeError("handoff_failed")
-	}
-	if _, err := hex.DecodeString(strings.TrimPrefix(stageName, "handoff-")); err != nil {
-		return safeError("handoff_failed")
-	}
-	stageHeld, err := lockPath(stage, true)
+	stageHeld, selfFile, err := lockHandoffStage(s.root, s.sid, self, plan.HelperSHA256)
 	if err != nil {
 		return err
 	}
 	defer stageHeld.Close()
-	if err = verifyFileSecurity(stageHeld, s.sid, false, true); err != nil {
-		return err
-	}
-	selfFile, err := secureReadFile(self, s.sid, false)
-	if err != nil {
-		return err
-	}
 	defer selfFile.Close()
-	selfHash, err := hashFile(selfFile)
-	if err != nil || selfHash != plan.HelperSHA256 {
-		return safeError("integrity_failed")
-	}
+	selfHash := plan.HelperSHA256 // lockHandoffStage verified these retained bytes.
 	ui, helper, installedHeld, err := validateInstalledTree()
 	if err != nil {
 		return err

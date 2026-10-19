@@ -20,13 +20,15 @@ import java.util.concurrent.atomic.AtomicInteger
 class MainActivity : FlutterActivity() {
     private var qrPicker: QrImagePicker? = null
     private var qrChannel: MethodChannel? = null
+    private var appUpdates: AndroidAppUpdates? = null
+    private var appUpdatesChannel: MethodChannel? = null
     private val activityHandler = Handler(Looper.getMainLooper())
     private var activityResumed = false
     private var notificationPermissionPending = false
     private val consent = VpnConsentCoordinator<ConnectRequest, MethodChannel.Result, Intent>(
         prepare = { VpnService.prepare(this) },
         nextToken = {
-            permissionTokens.incrementAndGet().also { check(it <= 65535) }
+            permissionTokens.incrementAndGet().also { check(it in (VPN_PERMISSION_BASE + 1)..65535) }
         },
         launch = { intent, token ->
             startActivityForResult(intent, token)
@@ -58,6 +60,11 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
+        appUpdates = AndroidAppUpdates(this)
+        appUpdatesChannel = MethodChannel(messenger, "exvpn/app_updates").also { channel ->
+            channel.setMethodCallHandler { call, reply -> appUpdates?.handle(call.method, call.arguments, reply)
+                ?: reply.error("updater_unavailable", "Application updater unavailable", null) }
+        }
         qrPicker = QrImagePicker(this)
         qrChannel = MethodChannel(messenger, "exvpn/qr_import").also { channel ->
             channel.setMethodCallHandler { call, result ->
@@ -181,6 +188,7 @@ class MainActivity : FlutterActivity() {
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (qrPicker?.onActivityResult(requestCode, resultCode, data) == true) return
+        if (appUpdates?.onActivityResult(requestCode) == true) return
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode > VPN_PERMISSION_BASE && requestCode <= 65535) {
             consent.onActivityResult(requestCode, resultCode == Activity.RESULT_OK)
@@ -223,6 +231,10 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         activityHandler.removeCallbacks(permissionCheck)
         consent.dispose()
+        appUpdates?.dispose()
+        appUpdates = null
+        appUpdatesChannel?.setMethodCallHandler(null)
+        appUpdatesChannel = null
         pendingIcons.toList().forEach { it.success(null) }
         pendingIcons.clear()
         iconWorker.shutdownNow()

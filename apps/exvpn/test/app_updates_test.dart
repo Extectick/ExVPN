@@ -19,6 +19,8 @@ class FakeFullUpdates implements FullUpdatesBackend {
   FullUpdateProgressCallback? progress;
   int checks = 0, downloads = 0, handoffs = 0, restarts = 0, cancels = 0;
   bool disposed = false;
+  FullUpdateHandoff handoffResult = FullUpdateHandoff.exitUi;
+  Completer<FullUpdateHandoff>? pendingHandoff;
   @override
   Future<FullUpdateOffer?> check() async {
     checks++;
@@ -38,9 +40,12 @@ class FakeFullUpdates implements FullUpdatesBackend {
   }
 
   @override
-  Future<void> handoff(FullUpdateOffer selected) async {
+  Future<FullUpdateHandoff> handoff(FullUpdateOffer selected) async {
     handoffs++;
     if (handoffError != null) throw handoffError!;
+    return pendingHandoff == null
+        ? handoffResult
+        : await pendingHandoff!.future;
   }
 
   @override
@@ -191,6 +196,115 @@ void main() {
       await updates.download();
       expect(updates.phase, AppUpdateStatePhase.blocked);
       expect(full.handoffs, 0);
+    });
+
+    test('Android installer opening retains prepared retry without terminal handoff', () async {
+      updates.dispose();
+      full.handoffResult = FullUpdateHandoff.installerOpened;
+      updates = AppUpdatesController(
+        fullBackend: full,
+        dartUpdates: dart,
+        beforeRestart: (_, handoff) async {
+          await handoff();
+          return true;
+        },
+      );
+      await updates.initialize();
+      await updates.download();
+      expect(updates.phase, AppUpdateStatePhase.restartReady);
+      expect(updates.canRestart, isTrue);
+      expect(updates.busy, isFalse);
+      expect(full.handoffs, 1);
+      expect(full.restarts, 0);
+      await updates.restart();
+      expect(full.handoffs, 2);
+      expect(full.downloads, 1);
+      expect(updates.phase, AppUpdateStatePhase.restartReady);
+    });
+
+    for (final code in [
+      'install_permission_required',
+      'install_cancelled',
+      'install_failed',
+    ]) {
+      test(
+        'Android $code is safe, unblocks and retries without downloading again',
+        () async {
+          updates.dispose();
+          full.handoffResult = FullUpdateHandoff.installerOpened;
+          full.handoffError = AppUpdatesFailure(code);
+          updates = AppUpdatesController(
+            fullBackend: full,
+            dartUpdates: dart,
+            beforeRestart: (_, handoff) async {
+              await handoff();
+              return true;
+            },
+          );
+          await updates.initialize();
+          await updates.download();
+          expect(updates.phase, AppUpdateStatePhase.failed);
+          expect(updates.errorCode, code);
+          expect(updates.canRestart, isTrue);
+          expect(updates.busy, isFalse);
+          full.handoffError = null;
+          await updates.retry();
+          expect(updates.phase, AppUpdateStatePhase.restartReady);
+          expect(full.handoffs, 2);
+          expect(full.downloads, 1);
+        },
+      );
+    }
+
+    test(
+      'a caller failure after Android installer opening never freezes the UI',
+      () async {
+        updates.dispose();
+        full.handoffResult = FullUpdateHandoff.installerOpened;
+        updates = AppUpdatesController(
+          fullBackend: full,
+          dartUpdates: dart,
+          beforeRestart: (_, handoff) async {
+            await handoff();
+            throw StateError('synthetic caller failure');
+          },
+        );
+        await updates.initialize();
+        await updates.download();
+        expect(updates.phase, AppUpdateStatePhase.restartReady);
+        expect(updates.canRestart, isTrue);
+        expect(updates.busy, isFalse);
+      },
+    );
+
+    test('invalidated Android package cache retries download with the trusted offer', () async {
+      updates.dispose();
+      full.handoffResult = FullUpdateHandoff.installerOpened;
+      full.handoffError = AppUpdatesFailure(
+        'integrity_failed',
+        retryDownload: true,
+      );
+      updates = AppUpdatesController(
+        fullBackend: full,
+        dartUpdates: dart,
+        beforeRestart: (_, handoff) async {
+          await handoff();
+          return true;
+        },
+      );
+      await updates.initialize();
+      await updates.download();
+      expect(updates.phase, AppUpdateStatePhase.failed);
+      expect(updates.errorCode, 'integrity_failed');
+      expect(updates.availableVersion, offer.version);
+      expect(updates.canDownload, isTrue);
+      expect(updates.canRestart, isFalse);
+      full.handoffError = null;
+      await updates.retry();
+      expect(full.checks, 1);
+      expect(full.downloads, 2);
+      expect(full.handoffs, 2);
+      expect(updates.phase, AppUpdateStatePhase.restartReady);
     });
 
     test(

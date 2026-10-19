@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "capturedUtc": "2026-10-19T05:53:20.7628192+00:00",
+  "clientDate": "2026-10-19",
+  "installedVersion": "0.1.3+24",
+  "targetVersion": "0.1.4+25",
+  "download": {
+    "sha256": "3089b097e8b54fc2aed32cfac7b8f0399b20d20afd3cbf9dc39b3a3631921bf4",
+    "bytes": 49140620,
+    "matchesPublished": true
+  },
+  "prepareOnlyProbe": {
+    "workerError": "handoff_failed",
+    "uiExit": false,
+    "commitSent": false,
+    "installerStarted": false
+  },
+  "cause": {
+    "source": "4d4dbe5",
+    "generatedLength": 40,
+    "file": "native/appupdater/handoff_windows.go",
+    "idLength": 32,
+    "prefixLength": 8,
+    "oldRequiredLength": 39
+  },
+  "hostNetworkUnchanged": true,
+  "privateProfilesRead": false
+}

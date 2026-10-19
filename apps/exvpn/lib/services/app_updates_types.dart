@@ -12,6 +12,10 @@ enum AppUpdateStatePhase {
 
 enum AppUpdateKind { full, patch }
 
+/// Opening Android's installer is not proof of installation and must not cause
+/// this UI to exit. Windows' accepted handoff owns an explicit UI replacement.
+enum FullUpdateHandoff { exitUi, installerOpened }
+
 class AppUpdateState {
   const AppUpdateState({
     this.phase = AppUpdateStatePhase.hidden,
@@ -30,8 +34,13 @@ class AppUpdateState {
 }
 
 class AppUpdatesFailure implements Exception {
-  AppUpdatesFailure(String code) : code = safeAppUpdateCode(code);
+  AppUpdatesFailure(String code, {this.retryDownload = false})
+    : code = safeAppUpdateCode(code);
   final String code;
+
+  /// A backend can invalidate its prepared cache after a fresh integrity check.
+  /// Permission prompts and installer cancellation must not set this hint.
+  final bool retryDownload;
   @override
   String toString() => 'AppUpdatesFailure($code)';
 }
@@ -56,6 +65,11 @@ const _safeErrorCodes = {
   'installed_app_required',
   'owner_invalid',
   'permission_denied',
+  'install_permission_required',
+  'install_cancelled',
+  'install_failed',
+  'apk_invalid',
+  'apk_incompatible',
   'handoff_failed',
   'previous_install_failed',
   'operation_busy',
@@ -93,7 +107,8 @@ class FullUpdateProgress {
 typedef FullUpdateProgressCallback = void Function(FullUpdateProgress progress);
 
 /// The caller freezes commands, flushes persistence, checks authoritative VPN
-/// state, invokes handoff, then exits the UI. It never disconnects VPN implicitly.
+/// state, then invokes handoff. Only a platform requiring replacement exits the
+/// UI; Android installer handoff releases the reservation. Never disconnects VPN.
 typedef BeforeAppRestart = Future<bool> Function(
   AppUpdateKind kind,
   Future<void> Function() handoff,
@@ -106,7 +121,7 @@ abstract interface class FullUpdatesBackend {
     FullUpdateOffer offer, {
     required FullUpdateProgressCallback onProgress,
   });
-  Future<void> handoff(FullUpdateOffer offer);
+  Future<FullUpdateHandoff> handoff(FullUpdateOffer offer);
   Future<void> restartUi();
 
   /// Cancels only an owned check/download and completes after it has stopped.
@@ -126,7 +141,7 @@ class DisabledFullUpdatesBackend implements FullUpdatesBackend {
     required FullUpdateProgressCallback onProgress,
   }) async => throw AppUpdatesFailure('unsupported_platform');
   @override
-  Future<void> handoff(FullUpdateOffer offer) async =>
+  Future<FullUpdateHandoff> handoff(FullUpdateOffer offer) async =>
       throw AppUpdatesFailure('unsupported_platform');
   @override
   Future<void> restartUi() async =>

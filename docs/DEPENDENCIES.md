@@ -4,6 +4,14 @@
 
 ## Основные компоненты
 
+Android APK updater 0.1.5, 2026-10-19: Dart `cryptography` **2.9.0**
+(Apache-2.0) становится прямой runtime-зависимостью приложения для проверки
+Ed25519. Версия уже закреплена и используется в runtime через `exvpn_updates`;
+новой версии/дистрибутива не добавляется. APK identity/signer и системная
+установка используют Android PackageManager и AndroidX FileProvider из уже
+имеющегося AndroidX Core. Python signer обоих feed использует прежние
+закреплённые CPython/cryptography wheels, с разными domain/platform.
+
 Экспорт launcher-иконок 0.1.4: локальный dev-only скрипт использует Pillow
 **12.2.0**, лицензия **MIT-CMU** по metadata установленного дистрибутива. В пакет
 приложения библиотека не включается; коммитятся только PNG/XML, полученные из
