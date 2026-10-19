@@ -184,6 +184,65 @@ function Assert-ShorebirdPatchSource([string]$Repository, [string]$BaseCommit) {
     [ordered]@{baseCommit=$BaseCommit;sourceCommit=$head;paths=$paths;onlyDartProductionChanges=$true}
 }
 
+function Assert-ShorebirdReviewedPatchFull($Evidence) {
+    # Reuse one already accepted run, not an arbitrary caller-selected proof.
+    # Maintenance may update prose around this record but cannot invent a new
+    # tested tree or replace the observed source fingerprint/counts.
+    $reviewed='0d9fdf2236aeeb27085120341526827229e42b45'
+    $fingerprint='4f0dde5f1b9251f44baaeac88627d2e34dd93023b15822e3657139a8f304ecf3'
+    if (!$Evidence -or $Evidence.schemaVersion -ne 1 -or $Evidence.testedSourceCommit -cne $reviewed -or
+        $Evidence.mode -cne 'Full' -or $Evidence.result -cne 'passed' -or
+        ($Evidence.appTests -isnot [int] -and $Evidence.appTests -isnot [long]) -or $Evidence.appTests -ne 374 -or
+        ($Evidence.passedLanes -isnot [int] -and $Evidence.passedLanes -isnot [long]) -or $Evidence.passedLanes -ne 12 -or
+        $Evidence.sourceUnchanged -isnot [bool] -or !$Evidence.sourceUnchanged -or
+        $Evidence.sourceFingerprintBefore -cne $fingerprint -or $Evidence.sourceFingerprintAfter -cne $fingerprint) {
+        throw 'shorebird_reviewed_patch_full_invalid'
+    }
+    $reviewed
+}
+
+function Get-ShorebirdPatchDartValidationLanes([string[]]$ChangedDartPaths) {
+    $lanes=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($path in $ChangedDartPaths) {
+        if ($path -match '\.\.|//|[\x00-\x1f\\:]') { throw 'shorebird_patch_dart_scope_invalid' }
+        if ($path -cmatch '^apps/exvpn/(?:lib|test)/[A-Za-z0-9_/-]+\.dart$') {
+            $null=$lanes.Add('app')
+        } elseif ($path -cmatch '^packages/exvpn_domain/(?:lib|test)/[A-Za-z0-9_/-]+\.dart$') {
+            $null=$lanes.Add('domain');$null=$lanes.Add('state');$null=$lanes.Add('app')
+        } elseif ($path -cmatch '^packages/exvpn_client_state/(?:lib|test)/[A-Za-z0-9_/-]+\.dart$') {
+            $null=$lanes.Add('state');$null=$lanes.Add('app')
+        } elseif ($path -cmatch '^packages/exvpn_updates/(?:lib|test)/[A-Za-z0-9_/-]+\.dart$') {
+            $null=$lanes.Add('updates');$null=$lanes.Add('app')
+        } else { throw 'shorebird_patch_dart_scope_invalid' }
+    }
+    @('domain','state','updates','app') | Where-Object { $lanes.Contains($_) }
+}
+
+function Get-ShorebirdPatchValidationPlan([string]$Repository,[string]$BaseCommit) {
+    # Run the complete source guard BEFORE allowing any validation reuse. It
+    # excludes native/assets/dependencies/pins/identity and requires Dart work.
+    $source=Assert-ShorebirdPatchSource $Repository $BaseCommit
+    $evidencePath=Join-Path $Repository 'docs/evidence/shorebird29-accepted-patch-full.json'
+    Assert-AuditNoLinks $evidencePath
+    if (!(Test-Path -LiteralPath $evidencePath -PathType Leaf) -or (Get-Item -LiteralPath $evidencePath).Length -gt 64KB) {
+        throw 'shorebird_reviewed_patch_full_invalid'
+    }
+    try { $evidence=Get-Content -LiteralPath $evidencePath -Raw|ConvertFrom-Json -AsHashtable -ErrorAction Stop }
+    catch { throw 'shorebird_reviewed_patch_full_invalid' }
+    $reviewed=Assert-ShorebirdReviewedPatchFull $evidence
+    $null=Invoke-ShorebirdGit $Repository @('merge-base','--is-ancestor',$reviewed,$source.sourceCommit)
+    $scopes=@('apps/exvpn/lib','apps/exvpn/test',
+        'packages/exvpn_domain/lib','packages/exvpn_domain/test',
+        'packages/exvpn_client_state/lib','packages/exvpn_client_state/test',
+        'packages/exvpn_updates/lib','packages/exvpn_updates/test')
+    $raw=Invoke-ShorebirdGit $Repository (@('diff','--no-renames','--name-only',"$reviewed..$($source.sourceCommit)",'--')+$scopes)
+    $changed=@($raw -split "`n"|Where-Object { $_ })
+    $lanes=@(Get-ShorebirdPatchDartValidationLanes $changed)
+    [ordered]@{sourceCommit=$source.sourceCommit;baseCommit=$source.baseCommit;reviewedDartCommit=$reviewed
+        reusedReviewedFull=($changed.Count -eq 0);reviewedAppTests=374;reviewedFullLanes=12
+        changedDartPaths=$changed;lanes=$lanes;nativeLanesSelected=$false}
+}
+
 function Assert-ShorebirdJson($Envelope, [string]$Command) {
     $policy = Get-ShorebirdPolicy
     if ($null -eq $Envelope -or $Envelope.status -cne 'success' -or

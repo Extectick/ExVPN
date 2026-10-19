@@ -19,6 +19,7 @@ $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'shorebird-pipeline-lib.ps1')
 . (Join-Path $PSScriptRoot 'demo-android-lib.ps1')
 . (Join-Path $PSScriptRoot 'shorebird-android-environment.ps1')
+. (Join-Path $PSScriptRoot 'shorebird-patch-inputs.ps1')
 $policy = Get-ShorebirdPolicy
 $basePath = [IO.Path]::GetFullPath($BaseReceipt)
 Assert-AuditNoLinks $basePath
@@ -44,7 +45,7 @@ foreach ($name in @('PATH','APPDATA','PUB_CACHE','GRADLE_USER_HOME','CI','FLUTTE
     'EXVPN_ANDROID_KEYSTORE','EXVPN_ANDROID_KEY_ALIAS','EXVPN_ANDROID_STORE_PASSWORD','EXVPN_ANDROID_KEY_PASSWORD','EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64')) {
     $environment[$name] = [Environment]::GetEnvironmentVariable($name,'Process')
 }
-$keyPath = $null; $passwordBytes = $null; $phase = 'base_lookup'
+$keyPath = $null; $passwordBytes = $null; $textAssetLease = $null; $phase = 'base_lookup'
 $recoveryPath = $null; $cloudPatchVerified = $false
 Push-Location $app
 try {
@@ -108,10 +109,12 @@ try {
     $env:EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64 = $null
     $phase = 'patch'
     $arguments = Get-ShorebirdPatchArguments $Target $version $public.path $keyPath -PublishCloud:$PublishCloud
+    $textAssetLease = Enter-ShorebirdPatchTextAssetsLease -Repository $repository -Target $Target -BaseReceiptPath $basePath -BaseReceipt $base -SourceCommit $source.sourceCommit -PrivateDirectory $privateRun
     if ($PublishCloud) {
         $recoveryPath=Write-ShorebirdRecovery -Repository $repository -Action patch -Version $version -Target $Target -SourceCommit $source.sourceCommit -BaseSourceCommit $base.sourceCommit -ReleaseId $base.releaseId -Status attempting -CloudOutcome unknown -Phase $phase
     }
-    $result = Invoke-ShorebirdJson $cli $arguments 'patch' $privateRun 'patch'
+    try { $result = Invoke-ShorebirdJson $cli $arguments 'patch' $privateRun 'patch' }
+    finally { Restore-ShorebirdPatchTextAssetsLease $textAssetLease }
     $patchNumber = $null; $patchId = $null; $artifacts = @()
     if ($PublishCloud) {
         if ($result.app_id -cne $policy.appId -or $result.track -cne 'beta' -or @($result.patches).Count -ne 1) { throw 'shorebird_patch_response_invalid' }
@@ -151,6 +154,7 @@ try {
         patchNumber=$patchNumber;patchId=$patchId;artifacts=$artifacts
         baseReceiptSha256=Get-AuditSha256 $basePath;source=$source;runtime=$runtime.Identity
         nativeDiffsAllowed=$false;assetDiffsAllowed=$false;deviceApplyVerified=$false
+        textAssetInputs=$textAssetLease.summary
     } | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $output 'patch.json') -Encoding utf8NoBOM
     if ($recoveryPath) {
         $null=Write-ShorebirdRecovery -Repository $repository -Action patch -Version $version -Target $Target -SourceCommit $source.sourceCommit -BaseSourceCommit $base.sourceCommit -ReleaseId $base.releaseId -PatchId $patchId -PatchNumber $patchNumber -Status ready -CloudOutcome registered -Phase $phase -Path $recoveryPath
@@ -163,10 +167,13 @@ try {
     throw "shorebird_patch_failed phase=$phase; inspect private cloud receipt before retry"
 } finally {
     Pop-Location
-    try { if ($keyPath) { Remove-Item -LiteralPath $keyPath -Force -ErrorAction Stop } }
+    try { Restore-ShorebirdPatchTextAssetsLease $textAssetLease }
     finally {
-        if ($passwordBytes) { [Security.Cryptography.CryptographicOperations]::ZeroMemory($passwordBytes) }
-        Restore-DemoAndroidEnvironment $environment
+        try { if ($keyPath) { Remove-Item -LiteralPath $keyPath -Force -ErrorAction Stop } }
+        finally {
+            if ($passwordBytes) { [Security.Cryptography.CryptographicOperations]::ZeroMemory($passwordBytes) }
+            Restore-DemoAndroidEnvironment $environment
+        }
     }
 }
 [pscustomobject]@{OutputDirectory=$output;Published=[bool]$PublishCloud;Version=$version;Target=$Target}

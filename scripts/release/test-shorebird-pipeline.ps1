@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #requires -Version 7.0
 # Synthetic guard regressions only: no SDK, actual keys, cloud, VPN or builds.
-param([switch]$AndroidBuildDiagnosticsOnly)
+param([switch]$AndroidBuildDiagnosticsOnly,[switch]$SdkCacheFallbackOnly,[switch]$LockedPubPreparationOnly,[switch]$PatchTargetOnly)
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'shorebird-pipeline-lib.ps1')
@@ -19,6 +19,46 @@ function Assert-Refuses([scriptblock]$Action,[string]$Name) {
     Assert-Test $threw $Name
 }
 function Copy-Fixture($Value) { $Value | ConvertTo-Json -Depth 20 | ConvertFrom-Json -AsHashtable }
+
+$cacheWorkflow=[IO.File]::ReadAllText((Join-Path $PSScriptRoot '../../.github/workflows/shorebird.yml'))
+$targetCache=[regex]::Match($cacheWorkflow,'(?s)      - name: Cache exact Shorebird checkout and SDK \(verified after restore\)(?<step>.*?)      - name: Restore exact Windows SDK for first Android patch cache')
+$windowsFallback=[regex]::Match($cacheWorkflow,'(?s)      - name: Restore exact Windows SDK for first Android patch cache(?<step>.*?)      - name: Prepare pinned ordinary tools and Android inputs')
+Assert-Test ($targetCache.Success -and $targetCache.Groups['step'].Value.Contains('id: target-sdk') -and $targetCache.Groups['step'].Value.Contains('uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9') -and $targetCache.Groups['step'].Value.Contains('${{ matrix.target }}-${{ hashFiles(''scripts/bootstrap/shorebird.lock.json'') }}')) 'primary_target_cache_keeps_normal_save_and_exact_pin_key'
+$fallback=$windowsFallback.Groups['step'].Value
+Assert-Test ($windowsFallback.Success -and $fallback.Contains("if: inputs.operation == 'patch' && matrix.target == 'Android' && steps.target-sdk.outputs.cache-hit != 'true'") -and $fallback.Contains('uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9') -and $fallback.Contains('path: .tools/shorebird-1.6.129') -and $fallback.Contains('-Windows-${{ hashFiles(''scripts/bootstrap/shorebird.lock.json'') }}') -and !$fallback.Contains('restore-keys:') -and !$fallback.Contains('cache/save@')) 'android_patch_miss_uses_only_exact_windows_restore_without_save'
+Assert-Test ($windowsFallback.Index -gt $targetCache.Index -and $windowsFallback.Index -lt $cacheWorkflow.IndexOf('name: Prepare pinned ordinary tools') -and $cacheWorkflow.Contains('run: ./scripts/release/prepare-shorebird.ps1 -Target $env:EXVPN_TARGET')) 'cache_fallback_precedes_unchanged_pinned_preparation'
+if($SdkCacheFallbackOnly) {
+    Write-Host "Shorebird SDK cache fallback: $script:checks focused checks PASS; no SDK or builds."
+    $global:LASTEXITCODE=0
+    return
+}
+
+$lockedPubStep=[regex]::Match($cacheWorkflow,'(?s)      - name: Resolve locked app dependencies for patch or recovery from a cold cache\r?\n(?<step>.*?)      - name: Require clean source after SDK before native builds')
+$lockedBody=$lockedPubStep.Groups['step'].Value
+Assert-Test ($lockedPubStep.Success -and $lockedBody.Contains("if: inputs.operation == 'patch' || inputs.operation == 'recover_base'") -and $cacheWorkflow.IndexOf('name: Prepare exact Shorebird CLI and Flutter') -lt $lockedPubStep.Index -and $lockedPubStep.Index -lt $cacheWorkflow.IndexOf('name: Require clean source after SDK before native builds')) 'patch_and_recovery_locked_resolve_after_sdk_before_clean_gate'
+Assert-Test ($lockedBody.Contains('Get-ReleaseFlutterRuntime -Repository $repository -Target $env:EXVPN_TARGET -FlutterRuntime shorebird -FlutterBuildMode release') -and $lockedBody.Contains('$flutter=Join-Path $runtime.SdkRoot ''bin/flutter.bat''') -and $lockedBody.Contains('$env:PUB_CACHE=Join-Path $repository ''.tools/cache/pub''') -and $lockedBody.Contains('& $flutter pub get --enforce-lockfile') -and !$lockedBody.Contains('--offline')) 'cold_patch_resolves_exact_lock_online_using_prepared_sdk_and_main_pub_cache'
+$lockedRun=[regex]::Match($lockedBody,'(?s)        run: \|\r?\n(?<run>.*)').Groups['run'].Value
+$lockedRun=($lockedRun -split '\r?\n'|ForEach-Object {if($_.StartsWith('          ')){$_.Substring(10)}else{$_}})-join "`n"
+$lockedTokens=$null;$lockedErrors=$null
+$null=[Management.Automation.Language.Parser]::ParseInput($lockedRun,[ref]$lockedTokens,[ref]$lockedErrors)
+$patchWrapper=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'shorebird-patch.ps1'))
+Assert-Test (!$lockedErrors.Count -and $lockedRun.Contains('finally { Pop-Location }') -and $patchWrapper.Contains('pub get --offline --enforce-lockfile')) 'locked_prepare_parses_restores_location_and_keeps_wrapper_offline_guard'
+if($LockedPubPreparationOnly) {
+    Write-Host "Shorebird locked pub preparation: $script:checks focused cache/pub checks PASS; no SDK or builds."
+    $global:LASTEXITCODE=0
+    return
+}
+
+$patchTargetInput=[regex]::Match($cacheWorkflow,'(?s)      patch_target:\r?\n(?<input>.*?)      android_patch_number:').Groups['input'].Value
+Assert-Test ($patchTargetInput.Contains('type: choice') -and $patchTargetInput.Contains('options: [Both, Android, Windows]') -and $patchTargetInput.Contains('default: Both')) 'patch_target_explicit_choices_default_both'
+$matrixSelector=[regex]::Match($cacheWorkflow,'      matrix:\r?\n        target: (?<selector>[^\r\n]+)').Groups['selector'].Value
+Assert-Test ($matrixSelector.Contains('inputs.operation == ''patch'' && inputs.patch_target == ''Android'' && ''["Android"]''') -and $matrixSelector.Contains('inputs.operation == ''patch'' && inputs.patch_target == ''Windows'' && ''["Windows"]''') -and $matrixSelector.Contains('inputs.operation == ''diagnose'' && ''["Windows"]''') -and $matrixSelector.EndsWith('''["Android","Windows"]'') }}')) 'only_patch_can_select_one_platform_base_recovery_and_diagnose_preserved'
+Assert-Test ($cacheWorkflow.Contains('EXVPN_PATCH_TARGET: ${{ inputs.patch_target }}') -and $cacheWorkflow.Contains('if ($env:EXVPN_OPERATION -ceq ''patch'' -and $env:EXVPN_PATCH_TARGET -cnotin @(''Both'',''Android'',''Windows'')) { throw ''shorebird_patch_target_invalid'' }')) 'unknown_patch_target_refused_before_preparation_or_cloud'
+if($PatchTargetOnly) {
+    Write-Host "Shorebird patch platform selection: $script:checks focused cache/pub/target checks PASS; no SDK or builds."
+    $global:LASTEXITCODE=0
+    return
+}
 
 $diagnosticRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $diagnosticFixture=Join-Path $diagnosticRoot ('.private/shorebird-diagnostic-tests/'+[guid]::NewGuid().ToString('N'))
@@ -198,6 +238,58 @@ Assert-Refuses { Assert-ShorebirdPreviewAudit $bad Android ('a'*64) '0.1.7+28' }
 # Exercise actual Git comparisons, not mocked diff names. Keep the small owned
 # fixture for diagnosis; no recursive cleanup or mutations of the real repo.
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+$reviewedFull=Get-Content -LiteralPath (Join-Path $root 'docs/evidence/shorebird29-accepted-patch-full.json') -Raw|ConvertFrom-Json -AsHashtable
+Assert-Test ((Assert-ShorebirdReviewedPatchFull $reviewedFull) -ceq '0d9fdf2236aeeb27085120341526827229e42b45') 'reviewed_full_matches_real_accepted_source_counts_and_fingerprint'
+foreach($change in @(@('schemaVersion',2),@('testedSourceCommit',('a'*40)),@('mode','Changed'),@('result','failed'),
+    @('appTests',373),@('appTests','374'),@('passedLanes',11),@('passedLanes','12'),@('sourceUnchanged',$false),
+    @('sourceUnchanged','true'),@('sourceFingerprintBefore',('b'*64)),@('sourceFingerprintAfter',('b'*64)))) {
+    $bad=Copy-Fixture $reviewedFull;$bad[$change[0]]=$change[1]
+    Assert-Refuses { Assert-ShorebirdReviewedPatchFull $bad } 'fixed_full_evidence_cannot_be_replaced_or_weakened'
+}
+$bad=Copy-Fixture $reviewedFull;$bad.sourceFingerprintBefore='b'*64;$bad.sourceFingerprintAfter='b'*64
+Assert-Refuses { Assert-ShorebirdReviewedPatchFull $bad } 'equal_but_unreviewed_full_fingerprints_refused'
+Assert-Test (@(Get-ShorebirdPatchDartValidationLanes @()).Count -eq 0) 'no_new_dart_inputs_has_no_new_dart_lanes'
+Assert-Test ((@(Get-ShorebirdPatchDartValidationLanes @('apps/exvpn/lib/src/home_screen.dart')) -join ',') -ceq 'app') 'future_app_change_runs_app_without_native_lanes'
+Assert-Test ((@(Get-ShorebirdPatchDartValidationLanes @('packages/exvpn_domain/lib/src/profile.dart')) -join ',') -ceq 'domain,state,app') 'future_domain_change_runs_pure_dart_dependency_closure'
+Assert-Test ((@(Get-ShorebirdPatchDartValidationLanes @('packages/exvpn_client_state/test/state_test.dart','packages/exvpn_updates/lib/src/controller.dart')) -join ',') -ceq 'state,updates,app') 'future_state_and_updates_changes_keep_both_package_lanes_and_app'
+foreach($path in @('native/core/config.go','apps/exvpn/assets/icon.png','packages/exvpn_domain/pubspec.yaml',
+    'apps/exvpn/lib/../native.dart','docs/change.md','.github/workflows/shorebird.yml')) {
+    Assert-Refuses { Get-ShorebirdPatchDartValidationLanes @($path) } 'dart_validation_selector_never_silently_ignores_other_scopes'
+}
+$planFixture=Join-Path $root ('.private/shorebird-validation-plan-tests/'+[guid]::NewGuid().ToString('N'))
+[void][IO.Directory]::CreateDirectory((Join-Path $planFixture 'docs/evidence'))
+$planEvidence=Join-Path $planFixture 'docs/evidence/shorebird29-accepted-patch-full.json'
+$reviewedFull|ConvertTo-Json -Depth 6|Set-Content -LiteralPath $planEvidence -Encoding utf8NoBOM
+function Invoke-SyntheticPatchValidationPlan([string[]]$Changes=@(),[bool]$RejectSource=$false,[bool]$RejectAncestor=$false) {
+    $script:validationPlanGuardCalls=0;$script:validationPlanGitCalls=[Collections.Generic.List[object]]::new()
+    function Assert-ShorebirdPatchSource([string]$Repository,[string]$BaseCommit) {
+        $script:validationPlanGuardCalls++
+        if($RejectSource){throw 'synthetic_native_source_refused'}
+        @{sourceCommit=('c'*40);baseCommit=$BaseCommit}
+    }
+    function Invoke-ShorebirdGit([string]$Repository,[string[]]$Arguments) {
+        $script:validationPlanGitCalls.Add($Arguments)
+        if($Arguments[0] -ceq 'merge-base') { if($RejectAncestor){throw 'synthetic_reviewed_commit_not_ancestor'};return '' }
+        if($Arguments[0] -ceq 'diff'){return ($Changes -join "`n")}
+        throw 'unexpected_synthetic_git_operation'
+    }
+    Get-ShorebirdPatchValidationPlan $planFixture ('a'*40)
+}
+$plan=Invoke-SyntheticPatchValidationPlan
+Assert-Test ($plan.reusedReviewedFull -and $plan.lanes.Count -eq 0 -and $script:validationPlanGuardCalls -eq 1) 'maintenance_reuses_only_after_source_guard_and_fixed_proof'
+$scopes=@('apps/exvpn/lib','apps/exvpn/test','packages/exvpn_domain/lib','packages/exvpn_domain/test',
+    'packages/exvpn_client_state/lib','packages/exvpn_client_state/test','packages/exvpn_updates/lib','packages/exvpn_updates/test')
+$diffArgs=$script:validationPlanGitCalls[1]
+Assert-Test ($script:validationPlanGitCalls.Count -eq 2 -and $diffArgs[0] -ceq 'diff' -and $diffArgs[3] -ceq ('0d9fdf2236aeeb27085120341526827229e42b45..'+('c'*40)) -and ($diffArgs[5..12] -join ',') -ceq ($scopes -join ',')) 'reuse_compares_every_app_and_owned_package_lib_test_tree'
+$plan=Invoke-SyntheticPatchValidationPlan @('apps/exvpn/test/widget_test.dart')
+Assert-Test (!$plan.reusedReviewedFull -and ($plan.lanes -join ',') -ceq 'app') 'new_test_input_cannot_reuse_old_full'
+$plan=Invoke-SyntheticPatchValidationPlan @('packages/exvpn_domain/lib/src/profile.dart')
+Assert-Test (!$plan.reusedReviewedFull -and ($plan.lanes -join ',') -ceq 'domain,state,app' -and !$plan.nativeLanesSelected) 'new_package_input_requires_dart_consumers_not_native_full'
+Assert-Refuses { Invoke-SyntheticPatchValidationPlan @() $true } 'source_guard_failure_blocks_reuse'
+Assert-Test ($script:validationPlanGitCalls.Count -eq 0) 'forbidden_source_stops_before_reviewed_tree_comparison'
+Assert-Refuses { Invoke-SyntheticPatchValidationPlan @() $false $true } 'unrelated_reviewed_commit_refused'
+$bad=Copy-Fixture $reviewedFull;$bad.appTests=0;$bad|ConvertTo-Json -Depth 6|Set-Content -LiteralPath $planEvidence -Encoding utf8NoBOM
+Assert-Refuses { Invoke-SyntheticPatchValidationPlan } 'invalid_on_disk_full_proof_cannot_reuse_or_skip_validation'
 $fixture=Join-Path $root ('.private/shorebird-pipeline-tests/' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path (Join-Path $fixture 'apps/exvpn/lib') -Force | Out-Null
 $null=Invoke-ShorebirdGit $fixture @('init','--quiet')
@@ -763,8 +855,8 @@ try {
 # The workflow must retain the new byte-pinned dotfile and preserve ONLY the
 # allowlisted recovery directory on failure, never .private build logs.
 $workflow=[IO.File]::ReadAllText((Join-Path $root '.github/workflows/shorebird.yml'))
-$coldRecoveryStep=[regex]::Match($workflow,'(?s)      - name: Resolve locked app dependencies for recovery from a cold cache\r?\n(?<step>.*?)      - name: Require clean source after SDK before native builds')
-Assert-Test ($coldRecoveryStep.Success -and $coldRecoveryStep.Groups['step'].Value.Contains("if: inputs.operation == 'recover_base'") -and $coldRecoveryStep.Groups['step'].Value.Contains('Get-ReleaseFlutterRuntime -Repository $repository -Target $env:EXVPN_TARGET -FlutterRuntime shorebird -FlutterBuildMode release') -and $coldRecoveryStep.Groups['step'].Value.Contains('$flutter=Join-Path $runtime.SdkRoot ''bin/flutter.bat''') -and $coldRecoveryStep.Groups['step'].Value.Contains('$env:PUB_CACHE=Join-Path $repository ''.tools/cache/pub''') -and $coldRecoveryStep.Groups['step'].Value.Contains('& $flutter pub get --enforce-lockfile') -and !$coldRecoveryStep.Groups['step'].Value.Contains('--offline') -and $workflow.IndexOf('name: Prepare exact Shorebird CLI and Flutter') -lt $coldRecoveryStep.Index) 'recovery_cold_cache_locked_pub_uses_prepared_sdk_before_clean_gate'
+$coldRecoveryStep=[regex]::Match($workflow,'(?s)      - name: Resolve locked app dependencies for patch or recovery from a cold cache\r?\n(?<step>.*?)      - name: Require clean source after SDK before native builds')
+Assert-Test ($coldRecoveryStep.Success -and $coldRecoveryStep.Groups['step'].Value.Contains("if: inputs.operation == 'patch' || inputs.operation == 'recover_base'") -and $coldRecoveryStep.Groups['step'].Value.Contains('Get-ReleaseFlutterRuntime -Repository $repository -Target $env:EXVPN_TARGET -FlutterRuntime shorebird -FlutterBuildMode release') -and $coldRecoveryStep.Groups['step'].Value.Contains('$flutter=Join-Path $runtime.SdkRoot ''bin/flutter.bat''') -and $coldRecoveryStep.Groups['step'].Value.Contains('$env:PUB_CACHE=Join-Path $repository ''.tools/cache/pub''') -and $coldRecoveryStep.Groups['step'].Value.Contains('& $flutter pub get --enforce-lockfile') -and !$coldRecoveryStep.Groups['step'].Value.Contains('--offline') -and $workflow.IndexOf('name: Prepare exact Shorebird CLI and Flutter') -lt $coldRecoveryStep.Index) 'recovery_cold_cache_locked_pub_uses_prepared_sdk_before_clean_gate'
 Assert-Test ($workflow -cmatch 'include-hidden-files: true') 'base_artifact_keeps_required_hidden_notice'
 Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized cloud recovery identity even after failure\s+if: always\(\).*?path: artifacts/shorebird-recovery/\*\.json') 'failure_recovery_upload_always_and_allowlisted'
 Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized SDK preparation diagnosis even after failure\s+if: always\(\).*?path: artifacts/shorebird-prepare/\*\.json') 'prepare_diagnosis_upload_always_and_allowlisted'
@@ -787,6 +879,9 @@ $diagnosticRun=($diagnosticRun -split '\r?\n'|ForEach-Object {if($_.StartsWith('
 $diagnosticTokens=$null;$diagnosticErrors=$null
 $null=[Management.Automation.Language.Parser]::ParseInput($diagnosticRun,[ref]$diagnosticTokens,[ref]$diagnosticErrors)
 Assert-Test (!$diagnosticErrors.Count) 'android_diagnose_actual_inline_powershell_parses'
+Assert-Test ($workflow.Contains('name: Test exact patch input byte preservation without builds') -and $workflow.Contains('run: ./scripts/release/test-shorebird-patch-inputs.ps1')) 'patch_checks_scoped_input_preservation_guards'
+Assert-Test ($workflow.Contains('$plan=Get-ShorebirdPatchValidationPlan (Get-Location).Path $env:EXVPN_BASE_SHA') -and $workflow.Contains('run-fast-validation-lane.ps1 -Lane $lane -OnlineDependencies') -and !$workflow.Contains('run-fast-validation.ps1 -Changed -BaseRef')) 'patch_uses_reviewed_full_or_explicit_dart_lanes_never_native_full_selection'
+Assert-Test ($workflow.IndexOf('name: Guard exact patch source before tool preparation') -lt $workflow.IndexOf('name: Prepare pinned ordinary tools')) 'patch_native_asset_pin_guard_before_bootstrap'
 foreach ($step in @('Prepare exact Shorebird CLI and Flutter','Build once and optionally publish signed beta','Upload audited artifacts and sanitized receipts only')) {
     Assert-Test ($workflow -cmatch ('name: '+[regex]::Escape($step)+'\r?\n\s+if: inputs.operation != ''diagnose''')) 'diagnose_skips_sdk_secret_step_and_promotion'
 }

@@ -21,6 +21,11 @@ on:
       base_source_commit:
         description: Reviewed exact base source SHA (patch/rollback)
         type: string
+      patch_target:
+        description: Patch platform; select only the failed platform after partial success
+        type: choice
+        options: [Both, Android, Windows]
+        default: Both
       android_patch_number:
         description: Actual Android patch number (rollback only)
         type: string
@@ -46,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ${{ fromJSON(inputs.operation == 'diagnose' && '["Windows"]' || '["Android","Windows"]') }}
+        target: ${{ fromJSON(inputs.operation == 'diagnose' && '["Windows"]' || inputs.operation == 'patch' && inputs.patch_target == 'Android' && '["Android"]' || inputs.operation == 'patch' && inputs.patch_target == 'Windows' && '["Windows"]' || '["Android","Windows"]') }}
     defaults:
       run:
         shell: pwsh
@@ -59,6 +64,8 @@ jobs:
       EXVPN_VERSION: ${{ inputs.version }}
       EXVPN_PUBLISH: ${{ inputs.publish_cloud }}
       EXVPN_BASE_SHA: ${{ inputs.base_source_commit }}
+      EXVPN_BASE_RUN_ID: ${{ inputs.base_run_id }}
+      EXVPN_PATCH_TARGET: ${{ inputs.patch_target }}
       EXVPN_TARGET: ${{ matrix.target }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -68,8 +75,15 @@ jobs:
       - name: Validate explicit identity and source
         run: |
           if ($env:EXVPN_VERSION -cnotmatch '^\d+\.\d+\.\d+\+[1-9]\d*$') { throw 'shorebird_version_invalid' }
-          if ($env:EXVPN_OPERATION -ceq 'patch' -and $env:EXVPN_BASE_SHA -cnotmatch '^[a-f0-9]{40}$') { throw 'shorebird_base_source_invalid' }
+          if ($env:EXVPN_OPERATION -ceq 'patch' -and ($env:EXVPN_BASE_SHA -cnotmatch '^[a-f0-9]{40}$' -or $env:EXVPN_BASE_RUN_ID -cnotmatch '^[1-9][0-9]*$')) { throw 'shorebird_base_source_invalid' }
+          if ($env:EXVPN_OPERATION -ceq 'patch' -and $env:EXVPN_PATCH_TARGET -cnotin @('Both','Android','Windows')) { throw 'shorebird_patch_target_invalid' }
           if ($env:EXVPN_OPERATION -ceq 'recover_base' -and ($env:EXVPN_VERSION -cne '0.1.8+29' -or $env:EXVPN_PUBLISH -cne 'true')) { throw 'shorebird_recovery_version_mismatch' }
+      - name: Guard exact patch source before tool preparation
+        if: inputs.operation == 'patch'
+        run: |
+          . ./scripts/release/flutter-runtime-inputs.ps1
+          . ./scripts/release/shorebird-pipeline-lib.ps1
+          $null=Assert-ShorebirdPatchSource (Get-Location).Path $env:EXVPN_BASE_SHA
       - name: Prove recovery changes only packaging before SDK or native builds
         if: inputs.operation == 'recover_base'
         run: |
@@ -94,11 +108,18 @@ jobs:
             .tools/cache/go-build
           key: exvpn-shorebird-inputs-v1-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/*.lock.json', 'apps/exvpn/pubspec.lock', 'native/**/go.sum') }}
       - name: Cache exact Shorebird checkout and SDK (verified after restore)
+        id: target-sdk
         if: inputs.operation != 'diagnose'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .tools/shorebird-1.6.129
           key: exvpn-shorebird-sdk-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/shorebird.lock.json') }}
+      - name: Restore exact Windows SDK for first Android patch cache
+        if: inputs.operation == 'patch' && matrix.target == 'Android' && steps.target-sdk.outputs.cache-hit != 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools/shorebird-1.6.129
+          key: exvpn-shorebird-sdk-v1-${{ runner.os }}-${{ runner.arch }}-Windows-${{ hashFiles('scripts/bootstrap/shorebird.lock.json') }}
       - name: Prepare pinned ordinary tools and Android inputs
         run: |
           ./scripts/bootstrap/bootstrap.ps1
@@ -115,13 +136,23 @@ jobs:
       - name: Test isolated Android tool environment guards without builds
         if: matrix.target == 'Android'
         run: ./scripts/release/test-shorebird-android-environment.ps1
+      - name: Test exact patch input byte preservation without builds
+        if: inputs.operation == 'patch'
+        run: ./scripts/release/test-shorebird-patch-inputs.ps1
       - name: Analyze and test the reviewed Dart source
         if: inputs.operation != 'recover_base'
         run: |
           if ($env:EXVPN_OPERATION -cin @('base','diagnose')) {
             ./scripts/ci/verify.ps1 -Target Checks
           } else {
-            ./scripts/qa/run-fast-validation.ps1 -Changed -BaseRef $env:EXVPN_BASE_SHA
+            . ./scripts/release/flutter-runtime-inputs.ps1
+            . ./scripts/release/shorebird-pipeline-lib.ps1
+            $plan=Get-ShorebirdPatchValidationPlan (Get-Location).Path $env:EXVPN_BASE_SHA
+            if($plan.reusedReviewedFull) { Write-Host 'Dart inputs match accepted Full0d9f: 374 app tests / 12 lanes; focused maintenance guards ran separately.' }
+            foreach($lane in $plan.lanes) {
+              & pwsh -NoProfile -NonInteractive -File ./scripts/qa/run-fast-validation-lane.ps1 -Lane $lane -OnlineDependencies
+              if($LASTEXITCODE -ne 0) { throw 'shorebird_patch_dart_validation_failed' }
+            }
           }
       - name: Test recovery notice and packaging guards without rebuilding UI
         if: inputs.operation == 'recover_base'
@@ -138,8 +169,8 @@ jobs:
       - name: Prepare exact Shorebird CLI and Flutter
         if: inputs.operation != 'diagnose'
         run: ./scripts/release/prepare-shorebird.ps1 -Target $env:EXVPN_TARGET
-      - name: Resolve locked app dependencies for recovery from a cold cache
-        if: inputs.operation == 'recover_base'
+      - name: Resolve locked app dependencies for patch or recovery from a cold cache
+        if: inputs.operation == 'patch' || inputs.operation == 'recover_base'
         run: |
           . ./scripts/release/flutter-runtime-inputs.ps1
           $repository=(Get-Location).Path

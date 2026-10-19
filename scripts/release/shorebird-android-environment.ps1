@@ -135,6 +135,56 @@ function Assert-ShorebirdAndroidToolProbe($Probe) {
     }
 }
 
+function Test-ShorebirdAndroidAnalyzerListing([string]$Stdout,
+    [string]$TemporaryRoot=[IO.Path]::GetTempPath()) {
+    # The two observed SDK implementations list either ZIP-rooted paths or
+    # paths in a Java-created temporary extraction directory. Validate the
+    # entire known synthetic inventory, not a basename/substr anywhere in text.
+    if (!$Stdout -or $Stdout.Length -gt 64KB -or $Stdout -cmatch '[^\x20-\x7e\r\n]') { return $false }
+    $text=$Stdout.Replace("`r`n","`n")
+    if($text.Contains("`r")){return $false}
+    if($text.EndsWith("`n")){$text=$text.Substring(0,$text.Length-1)}
+    $lines=@($text -split "`n")
+    $expected=@('','BUNDLE-METADATA/','BUNDLE-METADATA/com.android.tools.build.debugsymbols/',
+        'BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/',
+        'BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/libflutter.so.sym')
+    if($lines.Count -ne $expected.Count){return $false}
+    $root=$lines[0];$windows=$false
+    if($root -cne '/'){
+        $temp=$TemporaryRoot.TrimEnd('\')
+        if($temp -cnotmatch '^[A-Za-z]:\\' -or $temp -cmatch '[^\x20-\x7e]|[/<>"|?*]' -or
+            $temp.Substring(2).Contains(':')){return $false}
+        foreach($part in ($temp.Substring(3) -split '\\')){
+            if(!$part -or $part -in @('.','..') -or $part -match '[. ]$'){return $false}
+        }
+        $match=[regex]::Match($root,'^(?<parent>[A-Za-z]:\\.+\\)analyzer-probe\.zip(?<nonce>0|[1-9][0-9]{0,19})\\$')
+        $nonce=[uint64]0
+        if(!$match.Success -or !$match.Groups['parent'].Value.Equals($temp+'\',[StringComparison]::OrdinalIgnoreCase) -or
+            ![uint64]::TryParse($match.Groups['nonce'].Value,[ref]$nonce)){return $false}
+        $windows=$true
+    }
+    for($index=0;$index -lt $lines.Count;$index++){
+        $line=$lines[$index]
+        if(!$line.StartsWith($root,[StringComparison]::Ordinal) -or
+            ($windows -and $line.Contains('/')) -or (!$windows -and $line.Contains('\'))){return $false}
+        $relative=$line.Substring($root.Length).Replace('\','/')
+        if($relative -cne $expected[$index]){return $false}
+    }
+    $true
+}
+
+function ConvertFrom-ShorebirdAndroidProcessProbe($ProcessProbe,[string]$Stdout,
+    [string]$TemporaryRoot=[IO.Path]::GetTempPath()) {
+    if($ProcessProbe -isnot [Collections.IDictionary] -or $ProcessProbe.Count -ne 3 -or
+        @('schema','exitCode','classFilesFailure').Where({!$ProcessProbe.Contains($_)}).Count -or
+        ($ProcessProbe.schema -isnot [int] -and $ProcessProbe.schema -isnot [long]) -or
+        ($ProcessProbe.exitCode -isnot [int] -and $ProcessProbe.exitCode -isnot [long]) -or
+        $ProcessProbe.classFilesFailure -isnot [bool]){throw 'shorebird_android_tool_probe_failed'}
+    [ordered]@{schema=$ProcessProbe.schema;exitCode=$ProcessProbe.exitCode
+        expectedMetadataListed=(Test-ShorebirdAndroidAnalyzerListing $Stdout $TemporaryRoot)
+        classFilesFailure=$ProcessProbe.classFilesFailure}
+}
+
 function Get-ShorebirdAndroidToolFailureReason([string]$Message) {
     # Never publish an arbitrary exception, path, argument or tool output.
     $known=@('unsupported','repository','private','private_acl','private_not_fresh','java',
@@ -329,13 +379,13 @@ Future<void> main(List<String> args) async {
   await File('${args[2]}/analyzer.stderr.private.log').writeAsString('${result.stderr}');
   final text = '${result.stdout}\n${result.stderr}';
   final proof = {'schema': 1, 'exitCode': result.exitCode,
-    'expectedMetadataListed': '${result.stdout}'.contains('/BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/libflutter.so.sym'),
     'classFilesFailure': text.contains('Could not find or load main class Files') || text.contains('ClassNotFoundException: Files')};
   await File('${args[2]}/analyzer-probe.json').writeAsString(jsonEncode(proof));
 }
 '@)
         if ((Invoke-ShorebirdAndroidPrivateProcess $dart @($probePath,$shortAnalyzer,$zipPath,$private) $private 'dart-analyzer') -ne 0) { throw 'dart_process' }
-        $probe=Get-Content -LiteralPath (Join-Path $private 'analyzer-probe.json') -Raw | ConvertFrom-Json -AsHashtable
+        $processProbe=Get-Content -LiteralPath (Join-Path $private 'analyzer-probe.json') -Raw | ConvertFrom-Json -AsHashtable
+        $probe=ConvertFrom-ShorebirdAndroidProcessProbe $processProbe ([IO.File]::ReadAllText((Join-Path $private 'analyzer.stdout.private.log')))
         $proof.syntheticExitCode=$probe.exitCode; $proof.expectedMetadataListed=$probe.expectedMetadataListed
         foreach($stream in @('stdout','stderr')){
             $log=Join-Path $private "analyzer.$stream.private.log"

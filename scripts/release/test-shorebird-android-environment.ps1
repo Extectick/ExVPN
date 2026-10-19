@@ -54,6 +54,38 @@ foreach ($change in @(@{exitCode=1},@{expectedMetadataListed=$false},@{expectedM
     Reject { Assert-ShorebirdAndroidToolProbe $bad } 'shorebird_android_tool_probe_failed'
 }
 Reject { Assert-ShorebirdAndroidToolProbe @{schema=1} } 'shorebird_android_tool_probe_failed'
+$inventory=@('','BUNDLE-METADATA/','BUNDLE-METADATA/com.android.tools.build.debugsymbols/',
+    'BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/',
+    'BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/libflutter.so.sym')
+$archiveListing=(@($inventory | ForEach-Object {'/'+$_}) -join "`r`n")+"`r`n"
+$tempRoot='C:\QA-Temp'
+$hostRoot=$tempRoot+'\analyzer-probe.zip1234567890123456789\'
+$hostListing=(@($inventory | ForEach-Object {$hostRoot+$_.Replace('/','\')}) -join "`r`n")+"`r`n"
+Check (Test-ShorebirdAndroidAnalyzerListing $archiveListing $tempRoot) 'exact_archive_rooted_inventory'
+Check (Test-ShorebirdAndroidAnalyzerListing $hostListing $tempRoot) 'exact_hosted_windows_temp_inventory'
+Check (Test-ShorebirdAndroidAnalyzerListing ($archiveListing.Replace("`r`n","`n")) $tempRoot) 'exact_lf_inventory'
+Check (!(Test-ShorebirdAndroidAnalyzerListing $hostListing 'C:\Other-Temp')) 'listing_root_must_be_current_process_temp'
+Check (!(Test-ShorebirdAndroidAnalyzerListing ($hostListing.Replace('QA-Temp\','QA-Temp-sibling\')) $tempRoot)) 'temp_prefix_is_not_parent_equality'
+Check (!(Test-ShorebirdAndroidAnalyzerListing ($hostListing.Replace('analyzer-probe.zip1234567890123456789','other.zip1234567890123456789')) $tempRoot)) 'fixed_synthetic_archive_leaf_required'
+Check (!(Test-ShorebirdAndroidAnalyzerListing ($hostListing.Replace('1234567890123456789','18446744073709551616')) $tempRoot)) 'temp_nonce_must_fit_unsigned64'
+Check (!(Test-ShorebirdAndroidAnalyzerListing ($hostListing.Replace('1234567890123456789','0123456789012345678')) $tempRoot)) 'temp_nonce_is_canonical_decimal'
+Check (!(Test-ShorebirdAndroidAnalyzerListing (($archiveListing -split "`r`n" | Select-Object -Skip 1) -join "`r`n") $tempRoot)) 'missing_root_row_refused'
+Check (!(Test-ShorebirdAndroidAnalyzerListing ($archiveListing+"/extra`r`n") $tempRoot)) 'extra_inventory_row_refused'
+Check (!(Test-ShorebirdAndroidAnalyzerListing ($archiveListing.Replace('libflutter.so.sym','unrelated.sym')) $tempRoot)) 'missing_expected_file_refused'
+Check (!(Test-ShorebirdAndroidAnalyzerListing ($archiveListing.Replace('/BUNDLE-METADATA/','/prefix/BUNDLE-METADATA/')) $tempRoot)) 'basename_under_wrong_prefix_refused'
+Check (!(Test-ShorebirdAndroidAnalyzerListing ($archiveListing.Replace('/BUNDLE-METADATA/','/../BUNDLE-METADATA/')) $tempRoot)) 'relative_traversal_refused'
+Check (!(Test-ShorebirdAndroidAnalyzerListing ("usage`r`n"+$archiveListing) $tempRoot)) 'usage_or_warning_output_refused'
+Check (!(Test-ShorebirdAndroidAnalyzerListing ($hostListing.Replace('BUNDLE-METADATA\','BUNDLE-METADATA/')) $tempRoot)) 'mixed_windows_separators_refused'
+Check (!(Test-ShorebirdAndroidAnalyzerListing ($archiveListing.Replace('/arm64-v8a/','\arm64-v8a\')) $tempRoot)) 'mixed_archive_separators_refused'
+Check (!(Test-ShorebirdAndroidAnalyzerListing ($archiveListing.Replace('BUNDLE-METADATA','bundle-metadata')) $tempRoot)) 'archive_names_remain_case_exact'
+Check (!(Test-ShorebirdAndroidAnalyzerListing ($archiveListing+[char]0) $tempRoot)) 'nonprintable_output_refused'
+$processProbe=@{schema=1;exitCode=0;classFilesFailure=$false}
+$classified=ConvertFrom-ShorebirdAndroidProcessProbe $processProbe $hostListing $tempRoot
+Assert-ShorebirdAndroidToolProbe $classified;$script:checks++
+Reject { ConvertFrom-ShorebirdAndroidProcessProbe @{schema=1;exitCode=0;classFilesFailure='false'} $hostListing $tempRoot } 'shorebird_android_tool_probe_failed'
+Reject { ConvertFrom-ShorebirdAndroidProcessProbe (@{}+$processProbe+@{extra='unexpected'}) $hostListing $tempRoot } 'shorebird_android_tool_probe_failed'
+Reject { $bad=ConvertFrom-ShorebirdAndroidProcessProbe @{schema=1;exitCode=1;classFilesFailure=$false} $hostListing $tempRoot;Assert-ShorebirdAndroidToolProbe $bad } 'shorebird_android_tool_probe_failed'
+Reject { $bad=ConvertFrom-ShorebirdAndroidProcessProbe @{schema=1;exitCode=0;classFilesFailure=$true} $hostListing $tempRoot;Assert-ShorebirdAndroidToolProbe $bad } 'shorebird_android_tool_probe_failed'
 foreach ($invalid in @('relative/sdk','C:\sdk\..\other','C:\sdk\tool:stream','C:\sdk\trailing.','\\server\sdk')) {
     Reject { Assert-ShorebirdAndroidToolPath $invalid } 'shorebird_android_tool_path_invalid'
 }
