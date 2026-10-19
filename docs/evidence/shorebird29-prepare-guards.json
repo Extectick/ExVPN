@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-10-19T11:05:35.8463540Z",
+  "scope": "targeted cold Shorebird preparation regression",
+  "rootCause": "Pinned Shorebird FlutterCommand supports config and versions, not precache; root independently reproduced shorebird_precache_failed",
+  "checks": 101,
+  "passed": true,
+  "powerShellParse": true,
+  "diffWhitespaceCheck": true,
+  "actualSdkExecuted": false,
+  "buildExecuted": false,
+  "cloudMutationExecuted": false,
+  "files": [
+    {
+      "path": "scripts/release/prepare-shorebird.ps1",
+      "sha256": "cb127570fecb15122d97b473f92b84354db531e918ca37f6da67122d22345ca1"
+    },
+    {
+      "path": "scripts/release/shorebird-pipeline-lib.ps1",
+      "sha256": "8ab5180f0ab37482152ee9c091885fd3d47bb405c684ce0ffadb0b62427b2c87"
+    },
+    {
+      "path": "scripts/release/test-shorebird-pipeline.ps1",
+      "sha256": "410ebd6fcaa64449284c0274399d716aa04fd380e429c4938d5e2a126a9e054f"
+    },
+    {
+      "path": ".github/workflows/shorebird.yml",
+      "sha256": "82f9895f2572cbe9856777354ee19177046882a8dd8790c1d4566e77d31080c9"
+    }
+  ]
+}

@@ -28,7 +28,7 @@ function ConvertFrom-AndroidShorebirdDiagnostics {
     if ($value -isnot [Collections.IDictionary] -or
         (($value.Keys | Sort-Object) -join ',') -cne (($expected | Sort-Object) -join ',') -or
         $value.schema -ne 1 -or $value.application -cne 'ExVPN' -or $value.platform -cne 'android' -or
-        $value.version -cne '0.1.7+28' -or $value.uiRevision -isnot [long] -and $value.uiRevision -isnot [int] -or
+        $value.version -cne '0.1.8+29' -or $value.uiRevision -isnot [long] -and $value.uiRevision -isnot [int] -or
         $value.uiRevision -notin @(0,1)) { throw 'shorebird_diagnostics_identity_mismatch' }
     $updates=$value.updates
     $updateKeys=@('dataRevision','dataChannel','dartAvailable','currentDartPatch','nextDartPatch','dartRestartRequired','dartTrack')
@@ -79,7 +79,7 @@ function Assert-AndroidShorebirdPhase {
         [Parameter(Mandatory)][ValidateSet('base','staged','applied','rollbackStaged','rolledBack')][string]$Phase,
         [Parameter(Mandatory)][ValidateRange(1,2147483647)][int]$PatchNumber
     )
-    if (!$Snapshot.available -or $Snapshot.track -cne 'beta' -or $Snapshot.version -cne '0.1.7+28') {
+    if (!$Snapshot.available -or $Snapshot.track -cne 'beta' -or $Snapshot.version -cne '0.1.8+29') {
         throw 'shorebird_sdk_unavailable_or_wrong_base'
     }
     $expected=switch ($Phase) {
@@ -107,15 +107,15 @@ function Get-AndroidShorebirdInstalledIdentity {
     $build=[regex]::Matches($dump,'(?m)^\s*versionCode=([0-9]+)\b')
     $uid=[regex]::Matches($dump,'(?m)^\s*userId=([0-9]+)\b')
     $path=(Invoke-AndroidLifecycleAdb -Step "$Step-path" -AdbArguments @('shell','pm','path','ru.exvpn.exvpn')).Trim()
-    if ($version.Count -ne 1 -or $version[0].Groups[1].Value.Trim() -cne '0.1.7' -or
-        $build.Count -ne 1 -or $build[0].Groups[1].Value -cne '28' -or $uid.Count -ne 1 -or
+    if ($version.Count -ne 1 -or $version[0].Groups[1].Value.Trim() -cne '0.1.8' -or
+        $build.Count -ne 1 -or $build[0].Groups[1].Value -cne '29' -or $uid.Count -ne 1 -or
         $path -cnotmatch '\Apackage:(/data/app/[-A-Za-z0-9_=/+.~]+/base\.apk)\z') {
         throw 'shorebird_installed_identity_mismatch'
     }
     $apkPath=$Matches[1]
     $sha=(Invoke-AndroidLifecycleAdb -Step "$Step-apk-sha" -AdbArguments @('shell','sha256sum',$apkPath)).Trim()
     if ($sha -cnotmatch ('\A([a-f0-9]{64})\s+'+[regex]::Escape($apkPath)+'\z')) { throw 'shorebird_apk_hash_invalid' }
-    [ordered]@{version='0.1.7';build=28;uid=[int]$uid[0].Groups[1].Value;apkSha256=$Matches[1]}
+    [ordered]@{version='0.1.8';build=29;uid=[int]$uid[0].Groups[1].Value;apkSha256=$Matches[1]}
 }
 
 function Assert-AndroidShorebirdUnchangedApk {
@@ -123,7 +123,7 @@ function Assert-AndroidShorebirdUnchangedApk {
         [Parameter(Mandatory)][Collections.IDictionary]$After,
         [Parameter(Mandatory)][ValidatePattern('^[a-f0-9]{64}$')][string]$ExpectedSha256)
     foreach ($state in @($Before,$After)) {
-        if ($state.version -cne '0.1.7' -or $state.build -ne 28 -or $state.uid -lt 10000 -or
+        if ($state.version -cne '0.1.8' -or $state.build -ne 29 -or $state.uid -lt 10000 -or
             $state.apkSha256 -cne $ExpectedSha256) { throw 'shorebird_apk_continuity_failed' }
     }
     if ($Before.uid -ne $After.uid) { throw 'shorebird_uid_changed' }

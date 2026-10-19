@@ -1,9 +1,9 @@
 # Shorebird: подготовка Dart OTA
 
-## Реальный цикл 0.1.7+28, 2026-10-19 — в работе
+## Реальный цикл 0.1.8+29, 2026-10-19 — в работе
 
 Пользователь поручил выпустить настоящую Android/Windows базу, подписанный
-Dart-патч и проверить откат. Версия базы — **0.1.7+28 / beta**. CLI 1.6.129,
+Dart-патч и проверить откат. Версия базы — **0.1.8+29 / beta**. CLI 1.6.129,
 Flutter 5bef02a, engine 4b936a0 и существующие APK/RSA ключи сохраняются.
 Будущие совместимые Dart/UI изменения должны проходить patch workflow;
 native/assets/plugins/engine изменения требуют нового полного базового пакета.
@@ -36,6 +36,28 @@ runtime-приёмка пока не выполнены; EXVPN-E6-004 остаё
 изменения native/assets/dependencies отклоняются. Оба фактических номера патчей
 проверяются перед откатом. CI сохраняет обезличенную cloud recovery-квитанцию
 даже при последующей ошибке упаковки; повтор требует readback.
+
+Попытка base CI39239871468 (`0b45f9c`, source tag `v0.1.7`) отказала до
+native/package build и cloud registration. Причина воспроизведена локальным
+prepare без сборки приложения: CLI1.6.129 не поддерживает `shorebird flutter
+precache`. Нужно вызвать `flutter.bat precache` из строго закреплённого SDK.
+Тег не перемещается; подготовка исправляется для **0.1.8+29**. Реальные пакеты
+или патчи 0.1.7 в этом цикле не опубликованы.
+[Фактический отказ CI и локальное воспроизведение](evidence/shorebird28-sdk-prepare-failure.json).
+
+Исправленный prepare фактически выполнен последовательно для Windows и Android:
+оба `ready/complete`, CLI/Flutter/engine pins совпали. Приложение не собиралось,
+cloud API не вызывался. [Проверка SDK](evidence/shorebird29-sdk-prepare.json),
+[101 targeted guards](evidence/shorebird29-prepare-guards.json). Публичный отчёт
+CI теперь содержит только фиксированные phase/errorCode; raw diagnostics остаются
+приватными. Тег 0.1.8 создаётся после успешной сборки и аудита базы.
+
+Итоговый Full для исправленной 0.1.8+29: **12/12 PASS за 126,30 с**,
+373 app tests, source fingerprint неизменен.
+[Отчёт](evidence/fast-validation-shorebird29.json). Нативная сетевая приёмка
+не повторялась. Android +26 сохранён opaque backup на принадлежащем QA emulator;
+Windows +27 штатно вышел через tray/Dart flush, служба сохранена. Проверенная
+смена темы и возврат доказали обычный Roaming namespace; shadow не переносится.
 
 ## Проект и клиент, 2026-10-17
 

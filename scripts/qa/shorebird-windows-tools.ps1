@@ -1,4 +1,4 @@
-﻿# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 #requires -Version 5.1
 # Dot sourcing is inert. The owned installed process must be explicitly bound.
 Set-StrictMode -Version Latest
@@ -32,7 +32,7 @@ function ConvertFrom-WindowsShorebirdDiagnostics {
         ((@($d.PSObject.Properties.Name)|Sort-Object)-join ',') -cne (($keys|Sort-Object)-join ',') -or
         ($d.schema -isnot [int] -and $d.schema -isnot [long]) -or $d.schema -ne 1 -or
         $d.application -isnot [string] -or $d.application -cne 'ExVPN' -or $d.platform -isnot [string] -or $d.platform -cne 'windows' -or
-        $d.version -isnot [string] -or $d.version -cne '0.1.7+28' -or ($d.uiRevision -isnot [int] -and $d.uiRevision -isnot [long]) -or
+        $d.version -isnot [string] -or $d.version -cne '0.1.8+29' -or ($d.uiRevision -isnot [int] -and $d.uiRevision -isnot [long]) -or
         $d.uiRevision -notin @(0,1) -or $d.secureStorageAvailable -isnot [bool] -or
         $d.vpnPhase -cnotin @('unavailable','disconnected','requestingPermission','connecting','connected','reconnecting','blocked','error')) {
         throw 'qa_diagnostics_wrong_application'
@@ -95,7 +95,9 @@ if($request.operation -eq 'openExitMenu') {
     try {
         $null=$process.Start()
         $stdout=$process.StandardOutput.ReadToEndAsync();$stderr=$process.StandardError.ReadToEndAsync()
-        $process.StandardInput.Write((@{binding=$Binding;operation=$Operation;action=$Action}|ConvertTo-Json -Compress))
+        $requestBytes=[Text.UTF8Encoding]::new($false).GetBytes((@{binding=$Binding;operation=$Operation;action=$Action}|ConvertTo-Json -Compress))
+        $process.StandardInput.BaseStream.Write($requestBytes,0,$requestBytes.Length)
+        $process.StandardInput.BaseStream.Flush()
         $process.StandardInput.Close()
         if(!$process.WaitForExit(20000)){$process.Kill();$process.WaitForExit();throw 'qa_observer_deadline'}
         $output=$stdout.GetAwaiter().GetResult();$null=$stderr.GetAwaiter().GetResult()
@@ -111,7 +113,7 @@ function Assert-WindowsShorebirdPhase {
     param([Parameter(Mandatory)]$Snapshot,
         [Parameter(Mandatory)][ValidateSet('base','staged','applied','rollbackStaged','rolledBack')][string]$Phase,
         [Parameter(Mandatory)][ValidateRange(1,2147483647)][int]$PatchNumber)
-    if($Snapshot.available -isnot [bool] -or !$Snapshot.available -or $Snapshot.version -cne '0.1.7+28' -or
+    if($Snapshot.available -isnot [bool] -or !$Snapshot.available -or $Snapshot.version -cne '0.1.8+29' -or
         $Snapshot.track -cne 'beta' -or $Snapshot.storageAvailable -isnot [bool] -or !$Snapshot.storageAvailable -or
         $Snapshot.restartRequired -isnot [bool] -or ($Snapshot.uiRevision -isnot [int] -and $Snapshot.uiRevision -isnot [long])) {
         throw 'qa_sdk_unavailable_or_wrong_base'

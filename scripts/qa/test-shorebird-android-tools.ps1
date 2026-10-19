@@ -11,7 +11,7 @@ function Refuse([scriptblock]$Action) {
     Check $failed
 }
 function Fixture($Current,$Next,[int]$Ui=0,[bool]$Available=$true) {
-    @{schema=1;application='ExVPN';version='0.1.7+28';uiRevision=$Ui;platform='android';coreVersion='26.10.10-exvpn.5'
+    @{schema=1;application='ExVPN';version='0.1.8+29';uiRevision=$Ui;platform='android';coreVersion='26.10.10-exvpn.5'
       vpnPhase='disconnected';processCrashProtection=$false;errorCode=$null;secureStorageAvailable=$true
       updates=@{dataRevision=$null;dataChannel='stable';dartAvailable=$Available;currentDartPatch=$Current
         nextDartPatch=$Next;dartRestartRequired=($Current -ne $Next);dartTrack='beta'}} | ConvertTo-Json -Depth 5 -Compress
@@ -30,10 +30,10 @@ Refuse { Assert-AndroidShorebirdPhase (ConvertFrom-AndroidShorebirdDiagnostics (
 Refuse { ConvertFrom-AndroidShorebirdDiagnostics ((Fixture 3 3 1).Replace('"beta"','"stable"')) }
 Refuse { ConvertFrom-AndroidShorebirdDiagnostics ((Fixture 3 3 1).Replace('"currentDartPatch":3','"currentDartPatch":"3"')) }
 Refuse { ConvertFrom-AndroidShorebirdDiagnostics ((Fixture $null $null).Replace('"schema":1','"unexpectedSecret":"fixture","schema":1')) }
-$identity=@{version='0.1.7';build=28;uid=10169;apkSha256=('a'*64)}
+$identity=@{version='0.1.8';build=29;uid=10169;apkSha256=('a'*64)}
 Check (Assert-AndroidShorebirdUnchangedApk $identity $identity ('a'*64))
-Refuse { Assert-AndroidShorebirdUnchangedApk $identity (@{version='0.1.7';build=28;uid=10170;apkSha256=('a'*64)}) ('a'*64) }
-Refuse { Assert-AndroidShorebirdUnchangedApk $identity (@{version='0.1.7';build=28;uid=10169;apkSha256=('b'*64)}) ('a'*64) }
+Refuse { Assert-AndroidShorebirdUnchangedApk $identity (@{version='0.1.8';build=29;uid=10170;apkSha256=('a'*64)}) ('a'*64) }
+Refuse { Assert-AndroidShorebirdUnchangedApk $identity (@{version='0.1.8';build=29;uid=10169;apkSha256=('b'*64)}) ('a'*64) }
 $escaped=[Security.SecurityElement]::Escape((Fixture 3 3 1))
 [xml]$tree="<hierarchy><node package='ru.exvpn.exvpn' text='$escaped' content-desc='' /></hierarchy>"
 Check ((Get-AndroidShorebirdDiagnosticsFromUi $tree).current -eq 3)

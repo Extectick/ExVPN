@@ -154,12 +154,91 @@ function Initialize-ShorebirdCliCache([string]$Cli,[string]$PrivateDirectory) {
     # Preparation alone may run the official cold bootstrap. Its chatter is
     # intentionally private/non-JSON; every subsequent command stays strict.
     $oldSystemConfig=$env:GIT_CONFIG_SYSTEM
+    $oldStorage=$env:FLUTTER_STORAGE_BASE_URL
     try {
         $env:GIT_CONFIG_SYSTEM=New-ShorebirdGitOverlay $PrivateDirectory
         & $Cli --version *> (Join-Path $PrivateDirectory 'bootstrap-private.log')
         $code=$LASTEXITCODE
-    } finally { $env:GIT_CONFIG_SYSTEM=$oldSystemConfig }
+    } finally {
+        $env:GIT_CONFIG_SYSTEM=$oldSystemConfig
+        # The pinned cold bootstrap removes this process variable after its
+        # Flutter download. Do not let that change escape into later commands.
+        $env:FLUTTER_STORAGE_BASE_URL=$oldStorage
+    }
     if ($code -ne 0) { throw 'shorebird_cli_bootstrap_failed' }
+}
+
+function Get-ShorebirdPinnedFlutter([string]$Repository) {
+    $policy=Get-ShorebirdPolicy
+    $sdk=Join-Path $Repository ".tools/shorebird-$($policy.cliVersion)/bin/cache/flutter/$($policy.flutterRevision)"
+    Assert-ReleaseRuntimeCheckout $sdk $policy.flutterRevision
+    $engine=Invoke-ReleaseRuntimeGit $sdk @('show',"$($policy.flutterRevision):bin/internal/engine.version")
+    $enginePath=Join-Path $sdk 'bin/internal/engine.version'
+    Assert-AuditNoLinks $enginePath
+    if ($engine -cne $policy.engineRevision -or [IO.File]::ReadAllText($enginePath).Trim() -cne $engine) {
+        throw 'shorebird_flutter_pin_mismatch'
+    }
+    $flutter=Join-Path $sdk 'bin/flutter.bat'
+    Assert-AuditNoLinks $flutter
+    if (!(Test-Path -LiteralPath $flutter -PathType Leaf)) { throw 'shorebird_flutter_pin_mismatch' }
+    $flutter
+}
+
+function Invoke-ShorebirdFlutterPrecache([string]$Repository,[ValidateSet('Android','Windows')][string]$Target,[string]$PrivateDirectory) {
+    $flutter=Get-ShorebirdPinnedFlutter $Repository
+    $oldStorage=$env:FLUTTER_STORAGE_BASE_URL
+    try {
+        $env:FLUTTER_STORAGE_BASE_URL='https://download.shorebird.dev'
+        # `shorebird flutter` manages config/versions; it is not a Flutter
+        # passthrough. Invoke only the verified, exact SDK selected above.
+        & $flutter precache $(if ($Target -ceq 'Android') {'--android'} else {'--windows'}) *> (Join-Path $PrivateDirectory 'precache.log')
+        if ($LASTEXITCODE -ne 0) { throw 'shorebird_precache_failed' }
+    } finally { $env:FLUTTER_STORAGE_BASE_URL=$oldStorage }
+}
+
+function Get-ShorebirdPrepareErrorCode([string]$Message) {
+    if ($Message -cin @('shorebird_pin_mismatch','shorebird_git_failed','shorebird_cli_pin_mismatch',
+        'shorebird_cli_bootstrap_failed','shorebird_cli_cache_unprepared','shorebird_cli_cache_stale',
+        'shorebird_cli_failed','shorebird_cli_response_invalid','shorebird_bootstrap_version_mismatch',
+        'shorebird_flutter_pin_mismatch','shorebird_precache_failed','shorebird_prepare_source_invalid',
+        'flutter_runtime_checkout_mismatch','flutter_runtime_checkout_modified','flutter_runtime_engine_pin_mismatch',
+        'flutter_runtime_engine_stamp_mismatch','flutter_runtime_dart_version_mismatch','flutter_runtime_version_metadata_mismatch',
+        'linked_input_not_allowed','audit_tool_timeout','audit_tool_failed')) { return $Message }
+    'shorebird_prepare_operation_failed'
+}
+
+function Write-ShorebirdPrepareReceipt {
+    param(
+        [Parameter(Mandatory)][string]$Repository,
+        [Parameter(Mandatory)][ValidateSet('Android','Windows')][string]$Target,
+        [ValidatePattern('^$|^[a-f0-9]{40}$')][string]$SourceCommit='',
+        [Parameter(Mandatory)][ValidateSet('started','ready','failed')][string]$Status,
+        [string]$Phase='other',[string]$ErrorCode='',[string]$Path=''
+    )
+    $root=[IO.Path]::GetFullPath((Join-Path $Repository 'artifacts/shorebird-prepare'))
+    if (!(Test-Path -LiteralPath $root)) {
+        $ancestor=[IO.Path]::GetDirectoryName($root)
+        while (!(Test-Path -LiteralPath $ancestor)) { $ancestor=[IO.Path]::GetDirectoryName($ancestor) }
+        Assert-AuditNoLinks $ancestor
+        New-Item -ItemType Directory -Path $root -Force | Out-Null
+    }
+    Assert-AuditNoLinks $root
+    if (!$Path) { $Path=Join-Path $root ('prepare-'+$Target.ToLowerInvariant()+'-'+[guid]::NewGuid().ToString('N')+'.json') }
+    $Path=[IO.Path]::GetFullPath($Path)
+    if ([IO.Path]::GetDirectoryName($Path) -cne $root -or [IO.Path]::GetFileName($Path) -cnotmatch '^prepare-(android|windows)-[a-f0-9]{32}\.json$') { throw 'shorebird_prepare_receipt_path_invalid' }
+    if (Test-Path -LiteralPath $Path) { Assert-AuditNoLinks $Path }
+    if ($Phase -cnotin @('source_identity','private_directory','cli_pin','cli_checkout','cli_bootstrap','cli_cache','cli_version','flutter_precache','runtime_validation','complete')) { $Phase='other' }
+    $policy=Get-ShorebirdPolicy
+    $safe=[ordered]@{
+        schemaVersion=1;action='prepare';target=$Target;sourceCommit=$SourceCommit;status=$Status;phase=$Phase
+        errorCode=$(if ($Status -ceq 'failed') { Get-ShorebirdPrepareErrorCode $ErrorCode } else { $null })
+        cliVersion=$policy.cliVersion;cliRevision=$policy.cliRevision;flutterRevision=$policy.flutterRevision;engineRevision=$policy.engineRevision
+        nativeBuildStarted=$false;cloudRegistrationAttempted=$false;distributionApproved=$false
+    }
+    $temporary=$Path+'.tmp-'+[guid]::NewGuid().ToString('N')
+    [IO.File]::WriteAllText($temporary,($safe | ConvertTo-Json -Depth 4),[Text.UTF8Encoding]::new($false))
+    [IO.File]::Move($temporary,$Path,$true)
+    $Path
 }
 
 function Write-ShorebirdRecovery {

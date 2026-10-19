@@ -172,6 +172,7 @@ $systemConfig=Join-Path $fixture 'synthetic-system.config'
 [IO.File]::WriteAllText($systemConfig,"[core]`n`tlongpaths = false`n[exvpnqa]`n`tretained = yes`n")
 $systemHash=Get-AuditSha256 $systemConfig
 $oldSystem=$env:GIT_CONFIG_SYSTEM
+$oldStorage=$env:FLUTTER_STORAGE_BASE_URL
 try {
     $env:GIT_CONFIG_SYSTEM=$systemConfig
     $fake=Join-Path $fixture 'fake-cli.ps1'
@@ -200,17 +201,120 @@ if (!(Test-Path -LiteralPath $marker)) {
     Write-Output 'Compiling shorebird...'
     [IO.File]::WriteAllText($marker,'synthetic cached CLI')
 }
+Remove-Item Env:\FLUTTER_STORAGE_BASE_URL -ErrorAction SilentlyContinue
 Write-Output '{"status":"success","meta":{"version":"1.6.129","command":"version"},"data":{"ok":true}}'
 $global:LASTEXITCODE=0
 '@
     [IO.File]::WriteAllText($cold,$coldSource)
+    $env:FLUTTER_STORAGE_BASE_URL='https://synthetic-storage.invalid'
     $bootstrapOutput=@(Initialize-ShorebirdCliCache $cold $fixture)
     Assert-Test ($bootstrapOutput.Count -eq 0 -and (Test-Path -LiteralPath $coldMarker)) 'cold_bootstrap_has_no_success_stream_output'
     $bootstrapLog=[IO.File]::ReadAllText((Join-Path $fixture 'bootstrap-private.log'))
     Assert-Test ($bootstrapLog.Contains('Rebuilding shorebird...') -and $bootstrapLog.Contains('Compiling shorebird...')) 'cold_chatter_private_only'
+    Assert-Test ($env:FLUTTER_STORAGE_BASE_URL -ceq 'https://synthetic-storage.invalid') 'cold_bootstrap_restores_process_storage'
     $warm=Invoke-ShorebirdJson $cold @('--version') version $fixture 'warm-after-bootstrap'
     Assert-Test ($warm.ok -and $env:GIT_CONFIG_SYSTEM -ceq $systemConfig) 'post_bootstrap_json_stays_strict'
-} finally { $env:GIT_CONFIG_SYSTEM=$oldSystem }
+} finally { $env:GIT_CONFIG_SYSTEM=$oldSystem;$env:FLUTTER_STORAGE_BASE_URL=$oldStorage }
+
+# Execute the real precache invocation against a tiny synthetic executable,
+# never a SDK. Check argv and environment on both target paths, including failure.
+$fakeFlutter=Join-Path $fixture 'fake-flutter.ps1'
+[IO.File]::WriteAllText($fakeFlutter,@'
+[IO.File]::WriteAllText((Join-Path $PSScriptRoot 'precache-arguments.json'),(@{argv=@($args);storage=$env:FLUTTER_STORAGE_BASE_URL} | ConvertTo-Json))
+$global:LASTEXITCODE=$(if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'fail-precache')) {64} else {0})
+'@)
+function Invoke-SyntheticPrecache([string]$Target) {
+    function Get-ShorebirdPinnedFlutter([string]$Repository) { $fakeFlutter }
+    Invoke-ShorebirdFlutterPrecache $fixture $Target $fixture
+}
+$oldStorage=$env:FLUTTER_STORAGE_BASE_URL
+try {
+    $env:FLUTTER_STORAGE_BASE_URL='https://caller-storage.invalid'
+    foreach ($target in @('Android','Windows')) {
+        $output=@(Invoke-SyntheticPrecache $target)
+        $arguments=Get-Content -LiteralPath (Join-Path $fixture 'precache-arguments.json') -Raw | ConvertFrom-Json -AsHashtable
+        Assert-Test ($arguments.argv.Count -eq 2 -and $arguments.argv[0] -ceq 'precache' -and $arguments.argv[1] -ceq ('--'+$target.ToLowerInvariant())) 'precache_calls_flutter_directly_for_target'
+        Assert-Test ($arguments.storage -ceq 'https://download.shorebird.dev' -and $env:FLUTTER_STORAGE_BASE_URL -ceq 'https://caller-storage.invalid' -and $output.Count -eq 0) 'precache_pinned_storage_and_silent_result'
+    }
+    [IO.File]::WriteAllText((Join-Path $fixture 'fail-precache'),'synthetic failure')
+    Assert-Refuses { Invoke-SyntheticPrecache Windows } 'precache_nonzero_exit_refused'
+    Assert-Test ($env:FLUTTER_STORAGE_BASE_URL -ceq 'https://caller-storage.invalid') 'precache_failure_restores_storage'
+    Remove-Item -LiteralPath (Join-Path $fixture 'fail-precache')
+} finally { $env:FLUTTER_STORAGE_BASE_URL=$oldStorage }
+
+$syntheticSdk=Join-Path $fixture ".tools/shorebird-$($policy.cliVersion)/bin/cache/flutter/$($policy.flutterRevision)"
+New-Item -ItemType Directory -Path (Join-Path $syntheticSdk 'bin/internal') -Force | Out-Null
+[IO.File]::WriteAllText((Join-Path $syntheticSdk 'bin/flutter.bat'),'synthetic fixture, never executed')
+[IO.File]::WriteAllText((Join-Path $syntheticSdk 'bin/internal/engine.version'),$policy.engineRevision)
+function Get-SyntheticPinnedFlutter([bool]$RejectCheckout=$false) {
+    function Assert-ReleaseRuntimeCheckout([string]$Root,[string]$Revision) {
+        if ($RejectCheckout -or $Root -cne $syntheticSdk -or $Revision -cne $policy.flutterRevision) { throw 'flutter_runtime_checkout_mismatch' }
+    }
+    function Invoke-ReleaseRuntimeGit([string]$Root,[string[]]$Arguments) { $policy.engineRevision }
+    Get-ShorebirdPinnedFlutter $fixture
+}
+Assert-Test ((Get-SyntheticPinnedFlutter) -ceq (Join-Path $syntheticSdk 'bin/flutter.bat')) 'precache_selects_only_exact_pinned_sdk'
+Assert-Refuses { Get-SyntheticPinnedFlutter $true } 'precache_checkout_identity_required'
+[IO.File]::WriteAllText((Join-Path $syntheticSdk 'bin/internal/engine.version'),('f'*40))
+Assert-Refuses { Get-SyntheticPinnedFlutter } 'precache_engine_drift_refused_before_execution'
+
+# Run the actual prepare try/catch/finally with synthetic dependencies. This
+# proves a failed substep survives runner loss as a safe receipt, and that
+# neither environment restoration nor a failed preparation claims success.
+$prepareErrors=$null;$prepareTokens=$null
+$prepareAst=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root 'scripts/release/prepare-shorebird.ps1'),[ref]$prepareTokens,[ref]$prepareErrors)
+$prepareTry=@($prepareAst.EndBlock.Statements | Where-Object {$_ -is [Management.Automation.Language.TryStatementAst]})
+Assert-Test (!$prepareErrors.Count -and $prepareTry.Count -eq 1) 'actual_prepare_control_flow_found'
+$prepareBody=[scriptblock]::Create($prepareTry[0].Extent.Text)
+$pinDirectory=Join-Path $fixture 'scripts/bootstrap'
+New-Item -ItemType Directory -Path $pinDirectory -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $root 'scripts/bootstrap/shorebird.lock.json') -Destination (Join-Path $pinDirectory 'shorebird.lock.json')
+function Invoke-SyntheticPrepare([string]$Failure='') {
+    $repository=$fixture;$Target='Windows';$phase='source_identity';$privateRun=$null;$prepareReceipt='';$sourceCommit=''
+    $saved=@{}
+    foreach ($name in @('PUB_CACHE','FLUTTER_STORAGE_BASE_URL','CI','FLUTTER_SUPPRESS_ANALYTICS','DART_SUPPRESS_ANALYTICS')) { $saved[$name]=[Environment]::GetEnvironmentVariable($name,'Process') }
+    function Invoke-ShorebirdGit([string]$Repository,[string[]]$Arguments) { 'a'*40 }
+    function New-ShorebirdPrivateDirectory([string]$Repository,[string]$Kind) {
+        $directory=Join-Path $fixture ('private-prepare-'+[guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $directory | Out-Null
+        $directory
+    }
+    function Assert-ReleaseRuntimeCheckout([string]$Root,[string]$Revision) { }
+    function Get-AuditSha256([string]$Path) {
+        if ($Path.EndsWith('shorebird.ps1')) { $pin.cli.powershellEntrypointSha256 } else { $pin.cli.pubspecLockSha256 }
+    }
+    function Initialize-ShorebirdCliCache([string]$Cli,[string]$PrivateDirectory) { }
+    function Get-ShorebirdCli([string]$Repository) { 'synthetic CLI, never executed' }
+    function Invoke-ShorebirdJson {
+        @{shorebird_version=$policy.cliVersion;flutter_revision=$policy.flutterRevision;engine_revision=$policy.engineRevision}
+    }
+    function Invoke-ShorebirdFlutterPrecache {
+        if ($Failure -ceq 'precache') { throw 'shorebird_precache_failed' }
+    }
+    function Get-ReleaseFlutterRuntime {
+        if ($Failure -ceq 'runtime') { throw 'SYNTHETIC-PRIVATE-DIAGNOSTIC https://secret.invalid/private' }
+        @{Identity=@{flutterRevision=$policy.flutterRevision}}
+    }
+    $failureMessage=''
+    try { . $prepareBody } catch { $failureMessage=$_.Exception.Message }
+    [pscustomobject]@{message=$failureMessage;receipt=$prepareReceipt}
+}
+$oldStorage=$env:FLUTTER_STORAGE_BASE_URL
+try {
+    $env:FLUTTER_STORAGE_BASE_URL='https://caller-storage.invalid'
+    $failedPrepare=Invoke-SyntheticPrepare precache
+    $record=Get-Content -LiteralPath $failedPrepare.receipt -Raw | ConvertFrom-Json -AsHashtable
+    Assert-Test ($record.status -ceq 'failed' -and $record.phase -ceq 'flutter_precache' -and $record.errorCode -ceq 'shorebird_precache_failed' -and $failedPrepare.message.Contains('phase=flutter_precache')) 'actual_precache_failure_exports_exact_safe_phase'
+    Assert-Test (!$record.cloudRegistrationAttempted -and !$record.nativeBuildStarted -and !$record.distributionApproved -and $env:FLUTTER_STORAGE_BASE_URL -ceq 'https://caller-storage.invalid') 'failed_prepare_keeps_env_and_no_publish_claim'
+    $failedPrepare=Invoke-SyntheticPrepare runtime
+    $text=[IO.File]::ReadAllText($failedPrepare.receipt)
+    $record=$text | ConvertFrom-Json -AsHashtable
+    Assert-Test ($record.phase -ceq 'runtime_validation' -and $record.errorCode -ceq 'shorebird_prepare_operation_failed' -and !$text.Contains('SYNTHETIC-PRIVATE') -and !$text.Contains('secret.invalid') -and !$text.Contains($fixture) -and !$failedPrepare.message.Contains('secret.invalid')) 'actual_unknown_error_diagnostics_never_exported'
+    $readyPrepare=Invoke-SyntheticPrepare
+    $record=Get-Content -LiteralPath $readyPrepare.receipt -Raw | ConvertFrom-Json -AsHashtable
+    Assert-Test (!$readyPrepare.message -and $record.status -ceq 'ready' -and $record.phase -ceq 'complete' -and $null -eq $record.errorCode) 'actual_prepare_success_receipt_after_all_gates'
+} finally { $env:FLUTTER_STORAGE_BASE_URL=$oldStorage }
+Assert-Refuses { Write-ShorebirdPrepareReceipt -Repository $fixture -Target Windows -Status failed -Path (Join-Path $fixture 'outside.json') } 'prepare_receipt_cannot_escape_owned_directory'
 
 $recovery=Write-ShorebirdRecovery -Repository $fixture -Action base -Version '0.1.7+28' -Target Android -SourceCommit ('a'*40) -Status attempting -CloudOutcome unknown -Phase shorebird_release
 $record=Get-Content -LiteralPath $recovery -Raw | ConvertFrom-Json -AsHashtable
@@ -232,5 +336,6 @@ Assert-Refuses { Write-ShorebirdRecovery -Repository $fixture -Action base -Vers
 $workflow=[IO.File]::ReadAllText((Join-Path $root '.github/workflows/shorebird.yml'))
 Assert-Test ($workflow -cmatch 'include-hidden-files: true') 'base_artifact_keeps_required_hidden_notice'
 Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized cloud recovery identity even after failure\s+if: always\(\).*?path: artifacts/shorebird-recovery/\*\.json') 'failure_recovery_upload_always_and_allowlisted'
+Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized SDK preparation diagnosis even after failure\s+if: always\(\).*?path: artifacts/shorebird-prepare/\*\.json') 'prepare_diagnosis_upload_always_and_allowlisted'
 
 Write-Host "Shorebird pipeline guards: $script:checks checks PASS; no SDK, private signing inputs or cloud operations."

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.7+28",
+  "sourceCommit": "0b45f9cdc9c6199fb9620130428e800b16fc237f",
+  "workflowRunId": 39239871468,
+  "conclusion": "failure",
+  "failedStage": "Prepare exact Shorebird CLI and Flutter",
+  "platforms": [
+    "Android",
+    "Windows"
+  ],
+  "nativeBuildsStarted": false,
+  "appPackageBuildsStarted": false,
+  "cloudReleaseAttempted": false,
+  "localReproduction": {
+    "target": "Windows",
+    "flutterRevision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+    "reason": "Pinned CLI flutter command only supports config and versions; precache is not a passthrough subcommand",
+    "cliVersion": "1.6.129",
+    "cliRevision": "9fe1370bdd1d2f117cc08c57ae416b794ed92440",
+    "phase": "precache",
+    "result": "shorebird_precache_failed"
+  },
+  "sourceTagMoved": false,
+  "nextBaseVersion": "0.1.8+29"
+}

@@ -175,6 +175,14 @@ jobs:
           path: artifacts/shorebird-recovery/*.json
           if-no-files-found: ignore
           retention-days: 90
+      - name: Preserve sanitized SDK preparation diagnosis even after failure
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: shorebird-prepare-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/shorebird-prepare/*.json
+          if-no-files-found: ignore
+          retention-days: 90
 
   rollback:
     if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/main' && inputs.operation == 'rollback'

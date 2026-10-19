@@ -6,15 +6,22 @@
 
 ## Сводка этапов
 
-Цикл **0.1.7+28 / Shorebird beta**, 2026-10-19: рабочее дерево; commit ожидается.
+Цикл **0.1.8+29 / Shorebird beta**, 2026-10-19: рабочее дерево; commit ожидается.
 Служебный developer API key и существующий RSA signing key сохранены через `gh`
 в protected environment `demo-release`. SDK pins не менялись; реальные базы,
 подписанный патч и откат ниже пока не приняты. [Методика](SHOREBIRD.md).
-Подготовка: final Full 12/12 PASS, 120,30 с, source fingerprint неизменен;
+Подготовка 0.1.7: final Full 12/12 PASS, 120,30 с, source fingerprint неизменен;
 [отчёт](evidence/fast-validation-shorebird28.json). Реальные cloud/device gates
 ещё не заменяются этой отметкой.
+Его CI39239871468 остановился на неподдерживаемой команде подготовки SDK,
+до сборок и облака; [точное наблюдение](evidence/shorebird28-sdk-prepare-failure.json).
+Тег `v0.1.7` сохранён; исправленная база — 0.1.8+29.
+Исправленная подготовка Windows/Android SDK фактически PASS без сборки приложения;
+итоговый Full0.1.8 **12/12 PASS за 126,30 с**, source unchanged.
+[SDK](evidence/shorebird29-sdk-prepare.json),
+[Full](evidence/fast-validation-shorebird29.json). Cloud/runtime пункты открыты.
 
-- [ ] **EXVPN-E6-012** — Опубликовать настоящую Shorebird-базу 0.1.7+28
+- [ ] **EXVPN-E6-012** — Опубликовать настоящую Shorebird-базу 0.1.8+29
   Android/Windows. Критерий: один build/upload на платформу, прежний APK signer,
   strict RSA public pin, проверенные runtime notices/AOT и cloud receipts;
   установленная база читает настоящий updater. Зависимость: E6-004.

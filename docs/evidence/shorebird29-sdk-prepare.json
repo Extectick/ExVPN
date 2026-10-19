@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "scope": "Actual local SDK preparation only; no native/app build or cloud",
+  "source": "working tree after 0b45f9c; commit pending",
+  "prepareScriptSha256": "cb127570fecb15122d97b473f92b84354db531e918ca37f6da67122d22345ca1",
+  "pipelineLibrarySha256": "8ab5180f0ab37482152ee9c091885fd3d47bb405c684ce0ffadb0b62427b2c87",
+  "platforms": [
+    {
+      "schemaVersion": 1,
+      "action": "prepare",
+      "target": "Windows",
+      "sourceCommit": "0b45f9cdc9c6199fb9620130428e800b16fc237f",
+      "status": "ready",
+      "phase": "complete",
+      "errorCode": null,
+      "cliVersion": "1.6.129",
+      "cliRevision": "9fe1370bdd1d2f117cc08c57ae416b794ed92440",
+      "flutterRevision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+      "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+      "nativeBuildStarted": false,
+      "cloudRegistrationAttempted": false,
+      "distributionApproved": false
+    },
+    {
+      "schemaVersion": 1,
+      "action": "prepare",
+      "target": "Android",
+      "sourceCommit": "0b45f9cdc9c6199fb9620130428e800b16fc237f",
+      "status": "ready",
+      "phase": "complete",
+      "errorCode": null,
+      "cliVersion": "1.6.129",
+      "cliRevision": "9fe1370bdd1d2f117cc08c57ae416b794ed92440",
+      "flutterRevision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+      "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+      "nativeBuildStarted": false,
+      "cloudRegistrationAttempted": false,
+      "distributionApproved": false
+    }
+  ]
+}
