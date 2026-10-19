@@ -6,10 +6,12 @@
 
 ## Сводка этапов
 
-Исходники **0.1.1+22**, 2026-10-18: итоговый Full **12/12 PASS за 85,46 с**,
-284 app tests, fingerprint неизменен; tag `v0.1.1`. Новые native-пакеты в этом
-задании не собирались; runtime-отчёты сохраняют исходные номера +19/+20/+21.
-[Состав версии](RELEASE_0.1.1.md), [проверка](evidence/fast-validation-v0.1.1.json).
+Выпуск **0.1.6+27**, 2026-10-19: итоговый Full **12/12 PASS за 126,78 с**,
+373 app tests, fingerprint неизменен; tag `v0.1.6`, исходники `ae35c9a`.
+Android и Windows собраны и опубликованы одним release workflow39226424305;
+15 публичных файлов и оба подписанных beta feed прошли независимую сверку.
+[Состав версии](releases/0.1.6.md), [Full](evidence/fast-validation-v0.1.6.json),
+[доставка](evidence/release-v0.1.6.json). Preview; E1 и стабильная приёмка открыты.
 
 - [x] **EXVPN-E7-007** — Выпустить 0.1.0 Demo для Android и Windows через
   GitHub Actions. Поручение пользователя: 2026-10-17. Критерий: обе сборки +18
@@ -844,15 +846,24 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   tests PASS (13 новых), targeted analyze PASS. Проверено 2026-10-19: final
   Full **12/12 PASS за 126,78 с**, 373 app tests, source unchanged;
   [отчёт](evidence/fast-validation-v0.1.6.json).
-  Рабочее дерево; commit ожидается и будет указан после публикации.
-- [ ] **EXVPN-E7-012** — Опубликовать 0.1.6+27 в существующий канал обновлений.
+  Исходники: [ae35c9a](https://github.com/Extectick/ExVPN/commit/ae35c9ae2bcff26dac6a0a37d743a446ba6e2d35).
+- [x] **EXVPN-E7-012** — Опубликовать 0.1.6+27 в существующий канал обновлений.
   Критерий: один финальный Full на замороженных исходниках, подписанный Android,
   Windows package, immutable v0.1.6, обе platform jobs и оба подписанных feed,
   проверка публичных hashes/состава/версий. Без повторной сетевой VPN-матрицы:
   native core/служба/маршруты не менялись. Дублирующий development CI подавляется
   в release commit; manual release workflow сохраняет собственные проверки.
   Windows unsigned остаётся Preview, E1 и native camera не закрываются.
-  Final Full 12/12 PASS; tag/workflow/public audit ещё ожидаются.
+  Final Full 12/12 PASS; tag `v0.1.6` на `ae35c9a` создан.
+  [Release workflow 39226424305](https://github.com/Extectick/ExVPN/actions/runs/39226424305)
+  **SUCCESS**, обе сборки и публикация. Проверено 2026-10-19: все **15 assets**
+  скачаны, GitHub digests/sizes и 14 checksum entries совпали; APK +27/min30/target36,
+  прежний release signer, 47 fresh JVM tests, notices/SBOM/source bindings,
+  Ed25519 Windows и Android beta feeds PASS. Source CI отдельно не запускался:
+  проверки выполнены самим release workflow; локальные native builds не дублировались.
+  [Релиз](https://github.com/Extectick/ExVPN/releases/tag/v0.1.6),
+  [независимый аудит](evidence/release-v0.1.6.json). Установка/runtime в этом
+  цикле не повторялись; stableReady=false, Windows unsigned.
 
 ## Цикл 0.1.5 — полные обновления, 2026-10-19
 

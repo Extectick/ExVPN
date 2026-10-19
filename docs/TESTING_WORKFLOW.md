@@ -1,15 +1,20 @@
 # Быстрый цикл разработки и проверки ExVPN
 
-Кандидат **0.1.6+27**, 2026-10-19: final Full **12/12 PASS за 126,78 с**,
+Выпуск **0.1.6+27**, 2026-10-19: final Full **12/12 PASS за 126,78 с**,
 373 app tests, fingerprint unchanged; [отчёт](evidence/fast-validation-v0.1.6.json).
 Первый прогон остановился на двух lint-замечаниях; отдельная app-проверка
 выявила четыре устаревших ожидания тестов формы/partial refresh. Они исправлены
 до итогового Full без ослабления consent/race/data-preservation критериев.
-Следующая сборка выполняется только в release workflow: отдельный development
-CI подавляется в commit через skip ci, локальные APK/EXE не дублируются.
+Нативные пакеты собраны только в release workflow: отдельный development
+CI подавлен в commit через skip ci, локальные APK/EXE не дублировались.
 Повторная системная VPN-матрица не выполняется: native исходники не менялись.
-Публичные пакеты/подписанные feeds проверяются отдельно после публикации;
-Preview не закрывает E1/стабильную приёмку/подпись издателя Windows.
+Workflow39226424305 SUCCESS: Android/Windows/publish; 47 Android JVM tests.
+Все 15 публичных assets, 14 checksum entries, APK signer/source/notices/SBOM
+и оба Ed25519 platform feed прошли [независимую сверку](evidence/release-v0.1.6.json).
+Проверен только один CI run для source commit: отдельной verify-сборки не было.
+Preview не закрывает E1/стабильную приёмку/подпись издателя Windows;
+установку и VPN runtime в этом цикле не повторяли.
+Исходники: [ae35c9a](https://github.com/Extectick/ExVPN/commit/ae35c9ae2bcff26dac6a0a37d743a446ba6e2d35).
 
 Кандидат 0.1.5+26, 2026-10-19: **12/12 PASS за 216,79 с**, 366 app tests,
 source fingerprint unchanged. [Full](evidence/fast-validation-v0.1.5.json).
