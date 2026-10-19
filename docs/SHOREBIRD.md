@@ -67,6 +67,16 @@ test script оставил LASTEXITCODE от намеренно ошибочно
 не запускались, версия0.1.8+29 ещё не занята. Состав и поведение продукта
 не менялись; уже пройденный Full не повторялся ради exit-state драйвера.
 
+Base run39243607109 (`265c3f0`) прошёл Checks, SDK preparation и native build,
+но release guard отказал из-за изменённого checkout до сборки UI и обращения
+к cloud registration. Причина изменения пока не установлена. Добавлены ранние
+clean gates и ограниченная публичная квитанция с относительными путями/хешами;
+отказ при грязном дереве сохраняется. Отдельная операция `diagnose` запускает
+только Windows Checks без Shorebird SDK, native build, signing или публикации.
+123 targeted synthetic checks через Actions harness дали exit0; Full и native
+сборки для этой диагностики не повторялись.
+[Проверка guard и диагностического режима](evidence/shorebird29-source-diagnosis.json).
+
 ## Проект и клиент, 2026-10-17
 
 Пользователь завершил вход в CLI. Проверка аккаунта подтвердила тариф **free**;

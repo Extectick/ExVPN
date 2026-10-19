@@ -21,6 +21,12 @@
 [SDK](evidence/shorebird29-sdk-prepare.json),
 [Full](evidence/fast-validation-shorebird29.json). Cloud/runtime пункты открыты.
 
+CI39243607109 прошёл Checks/SDK/native, затем clean-source guard остановил
+release до UI build и cloud registration. Причина dirty checkout выясняется
+отдельным Windows-only `diagnose`, без повторной native сборки. Добавленные
+ранние gates и safe receipt проверены 123 synthetic checks/Actions exit0.
+[Доказательство](evidence/shorebird29-source-diagnosis.json).
+
 - [ ] **EXVPN-E6-012** — Опубликовать настоящую Shorebird-базу 0.1.8+29
   Android/Windows. Критерий: один build/upload на платформу, прежний APK signer,
   strict RSA public pin, проверенные runtime notices/AOT и cloud receipts;

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-10-19T11:42:40.0741213Z",
+  "scope": "bounded public source diagnosis and early release guards",
+  "checks": 123,
+  "actionsHarnessExit": 0,
+  "powerShellParse": true,
+  "diffWhitespaceCheck": true,
+  "dirtySourceStillFatal": true,
+  "receiptLimits": {
+    "porcelainCharacters": 131072,
+    "entries": 64,
+    "pathCharacters": 240,
+    "perFileBytes": 16777216,
+    "totalHashBytes": 67108864
+  },
+  "diagnoseTargets": [
+    "Windows"
+  ],
+  "diagnoseNativeBuilds": false,
+  "diagnoseCloudOrSigning": false,
+  "actualSdkExecuted": false,
+  "buildExecuted": false,
+  "cloudMutationExecuted": false,
+  "fullSuiteRepeated": false,
+  "files": [
+    {
+      "path": "scripts/release/shorebird-pipeline-lib.ps1",
+      "sha256": "cacd942043fa01bdba1ac88a6e6c70edddad6e1ebc98724090d8d57087421dcc"
+    },
+    {
+      "path": "scripts/release/test-shorebird-pipeline.ps1",
+      "sha256": "48f06f4d9a9d2f49dbcdff27e5da2dbf7faa592bc8b368fed5291bfbc211f72d"
+    },
+    {
+      "path": ".github/workflows/shorebird.yml",
+      "sha256": "e1e7b3ce846ba640d2063667b3fa50c24a7939879c045d4e02f848b0970ba675"
+    }
+  ]
+}

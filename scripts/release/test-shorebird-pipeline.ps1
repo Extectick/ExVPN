@@ -109,6 +109,7 @@ New-Item -ItemType Directory -Path (Join-Path $fixture 'apps/exvpn/lib') -Force 
 $null=Invoke-ShorebirdGit $fixture @('init','--quiet')
 $null=Invoke-ShorebirdGit $fixture @('config','user.name','Synthetic QA')
 $null=Invoke-ShorebirdGit $fixture @('config','user.email','qa@example.invalid')
+[IO.File]::WriteAllText((Join-Path $fixture '.gitignore'),"artifacts/`n")
 [IO.File]::WriteAllText((Join-Path $fixture 'apps/exvpn/lib/ui_revision.dart'),'const revision = 0;')
 $null=Invoke-ShorebirdGit $fixture @('add','--all');$null=Invoke-ShorebirdGit $fixture @('-c','commit.gpgsign=false','commit','--quiet','-m','synthetic base')
 $baseSha=Get-ShorebirdSourceCommit $fixture
@@ -137,6 +138,53 @@ $null=Invoke-ShorebirdGit $fixture @('-c','commit.gpgsign=false','commit','--qui
 [IO.File]::WriteAllText((Join-Path $fixture 'apps/exvpn/pubspec.yaml'),'version: 0.1.8+29')
 $null=Invoke-ShorebirdGit $fixture @('add','--all');$null=Invoke-ShorebirdGit $fixture @('-c','commit.gpgsign=false','commit','--quiet','-m','synthetic forbidden dependency change')
 Assert-Refuses { Assert-ShorebirdPatchSource $fixture $baseSha } 'real_git_dependency_change_refused'
+
+# A real dirty Git fixture must still fail, while a public receipt diagnoses
+# tracked/untracked/deleted paths without exporting local/private material.
+$sourceFixture=Join-Path $root ('.private/shorebird-source-tests/'+[guid]::NewGuid().ToString('N'))
+$sourceFiles=Join-Path $sourceFixture 'apps/exvpn/lib'
+New-Item -ItemType Directory -Path $sourceFiles -Force | Out-Null
+$null=Invoke-ShorebirdGit $sourceFixture @('init','--quiet')
+$null=Invoke-ShorebirdGit $sourceFixture @('config','user.name','Synthetic QA')
+$null=Invoke-ShorebirdGit $sourceFixture @('config','user.email','qa@example.invalid')
+[IO.File]::WriteAllText((Join-Path $sourceFixture '.gitignore'),"artifacts/`n")
+[IO.File]::WriteAllText((Join-Path $sourceFiles 'keep.dart'),'synthetic base')
+[IO.File]::WriteAllText((Join-Path $sourceFiles 'deleted.dart'),'synthetic deleted base')
+$null=Invoke-ShorebirdGit $sourceFixture @('add','--all')
+$null=Invoke-ShorebirdGit $sourceFixture @('-c','commit.gpgsign=false','commit','--quiet','-m','synthetic clean source')
+$sourceHead=Get-ShorebirdSourceCommit $sourceFixture
+[IO.File]::WriteAllText((Join-Path $sourceFiles 'keep.dart'),'synthetic modified source')
+Remove-Item -LiteralPath (Join-Path $sourceFiles 'deleted.dart')
+[IO.File]::WriteAllText((Join-Path $sourceFiles 'generated.dart'),'synthetic generated source')
+[IO.File]::WriteAllText((Join-Path $sourceFixture 'LOCAL-PRIVATE-INPUT.txt'),'SYNTHETIC-PRIVATE-CONTENTS')
+Assert-Refuses { Get-ShorebirdSourceCommit $sourceFixture -Phase after_checks } 'dirty_source_still_fatal_with_receipt'
+$sourceReceiptPath=@(Get-ChildItem -LiteralPath (Join-Path $sourceFixture 'artifacts/shorebird-source') -File -Filter '*.json')[0].FullName
+$sourceText=[IO.File]::ReadAllText($sourceReceiptPath)
+$sourceReceipt=$sourceText | ConvertFrom-Json -AsHashtable
+Assert-Test ($sourceReceipt.sourceCommit -ceq $sourceHead -and $sourceReceipt.phase -ceq 'after_checks' -and !$sourceReceipt.clean -and !$sourceReceipt.distributionApproved -and !$sourceReceipt.rawDiagnosticsIncluded) 'dirty_receipt_source_and_checkpoint_bound'
+$modified=@($sourceReceipt.entries | Where-Object path -CEQ 'apps/exvpn/lib/keep.dart')
+$deleted=@($sourceReceipt.entries | Where-Object path -CEQ 'apps/exvpn/lib/deleted.dart')
+$generated=@($sourceReceipt.entries | Where-Object path -CEQ 'apps/exvpn/lib/generated.dart')
+Assert-Test ($modified.Count -eq 1 -and $modified[0].status -ceq ' M' -and $modified[0].sha256 -ceq (Get-AuditSha256 (Join-Path $sourceFiles 'keep.dart'))) 'dirty_tracked_file_actual_hash'
+Assert-Test ($generated.Count -eq 1 -and $generated[0].status -ceq '??' -and $generated[0].sha256 -ceq (Get-AuditSha256 (Join-Path $sourceFiles 'generated.dart'))) 'dirty_untracked_public_file_actual_hash'
+Assert-Test ($deleted.Count -eq 1 -and $deleted[0].hashState -ceq 'missing' -and $null -eq $deleted[0].sha256) 'deleted_source_diagnosed_without_read'
+Assert-Test ($sourceReceipt.omittedCount -ge 1 -and !$sourceText.Contains('LOCAL-PRIVATE-INPUT') -and !$sourceText.Contains('SYNTHETIC-PRIVATE-CONTENTS') -and !$sourceText.Contains($sourceFixture) -and !$sourceText.Contains('synthetic modified source')) 'dirty_receipt_does_not_export_private_paths_or_contents'
+foreach ($unsafe in @('../apps/exvpn/lib/x.dart','apps/exvpn/lib/../x.dart','.private/profile.json','config/secrets/user.json','apps/exvpn/.dart_tool/package_config.json',"apps/exvpn/lib/line`nbreak.dart",'C:/outside.dart')) {
+    Assert-Test (!(Test-ShorebirdPublicSourcePath $unsafe)) 'source_diagnosis_rejects_unsafe_or_private_path'
+}
+$largePath=Join-Path $sourceFiles 'large.dart'
+$largeStream=[IO.File]::Open($largePath,[IO.FileMode]::CreateNew)
+try { $largeStream.SetLength(17MB) } finally { $largeStream.Dispose() }
+$largeReceipt=Write-ShorebirdSourceReceipt $sourceFixture $sourceHead after_sdk ("?? apps/exvpn/lib/large.dart"+[char]0)
+$record=Get-Content -LiteralPath $largeReceipt -Raw | ConvertFrom-Json -AsHashtable
+Assert-Test ($record.entries[0].hashState -ceq 'size_budget' -and $null -eq $record.entries[0].sha256) 'dirty_hash_read_is_size_bounded'
+$manyStatus=((1..80 | ForEach-Object {"?? apps/exvpn/lib/file$_.dart"+[char]0}) -join '')
+$manyReceipt=Write-ShorebirdSourceReceipt $sourceFixture $sourceHead after_sdk $manyStatus
+$record=Get-Content -LiteralPath $manyReceipt -Raw | ConvertFrom-Json -AsHashtable
+Assert-Test ($record.entries.Count -eq 64 -and $record.omittedCount -eq 16 -and $record.truncated -and (Get-Item -LiteralPath $manyReceipt).Length -lt 32KB) 'dirty_receipt_count_and_output_bounded'
+$renameReceipt=Write-ShorebirdSourceReceipt $sourceFixture $sourceHead after_sdk ("R  apps/exvpn/lib/moved.dart"+[char]0+"apps/exvpn/lib/original.dart"+[char]0+"?? apps/exvpn/lib/generated.dart"+[char]0)
+$record=Get-Content -LiteralPath $renameReceipt -Raw | ConvertFrom-Json -AsHashtable
+Assert-Test ($record.observedCount -eq 2 -and $record.entries.Count -eq 2 -and $record.entries[0].path -ceq 'apps/exvpn/lib/moved.dart') 'nul_rename_origin_not_misparsed_as_status'
 
 $bytesPath=Join-Path $fixture 'base.bin'
 [IO.File]::WriteAllBytes($bytesPath,[byte[]]@(1,2,3,4))
@@ -337,6 +385,12 @@ $workflow=[IO.File]::ReadAllText((Join-Path $root '.github/workflows/shorebird.y
 Assert-Test ($workflow -cmatch 'include-hidden-files: true') 'base_artifact_keeps_required_hidden_notice'
 Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized cloud recovery identity even after failure\s+if: always\(\).*?path: artifacts/shorebird-recovery/\*\.json') 'failure_recovery_upload_always_and_allowlisted'
 Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized SDK preparation diagnosis even after failure\s+if: always\(\).*?path: artifacts/shorebird-prepare/\*\.json') 'prepare_diagnosis_upload_always_and_allowlisted'
+Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized source guard diagnosis even after failure\s+if: always\(\).*?path: artifacts/shorebird-source/\*\.json') 'source_diagnosis_upload_always_and_allowlisted'
+Assert-Test ($workflow -cmatch 'options: \[base, patch, rollback, diagnose\]' -and $workflow -cmatch 'fromJSON\(inputs.operation == ''diagnose'' && ''\["Windows"\]''') 'diagnose_has_only_windows_matrix_target'
+foreach ($step in @('Prepare exact Shorebird CLI and Flutter','Build once and optionally publish signed beta','Upload audited artifacts and sanitized receipts only')) {
+    Assert-Test ($workflow -cmatch ('name: '+[regex]::Escape($step)+'\r?\n\s+if: inputs.operation != ''diagnose''')) 'diagnose_skips_sdk_secret_step_and_promotion'
+}
+Assert-Test ($workflow.IndexOf('name: Require clean source after Checks') -lt $workflow.IndexOf('name: Prepare exact Shorebird CLI and Flutter') -and $workflow.IndexOf('name: Require clean source after SDK before native builds') -lt $workflow.IndexOf('name: Build Android JNI for base only')) 'dirty_source_checked_before_sdk_and_native_builds'
 
 Write-Host "Shorebird pipeline guards: $script:checks checks PASS; no SDK, private signing inputs or cloud operations."
 # Expected refusal fixtures leave native exit codes behind. Actions propagates

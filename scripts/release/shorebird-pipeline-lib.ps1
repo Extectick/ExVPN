@@ -18,13 +18,91 @@ function Invoke-ShorebirdGit([string]$Repository, [string[]]$Arguments) {
     ($result -join "`n").TrimEnd("`r", "`n")
 }
 
-function Get-ShorebirdSourceCommit([string]$Repository) {
+function Get-ShorebirdSourceCommit([string]$Repository,[ValidateSet('source_guard','after_checks','after_sdk')][string]$Phase='source_guard') {
     $sha = Invoke-ShorebirdGit $Repository @('rev-parse','--verify','HEAD')
-    if ($sha -cnotmatch '^[a-f0-9]{40}$' -or
-        (Invoke-ShorebirdGit $Repository @('status','--porcelain','--untracked-files=normal'))) {
+    $status = Invoke-ShorebirdGit $Repository @('status','--porcelain=v1','-z','--untracked-files=normal')
+    if ($sha -cnotmatch '^[a-f0-9]{40}$' -or $status) {
+        if ($sha -cmatch '^[a-f0-9]{40}$' -and $status) {
+            try { $null=Write-ShorebirdSourceReceipt $Repository $sha $Phase $status } catch { }
+        }
         throw 'shorebird_source_not_clean'
     }
     $sha
+}
+
+function Test-ShorebirdPublicSourcePath([string]$Path) {
+    if (!$Path -or $Path.Length -gt 240 -or $Path -cnotmatch '^[A-Za-z0-9_. /-]+$') { return $false }
+    $parts=$Path.Split('/')
+    if ($parts[0] -cnotin @('apps','packages','native','scripts','config','docs','design','.github') -and
+        $Path -cnotin @('AGENTS.md','README.md','LICENSE','NOTICE','.gitignore','.gitattributes')) { return $false }
+    foreach ($part in $parts) {
+        if (!$part -or $part -in @('.','..','.private','.tools','.cache','artifacts','secrets','credentials') -or
+            $part -match '[. ]$' -or ($part.StartsWith('.') -and $part -cnotin @('.github','.metadata','.gitignore','.gitattributes'))) { return $false }
+    }
+    $true
+}
+
+function Write-ShorebirdSourceReceipt([string]$Repository,[ValidatePattern('^[a-f0-9]{40}$')][string]$SourceCommit,
+    [ValidateSet('source_guard','after_checks','after_sdk')][string]$Phase,[string]$Porcelain) {
+    # This report is public: fixed fields, bounded count/path/bytes, never raw
+    # Git output, file contents, diff hunks, private paths or environment values.
+    $root=[IO.Path]::GetFullPath($Repository)
+    $destination=Join-Path $root 'artifacts/shorebird-source'
+    $ancestor=$destination
+    while (!(Test-Path -LiteralPath $ancestor)) { $ancestor=[IO.Path]::GetDirectoryName($ancestor) }
+    Assert-AuditNoLinks $ancestor
+    New-Item -ItemType Directory -Path $destination -Force | Out-Null
+    Assert-AuditNoLinks $destination
+    $truncated=$Porcelain.Length -gt 128KB
+    if ($truncated) {
+        $Porcelain=$Porcelain.Substring(0,128KB)
+        $lastSeparator=$Porcelain.LastIndexOf([char]0)
+        $Porcelain=$(if ($lastSeparator -ge 0) {$Porcelain.Substring(0,$lastSeparator+1)} else {''})
+    }
+    $tokens=$Porcelain.Split([char]0)
+    $entries=[Collections.Generic.List[object]]::new()
+    $omitted=0;$observed=0;[long]$hashBudget=64MB
+    for ($index=0;$index -lt $tokens.Count;$index++) {
+        $token=$tokens[$index]
+        if (!$token) { continue }
+        $observed++
+        if ($token.Length -lt 4 -or $token.Substring(0,3) -cnotmatch '^[ MADRCU?!T]{2} $') { $omitted++;continue }
+        $state=$token.Substring(0,2);$path=$token.Substring(3).TrimEnd('/')
+        # In porcelain -z rename/copy entries the destination is followed by
+        # a second NUL-delimited original path. Do not mistake it for a status.
+        if ($state -match '[RC]') { $index++ }
+        if ($entries.Count -ge 64) { $omitted++;$truncated=$true;continue }
+        if (!(Test-ShorebirdPublicSourcePath $path)) { $omitted++;continue }
+        $full=[IO.Path]::GetFullPath((Join-Path $root $path))
+        if (!$full.StartsWith($root+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)) { $omitted++;continue }
+        $hash=$null;$bytes=$null;$hashState='missing'
+        if (Test-Path -LiteralPath $full) {
+            try {
+                Assert-AuditNoLinks $full
+                $item=Get-Item -LiteralPath $full -Force
+                if ($item.PSIsContainer) { $hashState='directory' }
+                elseif ($item.Length -gt 16MB -or $item.Length -gt $hashBudget) { $hashState='size_budget' }
+                else {
+                    $stream=[IO.File]::Open($full,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+                    try {
+                        if ($stream.Length -gt 16MB -or $stream.Length -gt $hashBudget) { $hashState='size_budget' }
+                        else {
+                            $bytes=$stream.Length;$hash=Get-AuditStreamHash $stream $bytes;$hashBudget-=$bytes;$hashState='sha256'
+                        }
+                    } finally { $stream.Dispose() }
+                }
+            } catch { $hashState='unavailable' }
+        }
+        $entries.Add([ordered]@{status=$state;path=$path;sha256=$hash;bytes=$bytes;hashState=$hashState})
+    }
+    $receipt=[ordered]@{schemaVersion=1;action='source_guard';sourceCommit=$SourceCommit;phase=$Phase;clean=$false
+        observedCount=$observed;omittedCount=$omitted;truncated=$truncated;entries=$entries.ToArray()
+        distributionApproved=$false;rawDiagnosticsIncluded=$false}
+    $path=Join-Path $destination ('source-'+[guid]::NewGuid().ToString('N')+'.json')
+    $temporary=$path+'.tmp-'+[guid]::NewGuid().ToString('N')
+    [IO.File]::WriteAllText($temporary,($receipt | ConvertTo-Json -Depth 5),[Text.UTF8Encoding]::new($false))
+    [IO.File]::Move($temporary,$path)
+    $path
 }
 
 function Assert-ShorebirdPatchPaths([string[]]$Paths) {

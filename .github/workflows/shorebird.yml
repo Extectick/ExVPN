@@ -5,7 +5,7 @@ on:
     inputs:
       operation:
         type: choice
-        options: [base, patch, rollback]
+        options: [base, patch, rollback, diagnose]
         required: true
       version:
         description: Exact base SemVer+build; patches never change it
@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [Android, Windows]
+        target: ${{ fromJSON(inputs.operation == 'diagnose' && '["Windows"]' || '["Android","Windows"]') }}
     defaults:
       run:
         shell: pwsh
@@ -80,6 +80,7 @@ jobs:
             .tools/cache/go-build
           key: exvpn-shorebird-inputs-v1-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/*.lock.json', 'apps/exvpn/pubspec.lock', 'native/**/go.sum') }}
       - name: Cache exact Shorebird checkout and SDK (verified after restore)
+        if: inputs.operation != 'diagnose'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .tools/shorebird-1.6.129
@@ -99,13 +100,25 @@ jobs:
         run: ./scripts/release/test-shorebird-pipeline.ps1
       - name: Analyze and test the reviewed Dart source
         run: |
-          if ($env:EXVPN_OPERATION -ceq 'base') {
+          if ($env:EXVPN_OPERATION -cin @('base','diagnose')) {
             ./scripts/ci/verify.ps1 -Target Checks
           } else {
             ./scripts/qa/run-fast-validation.ps1 -Changed -BaseRef $env:EXVPN_BASE_SHA
           }
+      - name: Require clean source after Checks
+        run: |
+          . ./scripts/release/flutter-runtime-inputs.ps1
+          . ./scripts/release/shorebird-pipeline-lib.ps1
+          $null = Get-ShorebirdSourceCommit (Get-Location).Path -Phase after_checks
       - name: Prepare exact Shorebird CLI and Flutter
+        if: inputs.operation != 'diagnose'
         run: ./scripts/release/prepare-shorebird.ps1 -Target $env:EXVPN_TARGET
+      - name: Require clean source after SDK before native builds
+        if: inputs.operation != 'diagnose'
+        run: |
+          . ./scripts/release/flutter-runtime-inputs.ps1
+          . ./scripts/release/shorebird-pipeline-lib.ps1
+          $null = Get-ShorebirdSourceCommit (Get-Location).Path -Phase after_sdk
       - name: Build Android JNI for base only
         if: inputs.operation == 'base' && matrix.target == 'Android'
         run: ./native/android/build.ps1
@@ -123,6 +136,7 @@ jobs:
           run-id: ${{ inputs.base_run_id }}
           github-token: ${{ github.token }}
       - name: Build once and optionally publish signed beta
+        if: inputs.operation != 'diagnose'
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
           EXVPN_ANDROID_KEYSTORE_BASE64: ${{ matrix.target == 'Android' && secrets.EXVPN_ANDROID_KEYSTORE_BASE64 || '' }}
@@ -160,6 +174,7 @@ jobs:
             if (Test-Path -LiteralPath $keyPath) { Remove-Item -LiteralPath $keyPath -Force }
           }
       - name: Upload audited artifacts and sanitized receipts only
+        if: inputs.operation != 'diagnose'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: shorebird-${{ inputs.operation }}-${{ matrix.target }}-${{ github.sha }}
@@ -181,6 +196,14 @@ jobs:
         with:
           name: shorebird-prepare-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: artifacts/shorebird-prepare/*.json
+          if-no-files-found: ignore
+          retention-days: 90
+      - name: Preserve sanitized source guard diagnosis even after failure
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: shorebird-source-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/shorebird-source/*.json
           if-no-files-found: ignore
           retention-days: 90
 
