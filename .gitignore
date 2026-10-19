@@ -29,6 +29,8 @@ credentials.json
 .pub-cache/
 .pub/
 **/build/
+!/scripts/build/
+!/scripts/build/*.ps1
 **/doc/api/
 **/flutter/ephemeral/
 

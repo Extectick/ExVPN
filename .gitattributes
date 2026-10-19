@@ -1,3 +1,12 @@
+* text=auto eol=lf
+
+# Preserve the established raw notice bytes while source checkouts use LF.
+native/windows/licenses/Microsoft-Visual-Studio-2026-Community.txt text eol=crlf
+native/windows/licenses/NSIS-3.13.txt text eol=crlf
+native/windows/licenses/Wintun-0.14.1-binary.txt text eol=crlf
+apps/exvpn/android/licenses/Hamcrest-1.3.txt text eol=crlf
+scripts/release/licenses/7zip-26.04.txt text eol=crlf
+
 # Checksummed patch bytes must be identical on Windows and CI checkouts.
 native/patches/*.patch text eol=lf
 native/patches/*.json text eol=lf

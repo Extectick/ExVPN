@@ -106,7 +106,9 @@ jobs:
             .tools/cache/shorebird-pub
             .tools/cache/go/pkg/mod
             .tools/cache/go-build
-          key: exvpn-shorebird-inputs-v1-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/*.lock.json', 'apps/exvpn/pubspec.lock', 'native/**/go.sum') }}
+            .tools/cache/native-outputs-v1
+          key: exvpn-shorebird-inputs-v1-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/*.lock.json', 'apps/exvpn/pubspec.lock', 'native/**/go.sum') }}-${{ hashFiles('native/**', 'scripts/core/**', 'scripts/bootstrap/**', 'scripts/build/**', 'scripts/windows/build.ps1') }}
+          restore-keys: exvpn-shorebird-inputs-v1-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/*.lock.json', 'apps/exvpn/pubspec.lock', 'native/**/go.sum') }}-
       - name: Cache exact Shorebird checkout and SDK (verified after restore)
         id: target-sdk
         if: inputs.operation != 'diagnose'
@@ -399,7 +401,9 @@ jobs:
             .tools/cache/shorebird-pub
             .tools/cache/go/pkg/mod
             .tools/cache/go-build
-          key: exvpn-shorebird-inputs-v1-${{ runner.os }}-Windows-${{ hashFiles('scripts/bootstrap/*.lock.json', 'apps/exvpn/pubspec.lock', 'native/**/go.sum') }}
+            .tools/cache/native-outputs-v1
+          key: exvpn-shorebird-inputs-v1-${{ runner.os }}-Windows-${{ hashFiles('scripts/bootstrap/*.lock.json', 'apps/exvpn/pubspec.lock', 'native/**/go.sum') }}-${{ hashFiles('native/**', 'scripts/core/**', 'scripts/bootstrap/**', 'scripts/build/**', 'scripts/windows/build.ps1') }}
+          restore-keys: exvpn-shorebird-inputs-v1-${{ runner.os }}-Windows-${{ hashFiles('scripts/bootstrap/*.lock.json', 'apps/exvpn/pubspec.lock', 'native/**/go.sum') }}-
       - name: Restore exact Shorebird SDK for rollback
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

@@ -56,7 +56,9 @@ jobs:
           path: |
             .tools/cache/go/pkg/mod
             .tools/cache/go-build
-          key: exvpn-go-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/toolchain.lock.json', 'native/core/go.mod', 'native/core/go.sum', 'native/android/go.mod', 'native/android/go.sum', 'native/windows/go.mod', 'native/windows/go.sum', 'native/patches/xray-lifecycle.lock.json', 'native/patches/xray-lifecycle.patch') }}
+            .tools/cache/native-outputs-v1
+          key: exvpn-go-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/toolchain.lock.json', 'native/core/go.mod', 'native/core/go.sum', 'native/android/go.mod', 'native/android/go.sum', 'native/windows/go.mod', 'native/windows/go.sum', 'native/patches/xray-lifecycle.lock.json', 'native/patches/xray-lifecycle.patch') }}-${{ hashFiles('native/**', 'scripts/core/**', 'scripts/bootstrap/**', 'scripts/build/**', 'scripts/windows/build.ps1') }}
+          restore-keys: exvpn-go-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/toolchain.lock.json', 'native/core/go.mod', 'native/core/go.sum', 'native/android/go.mod', 'native/android/go.sum', 'native/windows/go.mod', 'native/windows/go.sum', 'native/patches/xray-lifecycle.lock.json', 'native/patches/xray-lifecycle.patch') }}-
           enableCrossOsArchive: false
       - name: Cache locked Pub packages
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
