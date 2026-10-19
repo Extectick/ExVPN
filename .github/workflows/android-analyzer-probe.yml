@@ -1,50 +1,151 @@
-name: ExVPN Android analyzer probe (no application build)
+name: ExVPN C7 Android analyzer encrypted diagnostic (no builds)
 
 on:
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
+
+concurrency:
+  group: exvpn-shorebird29-analyzer-diagnostic
+  cancel-in-progress: false
 
 jobs:
   probe:
+    if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/codex/shorebird29-analyzer-diagnostic'
     runs-on: windows-2025
-    timeout-minutes: 5
+    environment: demo-release
+    timeout-minutes: 15
     defaults:
       run:
         shell: pwsh
+    env:
+      CI: 'true'
+      FLUTTER_SUPPRESS_ANALYTICS: 'true'
+      DART_SUPPRESS_ANALYTICS: 'true'
     steps:
-      - name: Probe installed analyzer and Java combinations using a synthetic ZIP
+      - name: Read exact C7 source (diagnostic workflow itself remains on its isolated branch)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 5bddc7770acd5446ca0c579857f9d1c7b2b1ada3
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Restore exact pinned Android Shorebird SDK cache; stop on miss; never save
+        id: sdk
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools/shorebird-1.6.129
+          key: exvpn-shorebird-sdk-v1-${{ runner.os }}-${{ runner.arch }}-Android-${{ hashFiles('scripts/bootstrap/shorebird.lock.json') }}
+          fail-on-cache-miss: true
+      - name: Prove exact cache hit
+        env:
+          CACHE_HIT: ${{ steps.sdk.outputs.cache-hit }}
+        run: |
+          if ($env:CACHE_HIT -cne 'true') { throw 'analyzer_diagnostic_exact_cache_required' }
+      - name: Reproduce exact C7 helper once and encrypt analyzer stdout and stderr
+        env:
+          EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64: ${{ secrets.EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64 }}
         run: |
           $ErrorActionPreference='Stop'
           $PSNativeCommandUseErrorActionPreference=$false
-          $zipPath=Join-Path $env:RUNNER_TEMP 'exvpn-analyzer-probe.zip'
-          $archive=[IO.Compression.ZipFile]::Open($zipPath,[IO.Compression.ZipArchiveMode]::Create)
+          Set-StrictMode -Version Latest
+          $repository=(Get-Location).Path
+          $expectedSource='5bddc7770acd5446ca0c579857f9d1c7b2b1ada3'
+          $output=Join-Path $repository 'artifacts/shorebird-analyzer-diagnostic'
+          [void][IO.Directory]::CreateDirectory($output)
+          $summary=[ordered]@{schemaVersion=1;expectedSourceCommit=$expectedSource;sourceCommitMatched=$false;cacheExactHit=$true;helperStatus='not_run';helperPhase=$null;syntheticExitCode=$null;expectedMetadataListed=$false;classFilesFailure=$null;stdoutBytes=$null;stderrBytes=$null;stdoutSha256=$null;stderrSha256=$null;exactMarkerInStdout=$false;exactMarkerInStderr=$false;basenameInStdout=$false;markerWithoutLeadingSlash=$false;syntheticZipEntries=$null;syntheticZipSha256=$null;encryptionProduced=$false;rawStdoutExported=$false;rawStderrExported=$false;privateKeyAvailable=$false;signingKeysUsed=$false;cloudMutations=0;applicationBuilds=0;nativeBuilds=0;gradleBuilds=0;cacheSaveInvoked=$false;errorCode=$null}
+          $savedAppData=$env:APPDATA
+          $savedJava=$env:JAVA_HOME
+          $private=$null
           try {
-            $entry=$archive.CreateEntry('BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/libflutter.so.sym')
-            $stream=$entry.Open();try{$stream.WriteByte(1)}finally{$stream.Dispose()}
-          }finally{$archive.Dispose()}
-          $java=@{current=$env:JAVA_HOME;java21=$env:JAVA_HOME_21_X64;studio='C:/Program Files/Android/Android Studio/jbr';studioCompact='C:/Program Files/Android/AndroidStudio/jbr'}
-          $tools=@(Get-ChildItem -LiteralPath (Join-Path $env:ANDROID_HOME 'cmdline-tools') -Directory | Where-Object {Test-Path (Join-Path $_.FullName 'bin/apkanalyzer.bat')})
-          $results=@()
-          foreach($tool in $tools){
-            foreach($label in $java.Keys | Sort-Object){
-              if(!$java[$label] -or !(Test-Path (Join-Path $java[$label] 'bin/java.exe'))){continue}
-              $env:JAVA_HOME=$java[$label]
-              $stdout=Join-Path $env:RUNNER_TEMP ('analyzer-'+[guid]::NewGuid().ToString('N')+'.out')
-              $stderr=$stdout+'.err'
-              & (Join-Path $tool.FullName 'bin/apkanalyzer.bat') files list $zipPath 1>$stdout 2>$stderr
-              $code=$LASTEXITCODE
-              $out=[IO.File]::ReadAllText($stdout);$err=[IO.File]::ReadAllText($stderr)
-              $marker=if(($out+$err) -match 'JAVA_HOME is not set|JAVA_HOME is set to an invalid directory|could not find java'){'java_not_found'}elseif(($out+$err) -match 'UnsupportedClassVersionError|class file version'){'class_version'}elseif(($out+$err) -match 'requires Java|Java version'){'java_version_gate'}elseif($code-eq0){'none'}else{'other'}
-              $results+=@{toolVersion=$tool.Name;javaContext=$label;exitCode=$code;expectedMetadataListed=$out.Contains('libflutter.so.sym');errorMarker=$marker;stderrBytes=(Get-Item $stderr).Length;stdoutBytes=(Get-Item $stdout).Length}
-            }
+              $source=(& git -c core.fsmonitor=false rev-parse HEAD 2>$null)-join ''
+              if($LASTEXITCODE -ne 0 -or $source -cne $expectedSource){throw 'analyzer_diagnostic_source_mismatch'}
+              $summary.sourceCommitMatched=$true
+              . ./scripts/release/artifact-audit-lib.ps1
+              . ./scripts/release/shorebird-pipeline-lib.ps1
+              . ./scripts/release/shorebird-android-environment.ps1
+              $flutter=Join-Path $repository '.tools/shorebird-1.6.129/bin/cache/flutter/5bef02a16146a0effc07da4acccaafe90a2739ce'
+              # A restore-only cache miss or incomplete SDK stops here; no bootstrap or repair.
+              foreach($relative in @('bin/flutter.bat','bin/cache/dart-sdk/bin/dart.exe','bin/cache/flutter_tools.snapshot','bin/cache/flutter_tools.stamp','bin/cache/engine-dart-sdk.stamp')){
+                  $path=Join-Path $flutter $relative
+                  Assert-AuditNoLinks $path
+                  if(!(Test-Path -LiteralPath $path -PathType Leaf) -or (Get-Item -LiteralPath $path).Length -le 0){throw 'analyzer_diagnostic_cached_sdk_incomplete'}
+              }
+              if([IO.File]::ReadAllText((Join-Path $flutter 'bin/cache/engine-dart-sdk.stamp')).Trim() -cne '4b936a0c03e13389ddfb1ac48823f187964975c2'){throw 'analyzer_diagnostic_cached_dart_wrong_pin'}
+              if(!$env:JAVA_HOME_21_X64 -or !(Test-Path -LiteralPath (Join-Path $env:JAVA_HOME_21_X64 'bin/java.exe')) -or !$env:ANDROID_HOME){throw 'analyzer_diagnostic_host_tools_missing'}
+              if(!$env:EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64){throw 'analyzer_diagnostic_public_key_missing'}
+              $env:JAVA_HOME=$env:JAVA_HOME_21_X64
+              $private=New-ShorebirdPrivateDirectory $repository 'analyzer-diagnostic'
+              try {
+                  $null=Initialize-ShorebirdAndroidToolEnvironment -Repository $repository -FlutterSdkRoot $flutter -AndroidSdkPath $env:ANDROID_HOME -PrivateDirectory $private
+                  $summary.helperStatus='passed'
+              } catch {
+                  # The diagnostic intentionally reproduces the exact helper failure.
+                  # No exception text or child output enters a public receipt or log.
+                  $summary.helperStatus='failed'
+              }
+              $receipts=@(Get-ChildItem -LiteralPath (Join-Path $repository 'artifacts/shorebird-recovery') -File -Filter 'android-tools-*.json')
+              if($receipts.Count -eq 1){
+                  $receipt=Get-Content -LiteralPath $receipts[0].FullName -Raw|ConvertFrom-Json -AsHashtable
+                  if($receipt.phase -cin @('complete','paths','source_pins','sdk_short_identity','private_flutter_config','dart_process_analyzer','identity_recheck')){$summary.helperPhase=$receipt.phase}
+                  if($receipt.syntheticExitCode -is [int] -or $receipt.syntheticExitCode -is [long]){$summary.syntheticExitCode=$receipt.syntheticExitCode}
+                  if($receipt.expectedMetadataListed -is [bool]){$summary.expectedMetadataListed=$receipt.expectedMetadataListed}
+              }
+              $probe=Join-Path $private 'analyzer-probe.json'
+              if(Test-Path -LiteralPath $probe -PathType Leaf){
+                  $probeData=Get-Content -LiteralPath $probe -Raw|ConvertFrom-Json -AsHashtable
+                  if($probeData.classFilesFailure -is [bool]){$summary.classFilesFailure=$probeData.classFilesFailure}
+              }
+              $stdoutPath=Join-Path $private 'analyzer.stdout.private.log'
+              $stderrPath=Join-Path $private 'analyzer.stderr.private.log'
+              if(!(Test-Path -LiteralPath $stdoutPath -PathType Leaf) -or !(Test-Path -LiteralPath $stderrPath -PathType Leaf)){throw 'analyzer_diagnostic_raw_unavailable'}
+              foreach($streamName in @('stdout','stderr')){
+                  $path=Get-Variable -Name ($streamName+'Path') -ValueOnly
+                  Assert-AuditNoLinks $path
+                  $summary[$streamName+'Bytes']=(Get-Item -LiteralPath $path).Length
+                  $summary[$streamName+'Sha256']=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+              }
+              if($summary.stdoutBytes -gt 64KB -or $summary.stderrBytes -gt 256KB){throw 'analyzer_diagnostic_output_exceeds_exact_encryption_limits'}
+              $stdout=[IO.File]::ReadAllText($stdoutPath)
+              $stderr=[IO.File]::ReadAllText($stderrPath)
+              $marker='/BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/libflutter.so.sym'
+              $summary.exactMarkerInStdout=$stdout.Contains($marker)
+              $summary.exactMarkerInStderr=$stderr.Contains($marker)
+              $summary.basenameInStdout=$stdout.Contains('libflutter.so.sym')
+              $summary.markerWithoutLeadingSlash=$stdout.Contains($marker.Substring(1))
+              $zipPath=Join-Path $private 'analyzer-probe.zip'
+              $zip=[IO.Compression.ZipFile]::OpenRead($zipPath)
+              try {$summary.syntheticZipEntries=$zip.Entries.Count} finally {$zip.Dispose()}
+              $summary.syntheticZipSha256=(Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+              # The existing encryptor derives stderr with ChangeExtension(.log).
+              # Preserve exact bytes in a matching .json/.log pair inside the private ACL.
+              $export=Join-Path $private 'analyzer-export.json'
+              Copy-Item -LiteralPath $stdoutPath -Destination $export
+              Copy-Item -LiteralPath $stderrPath -Destination ([IO.Path]::ChangeExtension($export,'.log'))
+              $cipher=Write-ShorebirdEncryptedDiagnostic $repository $export
+              if(!$cipher){throw 'analyzer_diagnostic_encryption_failed'}
+              Copy-Item -LiteralPath $cipher -Destination (Join-Path $output 'encrypted-analyzer.json')
+              $summary.encryptionProduced=$true
+          } catch {
+              $summary.errorCode='analyzer_diagnostic_failed'
+              if($_.Exception.Message -cmatch '\Aanalyzer_diagnostic_[a-z_]+\z'){$summary.errorCode=$_.Exception.Message}
+          } finally {
+              $env:APPDATA=$savedAppData
+              $env:JAVA_HOME=$savedJava
+              $env:EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64=$null
+              $summary|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $output 'summary.json') -Encoding utf8NoBOM
           }
-          @{schemaVersion=1;results=$results;toolCount=$tools.Count;applicationBuilds=0;nativeBuilds=0;secretsUsed=$false;rawLogsExported=$false}|ConvertTo-Json -Depth 5|Set-Content (Join-Path $env:RUNNER_TEMP 'android-analyzer-probe.json') -Encoding utf8NoBOM
-          Get-Content (Join-Path $env:RUNNER_TEMP 'android-analyzer-probe.json')
+          if($summary.errorCode -or !$summary.encryptionProduced){throw 'analyzer_diagnostic_incomplete_safe_receipt_retained'}
+          Write-Host 'Analyzer diagnostic complete; only safe receipt and encrypted stdout/stderr are exportable.'
           $global:LASTEXITCODE=0
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      - name: Upload only fixed safe summary and encrypted analyzer output
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: android-analyzer-probe
-          path: ${{ runner.temp }}/android-analyzer-probe.json
-          if-no-files-found: error
+          name: shorebird29-analyzer-diagnostic-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            artifacts/shorebird-analyzer-diagnostic/summary.json
+            artifacts/shorebird-analyzer-diagnostic/encrypted-analyzer.json
+          if-no-files-found: ignore
+          retention-days: 7
