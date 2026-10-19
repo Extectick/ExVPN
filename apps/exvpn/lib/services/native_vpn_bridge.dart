@@ -101,6 +101,7 @@ final class NativeVpnBridge
         VpnBridge,
         ConnectionModeBridge,
         ServerReconnectBridge,
+        AutomaticSelectionBridge,
         ApplicationRoutingBridge,
         ApplicationIconBridge {
   NativeVpnBridge({
@@ -200,6 +201,38 @@ final class NativeVpnBridge
   @override
   Future<void> disconnect() async {
     await _invoke('disconnect');
+  }
+
+  @override
+  bool get supportsAutomaticSelection => supportsServerReconnect;
+
+  @override
+  Future<void> connectAutomatic(
+    ConnectionProfile primary,
+    List<ConnectionProfile> candidates,
+    VpnMode mode, {
+    required bool replace,
+  }) async {
+    if (!supportsAutomaticSelection ||
+        (mode == VpnMode.proxy && !supportsConnectionModes)) {
+      throw const VpnFailure('mode_unsupported');
+    }
+    if (candidates.isEmpty ||
+        candidates.length > 32 ||
+        candidates.map((p) => p.id).toSet().length != candidates.length ||
+        !candidates.any((p) => p.id == primary.id)) {
+      throw const VpnFailure('invalid_native_request');
+    }
+    await _invoke(replace ? 'reconnect' : 'connect', {
+      'profile': primary.toNativeJson(),
+      'mode': mode.name,
+      'automaticProfiles': [for (final p in candidates) p.toNativeJson()],
+    });
+  }
+
+  @override
+  Future<void> clearAutomaticSelection() async {
+    await _invoke('clearAutomaticSelection');
   }
 
   @override
@@ -382,7 +415,9 @@ final class NativeVpnBridge
         (map.containsKey('systemProxySupported') &&
             map['systemProxySupported'] is! bool) ||
         (map.containsKey('cleanupRequired') &&
-            map['cleanupRequired'] is! bool)) {
+            map['cleanupRequired'] is! bool) ||
+        (map.containsKey('automaticSelection') &&
+            map['automaticSelection'] is! bool)) {
       throw const VpnFailure('invalid_native_response');
     }
     return VpnStatus(
@@ -398,6 +433,7 @@ final class NativeVpnBridge
       mode: mode,
       systemProxySupported: map['systemProxySupported'] == true,
       cleanupRequired: map['cleanupRequired'] == true,
+      automaticSelection: map['automaticSelection'] == true,
     );
   }
 }

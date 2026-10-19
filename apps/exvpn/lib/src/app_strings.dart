@@ -104,6 +104,9 @@ class _TranslationTemplate {
 // Unknown text stays visible verbatim; unlisted backend errors are not claimed
 // to be translated. No provider content is sent to an external translator.
 const _rows = '''
+Авто · основной и резерв|Auto · primary and backup|Авто · негізгі және резерв|Auto · Haupt- und Ersatzserver|Auto · principal et secours|Auto · principal y respaldo|Auto · principal e reserva|Otomatik · ana ve yedek|自动 · 主用与备用|تلقائي · أساسي واحتياطي
+Проверка HTTPS · резерв при обрыве|HTTPS check · backup on failure|HTTPS тексеру · үзілісте резерв|HTTPS-Prüfung · Ersatz bei Ausfall|Vérification HTTPS · secours en cas de panne|Verificación HTTPS · respaldo ante fallos|Verificação HTTPS · reserva em caso de falha|HTTPS denetimi · arızada yedek|HTTPS 检测 · 故障时切换备用|فحص HTTPS · احتياطي عند الانقطاع
+Авто доступно для групп до 32 серверов|Auto supports groups of up to 32 servers|Авто 32 серверге дейінгі топтарға қолжетімді|Auto unterstützt Gruppen mit bis zu 32 Servern|Auto prend en charge jusqu’à 32 serveurs|Auto admite grupos de hasta 32 servidores|Auto aceita grupos de até 32 servidores|Otomatik en fazla 32 sunuculu grupları destekler|自动模式支持最多32个服务器|يدعم الوضع التلقائي حتى 32 خادمًا
 Исключения|Exceptions|Ерекшеліктер|Ausnahmen|Exceptions|Excepciones|Exceções|İstisnalar|排除应用|الاستثناءات
 Только эти|Only these|Тек осы|Nur diese|Ces applis|Solo estas|Só estes|Yalnız bunlar|仅这些|هذه فقط
 VPN для всех, кроме выбранных приложений|VPN for all apps except selected|Таңдалғандардан басқа барлық қолданбаға VPN|VPN für alle Apps außer den ausgewählten|VPN pour toutes les applications sauf la sélection|VPN para todas las aplicaciones excepto las seleccionadas|VPN para todos os aplicativos, exceto os selecionados|Seçilenler hariç tüm uygulamalar için VPN|除选中应用外，全部使用 VPN|VPN لكل التطبيقات باستثناء المحددة

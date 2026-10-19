@@ -15,6 +15,74 @@ void main() {
   });
 
   test(
+    'automatic group crosses only existing authenticated connect channel',
+    () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      final calls = <MethodCall>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        return null;
+      });
+      final bridge = NativeVpnBridge(methods: channel);
+      ConnectionProfile node(String id) => ConnectionProfile(
+        id: id,
+        name: 'Synthetic',
+        protocol: ProxyProtocol.vless,
+        server: '$id.example',
+        port: 443,
+        uuid: '00000000-0000-4000-8000-000000000001',
+        transport: const Transport(),
+        tls: TlsOptions(enabled: true),
+      );
+      final first = node('first');
+      final second = node('second');
+      await bridge.connectAutomatic(
+        first,
+        [first, second],
+        VpnMode.vpn,
+        replace: true,
+      );
+      expect(calls.single.method, 'reconnect');
+      expect((calls.single.arguments as Map)['automaticProfiles'], [
+        first.toNativeJson(),
+        second.toNativeJson(),
+      ]);
+      await bridge.clearAutomaticSelection();
+      expect(calls.last.method, 'clearAutomaticSelection');
+      expect(calls.any((c) => c.method == 'disconnect'), isFalse);
+      for (final invalid in <List<ConnectionProfile>>[
+        [],
+        [first, first],
+        [second],
+        List.filled(33, first),
+      ]) {
+        await expectLater(
+          bridge.connectAutomatic(first, invalid, VpnMode.vpn, replace: false),
+          throwsA(isA<VpnFailure>()),
+        );
+      }
+      expect(calls, hasLength(2));
+    },
+  );
+
+  test('native automatic policy flag is typed and defaults to disabled', () {
+    final status = {'phase': 'disconnected', 'processCrashProtection': false};
+    expect(NativeVpnBridge.decodeStatus(status).automaticSelection, isFalse);
+    expect(
+      NativeVpnBridge.decodeStatus({...status, 'automaticSelection': true})
+          .automaticSelection,
+      isTrue,
+    );
+    expect(
+      () => NativeVpnBridge.decodeStatus({
+        ...status,
+        'automaticSelection': 'true',
+      }),
+      throwsA(isA<VpnFailure>()),
+    );
+  });
+
+  test(
     'native connected requires a profile, time and explicit protection flag',
     () {
       final valid = {

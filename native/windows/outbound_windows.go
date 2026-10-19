@@ -192,6 +192,11 @@ func ownedSocketOptions(options *internet.SocketConfig, token string) bool {
 	if options.Interface != token || options.DomainStrategy != internet.DomainStrategy_AS_IS {
 		return false
 	}
+	// Typed profile keepalive values affect remote transport liveness only.
+	// Zero means unspecified in the compiled protobuf, not provider disabling.
+	if options.TcpKeepAliveIdle < 0 || options.TcpKeepAliveIdle > 86400 || options.TcpKeepAliveInterval < 0 || options.TcpKeepAliveInterval > 86400 {
+		return false
+	}
 	// Allow the pinned compiler's default Happy Eyeballs configuration. AS_IS
 	// keeps upstream DNS/racing disabled; only this lease maps the endpoint.
 	defaults := &internet.HappyEyeballsConfig{Interleave: 1, MaxConcurrentTry: 4}
@@ -200,6 +205,7 @@ func ownedSocketOptions(options *internet.SocketConfig, token string) bool {
 	}
 	copy := proto.Clone(options).(*internet.SocketConfig)
 	copy.Interface, copy.DomainStrategy, copy.HappyEyeballs = "", internet.DomainStrategy_AS_IS, nil
+	copy.TcpKeepAliveIdle, copy.TcpKeepAliveInterval = 0, 0
 	// Includes unknown protobuf fields: a new dependency option requires review.
 	return proto.Equal(copy, &internet.SocketConfig{})
 }

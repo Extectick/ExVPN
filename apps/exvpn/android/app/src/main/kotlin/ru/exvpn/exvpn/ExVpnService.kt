@@ -36,6 +36,8 @@ class ExVpnService : VpnService() {
     private val generation = AtomicLong()
     @Volatile private var activeRequestGeneration = 0L
     private var healthTask: ScheduledFuture<*>? = null
+    private var failoverTask: ScheduledFuture<*>? = null
+    @Volatile private var automaticPolicy: AutomaticSelectionPolicy? = null
     private var statsTask: ScheduledFuture<*>? = null
     @Volatile private var underlying: Network? = null
     @Volatile private var resolvedUIDs: Set<Int> = emptySet()
@@ -93,8 +95,10 @@ class ExVpnService : VpnService() {
                 if (accepted != null && request !== accepted) {
                     request = accepted
                     requestNeedsSave = true
+                    resetAutomaticPolicy()
                 } else if (request == null) {
                     request = VpnPersistence.loadResume(this)
+                    resetAutomaticPolicy()
                 }
                 VpnRuntime.ensurePolicy(this)
                 if (stopping || command != generation.get()) return@execute
@@ -134,6 +138,7 @@ class ExVpnService : VpnService() {
         generation.incrementAndGet()
         endpointLookup?.cancel()
         healthTask?.cancel(false)
+        failoverTask?.cancel(false); failoverTask = null
         statsTask?.cancel(false)
         if (NativeCore.available) NativeCore.cancel()
     }
@@ -182,12 +187,58 @@ class ExVpnService : VpnService() {
         }
     }
 
+    fun clearAutomaticSelection(complete: (String?) -> Unit) {
+        try { worker.execute {
+            failoverTask?.cancel(false); failoverTask = null; automaticPolicy = null
+            val current = request
+            if (current == null) { complete(null); return@execute }
+            val manual = current.copy(automaticProfiles = emptyList())
+            request = manual
+            latestRequests.accept(manual)
+            try {
+                VpnPersistence.saveResume(this, manual)
+                requestNeedsSave = false
+                complete(null)
+            } catch (_: NativeStoreFailure) { complete("native_storage_unavailable") }
+        } } catch (_: RejectedExecutionException) { complete("service_unavailable") }
+    }
+
+    fun automaticSelection(): Boolean = automaticPolicy != null
+
+    private fun resetAutomaticPolicy() {
+        failoverTask?.cancel(false); failoverTask = null
+        val current = request
+        automaticPolicy = current?.automaticProfiles?.takeIf { it.isNotEmpty() }?.let { profiles ->
+            val index = profiles.indexOfFirst { JSONObject(it).getString("id") == current.profileId }
+            AutomaticSelectionPolicy(profiles.size, index)
+        }
+    }
+
+    private fun scheduleFailover() {
+        val current = request ?: return
+        val policy = automaticPolicy ?: return
+        if (stopping || activeRequestGeneration != generation.get() || failoverTask != null) return
+        val next = policy.failed()
+        val command = activeRequestGeneration
+        failoverTask = worker.schedule({
+            failoverTask = null
+            if (stopping || command != generation.get() || request !== current) return@schedule
+            val profile = current.automaticProfiles[next.index]
+            request = current.copy(profile = profile, profileId = JSONObject(profile).getString("id"))
+            latestRequests.accept(request)
+            requestNeedsSave = true
+            VpnRuntime.publish("reconnecting", request?.profileId)
+            restart()
+        }, next.delayMillis, TimeUnit.MILLISECONDS)
+    }
+
     private fun restart() {
         if (stopping) return
         val current = request ?: return
         val command = activeRequestGeneration
         if (command != generation.get()) return
         healthTask?.cancel(false); statsTask?.cancel(false)
+        failoverTask?.cancel(false); failoverTask = null
         if (NativeCore.available) NativeCore.stop()
         connectedAt = null
         VpnRuntime.publish("connecting", current.profileId)
@@ -200,7 +251,7 @@ class ExVpnService : VpnService() {
                 VpnPersistence.saveResume(this, current)
                 requestNeedsSave = false
             }
-            val network = selectUnderlying() ?: run { blocked("network_unavailable"); return }
+            val network = selectUnderlying() ?: run { blocked("network_unavailable", retryable = true); return }
             underlying = network
             setUnderlyingNetworks(arrayOf(network))
             val server = JSONObject(current.profile).getString("server")
@@ -208,7 +259,7 @@ class ExVpnService : VpnService() {
             // No application DNS request reaches this API.
             val endpoint = resolveEndpoint(network, server)
             if (stopping || command != generation.get()) return
-            if (endpoint == null) { blocked("endpoint_resolution_failed"); return }
+            if (endpoint == null) { blocked("endpoint_resolution_failed", retryable = true); return }
             ensureTunnel()
             val code = NativeCore.start(this, tunnel!!.fd, current.profile.toByteArray(Charsets.UTF_8), endpoint, resolvedUIDs.toIntArray(), current.routingMode)
             if (stopping || command != generation.get()) { NativeCore.stop(); return }
@@ -237,19 +288,26 @@ class ExVpnService : VpnService() {
             val result = JSONObject(NativeCore.health())
             if (stopping || command != generation.get() || command != activeRequestGeneration) return
             if (result.optBoolean("reachable")) {
+                automaticPolicy?.succeeded()
+                failoverTask?.cancel(false); failoverTask = null
                 if (connectedAt == null) connectedAt = System.currentTimeMillis()
                 VpnRuntime.publish("connected", current.profileId, connectedAt)
                 notifyStatus("VPN подключён")
-            } else blocked(result.optString("errorCode", "tunnel_https_failed"))
+            } else blocked(result.optString("errorCode", "tunnel_https_failed"), retryable = true)
         } catch (_: Exception) {
             if (!stopping && command == generation.get()) blocked("tunnel_health_failed")
         }
     }
 
-    private fun blocked(code: String) {
+    private fun blocked(code: String, retryable: Boolean = false) {
         connectedAt = null
         VpnRuntime.publish(if (tunnel != null) "blocked" else "error", request?.profileId, error = code)
         notifyStatus(if (tunnel != null) "VPN недоступен · трафик удерживается" else "VPN не запущен")
+        if (retryable && AutomaticSelectionPolicy.retryable(code)) scheduleFailover()
+        else {
+            failoverTask?.cancel(false); failoverTask = null; automaticPolicy = null
+            healthTask?.cancel(false)
+        }
         // Keep the established TUN and its default routes. There is no direct
         // fallback and no closing the interface just because the server failed.
     }
@@ -315,6 +373,7 @@ class ExVpnService : VpnService() {
         val command = generation.incrementAndGet()
         endpointLookup?.cancel()
         healthTask?.cancel(true); statsTask?.cancel(true)
+        failoverTask?.cancel(true); failoverTask = null; automaticPolicy = null
         if (NativeCore.available) NativeCore.cancel()
         worker.execute {
             if (command != generation.get()) return@execute
@@ -345,6 +404,7 @@ class ExVpnService : VpnService() {
         generation.incrementAndGet()
         endpointLookup?.cancel()
         healthTask?.cancel(true); statsTask?.cancel(true)
+        failoverTask?.cancel(true); failoverTask = null; automaticPolicy = null
         if (callbackRegistered) connectivity.unregisterNetworkCallback(networkCallback)
         if (NativeCore.available) NativeCore.stop()
         tunnel?.close(); tunnel = null

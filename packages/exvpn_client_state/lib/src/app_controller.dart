@@ -35,12 +35,14 @@ final class AppController {
   final Map<String, PendingSubscriptionUpdate> _pendingUpdates = {};
   String? _selectedGroupId;
   String? _selectedServerId;
+  String? _selectedAutomaticGroupId;
   int _nextGroup = 1;
   bool _disposed = false;
 
   List<SubscriptionGroup> get groups => List.unmodifiable(_groups);
   String? get selectedGroupId => _selectedGroupId;
   String? get selectedServerId => _selectedServerId;
+  String? get selectedAutomaticGroupId => _selectedAutomaticGroupId;
   bool get isDemo => _groups.any((group) => group.isDemo);
   bool get showAddSubscriptionButton => _groups.isEmpty;
   Stream<void> get changes => _changes.stream;
@@ -238,11 +240,28 @@ final class AppController {
           group.servers.any((server) => server.id == serverId),
     );
     if (!exists) return false;
-    if (_selectedGroupId == groupId && _selectedServerId == serverId) {
+    if (_selectedGroupId == groupId &&
+        _selectedServerId == serverId &&
+        _selectedAutomaticGroupId == null) {
       return true;
     }
     _selectedGroupId = groupId;
     _selectedServerId = serverId;
+    _selectedAutomaticGroupId = null;
+    _notify();
+    return true;
+  }
+
+  /// A local choice, never enabled by provider routing or a restored VPN state.
+  bool selectAutomaticGroup(String groupId) {
+    _ensureAlive();
+    final group = _groups.where((g) => g.id == groupId).firstOrNull;
+    if (group == null || group.isDemo || group.servers.length < 2) return false;
+    _selectedAutomaticGroupId = groupId;
+    _selectedGroupId = groupId;
+    if (!group.servers.any((s) => s.id == _selectedServerId)) {
+      _selectedServerId = group.servers.first.id;
+    }
     _notify();
     return true;
   }
@@ -258,6 +277,14 @@ final class AppController {
   }
 
   void _restoreSelection({String? preferredGroupId}) {
+    if (!_groups.any(
+      (g) =>
+          g.id == _selectedAutomaticGroupId &&
+          !g.isDemo &&
+          g.servers.length >= 2,
+    )) {
+      _selectedAutomaticGroupId = null;
+    }
     if (selectedServer != null) return;
     _selectedGroupId = null;
     _selectedServerId = null;
@@ -286,6 +313,7 @@ final class AppController {
     _pendingUpdates.clear();
     _selectedGroupId = null;
     _selectedServerId = null;
+    _selectedAutomaticGroupId = null;
     unawaited(_changes.close());
   }
 }

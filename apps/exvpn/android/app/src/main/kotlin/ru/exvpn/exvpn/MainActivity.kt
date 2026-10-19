@@ -25,6 +25,7 @@ class MainActivity : FlutterActivity() {
     private val activityHandler = Handler(Looper.getMainLooper())
     private var activityResumed = false
     private var notificationPermissionPending = false
+    private var automaticSelectionCleared = false
     private val consent = VpnConsentCoordinator<ConnectRequest, MethodChannel.Result, Intent>(
         prepare = { VpnService.prepare(this) },
         nextToken = {
@@ -37,7 +38,7 @@ class MainActivity : FlutterActivity() {
         waiting = { request -> VpnRuntime.publish("requestingPermission", request.profileId) },
         start = { request, reply ->
             VpnRuntime.service?.prepareReplacement()
-            startVpn(request, reply)
+            startVpn(if (automaticSelectionCleared) request.copy(automaticProfiles = emptyList()) else request, reply)
         },
         fail = { request, reply, code ->
             if (code != "operation_in_progress") {
@@ -105,10 +106,41 @@ class MainActivity : FlutterActivity() {
                     if (code.isNotEmpty()) { result.error(code, "Profile rejected", null); return@setMethodCallHandler }
                     VpnRuntime.ensurePolicy(this)
                     val routing = VpnRuntime.applicationRouting
-                    val request = ConnectRequest(raw, profile["id"] as? String ?: "", routing.applications.toSet(), routing.mode)
+                    val primaryId = profile["id"] as? String ?: throw IllegalArgumentException()
+                    val automaticInput = call.argument<List<Map<String, Any>>>("automaticProfiles")
+                    val automatic = if (automaticInput == null) emptyList() else {
+                        require(automaticInput.size in 1..32)
+                        val ids = mutableSetOf<String>()
+                        var bytes = 0
+                        automaticInput.map { candidate ->
+                            val candidateRaw = JSONObject(candidate).toString()
+                            bytes += candidateRaw.toByteArray(Charsets.UTF_8).size
+                            require(bytes <= 1048576)
+                            val candidateId = candidate["id"] as? String ?: throw IllegalArgumentException()
+                            require(candidateId.isNotEmpty() && ids.add(candidateId))
+                            val candidateCode = NativeCore.validate(candidateRaw.toByteArray(Charsets.UTF_8))
+                            require(candidateCode.isEmpty())
+                            candidateRaw
+                        }.also { candidates ->
+                            require(primaryId in ids)
+                            require(candidates.any { NativeProfileIdentity.equivalent(it, raw) })
+                        }
+                    }
+                    automaticSelectionCleared = false
+                    val request = ConnectRequest(raw, primaryId, routing.applications.toSet(), routing.mode, automatic)
                     // Re-check for every user connect/reconnect. Another VPN or
                     // system policy may have revoked this app's earlier grant.
                     consent.connect(request, result)
+                }
+                "clearAutomaticSelection" -> {
+                    automaticSelectionCleared = true
+                    VpnRuntime.pending = VpnRuntime.pending?.copy(automaticProfiles = emptyList())
+                    val service = VpnRuntime.service
+                    if (service == null) { VpnPersistence.loadResume(this)?.let { VpnPersistence.saveResume(this, it.copy(automaticProfiles = emptyList())) }; result.success(null) }
+                    else service.clearAutomaticSelection { error -> runOnUiThread {
+                        if (error == null) result.success(null)
+                        else result.error(error, "Could not save connection selection", null)
+                    } }
                 }
                 "disconnect" -> {
                     consent.cancel()?.second?.error("permission_cancelled", "Connection cancelled", null)

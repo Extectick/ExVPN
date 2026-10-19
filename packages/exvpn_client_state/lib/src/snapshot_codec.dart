@@ -83,6 +83,7 @@ ConnectionProfile _profile(Object? value) {
     'cipher',
     'flow',
     'encryption',
+    'packetEncoding',
     'transport',
     'tls',
   });
@@ -100,8 +101,19 @@ ConnectionProfile _profile(Object? value) {
     'serviceName',
     'mode',
     'tcpSudoku',
+    'tcpKeepAliveIdle',
+    'tcpKeepAliveInterval',
+    'wsEarlyDataHeaderName',
   });
   final type = _text(t['type'], max: 16);
+  final packetEncoding = _optional(p['packetEncoding'], max: 16);
+  final earlyDataHeader = _optional(t['wsEarlyDataHeaderName'], max: 64);
+  if ((packetEncoding != null &&
+          (packetEncoding != 'xudp' || protocol != ProxyProtocol.vless)) ||
+      (earlyDataHeader != null &&
+          (earlyDataHeader != 'Sec-WebSocket-Protocol' || type != 'ws'))) {
+    _invalidSnapshot();
+  }
   if (!{'tcp', 'ws', 'grpc', 'xhttp', 'hysteria'}.contains(type)) {
     _invalidSnapshot();
   }
@@ -157,6 +169,7 @@ ConnectionProfile _profile(Object? value) {
     cipher: _optional(p['cipher'], max: 128),
     flow: _optional(p['flow'], max: 128),
     encryption: encryption,
+    packetEncoding: packetEncoding,
     transport: Transport(
       type: type,
       path: _optional(t['path']),
@@ -164,6 +177,13 @@ ConnectionProfile _profile(Object? value) {
       serviceName: _optional(t['serviceName']),
       mode: _optional(t['mode'], max: 128),
       tcpSudoku: sudoku,
+      tcpKeepAliveIdle: t['tcpKeepAliveIdle'] == null
+          ? null
+          : _integer(t['tcpKeepAliveIdle'], 1, 86400),
+      tcpKeepAliveInterval: t['tcpKeepAliveInterval'] == null
+          ? null
+          : _integer(t['tcpKeepAliveInterval'], 1, 86400),
+      wsEarlyDataHeaderName: earlyDataHeader,
     ),
     tls: TlsOptions(
       enabled: _boolean(tls['enabled']),
@@ -184,8 +204,10 @@ AppController _decodeSnapshot(Map<String, dynamic> value) {
       'groups',
       'selectedGroupId',
       'selectedServerId',
+      'selectedAutomaticGroupId',
     });
-    if (snapshot['version'] is! int || !{1, 2}.contains(snapshot['version'])) {
+    if (snapshot['version'] is! int ||
+        !{1, 2, 3}.contains(snapshot['version'])) {
       _invalidSnapshot();
     }
     final groups = <SubscriptionGroup>[];
@@ -254,7 +276,15 @@ AppController _decodeSnapshot(Map<String, dynamic> value) {
       .._groups = groups
       .._nextGroup = nextId
       .._selectedGroupId = _optional(snapshot['selectedGroupId'], max: 40)
-      .._selectedServerId = _optional(snapshot['selectedServerId'], max: 64);
+      .._selectedServerId = _optional(snapshot['selectedServerId'], max: 64)
+      .._selectedAutomaticGroupId = _optional(
+        snapshot['selectedAutomaticGroupId'],
+        max: 40,
+      );
+    if (result._selectedAutomaticGroupId != null &&
+        result._selectedAutomaticGroupId != result._selectedGroupId) {
+      _invalidSnapshot();
+    }
     result._restoreSelection();
     return result;
   } on SnapshotFormatException {
@@ -269,9 +299,12 @@ Map<String, Object?> _encodeSnapshot(AppController controller) {
   final groups = controller.groups.where((g) => !g.isDemo).toList();
   final selectedReal = groups.any((g) => g.id == controller.selectedGroupId);
   final result = <String, Object?>{
-    'version': 2,
+    'version': 3,
     'selectedGroupId': selectedReal ? controller.selectedGroupId : null,
     'selectedServerId': selectedReal ? controller.selectedServerId : null,
+    'selectedAutomaticGroupId': selectedReal
+        ? controller.selectedAutomaticGroupId
+        : null,
     'groups': [
       for (final group in groups)
         <String, Object?>{

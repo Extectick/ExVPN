@@ -91,6 +91,8 @@ Value Status(const JsonObject& s) {
         {Value("mode"), Value(mode)},
         {Value("systemProxySupported"),
          Value(capabilities.GetNamedBoolean(L"systemProxy", false))},
+        {Value("automaticSelection"),
+         Value(s.GetNamedBoolean(L"automaticSelection", false))},
         {Value("processCrashProtection"),
          Value(mode == "vpn" && capabilities.GetNamedBoolean(L"verified") &&
                s.GetNamedBoolean(L"guardActive"))}};
@@ -202,7 +204,8 @@ void Transfer(HANDLE pipe, void* data, DWORD size, bool write,
 }
 JsonObject Request(const std::string& command, const Value* profile,
                    const List& exclusions, const std::string& mode = "",
-                   const Value* application_routing = nullptr) {
+                   const Value* application_routing = nullptr,
+                   const Value* automatic_profiles = nullptr) {
   Handle pipe{CreateFileW(
       kPipe, 0x12019b, 0, nullptr, OPEN_EXISTING,
       FILE_FLAG_OVERLAPPED | SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION,
@@ -222,6 +225,8 @@ JsonObject Request(const std::string& command, const Value* profile,
     request.Insert(L"exclusions", Json(Value(exclusions)));
   if (application_routing)
     request.Insert(L"applicationRouting", Json(*application_routing));
+  if (automatic_profiles)
+    request.Insert(L"automaticProfiles", Json(*automatic_profiles));
   std::string body = winrt::to_string(request.Stringify());
   if (body.empty() || body.size() > kMaxFrame) Fail("invalid_native_request");
   uint32_t size = static_cast<uint32_t>(body.size());
@@ -577,13 +582,24 @@ void VpnBridge::Work() {
         completion.value = Value(result);
       } else if (job.method == "getStatus" || job.method == "connect" ||
                  job.method == "reconnect" ||
+                 job.method == "clearAutomaticSelection" ||
                  job.method == "disconnect" || job.method == "probe") {
         const Value* profile = nullptr;
+        const Value* automatic_profiles = nullptr;
         std::string mode;
         if (job.method == "connect" || job.method == "reconnect") {
           mode = "vpn";
           const auto* arguments = std::get_if<Map>(&job.arguments);
           if (!arguments) Fail("invalid_native_request");
+          const auto group = arguments->find(Value("automaticProfiles"));
+          if (group != arguments->end()) {
+            const auto* candidates = std::get_if<List>(&group->second);
+            if (!candidates || candidates->empty() || candidates->size() > 32)
+              Fail("invalid_native_request");
+            for (const auto& candidate : *candidates)
+              if (!std::get_if<Map>(&candidate)) Fail("invalid_native_request");
+            automatic_profiles = &group->second;
+          }
           const auto found = arguments->find(Value("mode"));
           if (found != arguments->end()) {
             const auto* requested = std::get_if<std::string>(&found->second);
@@ -604,7 +620,7 @@ void VpnBridge::Work() {
         }
         auto response =
             Request(job.method == "getStatus" ? "status" : job.method, profile,
-                    exclusions, mode);
+                    exclusions, mode, nullptr, automatic_profiles);
         const auto native_status = response.GetNamedObject(L"status");
         completion.status = Status(native_status);
         last_mode = winrt::to_string(native_status.GetNamedString(L"mode", L"vpn"));

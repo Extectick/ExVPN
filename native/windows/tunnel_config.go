@@ -77,7 +77,13 @@ func buildTunnelConfigWithRouting(p exvpn.Profile, policy ApplicationRoutingPoli
 				// The ExVPN dialer validates the generation token before using
 				// this already bootstrapped name. Upstream ForceIP resolves via
 				// a global DNS client before reaching that lifetime check.
-				out["streamSettings"].(map[string]any)["sockopt"] = object{"domainStrategy": "AsIs"}
+				stream := out["streamSettings"].(map[string]any)
+				socket, _ := stream["sockopt"].(map[string]any)
+				if socket == nil {
+					socket = object{}
+				}
+				socket["domainStrategy"] = "AsIs"
+				stream["sockopt"] = socket
 			}
 		}
 	}

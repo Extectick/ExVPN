@@ -21,27 +21,31 @@ type CodeError string
 func (e CodeError) Error() string { return string(e) }
 
 type Profile struct {
-	ID         string    `json:"id"`
-	Name       string    `json:"name"`
-	Protocol   string    `json:"protocol"`
-	Server     string    `json:"server"`
-	Port       int       `json:"port"`
-	UUID       string    `json:"uuid,omitempty"`
-	Password   string    `json:"password,omitempty"`
-	Cipher     string    `json:"cipher,omitempty"`
-	Flow       string    `json:"flow,omitempty"`
-	Encryption string    `json:"encryption,omitempty"`
-	Transport  Transport `json:"transport"`
-	TLS        TLS       `json:"tls"`
+	ID             string    `json:"id"`
+	Name           string    `json:"name"`
+	Protocol       string    `json:"protocol"`
+	Server         string    `json:"server"`
+	Port           int       `json:"port"`
+	UUID           string    `json:"uuid,omitempty"`
+	Password       string    `json:"password,omitempty"`
+	Cipher         string    `json:"cipher,omitempty"`
+	Flow           string    `json:"flow,omitempty"`
+	Encryption     string    `json:"encryption,omitempty"`
+	PacketEncoding string    `json:"packetEncoding,omitempty"`
+	Transport      Transport `json:"transport"`
+	TLS            TLS       `json:"tls"`
 }
 
 type Transport struct {
-	Type        string  `json:"type"`
-	Path        string  `json:"path,omitempty"`
-	Host        string  `json:"host,omitempty"`
-	ServiceName string  `json:"serviceName,omitempty"`
-	Mode        string  `json:"mode,omitempty"`
-	TCPSudoku   *Sudoku `json:"tcpSudoku,omitempty"`
+	Type                  string  `json:"type"`
+	Path                  string  `json:"path,omitempty"`
+	Host                  string  `json:"host,omitempty"`
+	ServiceName           string  `json:"serviceName,omitempty"`
+	Mode                  string  `json:"mode,omitempty"`
+	TCPSudoku             *Sudoku `json:"tcpSudoku,omitempty"`
+	TCPKeepAliveIdle      *int    `json:"tcpKeepAliveIdle,omitempty"`
+	TCPKeepAliveInterval  *int    `json:"tcpKeepAliveInterval,omitempty"`
+	WSEarlyDataHeaderName string  `json:"wsEarlyDataHeaderName,omitempty"`
 }
 
 type TLS struct {
@@ -72,7 +76,7 @@ func DecodeProfile(r io.Reader) (Profile, error) {
 	if json.Unmarshal(b, &envelope) != nil {
 		return Profile{}, CodeError("profile_invalid_schema")
 	}
-	if !onlyKeys(envelope, "id", "name", "protocol", "server", "port", "uuid", "password", "cipher", "flow", "encryption", "transport", "tls") {
+	if !onlyKeys(envelope, "id", "name", "protocol", "server", "port", "uuid", "password", "cipher", "flow", "encryption", "packetEncoding", "transport", "tls") {
 		return Profile{}, CodeError("profile_invalid_schema")
 	}
 	for _, key := range []string{"protocol", "server", "port", "transport", "tls"} {
@@ -88,7 +92,7 @@ func DecodeProfile(r io.Reader) (Profile, error) {
 		return Profile{}, CodeError("profile_invalid_schema")
 	}
 	var transportFields map[string]json.RawMessage
-	if json.Unmarshal(envelope["transport"], &transportFields) != nil || !onlyKeys(transportFields, "type", "path", "host", "serviceName", "mode", "tcpSudoku") {
+	if json.Unmarshal(envelope["transport"], &transportFields) != nil || !onlyKeys(transportFields, "type", "path", "host", "serviceName", "mode", "tcpSudoku", "tcpKeepAliveIdle", "tcpKeepAliveInterval", "wsEarlyDataHeaderName") {
 		return Profile{}, CodeError("profile_invalid_schema")
 	}
 	if raw, ok := transportFields["tcpSudoku"]; ok {
@@ -208,6 +212,9 @@ func (p Profile) Validate() error {
 	if !validHost(p.Server) || p.Port < 1 || p.Port > 65535 {
 		return bad("invalid_endpoint")
 	}
+	if ip := net.ParseIP(p.Server); ip != nil && ip.IsUnspecified() {
+		return bad("invalid_endpoint")
+	}
 	if !clean(p.ID, 128) || !clean(p.Name, 256) || !clean(p.Password, 4096) {
 		return bad("invalid_text")
 	}
@@ -225,6 +232,17 @@ func (p Profile) Validate() error {
 	}
 	if p.Encryption != "" && (p.Protocol != "vless" || !validVlessEncryption(p.Encryption)) {
 		return bad("invalid_encryption")
+	}
+	if p.PacketEncoding != "" && (p.Protocol != "vless" || p.PacketEncoding != "xudp") {
+		return bad("unsupported_packet_encoding")
+	}
+	for _, seconds := range []*int{p.Transport.TCPKeepAliveIdle, p.Transport.TCPKeepAliveInterval} {
+		if seconds != nil && (*seconds < 1 || *seconds > 86400 || p.Transport.Type == "hysteria") {
+			return bad("invalid_keepalive")
+		}
+	}
+	if p.Transport.WSEarlyDataHeaderName != "" && (p.Transport.Type != "ws" || p.Transport.WSEarlyDataHeaderName != "Sec-WebSocket-Protocol") {
+		return bad("unsupported_ws_early_data_header")
 	}
 	if s := p.Transport.TCPSudoku; s != nil && (p.Protocol != "vless" || p.Transport.Type != "tcp" || (!p.TLS.Enabled && p.Encryption == "") || !s.valid()) {
 		return bad("invalid_sudoku")

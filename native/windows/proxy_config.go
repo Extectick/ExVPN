@@ -29,7 +29,13 @@ func BuildSystemProxyConfig(p exvpn.Profile, port int) ([]byte, error) {
 	for _, raw := range config["outbounds"].([]any) {
 		out := raw.(map[string]any)
 		if out["tag"] == "proxy" {
-			out["streamSettings"].(map[string]any)["sockopt"] = object{"domainStrategy": "AsIs"}
+			stream := out["streamSettings"].(map[string]any)
+			socket, _ := stream["sockopt"].(map[string]any)
+			if socket == nil {
+				socket = object{}
+			}
+			socket["domainStrategy"] = "AsIs"
+			stream["sockopt"] = socket
 		}
 	}
 	config["stats"] = object{}

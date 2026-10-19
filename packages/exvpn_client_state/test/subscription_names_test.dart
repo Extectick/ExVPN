@@ -70,7 +70,7 @@ void main() {
         .addSubscription(raw: _node, providerName: 'Provider')
         .groupId;
     final snapshot = _snapshot(app);
-    expect(snapshot['version'], 2);
+    expect(snapshot['version'], 3);
     final restored = AppController.fromSnapshot(snapshot);
     addTearDown(restored.dispose);
     restored.updateSubscription(

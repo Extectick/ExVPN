@@ -17,6 +17,230 @@ final class VpnController extends ChangeNotifier {
   bool statisticsAvailable = false;
   bool initialized = false;
   bool _commandPending = false;
+  List<ConnectionProfile> _automaticProfiles = const [];
+  final Set<String> _automaticFailed = {};
+  String? _automaticCandidate;
+  VpnMode _automaticMode = VpnMode.vpn;
+  int _automaticGeneration = 0;
+  bool _automaticAdvancing = false;
+  Timer? _automaticRetry;
+  bool get automaticSelectionEnabled =>
+      _automaticProfiles.isNotEmpty ||
+      (_nativeAutomaticSelection && status.automaticSelection);
+  bool get _nativeAutomaticSelection =>
+      bridge is AutomaticSelectionBridge &&
+      (bridge as AutomaticSelectionBridge).supportsAutomaticSelection;
+  Future<void>? _automaticClearing;
+  Future<void>? _connectionDrain;
+  List<String> get automaticProfileIds =>
+      List.unmodifiable(_automaticProfiles.map((profile) => profile.id));
+
+  /// Refresh never connects implicitly. Removing the active member disables the
+  /// session while retaining the current native connection and its protection.
+  void updateAutomaticCandidates(List<ConnectionProfile> profiles) {
+    if (!automaticSelectionEnabled) return;
+    final unique = {for (final profile in profiles) profile.id: profile};
+    final active = _nativeAutomaticSelection
+        ? status.activeProfileId
+        : _automaticCandidate;
+    if (!unique.containsKey(active)) {
+      unawaited(disableAutomaticSelection());
+      return;
+    }
+    // The native group is an immutable user-approved snapshot. A subscription
+    // refresh never silently replaces its members during an active session.
+    if (_nativeAutomaticSelection) return;
+    _automaticProfiles = List.unmodifiable(unique.values);
+    _automaticFailed.retainAll(unique.keys.toSet());
+    _changed();
+  }
+
+  /// Restore UI intent only after the native service confirms an active group.
+  /// No connection is started and the service snapshot is left unchanged.
+  bool adoptAutomaticSelection(List<ConnectionProfile> candidates) {
+    if (_disposed ||
+        !_nativeAutomaticSelection ||
+        !status.automaticSelection ||
+        _automaticProfiles.isNotEmpty ||
+        candidates.isEmpty ||
+        candidates.length > 32 ||
+        _automaticClearing != null) {
+      return false;
+    }
+    final unique = {for (final profile in candidates) profile.id: profile};
+    if (!unique.containsKey(status.activeProfileId)) return false;
+    _automaticProfiles = List.unmodifiable(unique.values);
+    _automaticCandidate = status.activeProfileId;
+    _automaticMode = status.mode;
+    _changed();
+    return true;
+  }
+
+  /// Ordered primary/backup selection, owned by the native service when supported.
+  /// Legacy bridge sessions last only while this controller remains alive.
+  /// Native HTTPS verification, never command acceptance, decides readiness.
+  Future<bool> startAutomaticSelection(
+    List<ConnectionProfile> profiles, {
+    VpnMode? mode,
+  }) async {
+    if (_automaticClearing != null) {
+      final generation = _automaticGeneration;
+      await _automaticClearing;
+      if (generation != _automaticGeneration || _disposed) return false;
+    }
+    if (!canChangeConnection ||
+        !_serverReconnectSupported ||
+        profiles.isEmpty ||
+        profiles.length > 32) {
+      return false;
+    }
+    stopAutomaticSelection();
+    final unique = <String, ConnectionProfile>{};
+    for (final profile in profiles) {
+      unique.putIfAbsent(profile.id, () => profile);
+    }
+    _automaticProfiles = List.unmodifiable(unique.values);
+    _automaticMode = mode ?? this.mode;
+    return _advanceAutomatic(_automaticGeneration);
+  }
+
+  /// Clear only the automatic policy, preserving native tunnel and guard. New
+  /// manual connection requests wait for this command before being dispatched.
+  Future<void> disableAutomaticSelection() {
+    stopAutomaticSelection();
+    if (!_nativeAutomaticSelection || _disposed) return Future.value();
+    if (_automaticClearing != null) return _automaticClearing!;
+    final drain = _connectionDrain;
+    final operation = () async {
+      try {
+        await drain;
+        if (!_disposed) {
+          await (bridge as AutomaticSelectionBridge).clearAutomaticSelection();
+          await refresh();
+        }
+      } catch (error) {
+        if (!_disposed) {
+          lastErrorCode = error is VpnFailure ? error.code : 'native_failure';
+        }
+      } finally {
+        _automaticClearing = null;
+        _changed();
+      }
+    }();
+    _automaticClearing = operation;
+    _changed();
+    return operation;
+  }
+
+  void stopAutomaticSelection() {
+    _automaticGeneration++;
+    _automaticProfiles = const [];
+    _automaticFailed.clear();
+    _automaticCandidate = null;
+    _automaticRetry?.cancel();
+    _automaticRetry = null;
+    _changed();
+  }
+
+  static const _automaticTransportFailures = {
+    'transport_unreachable',
+    'tunnel_health_failed',
+    'tunnel_https_failed',
+    'tunnel_https_status',
+    'tunnel_unreachable',
+    'endpoint_resolution_failed',
+    'proxy_unreachable',
+  };
+
+  void _considerAutomatic() {
+    if (!automaticSelectionEnabled ||
+        _automaticAdvancing ||
+        _connectionChangePending ||
+        _commandPending ||
+        commandsReserved) {
+      return;
+    }
+    if (status.cleanupRequired) {
+      stopAutomaticSelection();
+      return;
+    }
+    if (status.phase == VpnPhase.disconnected) {
+      stopAutomaticSelection();
+      return;
+    }
+    // The platform is the sole selector for persistent native groups.
+    if (_nativeAutomaticSelection) return;
+    if (status.activeProfileId != _automaticCandidate) return;
+    if (status.phase == VpnPhase.connected) {
+      _automaticRetry?.cancel();
+      _automaticRetry = null;
+      _automaticFailed.clear();
+      return;
+    }
+    if (status.phase != VpnPhase.blocked &&
+        status.phase != VpnPhase.error &&
+        status.phase != VpnPhase.reconnecting) {
+      return;
+    }
+    if (!_automaticTransportFailures.contains(status.errorCode)) {
+      stopAutomaticSelection();
+      return;
+    }
+    if (_automaticRetry != null) return;
+    _automaticFailed.add(_automaticCandidate!);
+    unawaited(_advanceAutomatic(_automaticGeneration));
+  }
+
+  Future<bool> _advanceAutomatic(int generation) async {
+    if (_disposed ||
+        generation != _automaticGeneration ||
+        !automaticSelectionEnabled) {
+      return false;
+    }
+    ConnectionProfile? candidate;
+    for (final profile in _automaticProfiles) {
+      if (!_automaticFailed.contains(profile.id)) {
+        candidate = profile;
+        break;
+      }
+    }
+    if (candidate == null) {
+      // Exhaustion retains native protection; never spin or release its guard.
+      _automaticRetry = Timer(const Duration(seconds: 30), () {
+        _automaticRetry = null;
+        if (generation != _automaticGeneration || _disposed) return;
+        if (status.cleanupRequired ||
+            status.activeProfileId != _automaticCandidate ||
+            !_automaticTransportFailures.contains(status.errorCode)) {
+          _considerAutomatic();
+          return;
+        }
+        _automaticFailed.clear();
+        unawaited(_advanceAutomatic(generation));
+      });
+      return false;
+    }
+    _automaticCandidate = candidate.id;
+    _automaticAdvancing = true;
+    try {
+      final accepted = await _requestConnection(
+        candidate,
+        mode: _automaticMode,
+        automatic: true,
+      );
+      if (generation != _automaticGeneration || _disposed) return false;
+      if (!accepted && !_automaticTransportFailures.contains(lastErrorCode)) {
+        stopAutomaticSelection();
+      }
+      return accepted;
+    } finally {
+      _automaticAdvancing = false;
+      if (generation == _automaticGeneration && !_disposed) {
+        scheduleMicrotask(_considerAutomatic);
+      }
+    }
+  }
+
   bool _policyPending = false;
   bool _dataUpdatePending = false;
   bool _connectionChangePending = false;
@@ -32,6 +256,7 @@ final class VpnController extends ChangeNotifier {
   bool get applicationRestartPending => _applicationRestartPending;
   bool get connectionChangePending => _connectionChangePending;
   bool get commandsReserved =>
+      _automaticClearing != null ||
       _policyPending ||
       _dataUpdatePending ||
       _applicationRestartPending ||
@@ -255,6 +480,7 @@ final class VpnController extends ChangeNotifier {
         };
     lastErrorCode = value.errorCode;
     _changed();
+    scheduleMicrotask(_considerAutomatic);
   }
 
   void _clearStatistics() {
@@ -264,6 +490,7 @@ final class VpnController extends ChangeNotifier {
 
   void _lost(Object error) {
     if (_disposed) return;
+    stopAutomaticSelection();
     _revision++;
     _unsafeEpoch++;
     initialized = true;
@@ -314,11 +541,29 @@ final class VpnController extends ChangeNotifier {
   /// Coalesces UI changes while one native command is awaiting acknowledgement.
   /// Superseding uses native reconnect, never an unprotected disconnect/connect.
   Future<bool> requestConnection(ConnectionProfile profile, {VpnMode? mode}) {
+    stopAutomaticSelection();
+    return _requestConnection(profile, mode: mode);
+  }
+
+  Future<bool> _requestConnection(
+    ConnectionProfile profile, {
+    VpnMode? mode,
+    bool automatic = false,
+  }) {
+    if (_automaticClearing != null) {
+      final generation = _automaticGeneration;
+      return _automaticClearing!.then((_) {
+        if (_disposed || generation != _automaticGeneration) return false;
+        return _requestConnection(profile, mode: mode, automatic: automatic);
+      });
+    }
     if (!canChangeConnection) return Future.value(false);
     final requestedMode = mode ?? this.mode;
     if (status.cleanupRequired ||
         ((status.phase == VpnPhase.error || status.phase == VpnPhase.blocked) &&
-            !_connectionChangePending)) {
+            !_connectionChangePending &&
+            !(automatic &&
+                _automaticTransportFailures.contains(status.errorCode)))) {
       return Future.value(_reject('mode_switch_requires_connected'));
     }
     final reconnect = _drainingConnections || canDisconnect;
@@ -341,14 +586,27 @@ final class VpnController extends ChangeNotifier {
     }
     _queuedConnection?.complete(false);
     _activeConnection?.complete(false);
-    final intent = _ConnectionIntent(profile, requestedMode, reconnect);
+    final intent = _ConnectionIntent(
+      profile,
+      requestedMode,
+      reconnect,
+      automaticProfiles: automatic && _nativeAutomaticSelection
+          ? _automaticProfiles
+          : const [],
+    );
     _queuedConnection = intent;
     _connectionChangePending = true;
     _mayHaveTunnel = true;
     if (!reconnect) _mode = requestedMode;
     if (!_drainingConnections) {
       _drainingConnections = true;
-      unawaited(_drainConnections());
+      final drain = _drainConnections();
+      _connectionDrain = drain;
+      unawaited(
+        drain.whenComplete(() {
+          if (identical(_connectionDrain, drain)) _connectionDrain = null;
+        }),
+      );
     }
     _changed();
     return intent.result.future;
@@ -361,6 +619,14 @@ final class VpnController extends ChangeNotifier {
         _queuedConnection = null;
         _activeConnection = intent;
         final accepted = await _run(() {
+          if (intent.automaticProfiles.isNotEmpty) {
+            return (bridge as AutomaticSelectionBridge).connectAutomatic(
+              intent.profile,
+              intent.automaticProfiles,
+              intent.mode,
+              replace: intent.reconnect,
+            );
+          }
           if (intent.reconnect) {
             if (!modeSwitchSupported && intent.mode == VpnMode.vpn) {
               return (bridge as ServerReconnectBridge).reconnectServer(
@@ -388,6 +654,7 @@ final class VpnController extends ChangeNotifier {
       _drainingConnections = false;
       _connectionChangePending = false;
       _changed();
+      scheduleMicrotask(_considerAutomatic);
     }
   }
 
@@ -427,6 +694,11 @@ final class VpnController extends ChangeNotifier {
         profile.id != status.activeProfileId) {
       return _reject('mode_profile_mismatch');
     }
+    if (automaticSelectionEnabled) {
+      if (_automaticProfiles.isEmpty) return _reject('profile_required');
+      _automaticMode = requested;
+      return _requestConnection(profile, mode: requested, automatic: true);
+    }
     return requestConnection(profile, mode: requested);
   }
 
@@ -437,6 +709,7 @@ final class VpnController extends ChangeNotifier {
   }
 
   Future<void> disconnect() {
+    stopAutomaticSelection();
     if (_disposed || commandsReserved && !_disconnectPending) {
       return Future.value();
     }
@@ -570,6 +843,7 @@ final class VpnController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    stopAutomaticSelection();
     _command++;
     _queuedConnection?.complete(false);
     _queuedConnection = null;
@@ -582,10 +856,16 @@ final class VpnController extends ChangeNotifier {
 }
 
 final class _ConnectionIntent {
-  _ConnectionIntent(this.profile, this.mode, this.reconnect);
+  _ConnectionIntent(
+    this.profile,
+    this.mode,
+    this.reconnect, {
+    this.automaticProfiles = const [],
+  });
   final ConnectionProfile profile;
   final VpnMode mode;
   final bool reconnect;
+  final List<ConnectionProfile> automaticProfiles;
   final Completer<bool> result = Completer<bool>();
   void complete(bool accepted) {
     if (!result.isCompleted) result.complete(accepted);

@@ -12,6 +12,9 @@ final class Transport {
     this.serviceName,
     this.mode,
     this.tcpSudoku,
+    this.tcpKeepAliveIdle,
+    this.tcpKeepAliveInterval,
+    this.wsEarlyDataHeaderName,
   });
   final String type;
   final String? path;
@@ -19,9 +22,17 @@ final class Transport {
   final String? serviceName;
   final String? mode;
   final SudokuOptions? tcpSudoku;
+  final int? tcpKeepAliveIdle;
+  final int? tcpKeepAliveInterval;
+  final String? wsEarlyDataHeaderName;
 
   Map<String, Object?> toJson() => {
     'type': type,
+    if (tcpKeepAliveIdle != null) 'tcpKeepAliveIdle': tcpKeepAliveIdle,
+    if (tcpKeepAliveInterval != null)
+      'tcpKeepAliveInterval': tcpKeepAliveInterval,
+    if (wsEarlyDataHeaderName != null)
+      'wsEarlyDataHeaderName': wsEarlyDataHeaderName,
     if (path != null) 'path': path,
     if (host != null) 'host': host,
     if (serviceName != null) 'serviceName': serviceName,
@@ -85,6 +96,7 @@ final class ConnectionProfile {
     this.cipher,
     this.flow,
     this.encryption,
+    this.packetEncoding,
   });
   final String id;
   final String name;
@@ -96,6 +108,7 @@ final class ConnectionProfile {
   final String? cipher;
   final String? flow;
   final VlessEncryption? encryption;
+  final String? packetEncoding;
   final Transport transport;
   final TlsOptions tls;
 
@@ -109,6 +122,7 @@ final class ConnectionProfile {
     if (password != null) 'password': password,
     if (cipher != null) 'cipher': cipher,
     if (flow != null) 'flow': flow,
+    if (packetEncoding != null) 'packetEncoding': packetEncoding,
     if (encryption != null) 'encryption': encryption!.value,
     'transport': transport.toJson(),
     'tls': tls.toJson(),

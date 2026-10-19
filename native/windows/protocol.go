@@ -27,6 +27,7 @@ type Request struct {
 	Exclusions         []string                  `json:"exclusions,omitempty"`
 	Mode               string                    `json:"mode,omitempty"`
 	ApplicationRouting *ApplicationRoutingPolicy `json:"applicationRouting,omitempty"`
+	AutomaticProfiles  []json.RawMessage         `json:"automaticProfiles,omitempty"`
 }
 
 type Capabilities struct {
@@ -37,15 +38,16 @@ type Capabilities struct {
 	Verified              bool `json:"verified"`
 }
 type Status struct {
-	State           string       `json:"state"`
-	Code            string       `json:"code"`
-	GuardActive     bool         `json:"guardActive"`
-	ConnectedAt     int64        `json:"connectedAt,omitempty"`
-	CoreVersion     string       `json:"coreVersion"`
-	ActiveProfileID string       `json:"activeProfileId,omitempty"`
-	Capabilities    Capabilities `json:"capabilities"`
-	Mode            string       `json:"mode"`
-	ProxyPort       int          `json:"proxyPort"`
+	State              string       `json:"state"`
+	Code               string       `json:"code"`
+	GuardActive        bool         `json:"guardActive"`
+	ConnectedAt        int64        `json:"connectedAt,omitempty"`
+	CoreVersion        string       `json:"coreVersion"`
+	ActiveProfileID    string       `json:"activeProfileId,omitempty"`
+	Capabilities       Capabilities `json:"capabilities"`
+	Mode               string       `json:"mode"`
+	ProxyPort          int          `json:"proxyPort"`
+	AutomaticSelection bool         `json:"automaticSelection"`
 }
 type Response struct {
 	Version            int                       `json:"version"`
@@ -126,8 +128,18 @@ func DecodeRequest(b []byte) (Request, error) {
 	if r.ApplicationRouting != nil && r.Command != "setApplicationRouting" {
 		return Request{}, Code("ipc_unexpected_payload")
 	}
+	if _, present := fields["automaticProfiles"]; present {
+		if (r.Command != "connect" && r.Command != "reconnect") || len(r.AutomaticProfiles) == 0 || len(r.AutomaticProfiles) > 32 {
+			return Request{}, Code("automatic_group_rejected")
+		}
+		for _, raw := range r.AutomaticProfiles {
+			if _, err := exvpn.DecodeProfile(bytes.NewReader(raw)); err != nil {
+				return Request{}, Code("automatic_group_rejected")
+			}
+		}
+	}
 	switch r.Command {
-	case "status", "stats", "disconnect", "getExclusions", "getApplicationRouting":
+	case "status", "stats", "disconnect", "getExclusions", "getApplicationRouting", "clearAutomaticSelection":
 		if len(r.Profile) != 0 || r.Exclusions != nil {
 			return Request{}, Code("ipc_unexpected_payload")
 		}

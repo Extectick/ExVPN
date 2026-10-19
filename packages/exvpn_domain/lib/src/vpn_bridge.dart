@@ -48,6 +48,7 @@ final class VpnStatus {
     this.mode = VpnMode.vpn,
     this.systemProxySupported = false,
     this.cleanupRequired = false,
+    this.automaticSelection = false,
   });
   final VpnPhase phase;
 
@@ -63,6 +64,9 @@ final class VpnStatus {
 
   /// Local native recovery is pending even when the service cannot be reached.
   final bool cleanupRequired;
+
+  /// Authoritative native group policy, independent of the UI lifetime.
+  final bool automaticSelection;
 }
 
 final class ApplicationIdentity {
@@ -121,6 +125,22 @@ abstract interface class ConnectionModeBridge {
 abstract interface class ServerReconnectBridge {
   bool get supportsServerReconnect;
   Future<void> reconnectServer(ConnectionProfile profile);
+}
+
+/// Optional service-owned primary/backup selection. Candidates are explicitly
+/// chosen locally, bounded and validated at the native boundary. Configuration
+/// from a subscription never enables this policy automatically.
+abstract interface class AutomaticSelectionBridge {
+  bool get supportsAutomaticSelection;
+  Future<void> connectAutomatic(
+    ConnectionProfile primary,
+    List<ConnectionProfile> candidates,
+    VpnMode mode, {
+    required bool replace,
+  });
+
+  /// Cancel future automatic changes, preserving the active tunnel and guard.
+  Future<void> clearAutomaticSelection();
 }
 
 /// Optional native policy support. Legacy bridges can express exclusions only.

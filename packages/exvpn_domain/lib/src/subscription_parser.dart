@@ -320,7 +320,8 @@ final class SubscriptionParser {
     final ids = <String>{};
     for (var i = 0; i < outbounds.length; i++) {
       try {
-        final node = _outbound(_map(outbounds[i]));
+        final raw = _map(outbounds[i]);
+        final node = _outbound(raw.containsKey('type') ? _singBox(raw) : raw);
         if (ids.add(node.id)) profiles.add(node);
       } on _Rejected catch (error) {
         issues.add(ImportIssue(i + 1, error.code));
@@ -336,8 +337,144 @@ final class SubscriptionParser {
     return ImportResult(profiles, issues);
   }
 
+  /// Translate only explicitly supported remote endpoint fields. Provider
+  /// routes, DNS, interfaces and detours never enter the normalized contract.
+  Map<String, Object?> _singBox(Map<String, Object?> node) {
+    _checkKeys(node, {
+      'type',
+      'tag',
+      'server',
+      'server_port',
+      'uuid',
+      'password',
+      'flow',
+      'tls',
+      'transport',
+      'packet_encoding',
+    });
+    final type = _string(node['type']);
+    if (!{'vless', 'hysteria2'}.contains(type)) {
+      throw const _Rejected(ImportIssueCode.unsupportedProtocol);
+    }
+    if ((type == 'vless' && node.containsKey('password')) ||
+        (type == 'hysteria2' &&
+            ['uuid', 'flow', 'packet_encoding'].any(node.containsKey))) {
+      throw const _Rejected(ImportIssueCode.unsupportedFeature);
+    }
+    final tls = node.containsKey('tls')
+        ? _map(node['tls'])
+        : <String, Object?>{};
+    _checkKeys(tls, {
+      'enabled',
+      'server_name',
+      'utls',
+      'reality',
+      'alpn',
+      'insecure',
+    });
+    final enabled = tls['enabled'] ?? false;
+    if (enabled is! bool ||
+        (tls['insecure'] != null && tls['insecure'] != false)) {
+      throw const _Rejected(ImportIssueCode.invalidProfile);
+    }
+    final utls = tls.containsKey('utls')
+        ? _map(tls['utls'])
+        : <String, Object?>{};
+    _checkKeys(utls, {'enabled', 'fingerprint'});
+    if (utls.isNotEmpty && utls['enabled'] != true) {
+      throw const _Rejected(ImportIssueCode.unsupportedFeature);
+    }
+    final reality = tls.containsKey('reality')
+        ? _map(tls['reality'])
+        : <String, Object?>{};
+    _checkKeys(reality, {'enabled', 'public_key', 'short_id'});
+    if (reality.isNotEmpty && (reality['enabled'] != true || !enabled)) {
+      throw const _Rejected(ImportIssueCode.invalidProfile);
+    }
+    if (!enabled && tls.keys.any((key) => key != 'enabled')) {
+      throw const _Rejected(ImportIssueCode.invalidProfile);
+    }
+    final security = !enabled
+        ? 'none'
+        : reality.isEmpty
+        ? 'tls'
+        : 'reality';
+    final tlsData = <String, Object?>{
+      if (tls.containsKey('server_name')) 'serverName': tls['server_name'],
+      if (utls.containsKey('fingerprint')) 'fingerprint': utls['fingerprint'],
+      if (tls.containsKey('alpn'))
+        'alpn': tls['alpn'] is String ? [tls['alpn']] : tls['alpn'],
+      if (reality.isNotEmpty) 'publicKey': reality['public_key'],
+      if (reality.isNotEmpty) 'shortId': reality['short_id'] ?? '',
+    };
+    final stream = <String, Object?>{
+      'security': security,
+      if (enabled) '${security}Settings': tlsData,
+    };
+    if (node.containsKey('transport')) {
+      final transport = _map(node['transport']);
+      _checkKeys(transport, {
+        'type',
+        'path',
+        'host',
+        'mode',
+        'headers',
+        'early_data_header_name',
+      });
+      final network = _string(transport['type']);
+      if (!{'ws', 'xhttp'}.contains(network) || type == 'hysteria2') {
+        throw const _Rejected(ImportIssueCode.unsupportedFeature);
+      }
+      stream['network'] = network;
+      stream['${network}Settings'] = <String, Object?>{
+        for (final key in ['path', 'host', 'mode', 'headers'])
+          if (transport.containsKey(key)) key: transport[key],
+        if (transport.containsKey('early_data_header_name'))
+          'earlyDataHeaderName': transport['early_data_header_name'],
+      };
+    }
+    if (type == 'hysteria2') {
+      stream['network'] = 'hysteria';
+      stream['hysteriaSettings'] = {'version': 2, 'auth': node['password']};
+    }
+    return {
+      'protocol': type == 'hysteria2' ? 'hysteria' : 'vless',
+      if (node.containsKey('tag')) 'tag': node['tag'],
+      if (node.containsKey('packet_encoding'))
+        'packetEncoding': node['packet_encoding'],
+      'settings': type == 'hysteria2'
+          ? {
+              'version': 2,
+              'address': node['server'],
+              'port': node['server_port'],
+            }
+          : {
+              'vnext': [
+                {
+                  'address': node['server'],
+                  'port': node['server_port'],
+                  'users': [
+                    {
+                      'id': node['uuid'],
+                      'encryption': 'none',
+                      if (node.containsKey('flow')) 'flow': node['flow'],
+                    },
+                  ],
+                },
+              ],
+            },
+      'streamSettings': stream,
+    };
+  }
+
   ConnectionProfile _outbound(Map<String, Object?> node) {
-    _checkKeys(node, {'tag', 'protocol', 'settings', 'streamSettings'});
+    _checkKeys(node, {
+      'tag',
+      'protocol',
+      'settings',
+      'streamSettings',
+      'packetEncoding',
+    });
     final protocol = switch (node['protocol']) {
       'vless' => ProxyProtocol.vless,
       'vmess' => ProxyProtocol.vmess,
@@ -403,7 +540,27 @@ final class SubscriptionParser {
       'xhttpSettings',
       'hysteriaSettings',
       'finalmask',
+      'sockopt',
+      'tcpSettings',
     });
+    final socket = stream.containsKey('sockopt')
+        ? _map(stream['sockopt'])
+        : <String, Object?>{};
+    _checkKeys(socket, {'tcpKeepAliveIdle', 'tcpKeepAliveInterval'});
+    if (isHysteria && socket.isNotEmpty) {
+      throw const _Rejected(ImportIssueCode.unsupportedFeature);
+    }
+    for (final value in socket.values) {
+      if (value is! int || value < 1 || value > 86400) {
+        throw const _Rejected(ImportIssueCode.invalidProfile);
+      }
+    }
+    if (stream.containsKey('tcpSettings')) {
+      _checkKeys(_map(stream['tcpSettings']), {});
+      if (!{'tcp', 'raw'}.contains(stream['network'] ?? 'tcp')) {
+        throw const _Rejected(ImportIssueCode.unsupportedFeature);
+      }
+    }
     final security = _string(stream['security'] ?? 'none');
     if (!{'none', 'tls', 'reality'}.contains(security)) {
       throw const _Rejected(ImportIssueCode.unsupportedFeature);
@@ -470,12 +627,18 @@ final class SubscriptionParser {
     if (subKey != null && stream[subKey] != null) {
       final sub = _map(stream[subKey]);
       _checkKeys(sub, switch (type) {
-        'ws' => {'path', 'host', 'headers'},
+        'ws' => {'path', 'host', 'headers', 'earlyDataHeaderName'},
         'grpc' => {'serviceName'},
         'xhttp' => {'path', 'host', 'mode'},
         _ => <String>{},
       });
-      for (final key in ['path', 'host', 'serviceName', 'mode']) {
+      for (final key in [
+        'path',
+        'host',
+        'serviceName',
+        'mode',
+        'earlyDataHeaderName',
+      ]) {
         if (sub[key] != null) transportData[key] = _string(sub[key]);
       }
       if (sub['headers'] != null) {
@@ -515,7 +678,8 @@ final class SubscriptionParser {
           : _optional(server['method']),
       flow: _optional(user['flow']),
       encryption: _encryption(_optional(user['encryption'])),
-      transport: _transport(transportData),
+      transport: _transport(transportData, socket: socket),
+      packetEncoding: _optional(node['packetEncoding']),
       tls: TlsOptions(
         enabled: security != 'none',
         serverName: _optional(tls['serverName']),
@@ -532,7 +696,11 @@ final class SubscriptionParser {
     );
   }
 
-  Transport _transport(Map<String, String> q, {String defaultType = 'tcp'}) {
+  Transport _transport(
+    Map<String, String> q, {
+    String defaultType = 'tcp',
+    Map<String, Object?> socket = const {},
+  }) {
     var type = q['type'] ?? defaultType;
     if (type == 'raw') type = 'tcp';
     if (!{'tcp', 'ws', 'grpc', 'xhttp', 'hysteria'}.contains(type)) {
@@ -571,6 +739,9 @@ final class SubscriptionParser {
       serviceName: service,
       mode: mode,
       tcpSudoku: q.containsKey('fm') ? _sudoku(q['fm']!) : null,
+      tcpKeepAliveIdle: socket['tcpKeepAliveIdle'] as int?,
+      tcpKeepAliveInterval: socket['tcpKeepAliveInterval'] as int?,
+      wsEarlyDataHeaderName: q['earlyDataHeaderName'],
     );
   }
 
@@ -607,11 +778,20 @@ final class SubscriptionParser {
     String? cipher,
     String? flow,
     VlessEncryption? encryption,
+    String? packetEncoding,
   }) {
+    if ((packetEncoding != null &&
+            (packetEncoding != 'xudp' || protocol != ProxyProtocol.vless)) ||
+        (transport.wsEarlyDataHeaderName != null &&
+            (transport.type != 'ws' ||
+                transport.wsEarlyDataHeaderName != 'Sec-WebSocket-Protocol'))) {
+      throw const _Rejected(ImportIssueCode.unsupportedFeature);
+    }
     if (server.startsWith('[') && server.endsWith(']')) {
       server = server.substring(1, server.length - 1);
     }
-    if (!_validHost(server) ||
+    if ({'0.0.0.0', '::', '::0'}.contains(server) ||
+        !_validHost(server) ||
         port < 1 ||
         port > 65535 ||
         (password != null && (password.isEmpty || !_clean(password, 4096)))) {
@@ -721,6 +901,7 @@ final class SubscriptionParser {
       'password': password,
       'cipher': cipher,
       'flow': flow,
+      'packetEncoding': ?packetEncoding,
       if (encryption != null) 'encryption': encryption.value,
       'transport': transport.toJson(),
       'tls': tls.toJson(),
@@ -735,6 +916,7 @@ final class SubscriptionParser {
       password: password,
       cipher: cipher,
       flow: flow,
+      packetEncoding: packetEncoding,
       encryption: encryption,
       transport: transport,
       tls: tls,

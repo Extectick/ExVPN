@@ -132,6 +132,18 @@ func Compile(p Profile) (*core.Config, error) {
 
 func outbound(p Profile) object {
 	stream := object{"network": p.Transport.Type, "security": "none"}
+	// Only remote transport liveness knobs cross the provider boundary. Bind,
+	// interface, DNS strategy, mark and dialer chains remain platform policy.
+	if p.Transport.TCPKeepAliveIdle != nil || p.Transport.TCPKeepAliveInterval != nil {
+		socket := object{}
+		if p.Transport.TCPKeepAliveIdle != nil {
+			socket["tcpKeepAliveIdle"] = *p.Transport.TCPKeepAliveIdle
+		}
+		if p.Transport.TCPKeepAliveInterval != nil {
+			socket["tcpKeepAliveInterval"] = *p.Transport.TCPKeepAliveInterval
+		}
+		stream["sockopt"] = socket
+	}
 	if p.TLS.Enabled {
 		stream["security"] = "tls"
 		tls := object{"serverName": p.TLS.ServerName, "allowInsecure": false}
@@ -192,5 +204,13 @@ func outbound(p Profile) object {
 		protocol = "hysteria"
 		settings = object{"version": 2, "address": p.Server, "port": p.Port}
 	}
-	return object{"tag": "proxy", "protocol": protocol, "settings": settings, "streamSettings": stream}
+	result := object{"tag": "proxy", "protocol": protocol, "settings": settings, "streamSettings": stream}
+	if p.PacketEncoding == "xudp" {
+		// Xray's typed mux sender implements XUDP. Disable TCP mux separately;
+		// a raw packetEncoding field would be ignored by this pinned core.
+		result["mux"] = object{"enabled": true, "concurrency": -1, "xudpConcurrency": 8, "xudpProxyUDP443": "allow"}
+	}
+	// Sec-WebSocket-Protocol is already the pinned WS dialer's only early-data
+	// header. The accepted marker does not create arbitrary request headers.
+	return result
 }

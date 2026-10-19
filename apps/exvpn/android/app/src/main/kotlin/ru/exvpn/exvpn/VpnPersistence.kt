@@ -58,7 +58,8 @@ internal object VpnPersistence {
     @Synchronized fun loadResume(context: Context): ConnectRequest? = guarded {
         val record = read(context, RESUME) ?: return@guarded null
         val schema = record.getInt("schema")
-        require((schema == 1 && record.length() == 3) || (schema == 2 && record.length() == 4))
+        require((schema == 1 && record.length() == 3) || (schema == 2 && record.length() == 4) ||
+            (schema == 3 && record.length() == 5))
         val profile = record.getString("profile")
         require(profile.toByteArray(Charsets.UTF_8).size <= 1_048_576)
         val id = JSONObject(profile).getString("id")
@@ -66,7 +67,8 @@ internal object VpnPersistence {
         val selected = packages(record.getJSONArray("packages"))
         val policy = if (schema == 1) ApplicationRoutingPolicy.legacy(selected)
             else ApplicationRoutingPolicy(record.getString("mode"), selected)
-        ConnectRequest(profile, id, policy.applications, policy.mode)
+        val automatic = if (schema == 3) automaticProfiles(record.getJSONArray("automaticProfiles"), profile) else emptyList()
+        ConnectRequest(profile, id, policy.applications, policy.mode, automatic)
     }
 
     @Synchronized fun saveResume(context: Context, request: ConnectRequest) = guarded {
@@ -74,8 +76,10 @@ internal object VpnPersistence {
         require(JSONObject(request.profile).getString("id") == request.profileId)
         val selected = packages(JSONArray(request.packages.sorted()))
         val policy = ApplicationRoutingPolicy(request.routingMode, selected)
-        write(context, RESUME, JSONObject().put("schema", 2).put("mode", policy.mode)
-            .put("profile", request.profile).put("packages", JSONArray(selected.sorted())))
+        val automatic = automaticProfiles(JSONArray(request.automaticProfiles), request.profile)
+        write(context, RESUME, JSONObject().put("schema", 3).put("mode", policy.mode)
+            .put("profile", request.profile).put("packages", JSONArray(selected.sorted()))
+            .put("automaticProfiles", JSONArray(automatic)))
     }
 
     @Synchronized fun clearResume(context: Context) = guarded {
@@ -84,6 +88,23 @@ internal object VpnPersistence {
         // Explicit stop must not leave a recoverable old session, including
         // AtomicFile's legacy backup or unfinished replacement.
         require(listOf("", ".bak", ".new").none { File(file.baseFile.path + it).exists() })
+    }
+
+    private fun automaticProfiles(array: JSONArray, selectedProfile: String): List<String> {
+        require(array.length() <= 32)
+        val ids = mutableSetOf<String>()
+        var bytes = 0
+        val result = (0 until array.length()).map { index ->
+            val value = array.get(index)
+            require(value is String)
+            bytes += value.toByteArray(Charsets.UTF_8).size
+            require(bytes <= 1_048_576)
+            val id = JSONObject(value).getString("id")
+            require(id.isNotEmpty() && id.length <= 4096 && ids.add(id))
+            value
+        }
+        require(result.isEmpty() || result.any { NativeProfileIdentity.equivalent(it, selectedProfile) })
+        return result
     }
 
     private fun packages(array: JSONArray): Set<String> {

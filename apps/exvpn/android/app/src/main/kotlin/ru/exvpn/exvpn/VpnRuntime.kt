@@ -6,7 +6,8 @@ import android.os.Looper
 import io.flutter.plugin.common.EventChannel
 
 internal data class ConnectRequest(val profile: String, val profileId: String, val packages: Set<String>,
-    val routingMode: String = if (packages.isEmpty()) "disabled" else "exclude")
+    val routingMode: String = if (packages.isEmpty()) "disabled" else "exclude",
+    val automaticProfiles: List<String> = emptyList())
 
 /** Process-local command handoff: credentials never go into intents or logs. */
 internal object VpnRuntime {
@@ -37,7 +38,9 @@ internal object VpnRuntime {
         policyLoaded = true
     }
 
-    fun status(): Map<String, Any> = state + ("processCrashProtection" to (service?.crashProtection() ?: false))
+    fun status(): Map<String, Any> = state + mapOf(
+        "processCrashProtection" to (service?.crashProtection() ?: false),
+        "automaticSelection" to (service?.automaticSelection() ?: false))
     fun publish(phase: String, profileId: String? = null, connectedAt: Long? = null, error: String? = null) {
         state = buildMap {
             put("phase", phase); put("processCrashProtection", service?.crashProtection() ?: false)

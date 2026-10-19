@@ -109,8 +109,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ..addListener(_storageChanged);
     unawaited(_refreshes.refreshStale());
     _changes = widget.controller.changes.listen((_) {
+      final vpn = widget.vpn;
+      if (vpn != null && vpn.automaticSelectionEnabled) {
+        final group = widget.controller.groups
+            .where((g) => g.id == widget.controller.selectedAutomaticGroupId)
+            .firstOrNull;
+        if (group == null) {
+          unawaited(vpn.disableAutomaticSelection());
+        } else {
+          vpn.updateAutomaticCandidates([
+            for (final server in group.servers) server.profile,
+          ]);
+        }
+      }
       if (mounted) setState(() {});
     });
+    _adoptAutomaticGroup();
   }
 
   void _storageChanged() {
@@ -119,6 +133,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _vpnChanged() {
     if (!mounted) return;
+    _adoptAutomaticGroup();
     if (widget.vpn?.status.phase == VpnPhase.connected) {
       _clock ??= Timer.periodic(const Duration(seconds: 1), (_) {
         if (mounted) setState(() {});
@@ -128,6 +143,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _clock = null;
     }
     setState(() {});
+  }
+
+  void _adoptAutomaticGroup() {
+    final vpn = widget.vpn;
+    if (vpn == null ||
+        !vpn.status.automaticSelection ||
+        vpn.automaticProfileIds.isNotEmpty) {
+      return;
+    }
+    final group = widget.controller.groups
+        .where((g) => g.id == widget.controller.selectedAutomaticGroupId)
+        .firstOrNull;
+    if (group != null) {
+      vpn.adoptAutomaticSelection([
+        for (final server in group.servers) server.profile,
+      ]);
+    }
   }
 
   @override
@@ -191,6 +223,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
     if (vpn != null && !widget.controller.selectedServer!.isDemo) {
+      final automatic = widget.controller.groups
+          .where((g) => g.id == widget.controller.selectedAutomaticGroupId)
+          .firstOrNull;
+      if (automatic != null && automatic.servers.length >= 2) {
+        await vpn.startAutomaticSelection([
+          for (final server in automatic.servers) server.profile,
+        ]);
+        return;
+      }
       await vpn.connect(widget.controller.selectedServer!.profile);
       return;
     }
@@ -319,6 +360,30 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool get _connectionBusy =>
       widget.vpn != null && !widget.vpn!.canChangeConnection;
 
+  Future<void> _selectAutomatic(
+    SubscriptionGroup group, {
+    VoidCallback? onSelected,
+  }) async {
+    if (_connectionBusy ||
+        group.isDemo ||
+        group.servers.length < 2 ||
+        group.servers.length > 32) {
+      return;
+    }
+    final revision = ++_selectionRevision;
+    final vpn = widget.vpn;
+    // Save the explicit user intent before native notifications. No subscription
+    // content may activate automatic mode by itself.
+    widget.controller.selectAutomaticGroup(group.id);
+    onSelected?.call();
+    if (vpn != null && (vpn.canDisconnect || vpn.connectionChangePending)) {
+      await vpn.startAutomaticSelection([
+        for (final server in group.servers) server.profile,
+      ]);
+      if (!mounted || revision != _selectionRevision) return;
+    }
+  }
+
   Future<void> _selectServer(
     SubscriptionGroup group,
     ServerEntry server, {
@@ -372,6 +437,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     for (final group in widget.controller.groups) {
       for (final server in group.servers) {
         if (server.profile.id == profile.id) {
+          if (widget.controller.selectedAutomaticGroupId == group.id) {
+            widget.controller.selectAutomaticGroup(group.id);
+            return;
+          }
           widget.controller.selectServer(
             groupId: group.id,
             serverId: server.id,
@@ -1463,6 +1532,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         SubscriptionTree(
           children: [
+            if (!group.isDemo && group.servers.length >= 2)
+              _automaticServer(group, onSelected: onSelected),
             for (final server in group.servers)
               _server(group, server, onSelected: onSelected),
           ],
@@ -1474,6 +1545,51 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _flag(ServerEntry server, {required bool selected}) =>
       CountryFlag(countryCode: server.countryCode, size: 28);
+
+  Widget _automaticServer(SubscriptionGroup group, {VoidCallback? onSelected}) {
+    final selected = widget.controller.selectedAutomaticGroupId == group.id;
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Material(
+        color: selected
+            ? scheme.primary.withValues(alpha: .13)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(11),
+        child: ListTile(
+          key: ValueKey('automatic-${group.id}'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(11),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+          leading: Icon(
+            CupertinoIcons.arrow_2_circlepath,
+            color: scheme.primary,
+            size: 28,
+          ),
+          title: Text(
+            context.tr('Авто · основной и резерв'),
+            style: const TextStyle(fontSize: 15),
+          ),
+          subtitle: Text(
+            context.tr(
+              group.servers.length > 32
+                  ? 'Авто доступно для групп до 32 серверов'
+                  : 'Проверка HTTPS · резерв при обрыве',
+            ),
+            style: const TextStyle(fontSize: 12),
+          ),
+          trailing: selected
+              ? Icon(CupertinoIcons.check_mark, size: 20, color: scheme.primary)
+              : null,
+          selected: selected,
+          enabled: !_connectionBusy && group.servers.length <= 32,
+          onTap: () => _selectAutomatic(group, onSelected: onSelected),
+        ),
+      ),
+    );
+  }
+
   Widget _latency(ServerEntry server, {required bool selected}) {
     final sample = _latencies.results[server.profile.id];
     final checking = _latencies.checking.contains(server.profile.id);

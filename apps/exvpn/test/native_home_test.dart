@@ -61,6 +61,27 @@ void main() {
     TestWidgetsFlutterBinding.instance.platformDispatcher
         .clearLocalesTestValue();
   });
+  testWidgets('automatic group is a local choice and manual server exits it', (
+    tester,
+  ) async {
+    final bridge = ModeBridge();
+    final controls = await openConnectionControls(tester, bridge);
+    final group = controls.app.groups.single;
+    final auto = find.byKey(ValueKey('automatic-${group.id}'));
+    await tester.ensureVisible(auto);
+    await tester.tap(auto);
+    await tester.pumpAndSettle();
+    expect(controls.app.selectedAutomaticGroupId, group.id);
+    expect(bridge.reconfigurations, isEmpty);
+    final first = find.byKey(
+      ValueKey('server-${group.id}-${group.servers.first.id}'),
+    );
+    await tester.ensureVisible(first);
+    await tester.tap(first);
+    await tester.pumpAndSettle();
+    expect(controls.app.selectedAutomaticGroupId, isNull);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('cold UI waits for native status before offering connect', (
     tester,
   ) async {

@@ -49,6 +49,10 @@ type Controller struct {
 	policy             PolicyStore
 	monitorInterval    time.Duration
 	reconnectDelays    []time.Duration
+	automaticEpoch     uint64
+	automaticCancel    context.CancelFunc
+	automaticPoll      time.Duration
+	automaticCooldown  time.Duration
 }
 
 func NewController(g Guard, f TunnelFactory, validate func([]string) error, networkEnabled bool) (*Controller, error) {
@@ -65,6 +69,7 @@ func NewControllerWithPolicy(g Guard, f TunnelFactory, validate func([]string) e
 	c := &Controller{guard: g, start: f, tunnelMode: ModeVPN, validateExclusions: validate, networkEnabled: networkEnabled, status: Status{Mode: ModeVPN, State: "disconnected", Code: "idle", GuardActive: armed, CoreVersion: exvpn.CoreVersion, Capabilities: Capabilities{SystemTunnel: networkEnabled, PersistentGuard: networkEnabled, ApplicationExclusions: networkEnabled, Verified: false}}}
 	c.monitorInterval = 15 * time.Second
 	c.reconnectDelays = []time.Duration{5 * time.Second, 15 * time.Second, 30 * time.Second}
+	c.automaticPoll, c.automaticCooldown = time.Second, 30*time.Second
 	if armed {
 		c.status.State = "blocked"
 		c.status.Code = "guard_recovered"
@@ -134,6 +139,10 @@ func (c *Controller) Handle(r Request) Response {
 	code := "ok"
 	ok := true
 	switch r.Command {
+	case "clearAutomaticSelection":
+		c.mu.Lock()
+		c.clearAutomaticLocked()
+		c.mu.Unlock()
 	case "status":
 	case "stats":
 		traffic, err := c.Statistics()
@@ -188,7 +197,12 @@ func (c *Controller) Handle(r Request) Response {
 			break
 		}
 		if r.Command == "connect" || r.Command == "reconnect" {
-			e = c.connectInMode(p, r.Exclusions, r.Exclusions == nil, r.Mode, r.Command == "reconnect")
+			group, groupErr := decodeAutomaticProfiles(p, r.AutomaticProfiles)
+			if groupErr != nil {
+				code, ok = "automatic_group_rejected", false
+				break
+			}
+			e = c.connectInModeAutomatic(p, r.Exclusions, r.Exclusions == nil, r.Mode, r.Command == "reconnect", group, 0, 0)
 		} else {
 			c.mu.Lock()
 			_, e = c.resolvePolicyLocked(p, r.Exclusions, r.Exclusions == nil)
@@ -328,6 +342,10 @@ func (c *Controller) Reconnect(p exvpn.Profile, mode string) error {
 }
 
 func (c *Controller) connectInMode(p exvpn.Profile, paths []string, stored bool, mode string, replace bool) error {
+	return c.connectInModeAutomatic(p, paths, stored, mode, replace, nil, 0, 0)
+}
+
+func (c *Controller) connectInModeAutomatic(p exvpn.Profile, paths []string, stored bool, mode string, replace bool, group []exvpn.Profile, epoch, expectedGeneration uint64) error {
 	if mode == "" {
 		mode = ModeVPN
 	}
@@ -338,6 +356,9 @@ func (c *Controller) connectInMode(p exvpn.Profile, paths []string, stored bool,
 	defer c.mu.Unlock()
 	if c.closed {
 		return Code("service_stopping")
+	}
+	if epoch != 0 && (c.automaticEpoch != epoch || !c.status.AutomaticSelection || c.generation != expectedGeneration) {
+		return Code("cancelled")
 	}
 	if !c.networkEnabled {
 		return Code("system_testing_required")
@@ -369,6 +390,20 @@ func (c *Controller) connectInMode(p exvpn.Profile, paths []string, stored bool,
 	if err != nil {
 		return err
 	}
+	// Compile every candidate before changing durable policy or cancelling the
+	// current generation. A valid primary cannot smuggle an unusable backup.
+	if epoch == 0 {
+		for _, candidate := range group {
+			if mode == ModeProxy {
+				err = validateTunnelProfile(candidate, nil)
+			} else {
+				_, err = c.resolvePolicyLocked(candidate, paths, stored)
+			}
+			if err != nil {
+				return Code("automatic_group_rejected")
+			}
+		}
+	}
 	p, err = snapshotProfile(p)
 	if err != nil {
 		return err
@@ -399,6 +434,15 @@ func (c *Controller) connectInMode(p exvpn.Profile, paths []string, stored bool,
 	c.status.ConnectedAt = 0
 	c.status.ActiveProfileID = p.ID
 	c.status.Mode, c.status.ProxyPort = mode, 0
+	if epoch == 0 {
+		c.clearAutomaticLocked()
+		if len(group) != 0 {
+			autoContext, autoCancel := context.WithCancel(context.Background())
+			c.automaticCancel = autoCancel
+			c.status.AutomaticSelection = true
+			go c.runAutomatic(autoContext, c.automaticEpoch, group, mode)
+		}
+	}
 	go c.connect(ctx, generation, p, append([]string(nil), exclusions...), mode, replace, allowGuardRelease)
 	return nil
 }
@@ -603,6 +647,7 @@ func (c *Controller) Disconnect() error {
 		return Code("service_stopping")
 	}
 	c.stopping++
+	c.clearAutomaticLocked()
 	c.generation++
 	if c.cancel != nil {
 		c.cancel()
@@ -738,6 +783,7 @@ func (c *Controller) stopTunnel() error {
 // block filters in place across service stop, process death and reboot.
 func (c *Controller) Shutdown() error {
 	c.mu.Lock()
+	c.clearAutomaticLocked()
 	c.closed = true
 	c.generation++
 	if c.cancel != nil {
