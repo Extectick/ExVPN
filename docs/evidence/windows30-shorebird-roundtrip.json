@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "date": "2026-10-20",
+  "platform": "Windows Sandbox",
+  "version": "0.1.9+30",
+  "baseCommit": "f98b75d38a656fc6a708cac9ba692ad7502c47c2",
+  "patchCommit": "1be30d5",
+  "baseReleaseId": 910468,
+  "patchNumber": 1,
+  "patchId": 732154,
+  "track": "beta",
+  "baseCiRun": "39319816470",
+  "patchReceiptSha256": "9ec5113813b5eba76f576c0c5cfa08b6cb064180a8fc3d20a8006dbd3c46123f",
+  "rollbackCiRun": "39328414028",
+  "rollbackReceiptSha256": "1c7888b371fdd0dbb19a9ea8b890103d358daae1db91d91382d4d9c9db398fcc",
+  "computerUse": false,
+  "hostNetworkChanged": false,
+  "manualSdkPointerOrCacheMutation": false,
+  "phases": {
+    "applied": {
+      "version": "0.1.9+30",
+      "uiRevision": 2,
+      "available": true,
+      "current": 1,
+      "next": 1,
+      "restartRequired": false,
+      "track": "beta",
+      "storageAvailable": true,
+      "vpnPhase": "disconnected"
+    },
+    "rolledBack": {
+      "version": "0.1.9+30",
+      "uiRevision": 1,
+      "available": true,
+      "current": null,
+      "next": null,
+      "restartRequired": false,
+      "track": "beta",
+      "storageAvailable": true,
+      "vpnPhase": "disconnected"
+    },
+    "base": {
+      "version": "0.1.9+30",
+      "uiRevision": 1,
+      "available": true,
+      "current": null,
+      "next": null,
+      "restartRequired": false,
+      "track": "beta",
+      "storageAvailable": true,
+      "vpnPhase": "disconnected"
+    },
+    "patchStaged": {
+      "version": "0.1.9+30",
+      "uiRevision": 1,
+      "available": true,
+      "current": null,
+      "next": 1,
+      "restartRequired": true,
+      "track": "beta",
+      "storageAvailable": true,
+      "vpnPhase": "disconnected"
+    },
+    "rollbackStaged": {
+      "version": "0.1.9+30",
+      "uiRevision": 2,
+      "available": true,
+      "current": 1,
+      "next": null,
+      "restartRequired": true,
+      "track": "beta",
+      "storageAvailable": true,
+      "vpnPhase": "disconnected"
+    }
+  },
+  "processes": {
+    "basePid": 7416,
+    "applyWasDistinctColdProcess": true,
+    "rollbackPid": 7644,
+    "actualMediumRollbackLaunchVerified": true,
+    "rollbackWasDistinctColdProcess": true,
+    "actualMediumApplyLaunchVerified": true,
+    "appliedPid": 6128
+  },
+  "continuity": {
+    "pendingSubscriptionJournalUnchanged": true,
+    "flutterEngineUnchanged": true,
+    "installedBaseAppSoUnchanged": true,
+    "appearanceUnchanged": true,
+    "checkedAcrossApplyAndRollback": true,
+    "opaqueEncryptedSubscriptionBytesUnchanged": true,
+    "uiExecutableUnchanged": true
+  },
+  "automaticRestartObserved": false,
+  "observedElevatedContextRefusal": true,
+  "limits": [
+    "Initial Sandbox ExistingLogin/Explorer/UI were elevated with high integrity; the updater ordinaryUser policy correctly excludes that context. Patch download/staging succeeded; automatic UI restart was not observed.",
+    "SDK apply and rollback were proven using normal owned shutdown and distinct cold launches of the exact CI UI with verified same-user non-elevated medium tokens.",
+    "No patch-cache pointers or SDK state files were manually edited, and no older base cache was restored.",
+    "Private observer nativeInitializationProven is a static derived field, not an app diagnostic; omitted from public phase tuples.",
+    "Post-patch VPN bridge/TUN behavior was not redundantly retested; installed SCM runtime proof is in windows30-installed-runtime.json."
+  ],
+  "localProofs": [
+    {
+      "sha256": "f5638a0687924b86e0bc43febcb93d31a950215e755befddfa7369fc00a91c6f",
+      "file": "artifacts/windows/routing-modes-20261019-202852-f17a2e7f/output/ui-sdk-base-diagnostics.json"
+    },
+    {
+      "sha256": "d2d330d6ec33a0d514ac16f94d96b2c5279af2fd0a822eeecbde428b41624ba2",
+      "file": "artifacts/windows/routing-modes-20261019-202852-f17a2e7f/output/sdk-after-failure-diagnostics.json"
+    },
+    {
+      "sha256": "39a18003a55ffb216d697924f008e953375b0f1660cb07821063b4335efa2c8c",
+      "file": "artifacts/windows/routing-modes-20261019-202852-f17a2e7f/output/sdk-applied-diagnostics.json"
+    },
+    {
+      "sha256": "1a5b460a8d96274fb5623ce05e544b6aa8b087256da6eabb60199d1d66414a8d",
+      "file": "artifacts/windows/routing-modes-20261019-202852-f17a2e7f/output/sdk-rollback-staged-diagnostics.json"
+    },
+    {
+      "sha256": "f5638a0687924b86e0bc43febcb93d31a950215e755befddfa7369fc00a91c6f",
+      "file": "artifacts/windows/routing-modes-20261019-202852-f17a2e7f/output/sdk-rolled-back-diagnostics.json"
+    },
+    {
+      "sha256": "b2fd20815bd8b0ae54adc482c66d53bc7efe45f1be063497bb2807c974ebe19e",
+      "file": "artifacts/windows/routing-modes-20261019-202852-f17a2e7f/output/ui-sdk-prepatch-continuity.json"
+    },
+    {
+      "sha256": "b2fd20815bd8b0ae54adc482c66d53bc7efe45f1be063497bb2807c974ebe19e",
+      "file": "artifacts/windows/routing-modes-20261019-202852-f17a2e7f/output/sdk-applied-continuity.json"
+    },
+    {
+      "sha256": "b2fd20815bd8b0ae54adc482c66d53bc7efe45f1be063497bb2807c974ebe19e",
+      "file": "artifacts/windows/routing-modes-20261019-202852-f17a2e7f/output/sdk-rolled-back-continuity.json"
+    },
+    {
+      "sha256": "547568c49bdf84acbcebdc389ee95d0797000469eb34969342f6ddcdee1e08b6",
+      "file": "artifacts/windows/routing-modes-20261019-202852-f17a2e7f/output/sdk-old-binding.json"
+    },
+    {
+      "sha256": "39ee07315afb6223514e14a3ab89d7c5b8661c16c4e4b249ff704227280bdbd9",
+      "file": "artifacts/windows/routing-modes-20261019-202852-f17a2e7f/output/sdk-applied-binding.json"
+    },
+    {
+      "sha256": "cb74e8125582db76064495998e2093fdcfa85575c962ce6ff15162e23ee790d9",
+      "file": "artifacts/windows/routing-modes-20261019-202852-f17a2e7f/output/sdk-rolled-back-binding.json"
+    },
+    {
+      "sha256": "9545cb177a4de03ce6c819ceb061cea2cdca5a794b2ae3359d6dbf544c9b8723",
+      "file": "artifacts/windows/routing-modes-20261019-202852-f17a2e7f/output/process-token-observation.json"
+    }
+  ],
+  "privateRoundtripSha256": "efa93d2d4de1161978a8dcf2163192468fc529c538d8576b1f9af0d881e972f8",
+  "passed": true
+}
