@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-10-19T12:22:54.2727329Z",
+  "run": 39247684410,
+  "compiledSourceCommit": "e8cba9fc7f849013c804b02d2c401b07a907d9e8",
+  "version": "0.1.8+29",
+  "windows": {
+    "cloudReleaseId": 908884,
+    "cloudReadbackVerified": true,
+    "cloudStatus": "active",
+    "auditAccepted": false,
+    "failurePhase": "package_audit",
+    "cloudArchiveId": 4043762,
+    "cloudArchiveSha256": "85ad5bc927874a0284862f82a159c53b28ee01cfbcc20323edee3344784ddc49",
+    "cloudArchiveBytes": 30552700,
+    "downloadHashAndSizeVerified": true,
+    "extractedExactFiles": 283,
+    "uiRebuilt": false
+  },
+  "android": {
+    "failurePhase": "environment",
+    "noticeCollectorStarted": true,
+    "releaseAttemptStarted": false,
+    "cloudRegistrationPerformed": false
+  },
+  "noticeDefect": {
+    "priorGitBlobSha256": "2a19db06cfb2037957b01660b0054a1d35fb54104539b29ad86f84193c0762fc",
+    "requiredRawSha256": "60089d1c2c264863ec57ae1fd71cf60a85561c293f6bbbb7d404f6e3a196461a",
+    "dependencySemanticsChanged": false,
+    "licenseInventoryChanged": false,
+    "freshArchiveAndCheckoutProof": "shorebird29-cratepin-eol.json",
+    "finalAttribute": "scripts/release/shorebird-updater-notices-crates.lock.json -text -whitespace",
+    "coordinatorStyleAttributeAddedAfterFixture": true,
+    "styleAttributeChangesBytes": false,
+    "finalRawSha256": "60089d1c2c264863ec57ae1fd71cf60a85561c293f6bbbb7d404f6e3a196461a",
+    "finalStagedDiffCheckExit": 0
+  },
+  "distributionApproved": false,
+  "cloudMutationsDuringRecoveryDiagnosis": false,
+  "rawLogsOrSignedUrlsIncluded": false,
+  "actualPatchOrRollbackVerified": false
+}

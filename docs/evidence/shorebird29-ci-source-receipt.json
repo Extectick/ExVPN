@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "action": "source_guard",
+  "sourceCommit": "477eb5074b1b1bbc6132a2c3ea838b1e385d19c3",
+  "phase": "after_checks",
+  "clean": false,
+  "observedCount": 6,
+  "omittedCount": 0,
+  "truncated": false,
+  "entries": [
+    {
+      "status": " M",
+      "path": "apps/exvpn/linux/flutter/generated_plugin_registrant.cc",
+      "sha256": "2d820ff616e2228f699316fa2329d173ddbe6b98bbd7faca780daf329e4efacb",
+      "bytes": 789,
+      "hashState": "sha256"
+    },
+    {
+      "status": " M",
+      "path": "apps/exvpn/linux/flutter/generated_plugin_registrant.h",
+      "sha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb",
+      "bytes": 303,
+      "hashState": "sha256"
+    },
+    {
+      "status": " M",
+      "path": "apps/exvpn/linux/flutter/generated_plugins.cmake",
+      "sha256": "9b0a3121ceab17166a6bdd0bf114dc7478c95b0c99e50c19d3257f89f36bafdb",
+      "bytes": 798,
+      "hashState": "sha256"
+    },
+    {
+      "status": " M",
+      "path": "apps/exvpn/windows/flutter/generated_plugin_registrant.cc",
+      "sha256": "384b2836e0f01867036cc70a4c622775fad3dda23cf6c9093eb5c9fdf793cc09",
+      "bytes": 545,
+      "hashState": "sha256"
+    },
+    {
+      "status": " M",
+      "path": "apps/exvpn/windows/flutter/generated_plugin_registrant.h",
+      "sha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a",
+      "bytes": 302,
+      "hashState": "sha256"
+    },
+    {
+      "status": " M",
+      "path": "apps/exvpn/windows/flutter/generated_plugins.cmake",
+      "sha256": "01cb8fe76e1560c04f199b09893edf70f89d65d5c29784ddc00796142806627a",
+      "bytes": 806,
+      "hashState": "sha256"
+    }
+  ],
+  "distributionApproved": false,
+  "rawDiagnosticsIncluded": false
+}

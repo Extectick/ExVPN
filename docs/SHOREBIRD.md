@@ -87,6 +87,34 @@ CRLF→LF, `git diff` пуст, но `status` остаётся M. Для эти�
 native сборки не запускались ради изменения формата checkout.
 [Контроль и исправление](evidence/shorebird29-eol-fix.json).
 
+CI diagnose39246721973 независимо подтвердил ровно эти шесть файлов
+([квитанция](evidence/shorebird29-ci-source-receipt.json)); последующий
+base39247684410 прошёл clean gates обеих платформ. Windows был собран и
+зарегистрирован как release908884, затем package audit отказал; Android
+остановился в notice collector до вызова release. Причина: inventory требует
+raw SHA60089d1c crate-pin JSON, а Git хранил нормализованный blob2a19db06.
+Для этого единственного checksum-pinned файла закреплены исходные raw bytes
+через `-text`; `-whitespace` отключает только style-предупреждения о его CRLF.
+SHA и содержание JSON остаются строго проверяемыми, зависимости не меняются.
+Fresh commit/archive/checkout и offline source notice validation двух платформ
+прошли. [Проверка байтов](evidence/shorebird29-cratepin-eol.json).
+
+Облачный Windows release прочитан обратно, его win_archive4043762 скачан и
+проверен по hash/size; 283 извлечённых файла побайтно совпали с архивом.
+Повторная сборка/загрузка UI не выполняется. Подготавливается explicit recovery
+упаковки: отдельный compiledSourceCommit=e8cba9f и новый sourceCommit упаковки,
+с отказом при любых различиях компилируемых исходников, SDK, ключей или assets.
+Доставка пользователям, signed patch и runtime rollback пока не подтверждены.
+[Фактический отказ и восстановление исходных bytes](evidence/shorebird29-packaging-recovery.json).
+
+Recovery implementation source freeze прошёл targeted guards: 192 pipeline,
+34 publication,177+43 notice inputs,220 runtime notice,41 Maven; parse и
+Actions child exit0. Общий Full затем прошёл **12/12 за140,41с**, без изменения
+source fingerprint. [Guards](evidence/shorebird29-recovery-guards.json),
+[Full](evidence/fast-validation-shorebird29-recovery.json). Review cold-cache
+пути потребовал отдельного locked app dependency resolve перед offline wrapper;
+это CI preparation, повторная полная проверка продукта для него не требуется.
+
 ## Проект и клиент, 2026-10-17
 
 Пользователь завершил вход в CLI. Проверка аккаунта подтвердила тариф **free**;

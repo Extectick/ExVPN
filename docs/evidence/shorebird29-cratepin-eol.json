@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "sourceCommit": "e8cba9fc7f849013c804b02d2c401b07a907d9e8",
+  "intendedRawSha256": "60089d1c2c264863ec57ae1fd71cf60a85561c293f6bbbb7d404f6e3a196461a",
+  "hashes": {
+    "priorCommitted": "2a19db06cfb2037957b01660b0054a1d35fb54104539b29ad86f84193c0762fc",
+    "sourceRaw": "60089d1c2c264863ec57ae1fd71cf60a85561c293f6bbbb7d404f6e3a196461a",
+    "staged": "60089d1c2c264863ec57ae1fd71cf60a85561c293f6bbbb7d404f6e3a196461a",
+    "fixtureCommitted": "60089d1c2c264863ec57ae1fd71cf60a85561c293f6bbbb7d404f6e3a196461a",
+    "freshArchive": "60089d1c2c264863ec57ae1fd71cf60a85561c293f6bbbb7d404f6e3a196461a",
+    "freshCheckout": "60089d1c2c264863ec57ae1fd71cf60a85561c293f6bbbb7d404f6e3a196461a",
+    "inventory": "60089d1c2c264863ec57ae1fd71cf60a85561c293f6bbbb7d404f6e3a196461a"
+  },
+  "semanticsEqualToOriginal": true,
+  "normalizedTextEqualToOriginal": true,
+  "fixtureAutocrlf": true,
+  "freshCheckoutClean": true,
+  "attributes": [
+    "scripts/release/shorebird-updater-notices-crates.lock.json: text: unset"
+  ],
+  "runtimeNoticeValidation": [
+    {
+      "target": "Windows",
+      "noticeInputAccepted": true,
+      "sourceNoticeFiles": 200,
+      "scope": "Exact offline source notice validation; not runtime build attestation"
+    },
+    {
+      "target": "Android",
+      "noticeInputAccepted": true,
+      "sourceNoticeFiles": 200,
+      "scope": "Exact offline source notice validation; not runtime build attestation"
+    }
+  ],
+  "mainCommitCreated": false,
+  "SDKOrBuildInvoked": false,
+  "scope": "Focused raw-byte preservation and offline source notice pin validation only",
+  "sourceAttributesMatchFreshFixture": true,
+  "attributesExactlyOneAddedRule": true,
+  "sourceAttributesDiff": [
+    "diff --git a/.gitattributes b/.gitattributes",
+    "index e11bd03..4d2ebe4 100644",
+    "--- a/.gitattributes",
+    "+++ b/.gitattributes",
+    "@@ -3,0 +4 @@ native/patches/*.json text eol=lf",
+    "+scripts/release/shorebird-updater-notices-crates.lock.json -text"
+  ],
+  "stageAction": "git add --renormalize -- scripts/release/shorebird-updater-notices-crates.lock.json only; .gitattributes left unstaged for coordinator"
+}

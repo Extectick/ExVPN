@@ -29,6 +29,11 @@ release до UI build и cloud registration. Причина dirty checkout вы�
 Локальный fresh fixture установил CRLF→LF в шести Flutter-generated файлах;
 точные `text eol=lf` attrs сохранили исходные bytes и чистоту после pub get.
 [Воспроизведение и узкое исправление](evidence/shorebird29-eol-fix.json).
+Обе clean gates затем прошли в CI39247684410. Windows cloud release908884
+зарегистрирован, но package audit отказал из-за raw crate-pin hash; Android
+отказал в notice collector до release. Fresh checkout raw-byte fix проверен;
+Windows cloud archive восстановлен без пересборки UI, recovery упаковки в работе.
+[Наблюдения](evidence/shorebird29-packaging-recovery.json). Пункты ниже открыты.
 
 - [ ] **EXVPN-E6-012** — Опубликовать настоящую Shorebird-базу 0.1.8+29
   Android/Windows. Критерий: один build/upload на платформу, прежний APK signer,

@@ -80,6 +80,10 @@ foreach ($change in @(@('published',$false),@('auditAccepted',$false),@('version
 }
 $artifacts=@(@{platform='android';arch='aarch64';sha256=('a'*64);bytes=12},@{platform='android';arch='x86_64';sha256=('b'*64);bytes=15})
 Assert-ShorebirdPatchArtifacts $artifacts Android;Assert-Test $true 'both_android_abis'
+$windowsAot=@(@{platform='windows';arch='x86_64';sha256=('a'*64);bytes=12})
+Assert-ShorebirdPatchArtifacts $windowsAot Windows;Assert-Test $true 'single_windows_aot_valid_under_strict_mode'
+Assert-Refuses {Assert-ShorebirdPatchArtifacts @() Windows} 'missing_windows_aot_refused'
+Assert-Refuses {Assert-ShorebirdPatchArtifacts @($windowsAot[0],$windowsAot[0]) Windows} 'duplicate_windows_aot_refused'
 Assert-Refuses { Assert-ShorebirdPatchArtifacts @($artifacts[0]) Android } 'missing_abi'
 Assert-Refuses { Assert-ShorebirdPatchArtifacts @($artifacts[0],$artifacts[0]) Android } 'duplicate_abi'
 Assert-Refuses { Assert-ShorebirdPatchArtifacts $artifacts Windows } 'wrong_platform'
@@ -379,18 +383,152 @@ $text=[IO.File]::ReadAllText($recovery)
 Assert-Test (!$text.Contains('PRIVATE-EXCEPTION-NEVER-EXPORT') -and !$text.Contains($fixture) -and !$text.Contains('private.log')) 'recovery_exports_fixed_fields_only'
 Assert-Refuses { Write-ShorebirdRecovery -Repository $fixture -Action base -Version '0.1.7+28' -Target Android -SourceCommit ('a'*40) -Status failed -CloudOutcome unknown -Path (Join-Path $fixture 'outside.json') } 'recovery_path_escape_refused'
 
+# A single reviewed cloud recovery, never a caller-selected release or URL.
+$fixedRecovery=Get-ShorebirdWindowsRecoveryPolicy
+Assert-Test ($fixedRecovery.version -ceq '0.1.8+29' -and $fixedRecovery.releaseId -eq 908884 -and $fixedRecovery.artifactId -eq 4043762 -and $fixedRecovery.bytes -eq 30552700 -and $fixedRecovery.files -eq 283) 'recovery_fixed_cloud_identity'
+foreach($path in @('apps/exvpn/lib/ui_revision.dart','native/core/core.go','apps/exvpn/assets/a.png','apps/exvpn/pubspec.yaml','apps/exvpn/pubspec.lock','scripts/bootstrap/shorebird.lock.json','config/signing/shorebird-beta-public.pem','scripts/release/shorebird-patch.ps1','docs/elsewhere/proof.json','docs/../apps/exvpn/lib/main.dart')){
+    Assert-Refuses {Assert-ShorebirdRecoveryPaths @($path)} 'recovery_rejects_compiled_or_unreviewed_change'
+}
+Assert-ShorebirdRecoveryPaths @('scripts/release/shorebird-recovery-lib.ps1','.github/workflows/shorebird.yml','docs/SHOREBIRD.md','docs/evidence/recovery.json')
+Assert-Test $true 'recovery_exact_packaging_and_proof_paths'
+$attrsBefore=Get-ShorebirdRecoveryBlob $root $fixedRecovery.compiledSourceCommit '.gitattributes'
+$crateBefore=Get-ShorebirdRecoveryBlob $root $fixedRecovery.compiledSourceCommit 'scripts/release/shorebird-updater-notices-crates.lock.json'
+$crateAfter=[IO.File]::ReadAllText((Join-Path $root 'scripts/release/shorebird-updater-notices-crates.lock.json'))
+$recoveryRule='scripts/release/shorebird-updater-notices-crates.lock.json -text -whitespace'
+$attrsAfter=$attrsBefore.TrimEnd("`r","`n")+"`n"+$recoveryRule+"`n"
+Assert-ShorebirdRecoveryAttributes $attrsBefore $attrsAfter
+Assert-ShorebirdRecoveryCratePin $crateBefore $crateAfter
+Assert-Test $true 'reviewed_raw_crate_bytes_only_no_semantic_change'
+foreach($badAttrs in @($attrsAfter+"scripts/bootstrap/shorebird.lock.json -text`n",$attrsBefore,($attrsAfter+$recoveryRule+"`n"),($attrsAfter.Replace(' -text -whitespace',' -text')))){
+    Assert-Refuses {Assert-ShorebirdRecoveryAttributes $attrsBefore $badAttrs} 'recovery_attributes_cannot_change_other_rules'
+}
+Assert-Refuses {Assert-ShorebirdRecoveryCratePin $crateBefore ($crateAfter+' ')} 'recovery_crate_raw_hash_drift_refused'
+$badCrate=$crateAfter | ConvertFrom-Json -AsHashtable;$badCrate['schemaVersion']=999
+Assert-Refuses {Assert-ShorebirdRecoveryCratePin $crateBefore ($badCrate | ConvertTo-Json -Depth 20)} 'recovery_crate_changed_value_or_hash_refused'
+
+# Execute the actual Git equivalence gate against an owned tiny repository.
+# Only the compiled commit is replaced in this test's function scope.
+$recoveryRepo=Join-Path $fixture 'recovery-source'
+New-Item -ItemType Directory -Path (Join-Path $recoveryRepo 'scripts/release') -Force | Out-Null
+$null=Invoke-ShorebirdGit $recoveryRepo @('init','--quiet')
+$null=Invoke-ShorebirdGit $recoveryRepo @('config','user.name','Synthetic QA')
+$null=Invoke-ShorebirdGit $recoveryRepo @('config','user.email','qa@example.invalid')
+$null=Invoke-ShorebirdGit $recoveryRepo @('config','core.autocrlf','false')
+[IO.File]::WriteAllText((Join-Path $recoveryRepo '.gitignore'),"artifacts/`n")
+[IO.File]::WriteAllText((Join-Path $recoveryRepo '.gitattributes'),$attrsBefore)
+[IO.File]::WriteAllText((Join-Path $recoveryRepo 'scripts/release/shorebird-updater-notices-crates.lock.json'),$crateBefore)
+$null=Invoke-ShorebirdGit $recoveryRepo @('add','--all');$null=Invoke-ShorebirdGit $recoveryRepo @('-c','commit.gpgsign=false','commit','--quiet','-m','synthetic compiled source')
+$recoveryBase=Get-ShorebirdSourceCommit $recoveryRepo
+[IO.File]::WriteAllText((Join-Path $recoveryRepo '.gitattributes'),$attrsAfter)
+[IO.File]::WriteAllText((Join-Path $recoveryRepo 'scripts/release/shorebird-updater-notices-crates.lock.json'),$crateAfter)
+New-Item -ItemType Directory -Path (Join-Path $recoveryRepo 'docs/evidence') -Force | Out-Null
+[IO.File]::WriteAllText((Join-Path $recoveryRepo 'docs/evidence/recovery.json'),'{"sanitized":true}')
+$null=Invoke-ShorebirdGit $recoveryRepo @('add','--all');$null=Invoke-ShorebirdGit $recoveryRepo @('-c','commit.gpgsign=false','commit','--quiet','-m','synthetic byte-preserving packaging fix')
+function Invoke-SyntheticRecoverySource {
+    function Get-ShorebirdWindowsRecoveryPolicy { $value=Copy-Fixture $fixedRecovery;$value.compiledSourceCommit=$recoveryBase;$value }
+    Assert-ShorebirdRecoverySource $recoveryRepo
+}
+$equivalence=Invoke-SyntheticRecoverySource
+Assert-Test ($equivalence.compiledSourceCommit -ceq $recoveryBase -and $equivalence.sourceCommit -cne $recoveryBase -and $equivalence.onlyPackagingChanges -and $equivalence.paths.Count -eq 3) 'real_git_recovery_equivalence_keeps_both_commits'
+New-Item -ItemType Directory -Path (Join-Path $recoveryRepo 'native/core') -Force | Out-Null
+[IO.File]::WriteAllText((Join-Path $recoveryRepo 'native/core/core.go'),'package synthetic')
+$null=Invoke-ShorebirdGit $recoveryRepo @('add','--all');$null=Invoke-ShorebirdGit $recoveryRepo @('-c','commit.gpgsign=false','commit','--quiet','-m','synthetic forbidden native change')
+Assert-Refuses {Invoke-SyntheticRecoverySource} 'real_git_recovery_native_change_refused'
+
+$recoveryArtifact=@{id=$fixedRecovery.artifactId;release_id=$fixedRecovery.releaseId;platform='windows';arch='win_archive';hash=$fixedRecovery.sha256;size=$fixedRecovery.bytes;url='https://storage.googleapis.com/synthetic/recovery.zip?synthetic-private=never-export'}
+Assert-ShorebirdRecoveryArtifact $recoveryArtifact;Assert-Test $true 'recovery_expected_artifact_metadata'
+foreach($change in @(@('id',4043763),@('release_id',908885),@('platform','android'),@('arch','x86_64'),@('hash',('f'*64)),@('size',30552701))){
+    $bad=Copy-Fixture $recoveryArtifact;$bad[$change[0]]=$change[1]
+    Assert-Refuses {Assert-ShorebirdRecoveryArtifact $bad} 'recovery_wrong_cloud_artifact_refused'
+}
+foreach($uri in @('http://storage.googleapis.com/a','https://other.invalid/a','https://storage.googleapis.com.evil.invalid/a','https://user@storage.googleapis.com/a','https://storage.googleapis.com:444/a','https://storage.googleapis.com/a#fragment','https://storage.googleapis.com/')){
+    Assert-Refuses {Assert-ShorebirdRecoveryUri ([uri]$uri)} 'recovery_storage_uri_not_arbitrary'
+}
+$fakeApi=Join-Path $fixture 'fake-recovery-api.ps1'
+$fakeApiSource=@'
+[IO.File]::WriteAllText((Join-Path $PSScriptRoot 'recovery-api-arguments.json'),(@($args) | ConvertTo-Json))
+Write-Output '__BODY__'
+$global:LASTEXITCODE=0
+'@
+$fakeApiSource=$fakeApiSource.Replace('__BODY__',(@{artifacts=@($recoveryArtifact)} | ConvertTo-Json -Depth 5 -Compress))
+[IO.File]::WriteAllText($fakeApi,$fakeApiSource)
+$oldSystem=$env:GIT_CONFIG_SYSTEM
+$selected=Get-ShorebirdRecoveryArtifact $fakeApi $fixture
+$apiArguments=Get-Content -LiteralPath (Join-Path $fixture 'recovery-api-arguments.json') -Raw | ConvertFrom-Json
+Assert-Test ($selected.id -eq $fixedRecovery.artifactId -and $apiArguments.Count -eq 5 -and $apiArguments[0] -ceq 'api' -and $apiArguments[1] -ceq '--method=GET' -and $apiArguments[2] -ceq "/apps/$($policy.appId)/releases/908884/artifacts" -and $apiArguments[4] -ceq 'platform=windows' -and $apiArguments -cnotcontains '--json') 'recovery_uses_only_fixed_official_get'
+Assert-Test ($env:GIT_CONFIG_SYSTEM -ceq $oldSystem) 'recovery_get_restores_git_environment'
+
+function New-SyntheticRecoveryZip([string]$Path,[string[]]$Names,[int]$Attributes=0){
+    $stream=[IO.File]::Open($Path,[IO.FileMode]::CreateNew)
+    $zip=[IO.Compression.ZipArchive]::new($stream,[IO.Compression.ZipArchiveMode]::Create)
+    try {foreach($name in $Names){$entry=$zip.CreateEntry($name);$entry.ExternalAttributes=$Attributes;$output=$entry.Open();try{$output.Write([byte[]]@(1,2,3,4),0,4)}finally{$output.Dispose()}}}
+    finally{$zip.Dispose();$stream.Dispose()}
+}
+$recoveryZip=Join-Path $fixture 'recovery-valid.zip';$recoveryOutput=Join-Path $fixture 'recovery-valid'
+New-SyntheticRecoveryZip $recoveryZip @('exvpn.exe','data/app.so')
+$recovered=Expand-ShorebirdRecoveryArchive $recoveryZip $recoveryOutput
+Assert-Test ($recovered.Count -eq 2 -and $recovered['data/app.so'].sha256 -ceq (Get-AuditSha256 (Join-Path $recoveryOutput 'data/app.so'))) 'recovery_extract_compares_actual_tree_bytes'
+Assert-Refuses {Expand-ShorebirdRecoveryArchive $recoveryZip $recoveryOutput} 'recovery_never_reuses_existing_output'
+foreach($names in @(@('exvpn.exe','EXVPN.exe'),@('../outside.bin'),@('data','data/app.so'))){
+    $zipPath=Join-Path $fixture ([guid]::NewGuid().ToString('N')+'.zip');$destination=$zipPath+'.out'
+    New-SyntheticRecoveryZip $zipPath $names
+    Assert-Refuses {Expand-ShorebirdRecoveryArchive $zipPath $destination} 'recovery_ambiguous_or_traversal_zip_refused'
+    Assert-Test (!(Test-Path -LiteralPath $destination)) 'recovery_rejects_zip_before_any_extraction'
+}
+foreach($attributes in @([int]0xa0000000,0x400)){
+    $zipPath=Join-Path $fixture ([guid]::NewGuid().ToString('N')+'.zip')
+    New-SyntheticRecoveryZip $zipPath @('linked.bin') $attributes
+    Assert-Refuses {Expand-ShorebirdRecoveryArchive $zipPath ($zipPath+'.out')} 'recovery_link_zip_refused'
+}
+$proof=@{compiledSourceCommit=$fixedRecovery.compiledSourceCommit;sourceCommit=('c'*40);releaseId=$fixedRecovery.releaseId;artifactId=$fixedRecovery.artifactId;archiveSha256=$fixedRecovery.sha256;archiveBytes=$fixedRecovery.bytes;uiFiles=$fixedRecovery.files;uiTreeSha256=('d'*64);sourceEquivalence=@{compiledSourceCommit=$fixedRecovery.compiledSourceCommit;sourceCommit=('c'*40);onlyPackagingChanges=$true;paths=@('docs/evidence/recovery.json')};uiBuildPerformed=$false;cloudUploadPerformed=$false}
+Assert-ShorebirdRecoveryProof $proof ('c'*40);Assert-Test $true 'recovery_proof_explicitly_no_ui_build_or_upload'
+foreach($change in @(@('compiledSourceCommit',('a'*40)),@('sourceCommit',('a'*40)),@('releaseId',1),@('artifactId',1),@('archiveSha256',('a'*64)),@('archiveBytes',1),@('uiFiles',1),@('uiBuildPerformed',$true),@('cloudUploadPerformed',$true))){
+    $bad=Copy-Fixture $proof;$bad[$change[0]]=$change[1]
+    Assert-Refuses {Assert-ShorebirdRecoveryProof $bad ('c'*40)} 'recovery_proof_cannot_claim_different_build'
+}
+$recoveredBase=Copy-Fixture $base
+$recoveredBase.version=$fixedRecovery.version;$recoveredBase.target='Windows';$recoveredBase.releaseId=$fixedRecovery.releaseId;$recoveredBase.sourceCommit='c'*40
+$recoveredBase.runtime.identity.target='Windows';$recoveredBase.baseAot=@(@{platform='windows';arch='x86_64';sha256=('a'*64);bytes=12})
+$recoveredBase.compiledSourceCommit=$fixedRecovery.compiledSourceCommit;$recoveredBase.recoveryProof=$proof
+Assert-ShorebirdBaseReceipt $recoveredBase $fixedRecovery.version Windows;Assert-Test $true 'recovered_base_compatible_with_patch_receipt_consumer'
+$bad=Copy-Fixture $recoveredBase;$bad.runtime.identity.engineRevision='f'*40
+Assert-Refuses {Assert-ShorebirdBaseReceipt $bad $fixedRecovery.version Windows} 'recovery_does_not_bypass_engine_pin'
+$bad=Copy-Fixture $recoveredBase;$bad.recoveryProof=$null
+Assert-Refuses {Assert-ShorebirdBaseReceipt $bad $fixedRecovery.version Windows} 'different_compiled_source_needs_proof'
+$normal=Copy-Fixture $base;$normal.compiledSourceCommit=$normal.sourceCommit;$normal.recoveryProof=$null
+Assert-ShorebirdBaseReceipt $normal '0.1.7+28' Android;Assert-Test $true 'ordinary_base_same_source_still_accepted'
+$null=Write-ShorebirdRecovery -Repository $fixture -Action base -Version $fixedRecovery.version -Target Windows -SourceCommit ('c'*40) -Status failed -CloudOutcome registered -ReleaseId 908884 -Phase package_audit -Subphase windows_notice_binding -ErrorCode shorebird_runtime_notices_inventory_invalid -FailureLeaf 'C:\synthetic\shorebird-runtime-notices.ps1' -FailureLine 47 -Path $recovery
+$record=Get-Content -LiteralPath $recovery -Raw | ConvertFrom-Json -AsHashtable
+Assert-Test ($record.subphase -ceq 'windows_notice_binding' -and $record.errorCode -ceq 'shorebird_runtime_notices_inventory_invalid' -and $record.failureLeaf -ceq 'shorebird-runtime-notices.ps1' -and $record.failureLine -eq 47) 'recovery_failure_has_safe_precise_phase_leaf_line'
+$null=Write-ShorebirdRecovery -Repository $fixture -Action base -Version $fixedRecovery.version -Target Windows -SourceCommit ('c'*40) -Status failed -CloudOutcome unknown -Phase 'PRIVATE' -Subphase 'PRIVATE' -ErrorCode 'SECRET https://secret.invalid' -FailureLeaf 'C:\private\secret.ps1' -FailureLine 999999 -Path $recovery
+$text=[IO.File]::ReadAllText($recovery);$record=$text | ConvertFrom-Json -AsHashtable
+Assert-Test ($record.errorCode -ceq 'shorebird_operation_failed' -and $record.failureLeaf -ceq '' -and $record.failureLine -eq 0 -and !$text.Contains('secret') -and !$text.Contains('PRIVATE')) 'recovery_failure_never_exports_raw_exception'
+
 # The workflow must retain the new byte-pinned dotfile and preserve ONLY the
 # allowlisted recovery directory on failure, never .private build logs.
 $workflow=[IO.File]::ReadAllText((Join-Path $root '.github/workflows/shorebird.yml'))
+$coldRecoveryStep=[regex]::Match($workflow,'(?s)      - name: Resolve locked app dependencies for recovery from a cold cache\r?\n(?<step>.*?)      - name: Require clean source after SDK before native builds')
+Assert-Test ($coldRecoveryStep.Success -and $coldRecoveryStep.Groups['step'].Value.Contains("if: inputs.operation == 'recover_base'") -and $coldRecoveryStep.Groups['step'].Value.Contains('Get-ReleaseFlutterRuntime -Repository $repository -Target $env:EXVPN_TARGET -FlutterRuntime shorebird -FlutterBuildMode release') -and $coldRecoveryStep.Groups['step'].Value.Contains('$flutter=Join-Path $runtime.SdkRoot ''bin/flutter.bat''') -and $coldRecoveryStep.Groups['step'].Value.Contains('$env:PUB_CACHE=Join-Path $repository ''.tools/cache/pub''') -and $coldRecoveryStep.Groups['step'].Value.Contains('& $flutter pub get --enforce-lockfile') -and !$coldRecoveryStep.Groups['step'].Value.Contains('--offline') -and $workflow.IndexOf('name: Prepare exact Shorebird CLI and Flutter') -lt $coldRecoveryStep.Index) 'recovery_cold_cache_locked_pub_uses_prepared_sdk_before_clean_gate'
 Assert-Test ($workflow -cmatch 'include-hidden-files: true') 'base_artifact_keeps_required_hidden_notice'
 Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized cloud recovery identity even after failure\s+if: always\(\).*?path: artifacts/shorebird-recovery/\*\.json') 'failure_recovery_upload_always_and_allowlisted'
 Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized SDK preparation diagnosis even after failure\s+if: always\(\).*?path: artifacts/shorebird-prepare/\*\.json') 'prepare_diagnosis_upload_always_and_allowlisted'
 Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized source guard diagnosis even after failure\s+if: always\(\).*?path: artifacts/shorebird-source/\*\.json') 'source_diagnosis_upload_always_and_allowlisted'
-Assert-Test ($workflow -cmatch 'options: \[base, patch, rollback, diagnose\]' -and $workflow -cmatch 'fromJSON\(inputs.operation == ''diagnose'' && ''\["Windows"\]''') 'diagnose_has_only_windows_matrix_target'
+Assert-Test ($workflow -cmatch 'options: \[base, patch, rollback, diagnose, recover_base\]' -and $workflow -cmatch 'fromJSON\(inputs.operation == ''diagnose'' && ''\["Windows"\]''') 'diagnose_has_only_windows_matrix_target'
 foreach ($step in @('Prepare exact Shorebird CLI and Flutter','Build once and optionally publish signed beta','Upload audited artifacts and sanitized receipts only')) {
     Assert-Test ($workflow -cmatch ('name: '+[regex]::Escape($step)+'\r?\n\s+if: inputs.operation != ''diagnose''')) 'diagnose_skips_sdk_secret_step_and_promotion'
 }
 Assert-Test ($workflow.IndexOf('name: Require clean source after Checks') -lt $workflow.IndexOf('name: Prepare exact Shorebird CLI and Flutter') -and $workflow.IndexOf('name: Require clean source after SDK before native builds') -lt $workflow.IndexOf('name: Build Android JNI for base only')) 'dirty_source_checked_before_sdk_and_native_builds'
+Assert-Test ($workflow.IndexOf('name: Prove recovery changes only packaging') -lt $workflow.IndexOf('name: Prepare pinned ordinary tools') -and $workflow -cmatch 'Analyze and test the reviewed Dart source\r?\n\s+if: inputs.operation != ''recover_base''') 'recovery_equivalence_before_tools_and_no_full_retest'
+Assert-Test ($workflow -cmatch 'name: shorebird-\$\{\{ inputs.operation == ''recover_base'' && ''base'' \|\| inputs.operation \}\}-\$\{\{ matrix.target \}\}-\$\{\{ github.sha \}\}') 'recovery_artifact_names_match_existing_consumers'
+foreach($target in @('Android','Windows')){
+    Assert-Test ($workflow.Contains("if: (inputs.operation == 'base' || inputs.operation == 'recover_base') && matrix.target == '$target'")) 'recovery_builds_required_native_packaging_inputs'
+}
+$releaseTokens=$null;$releaseErrors=$null
+$releaseAst=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root 'scripts/release/shorebird-release.ps1'),[ref]$releaseTokens,[ref]$releaseErrors)
+$recoveryBranch=@($releaseAst.FindAll({param($node)$node -is [Management.Automation.Language.IfStatementAst] -and $node.Clauses[0].Item1.Extent.Text -ceq '$RecoverWindowsBase' -and $node.Clauses[0].Item2.Extent.Text.Contains('Get-ShorebirdRecoveryArtifact')},$true))
+Assert-Test (!$releaseErrors.Count -and $recoveryBranch.Count -eq 1) 'actual_recovery_branch_identified'
+$recoveryBody=$recoveryBranch[0].Clauses[0].Item2.Extent.Text
+Assert-Test ($recoveryBody.Contains('Receive-ShorebirdRecoveryArchive') -and !$recoveryBody.Contains("'release',") -and !$recoveryBody.Contains('flutter build') -and $releaseAst.Extent.Text.Contains('scripts/windows/build-installer.ps1')) 'recovery_downloads_then_common_packaging_no_ui_build_or_upload'
 
 Write-Host "Shorebird pipeline guards: $script:checks checks PASS; no SDK, private signing inputs or cloud operations."
 # Expected refusal fixtures leave native exit codes behind. Actions propagates

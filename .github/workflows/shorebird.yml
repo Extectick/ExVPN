@@ -5,7 +5,7 @@ on:
     inputs:
       operation:
         type: choice
-        options: [base, patch, rollback, diagnose]
+        options: [base, patch, rollback, diagnose, recover_base]
         required: true
       version:
         description: Exact base SemVer+build; patches never change it
@@ -69,6 +69,20 @@ jobs:
         run: |
           if ($env:EXVPN_VERSION -cnotmatch '^\d+\.\d+\.\d+\+[1-9]\d*$') { throw 'shorebird_version_invalid' }
           if ($env:EXVPN_OPERATION -ceq 'patch' -and $env:EXVPN_BASE_SHA -cnotmatch '^[a-f0-9]{40}$') { throw 'shorebird_base_source_invalid' }
+          if ($env:EXVPN_OPERATION -ceq 'recover_base' -and ($env:EXVPN_VERSION -cne '0.1.8+29' -or $env:EXVPN_PUBLISH -cne 'true')) { throw 'shorebird_recovery_version_mismatch' }
+      - name: Prove recovery changes only packaging before SDK or native builds
+        if: inputs.operation == 'recover_base'
+        run: |
+          . ./scripts/release/flutter-runtime-inputs.ps1
+          . ./scripts/release/shorebird-pipeline-lib.ps1
+          $repository=(Get-Location).Path
+          $source=Get-ShorebirdSourceCommit $repository
+          try { $null = Assert-ShorebirdRecoverySource $repository $source }
+          catch {
+            $null=Write-ShorebirdRecovery -Repository $repository -Action base -Version $env:EXVPN_VERSION -Target $env:EXVPN_TARGET -SourceCommit $source -Status failed -CloudOutcome unknown -Phase cloud_recovery -Subphase recovery_equivalence -ErrorCode (Get-ShorebirdSafeFailureCode $_.Exception.Message) -FailureLeaf (Get-ShorebirdSafeFailureLeaf $_.InvocationInfo.ScriptName) -FailureLine $_.InvocationInfo.ScriptLineNumber
+            throw 'shorebird_recovery_equivalence_failed'
+          }
+          Write-Host 'Recovery compiled-source equivalence PASS.'
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -99,11 +113,19 @@ jobs:
       - name: Test pipeline guards without SDK or cloud mutations
         run: ./scripts/release/test-shorebird-pipeline.ps1
       - name: Analyze and test the reviewed Dart source
+        if: inputs.operation != 'recover_base'
         run: |
           if ($env:EXVPN_OPERATION -cin @('base','diagnose')) {
             ./scripts/ci/verify.ps1 -Target Checks
           } else {
             ./scripts/qa/run-fast-validation.ps1 -Changed -BaseRef $env:EXVPN_BASE_SHA
+          }
+      - name: Test recovery notice and packaging guards without rebuilding UI
+        if: inputs.operation == 'recover_base'
+        run: |
+          foreach ($test in @('test-shorebird-runtime-notices.ps1','test-notice-inputs.ps1','test-demo-maven-notices.ps1')) {
+            & pwsh -NoProfile -File (Join-Path ./scripts/release $test)
+            if ($LASTEXITCODE -ne 0) { throw 'shorebird_recovery_notice_guard_failed' }
           }
       - name: Require clean source after Checks
         run: |
@@ -113,6 +135,20 @@ jobs:
       - name: Prepare exact Shorebird CLI and Flutter
         if: inputs.operation != 'diagnose'
         run: ./scripts/release/prepare-shorebird.ps1 -Target $env:EXVPN_TARGET
+      - name: Resolve locked app dependencies for recovery from a cold cache
+        if: inputs.operation == 'recover_base'
+        run: |
+          . ./scripts/release/flutter-runtime-inputs.ps1
+          $repository=(Get-Location).Path
+          $runtime=Get-ReleaseFlutterRuntime -Repository $repository -Target $env:EXVPN_TARGET -FlutterRuntime shorebird -FlutterBuildMode release
+          $flutter=Join-Path $runtime.SdkRoot 'bin/flutter.bat'
+          $env:PUB_CACHE=Join-Path $repository '.tools/cache/pub'
+          $env:FLUTTER_STORAGE_BASE_URL='https://download.shorebird.dev'
+          Push-Location (Join-Path $repository 'apps/exvpn')
+          try {
+            & $flutter pub get --enforce-lockfile
+            if ($LASTEXITCODE -ne 0) { throw 'shorebird_recovery_locked_pub_failed' }
+          } finally { Pop-Location }
       - name: Require clean source after SDK before native builds
         if: inputs.operation != 'diagnose'
         run: |
@@ -120,10 +156,10 @@ jobs:
           . ./scripts/release/shorebird-pipeline-lib.ps1
           $null = Get-ShorebirdSourceCommit (Get-Location).Path -Phase after_sdk
       - name: Build Android JNI for base only
-        if: inputs.operation == 'base' && matrix.target == 'Android'
+        if: (inputs.operation == 'base' || inputs.operation == 'recover_base') && matrix.target == 'Android'
         run: ./native/android/build.ps1
       - name: Build Windows service for base only
-        if: inputs.operation == 'base' && matrix.target == 'Windows'
+        if: (inputs.operation == 'base' || inputs.operation == 'recover_base') && matrix.target == 'Windows'
         run: |
           ./scripts/windows/build.ps1
           ./scripts/windows/prepare-wintun.ps1
@@ -157,7 +193,8 @@ jobs:
             }
             . ./scripts/bootstrap/enter-environment.ps1
             $arguments = @{Target=$env:EXVPN_TARGET;ReleaseVersion=$env:EXVPN_VERSION;PublishCloud=($env:EXVPN_PUBLISH -ceq 'true')}
-            if ($env:EXVPN_OPERATION -ceq 'base') {
+            if ($env:EXVPN_OPERATION -cin @('base','recover_base')) {
+              if ($env:EXVPN_OPERATION -ceq 'recover_base' -and $env:EXVPN_TARGET -ceq 'Windows') { $arguments.RecoverWindowsBase = $true }
               $result = ./scripts/release/shorebird-release.ps1 @arguments
             } else {
               if (!$env:EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64) { throw 'shorebird_patch_signing_missing' }
@@ -177,7 +214,7 @@ jobs:
         if: inputs.operation != 'diagnose'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: shorebird-${{ inputs.operation }}-${{ matrix.target }}-${{ github.sha }}
+          name: shorebird-${{ inputs.operation == 'recover_base' && 'base' || inputs.operation }}-${{ matrix.target }}-${{ github.sha }}
           path: ${{ env.EXVPN_SHOREBIRD_OUTPUT }}
           if-no-files-found: error
           include-hidden-files: true

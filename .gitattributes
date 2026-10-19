@@ -1,6 +1,7 @@
 # Checksummed patch bytes must be identical on Windows and CI checkouts.
 native/patches/*.patch text eol=lf
 native/patches/*.json text eol=lf
+scripts/release/shorebird-updater-notices-crates.lock.json -text -whitespace
 
 # Flutter regenerates these tracked files using LF even on Windows. Explicit
 # checkout bytes keep a fresh pub get clean without ignoring plugin changes.

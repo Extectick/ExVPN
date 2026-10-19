@@ -2,6 +2,7 @@
 #requires -Version 7.0
 # Dot-sourcing has no SDK, network, signing or cloud side effects.
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot 'shorebird-recovery-lib.ps1')
 
 function Get-ShorebirdPolicy {
     [ordered]@{
@@ -329,6 +330,7 @@ function Write-ShorebirdRecovery {
         [Parameter(Mandatory)][ValidateSet('attempting','cloud_registered','ready','failed')][string]$Status,
         [Parameter(Mandatory)][ValidateSet('unknown','registered')][string]$CloudOutcome,
         [string]$Phase='other',
+        [string]$Subphase='other',[string]$ErrorCode='',[string]$FailureLeaf='',[int]$FailureLine=0,
         [long]$ReleaseId=0,[long]$PatchId=0,[int]$PatchNumber=0,
         [ValidatePattern('^$|^[a-f0-9]{40}$')][string]$BaseSourceCommit='',
         [string]$Path=''
@@ -345,7 +347,11 @@ function Write-ShorebirdRecovery {
     $Path=[IO.Path]::GetFullPath($Path)
     if ([IO.Path]::GetDirectoryName($Path) -cne $root -or [IO.Path]::GetFileName($Path) -cnotmatch '^(base|patch)-(android|windows)-[a-f0-9]{32}\.json$') { throw 'shorebird_recovery_path_invalid' }
     if (Test-Path -LiteralPath $Path) { Assert-AuditNoLinks $Path }
-    if ($Phase -cnotin @('shorebird_release','package_audit','promotion','patch','final_inputs')) { $Phase='other' }
+    if ($Phase -cnotin @('environment','shorebird_release','cloud_recovery','package_audit','promotion','patch','final_inputs')) { $Phase='other' }
+    if ($Subphase -cnotin @('pub','android_signer','android_notices','maven_hook','release','lock_check','runtime_check',
+        'windows_ui_binding','windows_msvc','windows_installer','windows_notice_binding','windows_audit','android_runtime',
+        'android_jvm','android_identity','android_notice_supplement','source_final','promotion','recovery_equivalence',
+        'recovery_readback','recovery_artifact','recovery_download')) {$Subphase='other'}
     if ($CloudOutcome -ceq 'registered' -and ($ReleaseId -le 0 -or ($Action -ceq 'patch' -and ($PatchId -le 0 -or $PatchNumber -le 0)))) { throw 'shorebird_recovery_identity_invalid' }
     # Never serialize exceptions, raw API responses, arguments, environment,
     # paths, credentials, or arbitrary caller fields. Unknown means read back
@@ -353,6 +359,9 @@ function Write-ShorebirdRecovery {
     $safe=[ordered]@{
         schemaVersion=1;action=$Action;appId=(Get-ShorebirdPolicy).appId;version=$Version;target=$Target
         sourceCommit=$SourceCommit;baseSourceCommit=$BaseSourceCommit;status=$Status;phase=$Phase;cloudOutcome=$CloudOutcome
+        subphase=$Subphase;errorCode=$(if($Status -ceq 'failed'){Get-ShorebirdSafeFailureCode $ErrorCode}else{$null})
+        failureLeaf=$(if($Status -ceq 'failed'){Get-ShorebirdSafeFailureLeaf $FailureLeaf}else{''})
+        failureLine=$(if($Status -ceq 'failed' -and $FailureLine -gt 0 -and $FailureLine -le 20000){$FailureLine}else{0})
         releaseId=$(if ($ReleaseId -gt 0) {$ReleaseId} else {$null})
         patchId=$(if ($PatchId -gt 0) {$PatchId} else {$null});patchNumber=$(if ($PatchNumber -gt 0) {$PatchNumber} else {$null})
         distributionApproved=$false;requiresCloudReadbackBeforeRetry=$true
@@ -386,6 +395,15 @@ function Assert-ShorebirdBaseReceipt($Receipt, [string]$Version, [string]$Target
         $Receipt.runtime.identity.cli.revision -cne $policy.cliRevision -or !$Receipt.packagedRuntime.engineBytesBound) {
         throw 'shorebird_base_receipt_invalid'
     }
+    $compiled=Get-ReleaseRuntimeField $Receipt 'compiledSourceCommit'
+    $recovery=Get-ReleaseRuntimeField $Receipt 'recoveryProof'
+    if($compiled){
+        if($compiled -cnotmatch '^[a-f0-9]{40}$'){throw 'shorebird_base_receipt_invalid'}
+        if($recovery){
+            if($Target -cne 'Windows' -or $Version -cne (Get-ShorebirdWindowsRecoveryPolicy).version -or $compiled -cne $recovery.compiledSourceCommit){throw 'shorebird_base_receipt_invalid'}
+            Assert-ShorebirdRecoveryProof $recovery $Receipt.sourceCommit
+        } elseif($compiled -cne $Receipt.sourceCommit){throw 'shorebird_base_receipt_invalid'}
+    } elseif($recovery){throw 'shorebird_base_receipt_invalid'}
     Assert-ShorebirdPatchArtifacts $Receipt.baseAot $Target
 }
 
@@ -480,7 +498,7 @@ function Get-ShorebirdPatchArguments([string]$Target,[string]$Version,[string]$P
 }
 
 function Assert-ShorebirdPatchArtifacts($Artifacts,[string]$Target) {
-    $expected = if ($Target -ceq 'Android') { @('aarch64','x86_64') } elseif ($Target -ceq 'Windows') { @('x86_64') } else { throw 'shorebird_patch_target_invalid' }
+    $expected = @(if ($Target -ceq 'Android') { 'aarch64';'x86_64' } elseif ($Target -ceq 'Windows') { 'x86_64' } else { throw 'shorebird_patch_target_invalid' })
     $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     foreach ($artifact in $Artifacts) {
         if ($artifact.platform -cne $Target.ToLowerInvariant() -or $artifact.arch -cnotin $expected -or

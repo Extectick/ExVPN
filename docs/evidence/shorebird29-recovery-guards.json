@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "dateUtc": "2026-10-19T12:32:55.4776574Z",
+  "status": "focused_pass_source_frozen",
+  "compiledSourceCommit": "e8cba9fc7f849013c804b02d2c401b07a907d9e8",
+  "recovery": {
+    "version": "0.1.8+29",
+    "releaseId": 908884,
+    "artifactId": 4043762,
+    "archiveSha256": "85ad5bc927874a0284862f82a159c53b28ee01cfbcc20323edee3344784ddc49",
+    "archiveBytes": 30552700,
+    "archiveFiles": 283
+  },
+  "checks": {
+    "pipeline": 192,
+    "publication": 34,
+    "noticeInputs": 177,
+    "updaterCrates": 43,
+    "shorebirdRuntimeNotices": 220,
+    "demoMavenNotices": 41,
+    "actionsChildExitCode": 0,
+    "powerShellParse": true,
+    "workflowYamlParse": true,
+    "ownedDiffCheck": true
+  },
+  "actualExecution": {
+    "sdk": false,
+    "uiBuild": false,
+    "nativeBuild": false,
+    "api": false,
+    "cloudMutation": false,
+    "device": false
+  },
+  "files": [
+    {
+      "path": "scripts/release/shorebird-recovery-lib.ps1",
+      "sha256": "e5d37b44cb85d92a20a3b26f3cd883a66eed92e2d2a706d3a3fba490c5365d7d"
+    },
+    {
+      "path": "scripts/release/shorebird-release.ps1",
+      "sha256": "e7488f00df6844763089cb3fbe5304778f1e7d1188141f521a14a016251eaa2d"
+    },
+    {
+      "path": "scripts/release/shorebird-pipeline-lib.ps1",
+      "sha256": "22edf7ed87eb84a06b00b82e7f47357a1260e2740c7eeb869f4f7eddef89ac40"
+    },
+    {
+      "path": "scripts/release/test-shorebird-pipeline.ps1",
+      "sha256": "f0e12ebd1c1d14a5c70b50c06d5bb4b1a0e5d85546fde0b1398a693e8af26020"
+    },
+    {
+      "path": ".github/workflows/shorebird.yml",
+      "sha256": "29c29497ce1837e5545e09964f669d7177754ddc6a2d0a16479f2bb4a6718d5f"
+    }
+  ],
+  "remaining": [
+    "Root required Full/review and clean commit C.",
+    "Actual recovery CI GET/download/package/audit; Android first cloud release.",
+    "Device patch/rollback and public promotion remain separate gates."
+  ],
+  "coldCacheFollowup": {
+    "dateUtc": "2026-10-19T12:41:30.1211689Z",
+    "isolatedWorkflowFixture": 1,
+    "fixturePassed": true,
+    "runBlockPowerShellParse": true,
+    "workflowYamlParse": true,
+    "diffCheck": true,
+    "recoveryOnly": true,
+    "preparedSdkRoot": true,
+    "mainPubCache": true,
+    "onlineEnforceLockfile": true,
+    "fullOrPriorSuitesRepeated": false,
+    "sdkInvoked": false,
+    "buildInvoked": false,
+    "cloudInvoked": false
+  }
+}
