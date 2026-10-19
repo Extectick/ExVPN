@@ -574,7 +574,7 @@ function Write-ShorebirdRecovery {
     if ($Phase -cnotin @('environment','shorebird_release','cloud_recovery','package_audit','promotion','patch','final_inputs')) { $Phase='other' }
     if ($Subphase -cnotin @('pub','android_signer','android_notices','maven_hook','release','lock_check','runtime_check',
         'windows_ui_binding','windows_msvc','windows_installer','windows_notice_binding','windows_audit','android_runtime',
-        'android_jvm','android_identity','android_notice_supplement','source_final','promotion','recovery_equivalence',
+        'android_release_configuration','android_jvm','android_identity','android_notice_supplement','source_final','promotion','recovery_equivalence',
         'recovery_readback','recovery_artifact','recovery_download')) {$Subphase='other'}
     if ($CloudOutcome -ceq 'registered' -and ($ReleaseId -le 0 -or ($Action -ceq 'patch' -and ($PatchId -le 0 -or $PatchNumber -le 0)))) { throw 'shorebird_recovery_identity_invalid' }
     # Never serialize exceptions, raw API responses, arguments, environment,

@@ -898,6 +898,8 @@ Assert-Test (!$releaseErrors.Count -and $recoveryBranch.Count -eq 1) 'actual_rec
 $recoveryBody=$recoveryBranch[0].Clauses[0].Item2.Extent.Text
 Assert-Test ($recoveryBody.Contains('Receive-ShorebirdRecoveryArchive') -and !$recoveryBody.Contains("'release',") -and !$recoveryBody.Contains('flutter build') -and $releaseAst.Extent.Text.Contains('scripts/windows/build-installer.ps1')) 'recovery_downloads_then_common_packaging_no_ui_build_or_upload'
 
+& (Join-Path $PSScriptRoot 'test-shorebird-android-release-config.ps1')
+if ($LASTEXITCODE -ne 0) { throw 'shorebird_android_release_configuration_guards_failed' }
 Write-Host "Shorebird pipeline guards: $script:checks checks PASS; no SDK, private signing inputs or cloud operations."
 # Expected refusal fixtures leave native exit codes behind. Actions propagates
 # LASTEXITCODE after this script; clear it only after every assertion passed.

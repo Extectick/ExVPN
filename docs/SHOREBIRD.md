@@ -1,5 +1,19 @@
 # Shorebird: подготовка Dart OTA
 
+## Новая native-база 0.1.9+30 — подготовка
+
+Новые протоколы и native primary/backup требуют новой базы обеих платформ.
+В wrapper исправлено восстановление release-only Android registrant после
+cleanup `pub get` официального Shorebird release: перед JVM выполняется
+`flutter build apk --config-only --release --pub` тем же SDK и packaging-env.
+APK/AAB не пересобираются: hash/size до и после должны совпасть; updater,
+source, sealed native/notices/runtime inputs также остаются неизменными.
+Наличие dev `integration_test` в release registrant останавливает приёмку.
+Неизвестный cloud outcome по-прежнему запрещает слепой повтор upload;
+старый `recover_base` ограничен базой0.1.8+29.
+Публикация0.1.9 разрешена только после TUN/DNS/IPv6 runtime и policy-gates;
+план находится в [releases/0.1.9.md](releases/0.1.9.md).
+
 ## Подписанные патчи через GitHub Actions, 2026-10-20
 
 Оба signed-patch job прошли [run39309178502](https://github.com/Extectick/ExVPN/actions/runs/39309178502)

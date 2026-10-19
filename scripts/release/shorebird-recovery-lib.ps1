@@ -221,6 +221,8 @@ function Get-ShorebirdSafeFailureCode([string]$Message) {
         'shorebird_recovery_uri_rejected','shorebird_recovery_artifact_mismatch','shorebird_recovery_readback_failed','shorebird_recovery_download_failed',
         'shorebird_recovery_output_exists','shorebird_recovery_archive_invalid','shorebird_recovery_proof_invalid','shorebird_recovery_version_mismatch',
         'shorebird_recovery_ui_identity_invalid','shorebird_installer_failed','shorebird_installer_ambiguous','shorebird_android_jvm_failed','shorebird_maven_notices_failed',
+        'shorebird_android_configuration_artifact_invalid','shorebird_android_configuration_artifact_changed','shorebird_android_configuration_inputs_missing',
+        'shorebird_android_configuration_inputs_changed','shorebird_android_configuration_failed','shorebird_android_configuration_registrant_invalid','shorebird_android_configuration_dev_plugin_present',
         'shorebird_apk_signer_mismatch','shorebird_source_not_clean','shorebird_source_changed','shorebird_preview_audit_failed','shorebird_preview_artifact_binding_failed',
         'shorebird_preview_unexpected_audit_finding','shorebird_runtime_notices_inventory_invalid','shorebird_runtime_notices_inventory_mismatch',
         'shorebird_runtime_notices_file_mismatch','shorebird_runtime_notices_copy_mismatch','shorebird_runtime_notices_binding_mismatch',
@@ -232,7 +234,7 @@ function Get-ShorebirdSafeFailureCode([string]$Message) {
 function Get-ShorebirdSafeFailureLeaf([string]$Path) {
     $leaf=[IO.Path]::GetFileName($Path)
     if($leaf -cin @('shorebird-release.ps1','shorebird-recovery-lib.ps1','shorebird-pipeline-lib.ps1','shorebird-preview-lib.ps1',
-        'collect-notices.ps1','notice-inputs.ps1','shorebird-runtime-notices.ps1','shorebird-updater-notices.ps1','artifact-audit-lib.ps1',
+        'collect-notices.ps1','notice-inputs.ps1','shorebird-runtime-notices.ps1','shorebird-updater-notices.ps1','artifact-audit-lib.ps1','shorebird-android-release-config.ps1',
         'flutter-runtime-inputs.ps1','android-notice-inputs.ps1','prepare-android-notices.ps1','prepare-demo-maven-notices.ps1',
         'build-installer.ps1','build-app-updater.ps1','prepare-nsis.ps1','prepare-msvc-runtime.ps1','prepare-ci-msvc-runtime.ps1')){return $leaf}
     ''

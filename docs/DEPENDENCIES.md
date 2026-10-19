@@ -4,6 +4,13 @@
 
 ## Основные компоненты
 
+Кандидат 0.1.9+30, 2026-10-20: SOCKS/HTTP и userspace WireGuard используют
+уже закреплённые пакеты Xray, WireGuard Go и gVisor. Новых Go/Dart dependencies
+и обновления ядра нет. WireGuard Go `v0.0.0-20250521234502-f333402bd9cb` и
+gVisor `89a5d21be8f0` присутствовали в notice inventory базы29; для новых
+бинарников полный комплект notices/SBOM формируется повторно по их bytes.
+Kernel WireGuard, OpenVPN и TUIC в поставку не добавляются.
+
 Android APK updater 0.1.5, 2026-10-19: Dart `cryptography` **2.9.0**
 (Apache-2.0) становится прямой runtime-зависимостью приложения для проверки
 Ed25519. Версия уже закреплена и используется в runtime через `exvpn_updates`;

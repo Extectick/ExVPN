@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #requires -Version 7.0
 [CmdletBinding()]
-param([Parameter(Mandatory)][guid]$SandboxId,[Parameter(Mandatory)][string]$BundleDirectory,[string]$PrivateProfileDirectory='')
+param([Parameter(Mandatory)][guid]$SandboxId,[Parameter(Mandatory)][string]$BundleDirectory,[string]$PrivateProfileDirectory='',[switch]$ResumePrepared)
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $repository=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
@@ -12,7 +12,14 @@ $outputRoot=Join-Path $bundle 'output'
 $marker=Get-Content (Join-Path $inputRoot 'sandbox-bundle.json') -Raw | ConvertFrom-Json
 $runGuid=[guid]::Empty
 if(![guid]::TryParseExact($marker.runId,'D',[ref]$runGuid) -or $runGuid -eq [guid]::Empty){throw 'canonical_run_id_required'}
-if ($marker.forbiddenHost -ine $env:COMPUTERNAME -or !$marker.controllerHarness -or $marker.installedServiceIpcTested -or @((Get-ChildItem $outputRoot -Force)).Count) {throw 'fresh_controller_bundle_required'}
+if ($marker.forbiddenHost -ine $env:COMPUTERNAME -or !$marker.controllerHarness -or $marker.installedServiceIpcTested) {throw 'controller_bundle_required'}
+if(@((Get-ChildItem $outputRoot -Force)).Count -and !$ResumePrepared){throw 'fresh_controller_bundle_required'}
+if($ResumePrepared){
+    $previous=Get-Content (Join-Path $outputRoot 'automatic-coordinator.json') -Raw | ConvertFrom-Json
+    if($previous.runId -cne $marker.runId -or $previous.phases.Count -or $previous.passed -or (Test-Path (Join-Path $outputRoot 'automatic-samples.jsonl')) -or (Test-Path (Join-Path $outputRoot 'native-network.json'))){throw 'unstarted_prepared_resume_required'}
+    $archive=Join-Path $repository ('.private/windows30-failover/setup-'+[guid]::NewGuid().ToString('N')+'.json')
+    Copy-Item -LiteralPath (Join-Path $outputRoot 'automatic-coordinator.json') -Destination $archive
+}
 . (Join-Path $repository 'scripts/windows/installer/package-common.ps1')
 . (Join-Path $PSScriptRoot 'windows-pcap-dns-audit.ps1')
 $captureMapping=& (Join-Path $PSScriptRoot 'ensure-windows-lifecycle-mapping.ps1') -SandboxId $SandboxId
@@ -27,12 +34,8 @@ if($remote){
 }
 $inventory=& $wsb list --raw | ConvertFrom-Json
 if (@($inventory.WindowsSandboxEnvironments | Where-Object Id -EQ $SandboxId.ToString()).Count -ne 1) {throw 'live_sandbox_required'}
-foreach($mapping in @(@{host=$inputRoot;guest='C:\ExVPN-Package';write=$false},@{host=$inputRoot;guest='C:\ExVPN-System-QA';write=$false},@{host=$outputRoot;guest='C:\ExVPN-QA';write=$true})) {
-    $arguments=@('share','--id',$SandboxId.ToString(),'--host-path',$mapping.host,'--sandbox-path',$mapping.guest,'--raw')
-    if($mapping.write){$arguments+='--allow-write'}
-    $null=& $wsb @arguments
-    if($LASTEXITCODE -ne 0){throw 'isolated_mapping_failed'}
-}
+# Start the exact prepared .wsb: Windows cannot replace an existing mapping.
+# Verify its immutable identity and output mapping rather than overwriting it.
 function Guest([string]$Body,[string]$RunAs='System') {
     $preamble=@'
 $ErrorActionPreference='Stop'
@@ -40,7 +43,7 @@ $m=Get-Content C:\ExVPN-Package\sandbox-bundle.json -Raw | ConvertFrom-Json
 if($env:COMPUTERNAME -ieq $m.forbiddenHost -or $m.runId -cne '__RUN__'){throw 'disposable_guest_required'}
 '@
     $encoded=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($preamble.Replace('__RUN__',$marker.runId)+"`n"+$Body))
-    $raw=& $wsb exec --id $SandboxId.ToString() --run-as $RunAs --command ('powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand '+$encoded) --raw
+    $raw=& $wsb exec --id $SandboxId.ToString() --run-as $RunAs --command ('powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand '+$encoded) --raw
     if($LASTEXITCODE -ne 0 -or ($raw | ConvertFrom-Json).ExitCode -ne 0){throw 'guest_action_failed'}
 }
 function Read-Native {
@@ -74,23 +77,53 @@ $path='C:\ExVPN-Lifecycle-QA-Results\'+$m.runId+'-__PHASE__'
 if('__ACTION__' -ceq 'start'){
  & pktmon.exe filter add ExVPNAutomaticDns -p 53 | Out-Null
  if($LASTEXITCODE -ne 0){throw 'dns_capture_filter_failed'}
+ & pktmon.exe filter add ExVPNAutomaticDot -p 853 | Out-Null
+ if($LASTEXITCODE -ne 0){throw 'dot_capture_filter_failed'}
  & pktmon.exe start --capture --comp $components[0] --pkt-size 128 --file-size 16 --file-name ($path+'.etl') | Out-Null
  if($LASTEXITCODE -ne 0){throw 'dns_capture_start_failed'}
 }else{
+ $rawCounters=& pktmon.exe counters --json
+ if($LASTEXITCODE -ne 0){throw 'dns_counter_read_failed'}
+ $counterGroups=$rawCounters | ConvertFrom-Json
+ $rawCounters | Out-File -LiteralPath ($path+'-raw-counters.json') -Encoding UTF8
+ $physical=@($counterGroups | ForEach-Object {$_.Components} | Where-Object Id -EQ $components[0])
+ $counters=@($physical | ForEach-Object {$_.Counters})
+ $outbound=[long]0;$inbound=[long]0
+ foreach($counter in $counters){
+  if(!$counter.PSObject.Properties['Outbound'] -or !$counter.PSObject.Properties['Inbound']){throw 'unexpected_physical_counter_record'}
+  $outbound+=[long]$counter.Outbound.Packets;$inbound+=[long]$counter.Inbound.Packets
+ }
+ [ordered]@{format=1;method='pktmon_physical_component_port53_853_counters';runId=$m.runId;componentId=$components[0];ports=@(53,853);outboundPackets=$outbound;inboundPackets=$inbound;dnsPackets=($outbound+$inbound);counterReadFailed=$false} | ConvertTo-Json | Set-Content ($path+'-counts.json') -Encoding UTF8
  & pktmon.exe stop | Out-Null
  if($LASTEXITCODE -ne 0){throw 'dns_capture_stop_failed'}
  & pktmon.exe etl2pcap ($path+'.etl') --out ($path+'.pcapng') | Out-Null
  if($LASTEXITCODE -ne 0){throw 'dns_capture_export_failed'}
  & pktmon.exe filter remove ExVPNAutomaticDns | Out-Null
  if($LASTEXITCODE -ne 0){throw 'dns_capture_filter_cleanup_failed'}
+ & pktmon.exe filter remove ExVPNAutomaticDot | Out-Null
+ if($LASTEXITCODE -ne 0){throw 'dot_capture_filter_cleanup_failed'}
 }
 '@
     Guest ($body.Replace('__ACTION__',$Action).Replace('__PHASE__',$Phase))
-    if($Action -ceq 'stop'){return Get-PhysicalDnsPacketCounts (Join-Path $captureMapping.root ($marker.runId+'-'+$Phase+'.pcapng'))}
+    if($Action -ceq 'stop'){
+        $counts=Get-Content (Join-Path $captureMapping.root ($marker.runId+'-'+$Phase+'-counts.json')) -Raw | ConvertFrom-Json
+        if($counts.runId -cne $marker.runId -or $counts.counterReadFailed){throw 'invalid_counter_evidence'}
+        $payload=Get-PhysicalDnsPacketCounts (Join-Path $captureMapping.root ($marker.runId+'-'+$Phase+'.pcapng'))
+        $counts | Add-Member payloadPackets $payload.capturedPackets
+        return $counts
+    }
 }
 function Probes([ValidateSet('primary','backup','outage')][string]$Phase) {
     $script=@'
 Clear-DnsClientCache
+$dnsChecks=@()
+foreach($recordType in @('A','AAAA')){
+ $queryName='qa-'+[guid]::NewGuid().ToString('N')+'.example.com'
+ $nameError=$false;$resolved=$false
+ try{Resolve-DnsName $queryName -Server 172.31.255.2 -Type $recordType -DnsOnly -NoHostsFile -QuickTimeout -ErrorAction Stop | Out-Null;$resolved=$true}
+ catch{$nameError=$_.FullyQualifiedErrorId -match 'DNS_ERROR_RCODE_NAME_ERROR'}
+ $dnsChecks+=@([ordered]@{recordType=$recordType;freshNonce=$true;expectedNameError=$nameError;resolved=$resolved})
+}
 $results=@()
 foreach($name in @('protected-probe.exe','excluded-probe.exe')) {
  foreach($mode in @('numeric','health','dns-tun','numeric6')) {
@@ -99,12 +132,15 @@ foreach($name in @('protected-probe.exe','excluded-probe.exe')) {
   $results+=@([ordered]@{executable=$name;result=($out | ConvertFrom-Json)})
  }
 }
-[ordered]@{runId=$m.runId;phase='__PHASE__';dnsCacheCleared=$true;probes=$results} | ConvertTo-Json -Depth 7 | Set-Content C:\ExVPN-QA\automatic-probes-__PHASE__.json -Encoding UTF8
+[ordered]@{runId=$m.runId;phase='__PHASE__';dnsCacheCleared=$true;freshDns=$dnsChecks;probes=$results} | ConvertTo-Json -Depth 7 | Set-Content C:\ExVPN-QA\automatic-probes-__PHASE__.json -Encoding UTF8
 '@
     # Clear cache needs SYSTEM; independent probe processes retain own App-ID.
     Guest ($script.Replace('__PHASE__',$Phase))
     $report=Get-Content (Join-Path $outputRoot ('automatic-probes-'+$Phase+'.json')) -Raw | ConvertFrom-Json
     if($report.runId -cne $marker.runId){throw 'foreign_probe_report'}
+    foreach($check in $report.freshDns){
+        if($check.resolved -or [bool]$check.expectedNameError -ne ($Phase -cne 'outage')){throw ('fresh_dns_expectation_failed_'+$Phase+'_'+$check.recordType)}
+    }
     foreach($probe in $report.probes){
         $expected=($Phase -cne 'outage' -or $probe.executable -ceq 'excluded-probe.exe')
         if($probe.result.mode -ceq 'numeric6'){
@@ -119,14 +155,26 @@ $report=[ordered]@{format=1;runId=$marker.runId;computerUse=$false;hostNetworkCh
 $report.bundleManifestSha256=(Get-FileHash -LiteralPath (Join-Path $inputRoot 'sandbox-bundle.json') -Algorithm SHA256).Hash.ToLowerInvariant()
 if($remote){$report.privateProfileSha256=(Get-FileHash -LiteralPath (Join-Path $PrivateProfileDirectory 'profile.json') -Algorithm SHA256).Hash.ToLowerInvariant()}
 $prepared=$false
+$started=$false
 $captureActive=$false
 $capturePhase='calibration'
 try {
-    Guest '& C:\ExVPN-System-QA\guest-system-qa.ps1 -ConfirmDisposableGuest -Action Prepare'
+    Guest @'
+$second=Get-Content C:\ExVPN-System-QA\sandbox-bundle.json -Raw | ConvertFrom-Json
+if($second.runId -cne $m.runId -or !(Test-Path C:\ExVPN-QA -PathType Container)){throw 'exact_prepared_mappings_required'}
+[ordered]@{runId=$m.runId;outputWritable=$true} | ConvertTo-Json | Set-Content C:\ExVPN-QA\mapping-check.json -Encoding UTF8
+'@
+    $mappingCheck=Get-Content (Join-Path $outputRoot 'mapping-check.json') -Raw | ConvertFrom-Json
+    if($mappingCheck.runId -cne $marker.runId -or !$mappingCheck.outputWritable){throw 'exact_output_mapping_required'}
+    if(!$ResumePrepared){Guest '& C:\ExVPN-System-QA\guest-system-qa.ps1 -ConfirmDisposableGuest -Action Prepare'}
     $prepared=$true
     Capture 'start' 'calibration'
     $captureActive=$true
-    Guest "try { Resolve-DnsName www.gstatic.com -Server 1.1.1.1 -DnsOnly -NoHostsFile -QuickTimeout -ErrorAction Stop | Out-Null } catch {}"
+    Guest @'
+$packet=[byte[]](0x12,0x34,1,0,0,1,0,0,0,0,0,0,7,101,120,97,109,112,108,101,3,99,111,109,0,0,1,0,1)
+$udp=[Net.Sockets.UdpClient]::new();try{if($udp.Send($packet,$packet.Length,'1.1.1.1',53) -ne $packet.Length){throw 'calibration_send_failed'}}finally{$udp.Close()}
+Start-Sleep -Milliseconds 800
+'@
     $calibration=Capture 'stop' 'calibration'
     $captureActive=$false
     if($calibration.dnsPackets -lt 1){throw 'physical_dns_capture_calibration_failed'}
@@ -141,6 +189,7 @@ if(!$route){throw 'physical_route_required'}
 Start-Process -FilePath 'C:\Program Files\ExVPN System QA\qa-system.exe' -ArgumentList ('-confirm-disposable-guest -automatic-failover __REMOTE__ -interface-index '+$route.InterfaceIndex) -WorkingDirectory 'C:\Program Files\ExVPN System QA' -WindowStyle Hidden -RedirectStandardOutput C:\ExVPN-QA\automatic-stdout.txt -RedirectStandardError C:\ExVPN-QA\automatic-stderr.txt
 '@
     Guest ($startScript.Replace('__REMOTE__',$(if($remote){'-remote-relay'}else{''})))
+    $started=$true
     $primaryConnected=Wait-Connected 'qa-primary'
     $report.phases+=$primaryConnected
     $report.guardTestStartSequence=$primaryConnected.sequence
@@ -179,10 +228,12 @@ Start-Process -FilePath 'C:\Program Files\ExVPN System QA\qa-system.exe' -Argume
     if($captureActive){try{$null=Capture 'stop' $capturePhase}catch{$report.captureCleanupError=$_.Exception.Message}}
     if($prepared){
         try {
-            Control 'disconnect'
-            $deadline=[DateTime]::UtcNow.AddSeconds(35)
-            do {$sample=Read-Native;if($sample -and $sample.phase -ceq 'disconnected'){break};Start-Sleep -Milliseconds 200}while([DateTime]::UtcNow -lt $deadline)
-            if(!$sample -or $sample.phase -cne 'disconnected' -or $sample.guardArmed -or $sample.guardReadFailed -or $sample.adapterPresent){throw 'native_disconnect_failed'}
+            if($started){
+                Control 'disconnect'
+                $deadline=[DateTime]::UtcNow.AddSeconds(35)
+                do {$sample=Read-Native;if($sample -and $sample.phase -ceq 'disconnected'){break};Start-Sleep -Milliseconds 200}while([DateTime]::UtcNow -lt $deadline)
+                if(!$sample -or $sample.phase -cne 'disconnected' -or $sample.guardArmed -or $sample.guardReadFailed -or $sample.adapterPresent){throw 'native_disconnect_failed'}
+            }
             Guest '& C:\ExVPN-System-QA\guest-system-qa.ps1 -ConfirmDisposableGuest -Action Inspect -RoutingMode exclude'
             $before=Get-Content (Join-Path $outputRoot 'prepared.json') -Raw | ConvertFrom-Json
             $after=Get-Content (Join-Path $outputRoot 'inspection-exclude.json') -Raw | ConvertFrom-Json

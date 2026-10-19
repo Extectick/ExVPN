@@ -25,6 +25,7 @@ $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'demo-android-lib.ps1')
 . (Join-Path $PSScriptRoot 'shorebird-runtime-notices.ps1')
 . (Join-Path $PSScriptRoot 'shorebird-android-environment.ps1')
+. (Join-Path $PSScriptRoot 'shorebird-android-release-config.ps1')
 $sourceCommit = Get-ShorebirdSourceCommit $repository
 $compiledSourceCommit=$sourceCommit;$recoveryProof=$null;$recoveryEquivalence=$null
 if($RecoverWindowsBase){
@@ -287,6 +288,21 @@ try {
         # Shorebird records the AAB's Dart libraries, but testers install the
         # APK. Both base libraries must be identical before distribution.
         $baseAot = @(Assert-ShorebirdAndroidAotBinding $apk $aab)
+        # Upstream finishes with an ordinary pub get, restoring dev-only
+        # integration_test registration after its APK/AAB build. Regenerate only
+        # release configuration; preserve exact cloud-recorded package bytes.
+        $subphase='android_release_configuration'
+        $releaseConfiguration = Invoke-ShorebirdAndroidReleaseConfiguration -Flutter $flutter -Apk $apk -Aab $aab `
+            -Registrant (Join-Path $app 'android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java') `
+            -PrivateLog (Join-Path $privateRun 'release-configuration.log') -ReadProtectedInputs {
+                Assert-AndroidNoticeSeal $repository $packageInputs.InputDirectory -FlutterRuntime shorebird -FlutterBuildMode release
+                [ordered]@{
+                    seal=(Get-AuditSha256 (Join-Path $packageInputs.InputDirectory 'seal.json'))
+                    snapshot=(Get-AndroidNoticeSnapshotState $repository $packageInputs.InputDirectory -FlutterRuntime shorebird -FlutterBuildMode release)
+                    updater=(Get-AuditSha256 (Join-Path $app 'shorebird.yaml'))
+                    source=(Get-ShorebirdSourceCommit $repository)
+                }
+            }
         $subphase='android_jvm'
         $jvmStarted = [datetime]::UtcNow
         Push-Location (Join-Path $app 'android')
@@ -354,6 +370,7 @@ try {
         runtime=$runtimeAfter.Evidence; packagedRuntime=$packagedRuntime; sourceLockUnchanged=$true
         android=$(if ($Target -ceq 'Android') { $identity } else { $null }); signature=$(if ($Target -ceq 'Android') { $signature } else { $null })
         jvm=$(if ($Target -ceq 'Android') { $jvm } else { $null })
+        androidReleaseConfiguration=$(if ($Target -ceq 'Android') { $releaseConfiguration } else { $null })
         files=@(Get-ChildItem -LiteralPath $stage -File -Recurse | ForEach-Object {
             [ordered]@{path=[IO.Path]::GetRelativePath($stage,$_.FullName).Replace('\','/');sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
         })
