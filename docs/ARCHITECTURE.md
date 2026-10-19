@@ -16,6 +16,17 @@ supervisor. `clearAutomaticSelection` отменяет будущие замен
 выбора/отключения. [Контракт и границы](SUBSCRIPTION_COMPATIBILITY_AND_FAILOVER.md).
 Это ordered primary/backup, не эмуляция `leastLoad` или `roundRobin`.
 
+Windows: неудачная HTTPS-проверка полностью запущенного кандидата автоматической
+группы сохраняет этот core/TUN и разрешение WFP на время cooldown. Подтверждённые
+исключения продолжают прямые соединения; защищённый трафик и DNS не получают
+direct fallback. Это состояние blocked/reconnecting, а не connected.
+Удержание разрешено только для распознанного удалённого/транспортного отказа,
+живого context/generation и неизменившегося underlay. Ошибки guard/lease,
+неизвестные ошибки и отмена закрывают core с сохранением persistent deny.
+При замене кандидатов Windows может пересоздать адаптер; непрерывным является
+guard, а не обещание отсутствия краткого разрыва TUN. Runtime-приёмка ведётся
+отдельно от этих source-регрессий (`ec0e865`, `12c2caa`).
+
 ## Дополнение: CI-подготовка Dart-патчей
 
 Workflow `shorebird.yml` разделяет no-build `diagnose_android` и signed patch

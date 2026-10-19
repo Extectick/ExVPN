@@ -1,5 +1,15 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+После runtime-отказа Windows внесено сохранение TUN/исключений на время
+cooldown (`ec0e865`, `12c2caa`). Итоговый кандидат `f98b75d`, включая
+параллельно завершённую единую страницу обновлений, прошёл новый Full:
+**12/12 PASS, 101,56 с, 399 app tests, source unchanged**.
+[Итоговый отчёт](evidence/fast-validation-v0.1.9-final.json).
+Workflow39317376146 отменён до native/build/upload; вместо него базы строит
+workflow39319816470 из точного `f98b75d`. Runtime и публикация пока отдельные
+открытые гейты, первоначальный отказ сохранён в
+[обезличенном отчёте](evidence/windows30-failover-initial.json).
+
 2026-10-20, кандидат базы **0.1.9+30**, `c20da08`: итоговый Full **12/12 PASS
 за 102,93 с**, fingerprint unchanged; 398 app / 206 domain / 84 state tests.
 [Отчёт](evidence/fast-validation-v0.1.9.json). Предыдущий прогон всех12 lanes
