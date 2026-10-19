@@ -1,3 +1,46 @@
+# Compact import and minimal windows — 2026-10-19
+
+Source: user attachment `codex-clipboard-4bd7389e-5ba3-4cae-b53b-146b40596f36.png`,
+425×450, saved as `design/references/import-before-20261019.png`.
+The request is a scoped redesign, not a pixel clone. Preserve approved Inter,
+theme tokens, flags and controls. Existing visual language is the target.
+
+IAB implementation captures: `design/screenshots/compact-import/`, viewport779×846.
+Logical minimal400×440 is shown at1:1; medium440×760 is scaled to fit the viewport.
+The source card is320×392; the medium implementation card is about372×260 in
+the full browser capture. Source and implementation were opened together for
+comparison; unrelated browser/desktop margins are excluded from the judgement.
+The minimal detail image is an explicitly cropped copy of the unedited capture.
+
+Findings fixed: original nested dimmed frames waste the small window; minimal
+now fills the complete app canvas. Initial icon-font cache on127.0.0.1 omitted
+new glyphs; a fresh localhost origin displays the full fonts. Final captures
+use that origin for the new form. No brand asset was replaced or approximated.
+
+- Typography: existing Inter, title20, normal control hierarchy, no clipped labels.
+- Spacing/layout:20px form gutter,38px tabs,42px primary action; optional name
+  collapsed initially. Medium shrinks to content, minimal pins the action below
+  scrollable content. Settings and server picker fill minimal without nesting.
+- Color: existing white/blue tokens; existing dark tokens remain in source,
+  dark runtime was not retested in this narrowly scoped pass.
+- Assets: existing Cupertino icons and local fonts; QR is an actual library icon,
+  with no raster placeholder or generated artwork.
+- Copy: removed persistence/developer footnote and duplicate Cancel; close X
+  remains. Unsupported-only warning icon absent, refresh-error simulation shows
+  red exclamation beside the relevant count. Supported server rows remain visible.
+- Interaction: Link/Text/QR and optional-name disclosure observed, QR action and
+  disabled submit shown correctly. Close and refresh simulation work; no real
+  subscription was sent, and no native bridge or network settings were changed.
+
+Browser error log empty. No P0/P1/P2 findings remain in these observed states.
+No native build, automated test suite, physical Android QA or production install
+was performed. Parser/pending-update semantics remain a separate implementation
+task. Source commit12aa7aa; no release/tag or push that starts CI.
+
+final result: passed (scoped web design only)
+
+---
+
 # Compact subscription tree — 2026-10-18
 
 Source visual truth: `design/references/subscription-tree-selected.png`
