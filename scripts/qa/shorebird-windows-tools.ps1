@@ -67,7 +67,7 @@ function Invoke-WindowsShorebirdWorker {
     $tools=Join-Path $PSScriptRoot 'shorebird-windows-tools.ps1'
     $code = '. '''+$tools.Replace("'","''")+'''; try {' + @'
 [Console]::InputEncoding=[Text.UTF8Encoding]::new($false)
-$request=[Console]::In.ReadToEnd()|ConvertFrom-Json -ErrorAction Stop
+$rawRequest=[Console]::In.ReadToEnd(); if($rawRequest.Length -gt 0 -and $rawRequest[0] -eq [char]0xfeff){$rawRequest=$rawRequest.Substring(1)}; $request=$rawRequest|ConvertFrom-Json -ErrorAction Stop
 [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
 Import-WindowsShorebirdObserver
 $binding=$request.binding
