@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "status": "PASS_METADATA_ONLY_SOURCE_FIX",
+  "oldInventorySha256": "bf4886f683436415923de72aaf4f504b696cece8f98960189700a76789f78c4a",
+  "newInventorySha256": "ba9b44fd8037e68e2e2ac42f1774c8ed5b05af9c60dca3ac6606482956377cd8",
+  "oldInventoryBytes": 229840,
+  "newInventoryBytes": 229615,
+  "removedDistributedEntry": {
+    "path": ".gitattributes",
+    "size": 20,
+    "sha256": "e97602ab9cac70102245345c5ab0fc9830df8b17f1072b188265a662a3a547ae",
+    "source": "ExVPN: preserve checksummed upstream bytes in Git checkouts"
+  },
+  "remainingNoticeEntries": 198,
+  "allRemainingEntriesAndRawBytesMatchPriorPins": true,
+  "allOtherInventoryJsonFieldsUnchanged": true,
+  "sourceCratePinsUnchanged": 282,
+  "productionAndBuildSourceClosureUnchanged": 200,
+  "rootSourceGitMetadataPreserved": true,
+  "androidGradleChanged": false,
+  "apkVerifierChanged": false,
+  "deviceActions": 0,
+  "builds": 0,
+  "focusedTests": {
+    "script": "scripts/release/test-shorebird-runtime-notices.ps1",
+    "passed": 229,
+    "failed": 0,
+    "builds": 0,
+    "deviceActions": 0
+  },
+  "originalPackageFailure": {
+    "expectedFiles": 430,
+    "matchesPerArchive": 429,
+    "mismatchesPerArchive": 1,
+    "archives": [
+      "APK",
+      "AAB"
+    ],
+    "missingPath": "assets/exvpn_notices/shorebird-runtime/.gitattributes",
+    "mergedAssetsAlsoMissing": true,
+    "actualMergeIgnorePatternIncludesDotStar": true
+  },
+  "sourceMetadataExcludedOnlyWithExplicitSwitchAndExactBytePin": true,
+  "unexpectedDeliveredRootMetadataRejected": true,
+  "unknownDotfileRejected": true,
+  "nestedMetadataRejected": true,
+  "missingOrTamperedSourceMetadataRejected": true,
+  "existingApkOrAabNotRebuiltOrReauditedAfterSourceFix": true,
+  "postTestRemainingRawFilesVerified": 198
+}

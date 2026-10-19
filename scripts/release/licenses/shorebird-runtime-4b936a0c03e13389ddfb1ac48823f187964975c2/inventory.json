@@ -4748,12 +4748,6 @@
   ],
   "files": [
     {
-      "path": ".gitattributes",
-      "size": 20,
-      "sha256": "e97602ab9cac70102245345c5ab0fc9830df8b17f1072b188265a662a3a547ae",
-      "source": "ExVPN: preserve checksummed upstream bytes in Git checkouts"
-    },
-    {
       "path": "locks/rust-library.Cargo.lock",
       "size": 9822,
       "sha256": "53d9ccff0c906de434b65af90d5c30063894b940fc839261f1fb06ef2e69e3d3",

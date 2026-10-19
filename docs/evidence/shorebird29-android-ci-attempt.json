@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "runId": 39254177224,
+  "sourceCommit": "989329b70e3aabdb745f1ada9f07135d6685b6c9",
+  "target": "Android",
+  "status": "failed",
+  "phase": "shorebird_release",
+  "subphase": "release",
+  "errorCode": "shorebird_operation_failed",
+  "failureLeaf": "shorebird-pipeline-lib.ps1",
+  "failureLine": 198,
+  "cloudOutcome": "unknown",
+  "releaseId": null,
+  "distributionApproved": false,
+  "requiresCloudReadbackBeforeRetry": true,
+  "observedFailureClass": "official_cli_nonzero_exit",
+  "exactInnerCauseAvailable": false,
+  "rawLogsExported": false,
+  "retryOrBuildPerformed": false
+}

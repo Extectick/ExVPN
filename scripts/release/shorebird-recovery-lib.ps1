@@ -17,6 +17,9 @@ function Get-ShorebirdRecoveryBlob([string]$Repository,[string]$Commit,[string]$
 function Assert-ShorebirdRecoveryPaths([string[]]$Paths) {
     $tooling=@('scripts/release/shorebird-release.ps1','scripts/release/shorebird-pipeline-lib.ps1',
         'scripts/release/shorebird-recovery-lib.ps1','scripts/release/test-shorebird-pipeline.ps1','.github/workflows/shorebird.yml',
+        'scripts/release/shorebird-runtime-notices.ps1','scripts/release/test-shorebird-runtime-notices.ps1',
+        'scripts/release/shorebird-runtime-notices.lock.json',
+        'scripts/release/licenses/shorebird-runtime-4b936a0c03e13389ddfb1ac48823f187964975c2/inventory.json',
         '.gitattributes','scripts/release/shorebird-updater-notices-crates.lock.json')
     foreach ($path in $Paths) {
         if ($path -match '\.\.|//|[\x00-\x1f\\:]' -or ($path -cnotin $tooling -and
@@ -48,6 +51,37 @@ function Assert-ShorebirdRecoveryCratePin([string]$Before,[string]$After) {
     }
 }
 
+function Assert-ShorebirdRecoveryNoticeMetadata([string]$Before,[string]$After,[string]$BeforePin,[string]$AfterPin) {
+    try {
+        $old=$Before | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+        $new=$After | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+        $oldPin=$BeforePin | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+        $newPin=$AfterPin | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+    } catch {throw 'shorebird_recovery_notice_metadata_changed'}
+    # Android's asset packager omits dotfiles. Remove only our own Git metadata
+    # from the notice manifest; every upstream license/source record stays exact.
+    $metadata=@($old.files | Where-Object path -CEQ '.gitattributes')
+    if((Get-AuditTextHash $Before) -cne 'bf4886f683436415923de72aaf4f504b696cece8f98960189700a76789f78c4a' -or
+        @($old.files).Count -ne 199 -or $metadata.Count -ne 1 -or $metadata[0].size -ne 20 -or
+        $metadata[0].sha256 -cne 'e97602ab9cac70102245345c5ab0fc9830df8b17f1072b188265a662a3a547ae') {
+        throw 'shorebird_recovery_notice_metadata_changed'
+    }
+    $old.files=@($old.files | Where-Object path -CNE '.gitattributes')
+    if(($old | ConvertTo-Json -Depth 60 -Compress) -cne ($new | ConvertTo-Json -Depth 60 -Compress)) {
+        throw 'shorebird_recovery_notice_metadata_changed'
+    }
+    if($oldPin.inventorySha256 -cne (Get-AuditTextHash $Before) -or
+        $oldPin.inventorySize -ne [Text.Encoding]::UTF8.GetByteCount($Before) -or
+        $newPin.inventorySha256 -cne (Get-AuditTextHash $After) -or
+        $newPin.inventorySize -ne [Text.Encoding]::UTF8.GetByteCount($After)) {
+        throw 'shorebird_recovery_notice_metadata_changed'
+    }
+    $oldPin.inventorySha256=$newPin.inventorySha256;$oldPin.inventorySize=$newPin.inventorySize
+    if(($oldPin | ConvertTo-Json -Depth 20 -Compress) -cne ($newPin | ConvertTo-Json -Depth 20 -Compress)) {
+        throw 'shorebird_recovery_notice_metadata_changed'
+    }
+}
+
 function Assert-ShorebirdRecoverySource([string]$Repository,[string]$SourceCommit='') {
     $policy=Get-ShorebirdWindowsRecoveryPolicy
     if (!$SourceCommit) { $SourceCommit=Get-ShorebirdSourceCommit $Repository }
@@ -69,6 +103,14 @@ function Assert-ShorebirdRecoverySource([string]$Repository,[string]$SourceCommi
     $attributes='.gitattributes';$crate='scripts/release/shorebird-updater-notices-crates.lock.json'
     Assert-ShorebirdRecoveryAttributes (Get-ShorebirdRecoveryBlob $Repository $policy.compiledSourceCommit $attributes) (Get-ShorebirdRecoveryBlob $Repository $SourceCommit $attributes)
     Assert-ShorebirdRecoveryCratePin (Get-ShorebirdRecoveryBlob $Repository $policy.compiledSourceCommit $crate) (Get-ShorebirdRecoveryBlob $Repository $SourceCommit $crate)
+    $inventory='scripts/release/licenses/shorebird-runtime-4b936a0c03e13389ddfb1ac48823f187964975c2/inventory.json'
+    $runtimePin='scripts/release/shorebird-runtime-notices.lock.json'
+    if($paths -ccontains $inventory -or $paths -ccontains $runtimePin){
+        Assert-ShorebirdRecoveryNoticeMetadata (Get-ShorebirdRecoveryBlob $Repository $policy.compiledSourceCommit $inventory) `
+            (Get-ShorebirdRecoveryBlob $Repository $SourceCommit $inventory) `
+            (Get-ShorebirdRecoveryBlob $Repository $policy.compiledSourceCommit $runtimePin) `
+            (Get-ShorebirdRecoveryBlob $Repository $SourceCommit $runtimePin)
+    }
     [ordered]@{compiledSourceCommit=$policy.compiledSourceCommit;sourceCommit=$SourceCommit;onlyPackagingChanges=$true;paths=$paths}
 }
 
@@ -170,7 +212,7 @@ function Assert-ShorebirdRecoveryProof($Proof,[string]$SourceCommit) {
 }
 
 function Get-ShorebirdSafeFailureCode([string]$Message) {
-    if($Message -cin @('shorebird_recovery_compiled_input_changed','shorebird_recovery_attributes_changed','shorebird_recovery_crate_pin_changed',
+    if($Message -cin @('shorebird_recovery_compiled_input_changed','shorebird_recovery_attributes_changed','shorebird_recovery_crate_pin_changed','shorebird_recovery_notice_metadata_changed',
         'shorebird_recovery_source_invalid','shorebird_recovery_source_mode_invalid','shorebird_recovery_source_size_invalid',
         'shorebird_recovery_uri_rejected','shorebird_recovery_artifact_mismatch','shorebird_recovery_readback_failed','shorebird_recovery_download_failed',
         'shorebird_recovery_output_exists','shorebird_recovery_archive_invalid','shorebird_recovery_proof_invalid','shorebird_recovery_version_mismatch',

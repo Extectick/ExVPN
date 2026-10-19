@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "dateUtc": "2026-10-19T13:23:07.5214300Z",
+  "pipelineChecks": 238,
+  "noticeChecks": 229,
+  "newRecoveryMetadataChecks": 9,
+  "sourceLicenseRecordsUnchanged": 198,
+  "newInventorySha256": "ba9b44fd8037e68e2e2ac42f1774c8ed5b05af9c60dca3ac6606482956377cd8",
+  "sdkBuildRepeated": false,
+  "fullRepeated": false,
+  "scope": "Metadata-only packaging correction and bounded CLI error markers; no product/native/SDK/key changes"
+}

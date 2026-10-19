@@ -406,6 +406,29 @@ Assert-Refuses {Assert-ShorebirdRecoveryCratePin $crateBefore ($crateAfter+' ')}
 $badCrate=$crateAfter | ConvertFrom-Json -AsHashtable;$badCrate['schemaVersion']=999
 Assert-Refuses {Assert-ShorebirdRecoveryCratePin $crateBefore ($badCrate | ConvertTo-Json -Depth 20)} 'recovery_crate_changed_value_or_hash_refused'
 
+$noticeInventoryPath='scripts/release/licenses/shorebird-runtime-4b936a0c03e13389ddfb1ac48823f187964975c2/inventory.json'
+$noticePinPath='scripts/release/shorebird-runtime-notices.lock.json'
+$noticeBefore=Get-ShorebirdRecoveryBlob $root $fixedRecovery.compiledSourceCommit $noticeInventoryPath
+$noticePinBefore=Get-ShorebirdRecoveryBlob $root $fixedRecovery.compiledSourceCommit $noticePinPath
+$noticeAfter=[IO.File]::ReadAllText((Join-Path $root $noticeInventoryPath))
+$noticePinAfter=[IO.File]::ReadAllText((Join-Path $root $noticePinPath))
+Assert-ShorebirdRecoveryNoticeMetadata $noticeBefore $noticeAfter $noticePinBefore $noticePinAfter
+Assert-Test $true 'recovery_only_own_git_metadata_removed_all_upstream_records_preserved'
+foreach($field in @('engineRevision','sourceCratePinSha256')){
+    $bad=Copy-Fixture ($noticeAfter | ConvertFrom-Json -AsHashtable);$bad[$field]='changed'
+    Assert-Refuses {Assert-ShorebirdRecoveryNoticeMetadata $noticeBefore ($bad | ConvertTo-Json -Depth 60) $noticePinBefore $noticePinAfter} 'recovery_notice_dependency_pins_cannot_change'
+}
+$bad=Copy-Fixture ($noticeAfter | ConvertFrom-Json -AsHashtable);$bad.files[0].sha256='a'*64
+Assert-Refuses {Assert-ShorebirdRecoveryNoticeMetadata $noticeBefore ($bad | ConvertTo-Json -Depth 60) $noticePinBefore $noticePinAfter} 'recovery_upstream_license_bytes_cannot_change'
+$bad=Copy-Fixture ($noticeAfter | ConvertFrom-Json -AsHashtable);$bad.files=@($bad.files | Select-Object -Skip 1)
+Assert-Refuses {Assert-ShorebirdRecoveryNoticeMetadata $noticeBefore ($bad | ConvertTo-Json -Depth 60) $noticePinBefore $noticePinAfter} 'recovery_upstream_license_cannot_be_removed'
+$bad=Copy-Fixture ($noticeAfter | ConvertFrom-Json -AsHashtable);$bad.claims.stableReleaseReady=$true
+Assert-Refuses {Assert-ShorebirdRecoveryNoticeMetadata $noticeBefore ($bad | ConvertTo-Json -Depth 60) $noticePinBefore $noticePinAfter} 'recovery_notice_scope_cannot_be_upgraded'
+foreach($field in @('inventorySha256','inventorySize','engineRevision')){
+    $bad=Copy-Fixture ($noticePinAfter | ConvertFrom-Json -AsHashtable);$bad[$field]=if($field -ceq 'inventorySize'){1}else{'changed'}
+    Assert-Refuses {Assert-ShorebirdRecoveryNoticeMetadata $noticeBefore $noticeAfter $noticePinBefore ($bad | ConvertTo-Json -Depth 20)} 'recovery_notice_pin_must_bind_exact_bytes_and_same_sdk'
+}
+
 # Execute the actual Git equivalence gate against an owned tiny repository.
 # Only the compiled commit is replaced in this test's function scope.
 $recoveryRepo=Join-Path $fixture 'recovery-source'
@@ -503,6 +526,76 @@ Assert-Test ($record.subphase -ceq 'windows_notice_binding' -and $record.errorCo
 $null=Write-ShorebirdRecovery -Repository $fixture -Action base -Version $fixedRecovery.version -Target Windows -SourceCommit ('c'*40) -Status failed -CloudOutcome unknown -Phase 'PRIVATE' -Subphase 'PRIVATE' -ErrorCode 'SECRET https://secret.invalid' -FailureLeaf 'C:\private\secret.ps1' -FailureLine 999999 -Path $recovery
 $text=[IO.File]::ReadAllText($recovery);$record=$text | ConvertFrom-Json -AsHashtable
 Assert-Test ($record.errorCode -ceq 'shorebird_operation_failed' -and $record.failureLeaf -ceq '' -and $record.failureLine -eq 0 -and !$text.Contains('secret') -and !$text.Contains('PRIVATE')) 'recovery_failure_never_exports_raw_exception'
+
+# Machine-readable CLI failures export seven fixed fields, never diagnostics.
+$cliErrorFixture=Join-Path $fixture 'cli-error-code'
+New-Item -ItemType Directory -Path $cliErrorFixture -Force | Out-Null
+$cliErrorPath=Join-Path $cliErrorFixture 'failure.json'
+$cliEnvelope=@{status='error';meta=@{version=$policy.cliVersion;command='release'};error=@{code='process_exit';message='SYNTHETIC-PRIVATE https://secret.invalid/token';hint='SYNTHETIC-PRIVATE';details='SYNTHETIC-PRIVATE';api_code='SYNTHETIC-PRIVATE'};exitCode=999}
+foreach($known in @('process_exit','usage_error','software_error','fetch_failed','precondition_failed','interactive_prompt_required')){
+    $cliEnvelope.error.code=$known
+    [IO.File]::WriteAllText($cliErrorPath,($cliEnvelope | ConvertTo-Json -Depth 6))
+    $failure=Get-ShorebirdCliFailure $cliErrorPath release 70
+    $text=$failure | ConvertTo-Json -Depth 3
+    Assert-Test ($failure.Count -eq 7 -and $failure.errorCode -ceq $known -and $failure.exitCode -eq 70 -and $failure.cliVersion -ceq $policy.cliVersion -and $failure.command -ceq 'release' -and !$text.Contains('SYNTHETIC-PRIVATE') -and !$text.Contains('secret.invalid')) 'cli_failure_only_known_code_and_actual_exit'
+}
+foreach($change in @(@('version','1.6.130'),@('command','patch'),@('version',@('1.6.129')),@('command',@('release')))){
+    $bad=Copy-Fixture $cliEnvelope;$bad.meta[$change[0]]=$change[1]
+    [IO.File]::WriteAllText($cliErrorPath,($bad | ConvertTo-Json -Depth 6))
+    Assert-Test ((Get-ShorebirdCliFailure $cliErrorPath release 65).errorCode -ceq 'unknown') 'cli_failure_refuses_wrong_or_mistyped_meta'
+}
+foreach($change in @(@('status','success'),@('status',@('error')),@('code','unknown_future_error'),@('code','PROCESS_EXIT'),@('code',@('process_exit')))){
+    $bad=Copy-Fixture $cliEnvelope
+    if($change[0] -ceq 'code'){$bad.error.code=$change[1]}else{$bad.status=$change[1]}
+    [IO.File]::WriteAllText($cliErrorPath,($bad | ConvertTo-Json -Depth 6))
+    Assert-Test ((Get-ShorebirdCliFailure $cliErrorPath release 65).errorCode -ceq 'unknown') 'cli_failure_refuses_nonerror_or_unknown_code'
+}
+foreach($text in @('prefix {"status":"error"}','not JSON',(' '*(4MB+1)))){
+    [IO.File]::WriteAllText($cliErrorPath,$text)
+    Assert-Test ((Get-ShorebirdCliFailure $cliErrorPath release 65).errorCode -ceq 'unknown') 'cli_failure_json_remains_strict_and_bounded'
+}
+Assert-Test ((Get-ShorebirdCliFailure (Join-Path $cliErrorFixture 'missing.json') release 65).errorCode -ceq 'unknown') 'cli_failure_missing_output_safe'
+$failure=Get-ShorebirdCliFailure $cliErrorPath 'PRIVATE-UNEXPECTED-COMMAND' -1073741819
+Assert-Test ($failure.command -ceq 'other' -and $failure.errorCode -ceq 'unknown' -and $failure.exitCode -eq -1073741819 -and !($failure | ConvertTo-Json).Contains('PRIVATE')) 'cli_failure_preserves_numeric_exit_no_arbitrary_command'
+Assert-Refuses {Get-ShorebirdCliFailure $cliErrorPath release 0} 'cli_failure_zero_exit_cannot_claim_failure'
+
+$stderrPath=Join-Path $cliErrorFixture 'failure.log'
+foreach($case in @(@('No space left on device','disk_space_marker'),@('java.lang.OutOfMemoryError','jvm_memory_marker'),@('Compilation error. See log for more details','compiler_error_marker'),@('Gradle build daemon disappeared unexpectedly','gradle_daemon_marker'),@('SYNTHETIC-PRIVATE https://secret.invalid','unknown'))){
+    [IO.File]::WriteAllText($stderrPath,$case[0])
+    $markers=Get-ShorebirdStderrMarkers $stderrPath
+    Assert-Test ($markers.stderrMarker -ceq $case[1] -and $markers.stageMarker -ceq 'unknown' -and !($markers | ConvertTo-Json).Contains('PRIVATE')) 'stderr_marker_fixed_enum_only'
+}
+foreach($case in @(@('Building Android app bundle with Flutter 3.47.7','aab'),@('Building APK','apk'),@('Failed to build AAB.','aab'),@('Failed to build APK.','apk'))){
+    [IO.File]::WriteAllText($stderrPath,$case[0])
+    Assert-Test ((Get-ShorebirdStderrMarkers $stderrPath).stageMarker -ceq $case[1]) 'stderr_stage_exact_pinned_marker'
+}
+[IO.File]::WriteAllText($stderrPath,"Building Android app bundle with Flutter`nBuilding APK")
+Assert-Test ((Get-ShorebirdStderrMarkers $stderrPath).stageMarker -ceq 'apk') 'stderr_stage_uses_last_observed_stage'
+[IO.File]::WriteAllText($stderrPath,('No space left on device Building Android app bundle with Flutter'+('x'*300KB)+"`njava.lang.OutOfMemoryError Building APK"))
+$markers=Get-ShorebirdStderrMarkers $stderrPath
+Assert-Test ($markers.stderrMarker -ceq 'jvm_memory_marker' -and $markers.stageMarker -ceq 'apk') 'stderr_seeks_bounded_tail_ignoring_old_prefix'
+[IO.File]::WriteAllText($stderrPath,('No space left on device Building APK'+('x'*300KB)))
+$markers=Get-ShorebirdStderrMarkers $stderrPath
+Assert-Test ($markers.stderrMarker -ceq 'unknown' -and $markers.stageMarker -ceq 'unknown') 'stderr_does_not_scan_unbounded_prefix'
+
+# Exercise the real invocation's nonzero path with a tiny fake CLI. The safe
+# sidecar uses the existing always-upload directory; private output stays put.
+$fakeErrorCli=Join-Path $cliErrorFixture 'fake-error-cli.ps1'
+$cliEnvelope.error.code='process_exit'
+$fakeErrorSource=@'
+Write-Output '__ERROR_JSON__'
+$global:LASTEXITCODE=70
+'@
+[IO.File]::WriteAllText($fakeErrorCli,$fakeErrorSource.Replace('__ERROR_JSON__',($cliEnvelope | ConvertTo-Json -Depth 6 -Compress)))
+$sidecarDirectory=Join-Path $fixture 'artifacts/shorebird-recovery'
+$before=@(Get-ChildItem -LiteralPath $sidecarDirectory -File -Filter 'cli-error-*.json' -ErrorAction SilentlyContinue)
+$oldSystem=$env:GIT_CONFIG_SYSTEM
+Assert-Refuses {Invoke-ShorebirdJson $fakeErrorCli @('release','android') release $cliErrorFixture 'actual-error'} 'actual_cli_nonzero_still_refuses_release'
+$after=@(Get-ChildItem -LiteralPath $sidecarDirectory -File -Filter 'cli-error-*.json')
+Assert-Test ($after.Count -eq $before.Count+1 -and $env:GIT_CONFIG_SYSTEM -ceq $oldSystem) 'actual_cli_error_saved_once_and_env_restored'
+$latest=@($after | Where-Object FullName -CNotIn @($before | ForEach-Object FullName))
+$text=[IO.File]::ReadAllText($latest[0].FullName);$safe=$text | ConvertFrom-Json -AsHashtable
+Assert-Test ($safe.Count -eq 7 -and $safe.errorCode -ceq 'process_exit' -and $safe.exitCode -eq 70 -and $safe.command -ceq 'release' -and $safe.stderrMarker -ceq 'unknown' -and $safe.stageMarker -ceq 'unknown' -and !$text.Contains('SYNTHETIC-PRIVATE') -and !$text.Contains('secret.invalid') -and !$text.Contains($fixture)) 'actual_cli_sidecar_never_exports_private_fields'
 
 # The workflow must retain the new byte-pinned dotfile and preserve ONLY the
 # allowlisted recovery directory on failure, never .private build logs.

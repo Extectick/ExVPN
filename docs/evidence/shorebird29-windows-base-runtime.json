@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "utc": "2026-10-19T20:15:47.1774342+07:00",
+  "result": "base_runtime_pass",
+  "version": "0.1.8+29",
+  "sourceCommit": "989329b70e3aabdb745f1ada9f07135d6685b6c9",
+  "compiledSourceCommit": "e8cba9fc7f849013c804b02d2c401b07a907d9e8",
+  "releaseId": 908884,
+  "installerSha256": "ffa5ecdf57d5f622984ea693a58c47909bdcf1b14b38c00216cfb76e954b48d2",
+  "installerExitCode": 0,
+  "requireDisconnectedUsed": true,
+  "installedManifestFilesChecked": 731,
+  "cloudUiFilesChecked": 283,
+  "nativeAuditedBinariesChecked": 2,
+  "payloadExact": true,
+  "sdk": {
+    "version": "0.1.8+29",
+    "uiRevision": 0,
+    "available": true,
+    "current": null,
+    "next": null,
+    "restartRequired": false,
+    "track": "beta",
+    "vpnPhase": "disconnected",
+    "storageAvailable": true,
+    "nativeInitializationProven": false
+  },
+  "phase": {
+    "phase": "base",
+    "current": null,
+    "next": null,
+    "uiRevision": 0,
+    "restartRequired": false,
+    "nativeInitializationProven": false
+  },
+  "prior27UserDataPreserved": true,
+  "noNamespaceMigration": true,
+  "old27ExitMethod": "forced_bound_ui_fallback_after_idle_and_stable_saved_files",
+  "old27GracefulExitClaimed": false,
+  "serviceRunning": true,
+  "vpnConnectionStarted": false,
+  "cloudPatchApplied": false,
+  "nativeInitializationProven": false,
+  "appLeftIdle": true,
+  "noSourceMutation": true,
+  "noSDKBuild": true,
+  "noComputerUse": true,
+  "limitations": [
+    "Base null current/next with marker0 is not proof of patched native initialization; actual signed patch and rollback still required.",
+    "Earlier old+27 reopened UI used explicitly authorized forced UI fallback; saved files were stable and matched prior backups."
+  ],
+  "privateStateHashesExported": false
+}

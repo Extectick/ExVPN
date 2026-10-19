@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "dateUtc": "2026-10-19T13:18:53.5101721Z",
+  "status": "source_frozen_focused_pass",
+  "sourceBaseCommit": "989329b70e3aabdb745f1ada9f07135d6685b6c9",
+  "checks": {
+    "pipeline": 229,
+    "newFixtures": 36,
+    "actionsChildExit": 0,
+    "powerShellParse": true,
+    "ownedDiffCheck": true,
+    "fullRepeated": false
+  },
+  "safeSidecar": {
+    "fields": [
+      "schemaVersion",
+      "cliVersion",
+      "command",
+      "errorCode",
+      "exitCode",
+      "stderrMarker",
+      "stageMarker"
+    ],
+    "stdoutMaximumBytes": 4194304,
+    "stderrMaximumTailReadBytes": 262144,
+    "stderrUsesSeek": true,
+    "sourceIsPairedPrivateLog": true,
+    "symlinksRejected": true,
+    "rawTextExported": false,
+    "markerDoesNotProveCause": true
+  },
+  "actualExecution": {
+    "sdk": false,
+    "build": false,
+    "api": false,
+    "cloudMutation": false,
+    "commit": false,
+    "push": false
+  },
+  "files": [
+    {
+      "path": "scripts/release/shorebird-pipeline-lib.ps1",
+      "sha256": "f0d5f9b093ac94dcb8811f9def5529d29f1c1441c73bc55ba1a3cd1e21cf4961"
+    },
+    {
+      "path": "scripts/release/test-shorebird-pipeline.ps1",
+      "sha256": "7a2b73dc3cd5e56e5c82fcad44be805b98b50ea9ee9789a9e507a78c7cc3a8b1"
+    }
+  ]
+}

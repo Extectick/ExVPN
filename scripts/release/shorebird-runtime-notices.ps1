@@ -4,12 +4,25 @@
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'flutter-runtime-inputs.ps1')
 
-function Get-ShorebirdNoticeFiles([string]$Root) {
+function Get-ShorebirdNoticeFiles([string]$Root, [switch]$AllowRootSourceMetadata) {
     $entries = @(Get-ChildItem -LiteralPath $Root -Recurse -Force)
     if ($entries.Count -gt 1000 -or @($entries | Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint }).Count) {
         throw 'shorebird_runtime_notices_file_set_invalid'
     }
-    @($entries | Where-Object { !$_.PSIsContainer } | Select-Object -ExpandProperty FullName)
+    $files = @($entries | Where-Object { !$_.PSIsContainer } | Select-Object -ExpandProperty FullName)
+    if ($AllowRootSourceMetadata) {
+        # This exact source-only Git file preserves pinned upstream raw bytes.
+        # It is not a license and Android asset merging excludes dotfiles. Do
+        # not ignore other dotfiles or any unexpected file in delivered copies.
+        $metadataPath = [IO.Path]::GetFullPath((Join-Path $Root '.gitattributes'))
+        if (!(Test-Path -LiteralPath $metadataPath -PathType Leaf)) { throw 'shorebird_runtime_source_metadata_invalid' }
+        $metadata = Get-ReleaseRuntimeFile $Root '.gitattributes'
+        if ($metadata.size -ne 20 -or $metadata.sha256 -cne 'e97602ab9cac70102245345c5ab0fc9830df8b17f1072b188265a662a3a547ae') {
+            throw 'shorebird_runtime_source_metadata_invalid'
+        }
+        $files = @($files | Where-Object { $_ -cne $metadataPath })
+    }
+    $files
 }
 
 function Get-ShorebirdRuntimeNotices([string]$Repository, $Runtime) {
@@ -45,7 +58,7 @@ function Get-ShorebirdRuntimeNotices([string]$Repository, $Runtime) {
         $inventory.flutterRevision -cne $pin.flutterRevision -or $inventory.engineRevision -cne $pin.engineRevision -or
         $inventory.updaterRevision -cne $pin.updaterRevision -or $inventory.rustSourceRevision -cne $pin.rustSourceRevision -or
         $inventory.sourceCratePinSha256 -cne $cratePin.sha256 -or
-        @($inventory.sourceCrates).Count -ne 282 -or @($inventory.files).Count -ne 199 -or
+        @($inventory.sourceCrates).Count -ne 282 -or @($inventory.files).Count -ne 198 -or
         $inventory.claims.exactLinkedMembership -or $inventory.claims.completePostLinkSbom -or $inventory.claims.stableReleaseReady) {
         throw 'shorebird_runtime_notices_inventory_invalid'
     }
@@ -60,7 +73,7 @@ function Get-ShorebirdRuntimeNotices([string]$Repository, $Runtime) {
             throw 'shorebird_runtime_notices_file_mismatch'
         }
     }
-    $actualFiles = @(Get-ShorebirdNoticeFiles $root)
+    $actualFiles = @(Get-ShorebirdNoticeFiles $root -AllowRootSourceMetadata)
     if ($actualFiles.Count -ne $seen.Count) { throw 'shorebird_runtime_notices_file_set_mismatch' }
     foreach ($file in $actualFiles) {
         if (!$seen.Contains([IO.Path]::GetRelativePath($root, $file).Replace('\','/'))) {

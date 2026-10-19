@@ -25,12 +25,15 @@ $runtime = @{Identity=@{kind='shorebird';target='Android';buildMode='release';
 $ordinary = @{Identity=@{kind='ordinary'}}
 Check ($null -eq (Get-ShorebirdRuntimeNotices 'Z:/does-not-exist' $ordinary)) 'ordinary_no_inputs_read'
 $expected = Get-ShorebirdRuntimeNotices $repository $runtime
-Check ($expected.Files.Count -eq 200) 'complete_pinned_file_set'
+Check ($expected.Files.Count -eq 199) 'complete_pinned_file_set'
 Check (!$expected.Evidence.exactLinkedMembership -and !$expected.Evidence.stableReleaseReady) 'no_link_or_stable_claim'
 $pin = Get-Content -LiteralPath (Join-Path $repository 'scripts/release/shorebird-runtime-notices.lock.json') -Raw | ConvertFrom-Json -AsHashtable
 $sourceInventory = Get-Content -LiteralPath (Join-Path $repository ($pin.directory+'/inventory.json')) -Raw | ConvertFrom-Json -AsHashtable
 Check ($sourceInventory.sourceCrates.Count -eq 282) 'source_superset_count'
 Check ($sourceInventory.updaterProductionAndBuildSourceClosure.Count -eq 200) 'source_production_build_roots'
+Check ($sourceInventory.files.Count -eq 198 -and @($sourceInventory.files | Where-Object path -CEQ '.gitattributes').Count -eq 0) 'source_metadata_not_distributed'
+$metadata = Get-ReleaseRuntimeFile (Join-Path $repository $pin.directory) '.gitattributes'
+Check ($metadata.size -eq 20 -and $metadata.sha256 -ceq 'e97602ab9cac70102245345c5ab0fc9830df8b17f1072b188265a662a3a547ae') 'source_metadata_preserved'
 $comde = @($sourceInventory.sourceCrates | Where-Object name -CEQ 'comde')
 Check ($comde.Count -eq 1 -and $comde[0].declaredLicense -ceq 'Apache-2.0 OR MIT' -and
     $comde[0].selection -ceq 'declared-Apache-2.0-branch-standard-text-with-complete-published-source' -and
@@ -53,7 +56,7 @@ Reject { Get-ShorebirdRuntimeNotices $repository $badRuntime } 'shorebird_runtim
 $badRuntime = Clone $runtime; $badRuntime.Identity.kind = 'future'
 Reject { Get-ShorebirdRuntimeNotices $repository $badRuntime } 'shorebird_runtime_notices_selection_invalid'
 $windows = Clone $runtime; $windows.Identity.target = 'Windows'
-Check ((Get-ShorebirdRuntimeNotices $repository $windows).Files.Count -eq 200) 'same_pinned_windows_notices'
+Check ((Get-ShorebirdRuntimeNotices $repository $windows).Files.Count -eq 199) 'same_pinned_windows_notices'
 $bad = Clone $manifest; $bad.shorebirdRuntimeSupplement.exactLinkedMembership = $true
 Reject { Assert-ShorebirdRuntimeNotices $bad $expected $fixture } 'shorebird_runtime_notices_binding_mismatch'
 $bad = Clone $manifest; $bad.components[0].notices = @($bad.components[0].notices | Select-Object -Skip 1)
@@ -62,6 +65,30 @@ $extra = Join-Path $fixture 'shorebird-runtime/extra.txt'
 [IO.File]::WriteAllText($extra, 'unexpected')
 Reject { Assert-ShorebirdRuntimeNotices $manifest $expected $fixture } 'shorebird_runtime_notices_file_set_mismatch'
 Remove-Item -LiteralPath $extra
+$extraMetadata = Join-Path $fixture 'shorebird-runtime/.gitattributes'
+Copy-Item -LiteralPath (Join-Path $repository ($pin.directory+'/.gitattributes')) -Destination $extraMetadata
+Reject { Assert-ShorebirdRuntimeNotices $manifest $expected $fixture } 'shorebird_runtime_notices_file_set_mismatch'
+Remove-Item -LiteralPath $extraMetadata
+$extra = Join-Path $fixture 'shorebird-runtime/.env'
+[IO.File]::WriteAllText($extra, 'synthetic unexpected dotfile')
+Reject { Assert-ShorebirdRuntimeNotices $manifest $expected $fixture } 'shorebird_runtime_notices_file_set_mismatch'
+Remove-Item -LiteralPath $extra
+$extra = Join-Path $fixture 'shorebird-runtime/locks/.gitattributes'
+[IO.File]::WriteAllText($extra, 'synthetic nested metadata')
+Reject { Assert-ShorebirdRuntimeNotices $manifest $expected $fixture } 'shorebird_runtime_notices_file_set_mismatch'
+Remove-Item -LiteralPath $extra
+$metadataFixture = Join-Path $fixture 'source-metadata'
+[void][IO.Directory]::CreateDirectory($metadataFixture)
+$metadataCopy = Join-Path $metadataFixture '.gitattributes'
+Copy-Item -LiteralPath (Join-Path $repository ($pin.directory+'/.gitattributes')) -Destination $metadataCopy
+Check (@(Get-ShorebirdNoticeFiles $metadataFixture -AllowRootSourceMetadata).Count -eq 0) 'exact_source_metadata_only_skipped'
+$extra = Join-Path $metadataFixture '.unexpected'
+[IO.File]::WriteAllText($extra, 'synthetic')
+Check (@(Get-ShorebirdNoticeFiles $metadataFixture -AllowRootSourceMetadata).Count -eq 1) 'other_source_dotfile_not_skipped'
+[IO.File]::WriteAllText($metadataCopy, 'tampered')
+Reject { Get-ShorebirdNoticeFiles $metadataFixture -AllowRootSourceMetadata } 'shorebird_runtime_source_metadata_invalid'
+Remove-Item -LiteralPath $metadataCopy
+Reject { Get-ShorebirdNoticeFiles $metadataFixture -AllowRootSourceMetadata } 'shorebird_runtime_source_metadata_invalid'
 $copiedText = Join-Path $fixture ('shorebird-runtime/'+$expected.Files[0].path)
 $original = [IO.File]::ReadAllBytes($copiedText)
 [IO.File]::WriteAllText($copiedText, 'tampered')

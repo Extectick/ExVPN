@@ -2,6 +2,27 @@
 
 ## Реальный цикл 0.1.8+29, 2026-10-19 — в работе
 
+Windows-база cloud release908884 установлена из audited CI39254177224:
+NSIS exit0, 731 payload files и 283 cloud UI files совпали, прежние подписки
+и оформление сохранены. Реальный SDK сообщил `available=true`, beta,
+current/next=null, `uiRevision=0`. Это базовый snapshot, применение подписанного
+патча и откат ещё не подтверждены.
+[Windows runtime](evidence/shorebird29-windows-base-runtime.json).
+
+Android того же CI завершился nonzero внутри официального CLI; readback
+подтвердил только Windows, Android не зарегистрирован. Приватные inner logs
+на ephemeral runner не сохранились; точная причина этого отказа неизвестна.
+[Отказ](evidence/shorebird29-android-ci-attempt.json). Для следующего вызова
+добавлены bounded JSON error-code/exit-code и фиксированные stderr/stage markers;
+raw сообщения, ключи и download URL в CI artifacts не передаются.
+
+Отдельный локальный Android dry-run из989329b успешно собрал AAB и APK, cloud
+не изменялся. Проверка упаковки обнаружила отсутствие только собственного
+Git metadata файла `.gitattributes` (20bytes) из430 sealed records; остальные
+assets и оба JNI совпали. Эта запись удаляется из описи лицензий; все198
+upstream/source notice records и282 dependency records остаются прежними.
+Строгая сверка конечных APK bytes не ослабляется. Windows UI не пересобирается.
+
 Пользователь поручил выпустить настоящую Android/Windows базу, подписанный
 Dart-патч и проверить откат. Версия базы — **0.1.8+29 / beta**. CLI 1.6.129,
 Flutter 5bef02a, engine 4b936a0 и существующие APK/RSA ключи сохраняются.
@@ -20,8 +41,8 @@ Android QA владеет только emulator-5582; Windows QA — устан�
 Сетевая VPN-матрица не повторяется. Решающий OTA gate: неизменные bytes
 APK/EXE/base + реальные current/next номера SDK + Dart `uiRevision` 0→1→0
 после холодного запуска. Нулевой/base snapshot сам по себе не доказывает
-здоровую native-конфигурацию updater. Реальная облачная публикация и
-runtime-приёмка пока не выполнены; EXVPN-E6-004 остаётся открыт.
+здоровую native-конфигурацию updater. Общая Android/Windows cloud/runtime
+приёмка ещё не завершена; EXVPN-E6-004 остаётся открыт.
 
 Подготовка принята 2026-10-19: final Full **12/12 PASS за 120,30 с**,
 373 app tests, source fingerprint неизменен.

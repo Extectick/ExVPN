@@ -180,6 +180,83 @@ function Assert-ShorebirdJson($Envelope, [string]$Command) {
     $Envelope.data
 }
 
+function Get-ShorebirdCliFailure([string]$Path,[string]$Command,[int]$ExitCode) {
+    if($ExitCode -eq 0){throw 'shorebird_cli_failure_requires_nonzero_exit'}
+    $policy=Get-ShorebirdPolicy
+    $allowedCommands=@('version','release','patch','releases info','patches info','patches rollback')
+    $markers=Get-ShorebirdStderrMarkers ([IO.Path]::ChangeExtension($Path,'.log'))
+    $safe=[ordered]@{schemaVersion=1;cliVersion=$policy.cliVersion;command=$(if($Command -cin $allowedCommands){$Command}else{'other'});errorCode='unknown';exitCode=$ExitCode;stderrMarker=$markers.stderrMarker;stageMarker=$markers.stageMarker}
+    if($Command -cnotin $allowedCommands){return $safe}
+    try {
+        if(!(Test-Path -LiteralPath $Path -PathType Leaf)){return $safe}
+        Assert-AuditNoLinks $Path
+        $file=Get-Item -LiteralPath $Path -Force
+        if($file.Length -le 0 -or $file.Length -gt 4MB){return $safe}
+        $body=[IO.File]::ReadAllText($Path) | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+        if($body -isnot [Collections.IDictionary] -or $body['status'] -isnot [string] -or $body['status'] -cne 'error' -or
+            $body['meta'] -isnot [Collections.IDictionary] -or $body['error'] -isnot [Collections.IDictionary] -or
+            $body['meta']['version'] -isnot [string] -or $body['meta']['command'] -isnot [string] -or
+            $body['meta']['version'] -cne $policy.cliVersion -or $body['meta']['command'] -cne $Command){return $safe}
+        $code=$body['error']['code']
+        if($code -is [string] -and $code -cin @('process_exit','usage_error','software_error','fetch_failed','precondition_failed','interactive_prompt_required')){$safe.errorCode=$code}
+    } catch {
+        # Raw messages, hints, details and unrecognized envelopes stay private.
+        return $safe
+    }
+    $safe
+}
+
+function Write-ShorebirdCliFailure([string]$Repository,$Failure) {
+    if($Failure.exitCode -isnot [int] -or $Failure.exitCode -eq 0){throw 'shorebird_cli_failure_requires_nonzero_exit'}
+    $directory=Join-Path ([IO.Path]::GetFullPath($Repository)) 'artifacts/shorebird-recovery'
+    $ancestor=$directory
+    while(!(Test-Path -LiteralPath $ancestor)){$ancestor=[IO.Path]::GetDirectoryName($ancestor)}
+    Assert-AuditNoLinks $ancestor
+    New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    Assert-AuditNoLinks $directory
+    # Only this function's fixed safe fields; never serialize an API object.
+    $safe=[ordered]@{schemaVersion=1;cliVersion=(Get-ShorebirdPolicy).cliVersion
+        command=$(if($Failure.command -is [string] -and $Failure.command -cin @('version','release','patch','releases info','patches info','patches rollback')){$Failure.command}else{'other'})
+        errorCode=$(if($Failure.errorCode -is [string] -and $Failure.errorCode -cin @('process_exit','usage_error','software_error','fetch_failed','precondition_failed','interactive_prompt_required')){$Failure.errorCode}else{'unknown'})
+        exitCode=[int]$Failure.exitCode
+        stderrMarker=$(if($Failure.stderrMarker -is [string] -and $Failure.stderrMarker -cin @('disk_space_marker','jvm_memory_marker','compiler_error_marker','gradle_daemon_marker')){$Failure.stderrMarker}else{'unknown'})
+        stageMarker=$(if($Failure.stageMarker -is [string] -and $Failure.stageMarker -cin @('aab','apk')){$Failure.stageMarker}else{'unknown'})}
+    $path=Join-Path $directory ('cli-error-'+[guid]::NewGuid().ToString('N')+'.json')
+    $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($safe | ConvertTo-Json -Depth 3))
+    $stream=[IO.File]::Open($path,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+    try{$stream.Write($bytes,0,$bytes.Length)}finally{$stream.Dispose()}
+    $path
+}
+
+function Get-ShorebirdStderrMarkers([string]$Path) {
+    $safe=[ordered]@{stderrMarker='unknown';stageMarker='unknown'}
+    $stream=$null
+    try {
+        if(!(Test-Path -LiteralPath $Path -PathType Leaf)){return $safe}
+        Assert-AuditNoLinks $Path
+        $stream=[IO.File]::Open($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+        # Seek before reading, even for a very large log. Never copy raw tail,
+        # matched text, paths, arguments or captures into a diagnostic receipt.
+        [void]$stream.Seek([Math]::Max(0L,$stream.Length-256KB),[IO.SeekOrigin]::Begin)
+        $buffer=[byte[]]::new(256KB);$read=0
+        while($read -lt $buffer.Length){
+            $count=$stream.Read($buffer,$read,$buffer.Length-$read)
+            if($count -eq 0){break};$read+=$count
+        }
+        $tail=[Text.Encoding]::UTF8.GetString($buffer,0,$read)
+        # Priority only classifies observed markers, never proves a cause.
+        if($tail.Contains('No space left on device') -or $tail.Contains('There is not enough space on the disk')){$safe.stderrMarker='disk_space_marker'}
+        elseif($tail.Contains('java.lang.OutOfMemoryError') -or $tail.Contains('Java heap space') -or $tail.Contains('GC overhead limit exceeded') -or $tail.Contains('Could not reserve enough space for object heap')){$safe.stderrMarker='jvm_memory_marker'}
+        elseif($tail.Contains('Compilation error. See log for more details') -or $tail.Contains('Compilation failed; see the compiler error output for details.') -or $tail.Contains('Dart compilation failed')){$safe.stderrMarker='compiler_error_marker'}
+        elseif($tail.Contains('Gradle build daemon disappeared unexpectedly') -or $tail.Contains('DaemonDisappearedException')){$safe.stderrMarker='gradle_daemon_marker'}
+        $aab=[Math]::Max($tail.LastIndexOf('Building Android app bundle with Flutter',[StringComparison]::Ordinal),$tail.LastIndexOf('Failed to build AAB.',[StringComparison]::Ordinal))
+        $apk=[Math]::Max($tail.LastIndexOf('Building APK',[StringComparison]::Ordinal),$tail.LastIndexOf('Failed to build APK.',[StringComparison]::Ordinal))
+        if($aab -ge 0 -and $aab -gt $apk){$safe.stageMarker='aab'}elseif($apk -ge 0){$safe.stageMarker='apk'}
+    } catch {return $safe}
+    finally {if($stream){$stream.Dispose()}}
+    $safe
+}
+
 function Invoke-ShorebirdJson([string]$Cli, [string[]]$Arguments, [string]$Command, [string]$PrivateDirectory, [string]$Name) {
     # stdout can contain API URLs/details on errors. Never echo it, even when
     # parsing fails. The caller exports an allowlisted receipt, never raw JSON.
@@ -195,7 +272,12 @@ function Invoke-ShorebirdJson([string]$Cli, [string[]]$Arguments, [string]$Comma
         & $Cli --json @Arguments 1> $stdout 2> $stderr
         $code=$LASTEXITCODE
     } finally { $env:GIT_CONFIG_SYSTEM=$oldSystemConfig }
-    if ($code -ne 0) { throw 'shorebird_cli_failed' }
+    if ($code -ne 0) {
+        $failure=Get-ShorebirdCliFailure $stdout $Command $code
+        $failureRepository=Invoke-ShorebirdGit $PrivateDirectory @('rev-parse','--show-toplevel')
+        $null=Write-ShorebirdCliFailure $failureRepository $failure
+        throw 'shorebird_cli_failed'
+    }
     if (!(Test-Path -LiteralPath $stdout -PathType Leaf) -or (Get-Item -LiteralPath $stdout).Length -gt 4MB) {
         throw 'shorebird_cli_response_invalid'
     }

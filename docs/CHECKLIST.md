@@ -6,7 +6,8 @@
 
 ## Сводка этапов
 
-Цикл **0.1.8+29 / Shorebird beta**, 2026-10-19: рабочее дерево; commit ожидается.
+Цикл **0.1.8+29 / Shorebird beta**, 2026-10-19: база/упаковка989329b;
+исправление Android notice metadata — рабочее дерево; commit ожидается.
 Служебный developer API key и существующий RSA signing key сохранены через `gh`
 в protected environment `demo-release`. SDK pins не менялись; реальные базы,
 подписанный патч и откат ниже пока не приняты. [Методика](SHOREBIRD.md).
@@ -34,6 +35,14 @@ release до UI build и cloud registration. Причина dirty checkout вы�
 отказал в notice collector до release. Fresh checkout raw-byte fix проверен;
 Windows cloud archive восстановлен без пересборки UI, recovery упаковки в работе.
 [Наблюдения](evidence/shorebird29-packaging-recovery.json). Пункты ниже открыты.
+
+Windows CI39254177224 принят и установлен поверх+27:731 payload files,
+283 UI files, прежние подписки/оформление, beta SDK available=true/current=null/
+next=null/uiRevision0 подтверждены. [Runtime](evidence/shorebird29-windows-base-runtime.json).
+Android в том же CI отказал внутриCLI; readback оставил только Windows active.
+Локальный dry-run затем собрал AAB/APK, но audit обнаружил пропущенный упаковщиком
+20-byte Git metadata file. Удаляется только эта запись; upstream license/source
+bytes не меняются. Патч и откат ещё не проверены; общие пункты не закрыты.
 
 - [ ] **EXVPN-E6-012** — Опубликовать настоящую Shorebird-базу 0.1.8+29
   Android/Windows. Критерий: один build/upload на платформу, прежний APK signer,
