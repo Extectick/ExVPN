@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "runId": 39259774343,
+  "jobId": 118084096262,
+  "sourceCommit": "b9d43abd08beeb3eea38ced32f9035cd95e75daf",
+  "target": "Windows",
+  "phase": "flutter_precache",
+  "errorCode": "flutter_runtime_checkout_modified",
+  "cache": {
+    "id": 9161413179,
+    "key": "exvpn-shorebird-sdk-v1-Windows-X64-Windows-0d9d3d777be33b86590833086d65216457b442a45f96ab8c087c3bc77b88b896",
+    "version": "9ca07106f315dde2d95def63b7b6f7461f33aef76ff35bd49df5971667c26db8",
+    "ref": "refs/heads/main",
+    "bytes": 999553751,
+    "restoreIdentityMatchedPrivateLog": true
+  },
+  "cloudRegistrationAttempted": false,
+  "nativeBuildStarted": false,
+  "rawLogsExported": false,
+  "sdkDirtyPathsAvailable": false,
+  "cacheDeleted": true,
+  "rerunStarted": false,
+  "otherCachesChanged": false,
+  "cacheDeletedAtUtc": "2026-10-19T13:29:08.1513351Z"
+}

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "dateUtc": "2026-10-19T13:50:07.4561829Z",
+  "pipelineChecks": 256,
+  "aotArchiveFixturesAdded": 4,
+  "encryptedDiagnosticFixturesAdded": 14,
+  "actualLocalApkAabAotAbis": 2,
+  "actualEngineBinding": "verified_ndk_strip",
+  "fullMetadataBasePreviouslyPassed": "b9d43abd08beeb3eea38ced32f9035cd95e75daf",
+  "fullRepeated": false,
+  "productionCodeChanged": false,
+  "diagnosticKeySeparateFromAppAndPatchTrust": true,
+  "privateKeyExportedToCi": false,
+  "diagnosticPublicKeySha256": "8bb551311e6e2db332be22cf81a32e0f6f0615e5f00e89e2a67ecbc55438b788"
+}

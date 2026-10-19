@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "scope": "Read-only local diagnostic APK/AAB; not accepted release",
+  "compileSource": "989329b70e3aabdb745f1ada9f07135d6685b6c9",
+  "androidArchivesCaseSensitive": true,
+  "engineBinding": "verified_ndk_strip",
+  "aotBinding": [
+    {
+      "platform": "android",
+      "arch": "aarch64",
+      "sha256": "b01906a5938d9bb76642482256b8ce98b359f13c108ec6a368b238aa6d511dda",
+      "bytes": 7406472
+    },
+    {
+      "platform": "android",
+      "arch": "x86_64",
+      "sha256": "f42ca4c7778e2854325a6b13d8b222fc7483692ce8c98e27b03642d89364dd46",
+      "bytes": 7668616
+    }
+  ],
+  "builds": 0,
+  "cloudMutations": 0
+}

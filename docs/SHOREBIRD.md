@@ -493,3 +493,29 @@ runtime aggregate остаются открытыми.
 [подпись патчей](https://docs.shorebird.dev/code-push/guides/patch-signing/).
 
 Финальный Full metadata-fix b9d43ab: **12/12 PASS за347,2с**,373 app tests, source unchanged; [отчёт](evidence/fast-validation-shorebird29-metadata.json). Повторная сетевая матрица не запускалась.
+
+Второй recovery CI39259774343: AndroidCLI сообщил process_exit70 на AAB,
+markerunknown; exact cause пока неизвестна. Final readback после завершения
+снова подтвердил только Windows active/Android absent. Windows отказал до
+native/cloud из-за изменённого SDK checkout в восстановленном cache; удалена
+только доказанная hosted Windows SDK cache entry, SDK pins/guards не менялись.
+[CLI](evidence/shorebird29-android-cli-second-attempt.json),
+[readback](evidence/shorebird29-second-attempt-readback.json),
+[cache](evidence/shorebird29-windows-sdk-cache.json).
+
+Read-only аудит локальных APK/AAB выявил отдельную ошибку AOT-reader:
+case-insensitive JAR validator отклонял допустимые Android resource names.
+Оба Android архива теперь читает прежний строгий case-sensitive ZIP validator;
+exact duplicates, traversal, links и file/directory collisions отвергаются.
+Фактические2ABI AOT в старых диагностических APK/AAB совпали; pinned engine
+подтверждён через verified NDK strip. Это не приёмка будущих CI release bytes.
+[Факты](evidence/shorebird29-android-archive-binding.json).
+
+Для следующего CLI failure CI сохраняет только bounded encrypted stdout/stderr
+хвосты: AES-256-GCM/RSA-OAEP-SHA256, отдельный diagnosticRSA3072 public key.
+Private diagnostic key остаётся локально под DPAPI и не используется для
+подписи приложения/патчей. Raw private logs не публикуются, отсутствие ключа
+или ошибка диагностики не заменяет исходный отказ CLI. 256 targeted pipeline
+checks, включая4AOT и14crypto regression fixtures, PASS; прежний Full не повторялся
+ради этих двух проверяющих инструментов.
+[Guards](evidence/shorebird29-aot-and-ci-diagnostics-guards.json).

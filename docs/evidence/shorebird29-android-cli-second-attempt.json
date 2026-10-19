@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "cliVersion": "1.6.129",
+  "command": "release",
+  "errorCode": "process_exit",
+  "exitCode": 70,
+  "stderrMarker": "unknown",
+  "stageMarker": "aab"
+}

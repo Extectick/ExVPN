@@ -175,6 +175,7 @@ jobs:
         if: inputs.operation != 'diagnose'
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+          EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64: ${{ secrets.EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64 }}
           EXVPN_ANDROID_KEYSTORE_BASE64: ${{ matrix.target == 'Android' && secrets.EXVPN_ANDROID_KEYSTORE_BASE64 || '' }}
           EXVPN_ANDROID_STORE_PASSWORD: ${{ matrix.target == 'Android' && secrets.EXVPN_ANDROID_STORE_PASSWORD || '' }}
           EXVPN_ANDROID_KEY_PASSWORD: ${{ matrix.target == 'Android' && secrets.EXVPN_ANDROID_STORE_PASSWORD || '' }}

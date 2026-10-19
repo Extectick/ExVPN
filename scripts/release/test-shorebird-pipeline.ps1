@@ -200,7 +200,7 @@ Assert-Refuses { Assert-ShorebirdReceiptFiles $receiptPath $files } 'base_file_t
 $files.files[0].path='../base.bin'
 Assert-Refuses { Assert-ShorebirdReceiptFiles $receiptPath $files } 'base_file_traversal_refused'
 
-function New-SyntheticAotZip([string]$Path,[string]$Prefix,[byte]$LastByte) {
+function New-SyntheticAotZip([string]$Path,[string]$Prefix,[byte]$LastByte,[string[]]$ExtraNames=@()) {
     $stream=[IO.File]::Open($Path,[IO.FileMode]::CreateNew)
     $zip=[IO.Compression.ZipArchive]::new($stream,[IO.Compression.ZipArchiveMode]::Create)
     try {
@@ -209,6 +209,7 @@ function New-SyntheticAotZip([string]$Path,[string]$Prefix,[byte]$LastByte) {
             $output=$entry.Open()
             try { $output.Write([byte[]]@(1,2,3,$LastByte),0,4) } finally { $output.Dispose() }
         }
+        foreach($name in $ExtraNames){[void]$zip.CreateEntry($name)}
     } finally { $zip.Dispose();$stream.Dispose() }
 }
 $apk=Join-Path $fixture 'base.apk';$aab=Join-Path $fixture 'base.aab';$wrong=Join-Path $fixture 'wrong.aab'
@@ -216,6 +217,16 @@ New-SyntheticAotZip $apk '' 4;New-SyntheticAotZip $aab 'base/' 4;New-SyntheticAo
 $aot=@(Assert-ShorebirdAndroidAotBinding $apk $aab)
 Assert-Test ($aot.Count -eq 2 -and $aot[0].sha256 -ceq $aot[1].sha256) 'apk_aab_actual_aot_bytes_bound'
 Assert-Refuses { Assert-ShorebirdAndroidAotBinding $apk $wrong } 'apk_aab_different_aot_refused'
+$caseApk=Join-Path $fixture 'case-res.apk';$caseAab=Join-Path $fixture 'case-res.aab'
+New-SyntheticAotZip $caseApk '' 4 @('res/Aa.xml','res/aa.xml')
+New-SyntheticAotZip $caseAab 'base/' 4 @('base/res/Aa.xml','base/res/aa.xml')
+$caseAot=@(Assert-ShorebirdAndroidAotBinding $caseApk $caseAab)
+Assert-Test (($caseAot | ConvertTo-Json -Compress) -ceq ($aot | ConvertTo-Json -Compress)) 'android_case_sensitive_resources_do_not_change_aot_binding'
+foreach($badNames in @(@('lib/arm64-v8a/libapp.so'),@('../unsafe'),@('res','res/item'))){
+    $badZip=Join-Path $fixture ('bad-aot-'+[guid]::NewGuid().ToString('N')+'.apk')
+    New-SyntheticAotZip $badZip '' 4 $badNames
+    Assert-Refuses {Get-ShorebirdAndroidAot $badZip -Apk} 'aot_android_zip_still_refuses_duplicate_traversal_and_file_directory_collision'
+}
 
 # Reproduce the pinned entrypoint's --system query without running Shorebird.
 # The process overlay must preserve real settings, produce strict JSON, and
@@ -596,6 +607,66 @@ Assert-Test ($after.Count -eq $before.Count+1 -and $env:GIT_CONFIG_SYSTEM -ceq $
 $latest=@($after | Where-Object FullName -CNotIn @($before | ForEach-Object FullName))
 $text=[IO.File]::ReadAllText($latest[0].FullName);$safe=$text | ConvertFrom-Json -AsHashtable
 Assert-Test ($safe.Count -eq 7 -and $safe.errorCode -ceq 'process_exit' -and $safe.exitCode -eq 70 -and $safe.command -ceq 'release' -and $safe.stderrMarker -ceq 'unknown' -and $safe.stageMarker -ceq 'unknown' -and !$text.Contains('SYNTHETIC-PRIVATE') -and !$text.Contains('secret.invalid') -and !$text.Contains($fixture)) 'actual_cli_sidecar_never_exports_private_fields'
+
+# Synthetic recipient only: no production private key enters tests or CI.
+function Open-SyntheticDiagnostic($Envelope,$Recipient) {
+    $sha=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($Recipient.ExportSubjectPublicKeyInfo())).ToLowerInvariant()
+    if($Envelope.schemaVersion -ne 1 -or $Envelope.algorithm -cne 'RSA-OAEP-SHA256+A256GCM' -or $Envelope.publicKeySha256 -cne $sha){throw 'synthetic_envelope_identity_rejected'}
+    $key=$Recipient.Decrypt([Convert]::FromBase64String($Envelope.wrappedKeyBase64),[Security.Cryptography.RSAEncryptionPadding]::OaepSHA256)
+    $plain=$null;$aes=$null
+    try {
+        $cipher=[Convert]::FromBase64String($Envelope.ciphertextBase64);$plain=[byte[]]::new($cipher.Length)
+        $aad=[Text.Encoding]::UTF8.GetBytes(('ExVPN/ci-private-diagnostics/v1'+[char]0+$Envelope.algorithm+[char]0+$sha))
+        $aes=[Security.Cryptography.AesGcm]::new($key,16)
+        $aes.Decrypt([Convert]::FromBase64String($Envelope.nonceBase64),$cipher,[Convert]::FromBase64String($Envelope.tagBase64),$plain,$aad)
+        [Text.Encoding]::UTF8.GetString($plain) | ConvertFrom-Json -AsHashtable
+    } finally {
+        if($aes){$aes.Dispose()};[Security.Cryptography.CryptographicOperations]::ZeroMemory($key)
+        if($null -ne $plain){[Security.Cryptography.CryptographicOperations]::ZeroMemory($plain)}
+    }
+}
+$oldDiagnosticKey=$env:EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64
+$diagnosticRsa=[Security.Cryptography.RSA]::Create(3072);$wrongDiagnosticRsa=[Security.Cryptography.RSA]::Create(3072)
+$diagnosticStdout=Join-Path $cliErrorFixture 'encrypted-input.json'
+$diagnosticStderr=[IO.Path]::ChangeExtension($diagnosticStdout,'.log')
+try {
+    $stdoutBytes=[Text.Encoding]::UTF8.GetBytes(('OMITTED-STDOUT-PREFIX'+('s'*90KB)+'SYNTHETIC-PRIVATE-STDOUT https://secret.invalid'))
+    $stderrBytes=[Text.Encoding]::UTF8.GetBytes(('OMITTED-STDERR-PREFIX'+('e'*300KB)+'SYNTHETIC-PRIVATE-STDERR https://secret.invalid'))
+    [IO.File]::WriteAllBytes($diagnosticStdout,$stdoutBytes);[IO.File]::WriteAllBytes($diagnosticStderr,$stderrBytes)
+    $env:EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64=[Convert]::ToBase64String($diagnosticRsa.ExportSubjectPublicKeyInfo())
+    $encrypted=Write-ShorebirdEncryptedDiagnostic $fixture $diagnosticStdout
+    Assert-Test ($encrypted -and [IO.Path]::GetDirectoryName($encrypted) -ceq $sidecarDirectory -and [IO.Path]::GetFileName($encrypted) -cmatch '^cli-private-[a-f0-9]{32}\.json$') 'encrypted_diagnostic_only_owned_recovery_sidecar'
+    $text=[IO.File]::ReadAllText($encrypted);$envelope=$text | ConvertFrom-Json -AsHashtable
+    Assert-Test ($envelope.Count -eq 7 -and !$text.Contains('SYNTHETIC-PRIVATE') -and !$text.Contains('secret.invalid') -and !$text.Contains($fixture) -and !$text.Contains('stderrTailBase64')) 'encrypted_envelope_never_contains_plaintext_or_paths'
+    Assert-Test ([Convert]::FromBase64String($envelope.nonceBase64).Length -eq 12 -and [Convert]::FromBase64String($envelope.tagBase64).Length -eq 16 -and [Convert]::FromBase64String($envelope.wrappedKeyBase64).Length -eq 384) 'encrypted_diagnostic_fixed_crypto_sizes'
+    $opened=Open-SyntheticDiagnostic $envelope $diagnosticRsa
+    $actualOut=[Convert]::FromBase64String($opened.stdoutTailBase64);$actualErr=[Convert]::FromBase64String($opened.stderrTailBase64)
+    $expectedOut=[byte[]]::new(64KB);[Array]::Copy($stdoutBytes,$stdoutBytes.Length-64KB,$expectedOut,0,64KB)
+    $expectedErr=[byte[]]::new(256KB);[Array]::Copy($stderrBytes,$stderrBytes.Length-256KB,$expectedErr,0,256KB)
+    Assert-Test ($opened.Count -eq 2 -and $actualOut.Length -eq 64KB -and $actualErr.Length -eq 256KB -and [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($actualOut)) -ceq [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($expectedOut)) -and [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($actualErr)) -ceq [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($expectedErr))) 'encrypted_roundtrip_exact_bounded_tail_bytes'
+    Assert-Refuses {Open-SyntheticDiagnostic $envelope $wrongDiagnosticRsa} 'encrypted_diagnostic_wrong_recipient_refused'
+    foreach($field in @('ciphertextBase64','tagBase64','nonceBase64','wrappedKeyBase64')){
+        $bad=Copy-Fixture $envelope;$bytes=[Convert]::FromBase64String($bad[$field]);$bytes[0]=$bytes[0] -bxor 1;$bad[$field]=[Convert]::ToBase64String($bytes)
+        Assert-Refuses {Open-SyntheticDiagnostic $bad $diagnosticRsa} 'encrypted_diagnostic_tamper_refused'
+    }
+    $before=@(Get-ChildItem -LiteralPath $sidecarDirectory -File -Filter 'cli-private-*.json')
+    foreach($invalid in @($null,'not-base64',[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes('not DER')))){
+        $env:EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64=$invalid
+        Assert-Test ($null -eq (Write-ShorebirdEncryptedDiagnostic $fixture $diagnosticStdout) -and @(Get-ChildItem -LiteralPath $sidecarDirectory -File -Filter 'cli-private-*.json').Count -eq $before.Count) 'missing_or_invalid_diagnostic_key_no_plaintext_fallback'
+    }
+    $env:EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64=[Convert]::ToBase64String($diagnosticRsa.ExportSubjectPublicKeyInfo())
+    $message=''
+    try{Invoke-ShorebirdJson $fakeErrorCli @('release','android') release $cliErrorFixture 'actual-encrypted-error' | Out-Null}catch{$message=$_.Exception.Message}
+    Assert-Test ($message -ceq 'shorebird_cli_failed' -and @(Get-ChildItem -LiteralPath $sidecarDirectory -File -Filter 'cli-private-*.json').Count -eq $before.Count+1) 'actual_cli_failure_retains_safe_error_and_encrypted_export'
+    function Invoke-SyntheticEncryptionFailure {
+        function Read-ShorebirdPrivateTail {throw 'SYNTHETIC-PRIVATE unexpected failure'}
+        Write-ShorebirdEncryptedDiagnostic $fixture $diagnosticStdout
+    }
+    Assert-Test ($null -eq (Invoke-SyntheticEncryptionFailure)) 'unexpected_encryption_failure_never_masks_cli_or_exports_raw'
+} finally {
+    $env:EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64=$oldDiagnosticKey
+    $diagnosticRsa.Dispose();$wrongDiagnosticRsa.Dispose()
+}
 
 # The workflow must retain the new byte-pinned dotfile and preserve ONLY the
 # allowlisted recovery directory on failure, never .private build logs.

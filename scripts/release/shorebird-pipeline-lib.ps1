@@ -257,6 +257,76 @@ function Get-ShorebirdStderrMarkers([string]$Path) {
     $safe
 }
 
+function Read-ShorebirdPrivateTail([string]$Path,[ValidateRange(1,262144)][int]$MaximumBytes) {
+    if(!(Test-Path -LiteralPath $Path -PathType Leaf)){return ,([byte[]]::new(0))}
+    Assert-AuditNoLinks $Path
+    $stream=[IO.File]::Open($Path,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+    try {
+        [void]$stream.Seek([Math]::Max(0L,$stream.Length-$MaximumBytes),[IO.SeekOrigin]::Begin)
+        $buffer=[byte[]]::new($MaximumBytes);$read=0
+        while($read -lt $buffer.Length){
+            $count=$stream.Read($buffer,$read,$buffer.Length-$read)
+            if($count -eq 0){break};$read+=$count
+        }
+        if($read -eq $buffer.Length){return ,$buffer}
+        $result=[byte[]]::new($read);[Array]::Copy($buffer,$result,$read)
+        [Security.Cryptography.CryptographicOperations]::ZeroMemory($buffer)
+        return ,$result
+    } finally {$stream.Dispose()}
+}
+
+function Write-ShorebirdEncryptedDiagnostic([string]$Repository,[string]$StdoutPath) {
+    # Optional diagnostics only. CI receives a dedicated PUBLIC key; the
+    # diagnostic private key never enters the runner or the application.
+    $encoded=[Environment]::GetEnvironmentVariable('EXVPN_CI_DIAGNOSTICS_PUBLIC_KEY_BASE64','Process')
+    if(!$encoded){return $null}
+    $rsa=$null;$aes=$null;$key=$null;$plain=$null;$stdoutTail=$null;$stderrTail=$null;$path=$null;$created=$false
+    try {
+        if($encoded.Length -gt 8192){return $null}
+        $der=[Convert]::FromBase64String($encoded)
+        $rsa=[Security.Cryptography.RSA]::Create();$consumed=0
+        $rsa.ImportSubjectPublicKeyInfo($der,[ref]$consumed)
+        if($consumed -ne $der.Length -or $rsa.KeySize -ne 3072){return $null}
+        $publicSha=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($der)).ToLowerInvariant()
+        $algorithm='RSA-OAEP-SHA256+A256GCM'
+        $aad=[Text.Encoding]::UTF8.GetBytes(('ExVPN/ci-private-diagnostics/v1'+[char]0+$algorithm+[char]0+$publicSha))
+        # Paths are constructed by Invoke-ShorebirdJson, never taken from an
+        # error envelope. Keep exact raw tail bytes inside encryption only.
+        $stderrTail=Read-ShorebirdPrivateTail ([IO.Path]::ChangeExtension($StdoutPath,'.log')) 256KB
+        $stdoutTail=Read-ShorebirdPrivateTail $StdoutPath 64KB
+        $payload=[ordered]@{stderrTailBase64=[Convert]::ToBase64String($stderrTail);stdoutTailBase64=[Convert]::ToBase64String($stdoutTail)}
+        $plain=[Text.Encoding]::UTF8.GetBytes(($payload | ConvertTo-Json -Compress))
+        $key=[Security.Cryptography.RandomNumberGenerator]::GetBytes(32)
+        $nonce=[Security.Cryptography.RandomNumberGenerator]::GetBytes(12);$tag=[byte[]]::new(16);$cipher=[byte[]]::new($plain.Length)
+        $aes=[Security.Cryptography.AesGcm]::new($key,16)
+        $aes.Encrypt($nonce,$plain,$cipher,$tag,$aad)
+        $wrapped=$rsa.Encrypt($key,[Security.Cryptography.RSAEncryptionPadding]::OaepSHA256)
+        $envelope=[ordered]@{schemaVersion=1;algorithm=$algorithm;publicKeySha256=$publicSha
+            nonceBase64=[Convert]::ToBase64String($nonce);tagBase64=[Convert]::ToBase64String($tag)
+            wrappedKeyBase64=[Convert]::ToBase64String($wrapped);ciphertextBase64=[Convert]::ToBase64String($cipher)}
+        $directory=Join-Path ([IO.Path]::GetFullPath($Repository)) 'artifacts/shorebird-recovery'
+        $ancestor=$directory
+        while(!(Test-Path -LiteralPath $ancestor)){$ancestor=[IO.Path]::GetDirectoryName($ancestor)}
+        Assert-AuditNoLinks $ancestor
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+        Assert-AuditNoLinks $directory
+        $path=Join-Path $directory ('cli-private-'+[guid]::NewGuid().ToString('N')+'.json')
+        $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($envelope | ConvertTo-Json -Depth 3))
+        $stream=[IO.File]::Open($path,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None);$created=$true
+        try{$stream.Write($bytes,0,$bytes.Length)}finally{$stream.Dispose()}
+        return $path
+    } catch {
+        # A diagnostics failure cannot replace the original CLI failure.
+        # Never echo exceptions or fall back to plaintext artifacts.
+        if($created -and $path){try{[IO.File]::Delete($path)}catch{}}
+        return $null
+    } finally {
+        if($aes){$aes.Dispose()};if($rsa){$rsa.Dispose()}
+        foreach($secret in @($key,$plain,$stdoutTail,$stderrTail)){if($null -ne $secret){[Security.Cryptography.CryptographicOperations]::ZeroMemory($secret)}}
+        $payload=$null;$encoded=$null
+    }
+}
+
 function Invoke-ShorebirdJson([string]$Cli, [string[]]$Arguments, [string]$Command, [string]$PrivateDirectory, [string]$Name) {
     # stdout can contain API URLs/details on errors. Never echo it, even when
     # parsing fails. The caller exports an allowlisted receipt, never raw JSON.
@@ -276,6 +346,7 @@ function Invoke-ShorebirdJson([string]$Cli, [string[]]$Arguments, [string]$Comma
         $failure=Get-ShorebirdCliFailure $stdout $Command $code
         $failureRepository=Invoke-ShorebirdGit $PrivateDirectory @('rev-parse','--show-toplevel')
         $null=Write-ShorebirdCliFailure $failureRepository $failure
+        $null=Write-ShorebirdEncryptedDiagnostic $failureRepository $stdout
         throw 'shorebird_cli_failed'
     }
     if (!(Test-Path -LiteralPath $stdout -PathType Leaf) -or (Get-Item -LiteralPath $stdout).Length -gt 4MB) {
@@ -590,9 +661,15 @@ function Assert-ShorebirdPatchArtifacts($Artifacts,[string]$Target) {
 }
 
 function Get-ShorebirdAndroidAot([string]$Archive,[switch]$Apk) {
+    # Both APK and AAB contain case-sensitive Android resource names. Reuse the
+    # Android ZIP validator: exact duplicates, links and unsafe paths still fail.
+    # The engine-JAR reader deliberately rejects case variants and is not valid
+    # for these whole application archives.
+    $files=Get-AuditZipFiles $Archive -Apk
     foreach ($abi in @(@('aarch64','arm64-v8a'),@('x86_64','x86_64'))) {
         $entry = $(if ($Apk) { 'lib/' } else { 'base/lib/' }) + $abi[1] + '/libapp.so'
-        $file = Get-ReleaseRuntimeJarEngine $Archive $entry
+        if(!$files.ContainsKey($entry) -or $files[$entry].size -le 0 -or $files[$entry].size -gt 512MB){throw 'shorebird_android_aot_missing'}
+        $file=$files[$entry]
         [ordered]@{platform='android';arch=$abi[0];sha256=$file.sha256;bytes=$file.size}
     }
 }

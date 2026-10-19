@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "runId": 39259774343,
+  "sourceCommit": "b9d43abd08beeb3eea38ced32f9035cd95e75daf",
+  "releaseId": 908884,
+  "windowsStatus": "active",
+  "androidPresent": false,
+  "readbackAccepted": true,
+  "cancelRequestedAfterReadback": true,
+  "cancelOutcome": "already_completed_failure",
+  "windowsRerunStarted": false,
+  "newBuildOrUploadStarted": false,
+  "rawCloudResponseExported": false,
+  "finalAfterCompletedRunReadback": true,
+  "finalReadbackAtUtc": "2026-10-19T13:42:43.9006801Z"
+}
