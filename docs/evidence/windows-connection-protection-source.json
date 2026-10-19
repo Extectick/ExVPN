@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "createdAtUtc": "2026-10-19T20:44:11.1330034Z",
+  "status": "focused_pass",
+  "scope": "Windows Go controller, owned WFP lifetime policy and C++ MethodChannel bridge",
+  "sourceFiles": [
+    {
+      "path": "native/windows/controller.go",
+      "sha256": "b2071776175330527e6766d3bf47f593c0e4c3291658a4bac50d731d858cbf51",
+      "bytes": 27963
+    },
+    {
+      "path": "native/windows/protocol.go",
+      "sha256": "9c8fff8805566dec4d077cec1f2766b89a5886e67f5fa803f6a9b25e5a48b77b",
+      "bytes": 8067
+    },
+    {
+      "path": "native/windows/guard_windows.go",
+      "sha256": "769f5cc5e01df85860b770315dddc9f0b43588db4ca6d5e43fdc0efc652aea00",
+      "bytes": 8636
+    },
+    {
+      "path": "native/windows/connection_protection.go",
+      "sha256": "a5789c08a770bcb1833d3375c9a48b9cfdc736c8ecba6a91833937746820483a",
+      "bytes": 4291
+    },
+    {
+      "path": "native/windows/connection_protection_store_windows.go",
+      "sha256": "0cd91d1854fc81ce92ea9a0dcfcfde1b71b5c266c08604fbcd32e00efba6f871",
+      "bytes": 1862
+    },
+    {
+      "path": "native/windows/guard_policy_windows.go",
+      "sha256": "0447f1ed50988d42123c6c2fc455dc996a5fed64f63ed010125678d283407d31",
+      "bytes": 5107
+    },
+    {
+      "path": "native/windows/connection_protection_test.go",
+      "sha256": "8f6eb6471f031376ceeaf696d4a03909d42ca71fe1ecaa2672a22436b6d2ea10",
+      "bytes": 9332
+    },
+    {
+      "path": "native/windows/connection_protection_guard_windows_test.go",
+      "sha256": "43bf00fd77597aa553d4193891d27122eca8f448a4ebd8085272b8c66b17506d",
+      "bytes": 5773
+    },
+    {
+      "path": "apps/exvpn/windows/runner/vpn_bridge.cpp",
+      "sha256": "0196a1ed7f16ae1b322e2870cc93db4bc4ff3a4ce3e505461d65eebe098103bf",
+      "bytes": 35150
+    }
+  ],
+  "contract": {
+    "methods": [
+      "getConnectionProtection",
+      "setConnectionProtection"
+    ],
+    "setterArgument": "enabled:boolean",
+    "defaultEnabled": true,
+    "systemManaged": false,
+    "setterRequiresDisconnected": true,
+    "activeIndependentOfPreference": true,
+    "offUsesOwnedDynamicWfpSession": true,
+    "noCoreOrDnsFallbackChanges": true
+  },
+  "checks": {
+    "focusedPureRegression": {
+      "exitCode": 0,
+      "passedCases": 90,
+      "failedCases": 0,
+      "eventsSha256": "ce9963bb6e2bbe1cc88b21b03e4f05524228f3e73812a141fd196cb161d10c9b"
+    },
+    "recoveredPersistentWithStoredOff": {
+      "exitCode": 0,
+      "supported": true,
+      "enabled": false,
+      "active": true,
+      "setterOnAndOffRefused": true,
+      "filtersAndPreferenceUnchanged": true
+    },
+    "race": {
+      "exitCode": 0,
+      "pattern": "^TestConnectionProtection",
+      "repetitions": 10,
+      "topLevelTests": 11
+    },
+    "goVet": {
+      "exitCode": 0,
+      "scope": "./..."
+    },
+    "diffCheck": {
+      "exitCode": 0
+    }
+  },
+  "limitations": [
+    "Only fake WFP backends and in-memory preference storage were executed.",
+    "Real WFP lifetimes, registry/DPAPI persistence, service crash/recovery and installed integration are not runtime-verified in this task.",
+    "C++ bridge was reviewed but not compiled; no UI/native product build was invoked.",
+    "Full validation is delegated to the coordinator after this source freeze."
+  ],
+  "systemActions": {
+    "hostWfpCalls": false,
+    "registryWrites": false,
+    "serviceChanges": false,
+    "hostNetworkChanges": false,
+    "installations": false,
+    "productBuilds": false
+  },
+  "committed": false
+}

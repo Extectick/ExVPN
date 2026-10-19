@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-20",
+  "status": "PASS_SOURCE_AND_BROWSER_ONLY",
+  "sourceBase": "426842d",
+  "implementationCommit": "aecd17d145801cb105b8325c8505917208c6058c",
+  "full": {
+    "path": "docs/evidence/settings-protection-logs-full.json",
+    "lanesPassed": 12,
+    "durationSeconds": 115.73,
+    "appTests": 418,
+    "sourceUnchanged": true,
+    "scope": "Source before final isolated updater height correction; other product sources unchanged afterward."
+  },
+  "focused": {
+    "clientLogsAndSheet": 11,
+    "androidProtectionJvm": 9,
+    "windowsPureCases": 90,
+    "windowsNewTestsRaceRepetitions": 10
+  },
+  "ui": {
+    "directProtectionSwitch": true,
+    "noProtectionDialog": true,
+    "logsStickyCopy": true,
+    "maxLogEvents": 64,
+    "maxLogAgeMinutes": 30,
+    "reportMaxUtf8Bytes": 65536,
+    "logsOnDisk": false,
+    "serverTouchHeight": 48,
+    "serverVerticalGap": 2,
+    "fullHeightProgress": true,
+    "visibleProgressText": false,
+    "sharedTopStripProgressWidget": true
+  },
+  "browser": {
+    "syntheticOnly": true,
+    "darkMedium": "dense server list, protection ON to OFF, logs Copy success, full-height update progress and simulated relaunch",
+    "lightMinimal": "full-height update progress",
+    "consoleErrors": 0
+  },
+  "screenshots": [
+    {
+      "path": "design/screenshots/settings-protection-logs/logs-dark.png",
+      "sha256": "85de77e1628cb19b16536d214bbc5ade2fb6993ded909993473db3d552c7fc23"
+    },
+    {
+      "path": "design/screenshots/settings-protection-logs/servers-dense-dark.png",
+      "sha256": "770977b3530cf555259501dad7247ccb3e5e9fb0b11ff3f4b67a53f7d4cb827c"
+    },
+    {
+      "path": "design/screenshots/settings-protection-logs/settings-dark.png",
+      "sha256": "7a39688467a6a7ab0840c9fff30cd2cfc4386fdf81f273f5d136c63a04bf7227"
+    },
+    {
+      "path": "design/screenshots/settings-protection-logs/update-fixed-before-dark.png",
+      "sha256": "c038740badc59649314e99634d41cd00ed04b3b28b77ddb59d4c5aa1fa0169b5"
+    },
+    {
+      "path": "design/screenshots/settings-protection-logs/update-full-height-dark.png",
+      "sha256": "24df88e51b5575ff5f4dbc1cc48c9c10029610f72b1a347da2bc4a3bf49b7260"
+    },
+    {
+      "path": "design/screenshots/settings-protection-logs/update-full-height-light-minimal.png",
+      "sha256": "21875f1269e84d92c43412b309dfbc9e5dcb25eaddf5d163acf19b3755660b4a"
+    }
+  ],
+  "nativePackagesBuilt": 0,
+  "nativeInstallations": 0,
+  "hostNetworkChanges": false,
+  "ciInvoked": false,
+  "published": false,
+  "limits": [
+    "Windows setter requires fully disconnected service. Preference defaults to ON; OFF retains dynamic live WFP blocking, not persistent service-crash blocking.",
+    "Windows WFP/DPAPI/crash recovery and installed integration are model-tested only; C++ addon not compiled this cycle.",
+    "Android switch opens system VPN settings; enabled remains unknown without live VpnService. OS switches require user action.",
+    "Android Activity compilation, device lifecycle and physical device acceptance remain open.",
+    "Native bridge changes require a new signed base, not an OTA patch for an existing base.",
+    "Browser protection and update actions are visual simulations. No installed application or OS protection setting was changed."
+  ],
+  "finalHeightCorrection": {
+    "sourcePaths": [
+      "apps/exvpn/lib/src/updates_sheet.dart",
+      "apps/exvpn/test/updates_sheet_test.dart"
+    ],
+    "testsPassed": 8,
+    "newGeometryRegressions": 4,
+    "themes": [
+      "dark",
+      "light"
+    ],
+    "textScales": [
+      1,
+      1.5
+    ],
+    "targetedAnalyzer": "2 files clean",
+    "logicalHeight": 56,
+    "checkingAvailableDownloadingRestartingEqual": true,
+    "followingVersionRowsStationary": true,
+    "browserDarkMediumBoundingHeightAssertion": "PASS",
+    "fullRepeated": false,
+    "sourceSha256": {
+      "apps/exvpn/lib/src/updates_sheet.dart": "a5819b8244585763960fb5310d1be704f74963f3c68a5c4a15ea75a200b50ad7",
+      "apps/exvpn/test/updates_sheet_test.dart": "a1b9137a80948d283407cc0ae1d0dd229285ef7335c000f55ff04fbbb4e857fd"
+    }
+  }
+}

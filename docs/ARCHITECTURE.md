@@ -1,5 +1,28 @@
 # ExVPN — архитектура
 
+## Настройка Kill Switch и ограниченный журнал, 2026-10-20
+
+Опциональный `ConnectionProtectionBridge` возвращает supported/nullable enabled/
+active/systemManaged. Preference и фактические фильтры независимы; recovered guard
+может оставаться активным при сохранённом OFF. Dart не оптимистично меняет флаг:
+сериализует setter с connect/policy/restart, отсекает поздние чтения и перечитывает
+ОС при возврате приложения. Ошибки этой настройки отделены от состояния туннеля.
+Windows OFF использует owned dynamic WFP lifetime с теми же live block/loopback
+правилами, ON — прежние persistent filters. Только полностью disconnected setter;
+новая DPAPI owner-bound preference по умолчанию ON, ошибки хранения запрещают новый
+VPN. Core, DNS, owner routing и direct fallback не меняются. Android читает только
+публичные флаги живой VpnService; при неизвестном состоянии не обещает блокировку.
+Изменения — через системные VPN Settings с действием пользователя, без fake switch.
+Новые native методы требуют новой подписанной базы; текущие runtime gates открыты.
+
+`ClientLogs` живёт с приложением, только в памяти: до 64 событий, TTL 30 минут,
+очистка каждую минуту и вручную. Записываются изменения типизированного состояния,
+не stats ticks; schema2 содержит прежний schema1 diagnostics и bounded события.
+Закрытый allowlist повторно проверяется при экспорте, лимит UTF-8 64 KiB; секреты,
+подписки, имена, endpoint, raw exception и содержимое трафика не принимаются.
+Копирование строит свежий отчёт по явному нажатию. Диск и внешняя отправка отсутствуют.
+[Критерии/границы](evidence/settings-protection-logs.json).
+
 ## Локальная автоматическая группа серверов
 
 Connect/reconnect могут содержать `automaticProfiles`: 1–32 уникальных

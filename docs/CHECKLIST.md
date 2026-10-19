@@ -255,6 +255,41 @@ PID, netId и временем в querylog. VPN не запускался; пр�
 
 ## E2 — Дизайн
 
+- [x] **EXVPN-E2-022** — Прямой переключатель защиты, ограниченные «Логи», плотный список и прогресс обновления.
+  Проверено 2026-10-20: Settings без отдельного диалога защиты; «Логи» с закреплённой
+  кнопкой «Скопировать» и очисткой. До 64 значимых событий за 30 минут, автоочистка,
+  schema2 с allowlist, без ссылок, ключей, имён приложений/подписок и содержимого
+  трафика; отчёт до 64 KiB. Строки серверов 48 px с промежутком 2 px.
+  Во время проверки/скачивания/установки кнопка целиком становится прогрессом,
+  без видимого текста и процентов, общий виджет с верхней полосой обновления.
+  Общий Full **12/12 PASS, 418 app tests, 115,73 с**, fingerprint неизменен;
+  дополнительно 11 targeted logs tests, Android 9 JVM и Windows pure/race/vet.
+  После последнего замечания о высоте изменены только updater UI и его тест:
+  56 px во всех состояниях, 8 targeted tests/analyzer PASS, из них 4 новые
+  геометрические регрессии dark/light × text scale 1/1,5; browser bounding height PASS.
+  Full после этого изолированного уточнения не повторялся.
+  В браузере приняты dark/medium, light/minimal, прямой toggle в макете и copy.
+  [Доказательства](evidence/settings-protection-logs.json), [просмотр](DESIGN_PREVIEW.md).
+  Исходники: `aecd17d`. Приёмка native ниже остаётся открытой.
+
+- [ ] **EXVPN-E5-010** — Принять переключаемый Windows Kill Switch на новой native-базе.
+  Исходники 2026-10-20: default ON, защищённая owner-DPAPI настройка, setter только
+  при полностью отключённом VPN. OFF сохраняет динамические WFP block filters
+  живой службы; ON — persistent. Recovered persistent guard не снимается из-за OFF;
+  `enabled=false, active=true` допустим. 90 pure checks, 11 новых tests race×10,
+  vet и общий Full PASS. [Source-квитанция](evidence/windows-connection-protection-source.json).
+  Открыто: C++ compile, настоящий DPAPI read/write, WFP/service-crash/recovery,
+  сохранность исключений/DNS/HTTPS и установленный UI. Требуется новая полная база;
+  существующий APK/EXE и OTA feed в этом цикле не менялись.
+
+- [ ] **EXVPN-E4-007** — Принять системный Android Kill Switch через новый переключатель.
+  Исходники 2026-10-20: `isAlwaysOn && isLockdownEnabled` читаются из живой VpnService;
+  без службы `enabled=null`, UI не показывает включённую защиту. Оба направления
+  переключения открывают VPN Settings; приложение не меняет ОС вместо пользователя.
+  9 адресных JVM-тестов PASS, [квитанция](evidence/android-connection-protection-jvm.json).
+  Открыты Activity compile/new-base integration, возврат из системных настроек и
+  устройство. E1 и общая физическая Android-приёмка не закрываются.
+
 - [x] **EXVPN-E2-021** — Единая кнопка на странице «Версии и обновления».
   Проверено 2026-10-20: одна автоматическая проверка при входе с повтором,
   общий full/patch updater, прогресс, автоматический handoff в widget-тесте,
