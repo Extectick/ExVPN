@@ -48,3 +48,88 @@ jobs:
           name: android-analyzer-probe
           path: ${{ runner.temp }}/android-analyzer-probe.json
           if-no-files-found: error
+
+  sdk-cache-probe:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      GIT_OPTIONAL_LOCKS: '0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Restore only the exact Windows Shorebird SDK cache; never save
+        id: sdk-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools/shorebird-1.6.129
+          key: exvpn-shorebird-sdk-v1-Windows-X64-Windows-${{ hashFiles('scripts/bootstrap/shorebird.lock.json') }}
+      - name: Inspect cached CLI and Flutter Git identity without SDK execution
+        env:
+          EXVPN_SDK_CACHE_HIT: ${{ steps.sdk-cache.outputs.cache-hit }}
+          EXVPN_SDK_CACHE_KEY: ${{ steps.sdk-cache.outputs.cache-primary-key }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $PSNativeCommandUseErrorActionPreference=$false
+          $repository=(Get-Location).Path
+          $pin=Get-Content -LiteralPath scripts/bootstrap/shorebird.lock.json -Raw|ConvertFrom-Json
+          if($pin.cli.folder -cne 'shorebird-1.6.129' -or $pin.cli.revision -cnotmatch '^[a-f0-9]{40}$' -or $pin.flutter.revision -cnotmatch '^[a-f0-9]{40}$'){throw 'cache_probe_pin_invalid'}
+          $cli=Join-Path $repository '.tools/shorebird-1.6.129'
+          $roots=@(@{kind='cli';path=$cli;expected=$pin.cli.revision},@{kind='flutter';path=(Join-Path $cli ('bin/cache/flutter/'+$pin.flutter.revision));expected=$pin.flutter.revision})
+          $privateLog=Join-Path $env:RUNNER_TEMP 'sdk-cache-git-private.log'
+          function Invoke-ProbeGit([string]$Root,[string[]]$Arguments){
+            $result=& git --no-optional-locks -c core.fsmonitor=false -c core.quotepath=false -c status.renames=false -C $Root @Arguments 2>>$privateLog
+            [ordered]@{text=($result -join "`n");exitCode=$LASTEXITCODE}
+          }
+          function Test-ProbeRegularPath([string]$Path,[string]$Root){
+            $full=[IO.Path]::GetFullPath($Path);$base=[IO.Path]::GetFullPath($Root)
+            if($full -ine $base -and !$full.StartsWith($base+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){return $false}
+            $cursor=$full
+            while($cursor.Length -ge $base.Length){
+              if(Test-Path -LiteralPath $cursor){if((Get-Item -LiteralPath $cursor -Force).Attributes -band [IO.FileAttributes]::ReparsePoint){return $false}}
+              if($cursor -ieq $base){return $true};$cursor=[IO.Path]::GetDirectoryName($cursor)
+            }
+            return $false
+          }
+          $records=@()
+          foreach($root in $roots){
+            $record=[ordered]@{repository=$root.kind;expectedHead=$root.expected;head=$null;pinMatched=$false;status='missing';trackedChangedCount=0;omittedCount=0;diffEmpty=$null;paths=@()}
+            if(!(Test-Path -LiteralPath $root.path -PathType Container)){$records+=$record;continue}
+            if(!(Test-ProbeRegularPath $root.path $repository) -or !(Test-ProbeRegularPath (Join-Path $root.path '.git') $repository)){$record.status='linked_input';$records+=$record;continue}
+            $head=Invoke-ProbeGit $root.path @('rev-parse','--verify','HEAD')
+            $status=Invoke-ProbeGit $root.path @('status','--porcelain=v1','-z','--untracked-files=no')
+            if($head.exitCode -ne 0 -or $head.text.Trim() -cnotmatch '^[a-f0-9]{40}$' -or $status.exitCode -ne 0){$record.status='git_failed';$records+=$record;continue}
+            $record.head=$head.text.Trim();$record.pinMatched=$record.head -ceq $root.expected
+            if($status.text.Length -gt 1MB){$record.status='status_size_limit';$records+=$record;continue}
+            $changes=@($status.text.Split([char]0)|Where-Object {$_})
+            $record.trackedChangedCount=$changes.Count
+            foreach($entry in $changes){
+              if($record.paths.Count -ge 64 -or $entry -cnotmatch '^([ MADRCUT?!]{2}) ([A-Za-z0-9_. /-]{1,240})$'){$record.omittedCount++;continue}
+              $flags=$Matches[1];$relative=$Matches[2]
+              if($relative -match '(?:^|/)\.{1,2}(?:/|$)|//|^/|/$'){$record.omittedCount++;continue}
+              $path=Join-Path $root.path $relative
+              $file=[ordered]@{path=$relative;status=$flags;rawSha256=$null;bytes=$null;headBlobSha1=$null;regularFile=$false}
+              $blob=Invoke-ProbeGit $root.path @('ls-tree','HEAD','--',$relative)
+              if($blob.exitCode -eq 0 -and $blob.text -cmatch '^100(?:644|755) blob ([a-f0-9]{40})\t'){$file.headBlobSha1=$Matches[1]}
+              if((Test-Path -LiteralPath $path -PathType Leaf) -and (Test-ProbeRegularPath $path $root.path)){
+                $item=Get-Item -LiteralPath $path
+                if($item.Length -le 32MB){$file.rawSha256=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant();$file.bytes=$item.Length;$file.regularFile=$true}
+              }
+              $record.paths+=$file
+            }
+            $diff=Invoke-ProbeGit $root.path @('diff','--quiet','HEAD','--')
+            if($diff.exitCode -in @(0,1)){$record.diffEmpty=$diff.exitCode -eq 0;$record.status='inspected'}else{$record.status='git_failed'}
+            $records+=$record
+          }
+          $key=$env:EXVPN_SDK_CACHE_KEY
+          if($key -cnotmatch '^exvpn-shorebird-sdk-v1-Windows-X64-Windows-[a-f0-9]{64}$'){$key=$null}
+          [ordered]@{schemaVersion=1;cacheHit=($env:EXVPN_SDK_CACHE_HIT -ceq 'true');cacheKey=$key;repositories=$records;applicationBuilds=0;nativeBuilds=0;sdkCommands=0;cacheSaved=$false;sourceReset=$false;rawLogsExported=$false}|ConvertTo-Json -Depth 7|Set-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'shorebird-sdk-cache-probe.json') -Encoding utf8NoBOM
+          $global:LASTEXITCODE=0
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: shorebird-sdk-cache-probe
+          path: ${{ runner.temp }}/shorebird-sdk-cache-probe.json
+          if-no-files-found: error
