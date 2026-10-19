@@ -29,11 +29,17 @@ Full Dart-патча: **12/12 PASS,374 app tests,235,6с**; maintenance:298 guar
   2026-10-20, `4a2262f3`: cloud readback и холодные SDK current/next=null/ui0
   на обеих платформах; данные и пакеты сохранены. SDK null нормализован в0
   только в publisher gate. [Runtime](evidence/shorebird29-runtime-qa.json).
-- [ ] **EXVPN-E7-013** — Публичный Preview и два подписанных full-update feed.
-  Immutable tag `v0.1.8` закреплён на C7. Принятые bytes импортированы в Actions
-  run39293255636 без SDK/build/upload в Shorebird; [import](evidence/shorebird29-ci-base-import.json).
-  Ожидаются publish workflow и независимые публичные hash/signature/feed проверки.
-  Физический Android, E1, полный stable audit и Windows Authenticode открыты.
+- [x] **EXVPN-E7-013** — Публичный Preview и два подписанных full-update feed.
+  2026-10-20, publisher source `ae4acee1`, immutable tag `v0.1.8` / `5bddc777`.
+  Принятые базы импортированы run39293255636 и опубликованы
+  [workflow39294754335](https://github.com/Extectick/ExVPN/actions/runs/39294754335)
+  без rebuild. Все 18 public assets, 17 checksum records, 16 manifest rows,
+  exact base receipts, runtime QA и оба Ed25519 feed прошли download/hash/domain/
+  expiry-проверки. [Релиз](https://github.com/Extectick/ExVPN/releases/tag/v0.1.8),
+  [независимый аудит](evidence/release-v0.1.8.json).
+  Физический Android, E1, точный post-link SBOM, Windows Authenticode и
+  стабильная VPN-приёмка остаются открытыми. Hosted Android patch preflight
+  отдельно не принят; сам клиентский OTA roundtrip подтверждён на обеих ОС.
 
 Выпуск **0.1.6+27**, 2026-10-19: итоговый Full **12/12 PASS за 126,78 с**,
 373 app tests, fingerprint неизменен; tag `v0.1.6`, исходники `ae35c9a`.

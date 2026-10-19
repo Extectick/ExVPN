@@ -17,8 +17,10 @@ Full точного Dart-патча: **12/12 PASS, 374 app tests, 235,6 с**. П
 изменены только инструменты отката и документация; для этих helpers прошли
 **298 pipeline guards** и настоящий облачный откат без пересборки приложений.
 [Проверки](evidence/shorebird29-accepted-patch-full.json).
-E6-004 и E6-012–014 приняты; публичная доставка E7-013 пока ожидает workflow
-и независимой проверки файлов/feed. Базы переданы в Actions без rebuild:
+E6-004, E6-012–014 и E7-013 приняты. Preview опубликован workflow
+**39294754335** без rebuild; 18 публичных файлов, SHA-256, подписи и оба
+Ed25519 feed проверены скачиванием. [Релиз](https://github.com/Extectick/ExVPN/releases/tag/v0.1.8),
+[независимый аудит](evidence/release-v0.1.8.json). Базы переданы в Actions без rebuild:
 **base_run_id=39293255636**, origin `local_accepted_import`, не CI compilation.
 [Точные квитанции и срок хранения](evidence/shorebird29-ci-base-import.json).
 

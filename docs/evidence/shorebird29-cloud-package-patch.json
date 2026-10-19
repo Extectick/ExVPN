@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "PASS_PACKAGES_SIGNED_APPLY_REJECT_RESTORE_ROLLBACK",
+  "status": "PASS_PACKAGES_SIGNED_ROUNDTRIP_AND_PUBLIC_PREVIEW",
   "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
   "version": "0.1.8+29",
   "releaseId": 908884,
@@ -138,16 +138,18 @@
     "windowsAuthenticode": false,
     "stableReleaseAccepted": false,
     "E1Complete": false,
-    "publicPreviewDownloadAudit": null,
+    "publicPreviewDownloadAudit": true,
     "negativeCacheRejection": true,
     "deviceRollback": true,
     "deviceApply": true,
     "baseRuntime": true
   },
   "immutableSourceTag": {
-    "publicReleaseConfirmed": false,
+    "publicReleaseConfirmed": true,
     "remoteConfirmedByCoordinator": true,
     "name": "v0.1.8",
     "sourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3"
-  }
+  },
+  "publicationEvidence": "release-v0.1.8.json",
+  "publisherRunId": 39294754335
 }

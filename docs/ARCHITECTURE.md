@@ -32,6 +32,10 @@ pointers/tombstones, затем снова подтверждён patch2/ui1. О
 [Runtime gate](evidence/shorebird29-runtime-qa.json), [roundtrip](evidence/shorebird29-roundtrip.json).
 Неизменные принятые пакеты могут переноситься в CI по hash/filemap; происхождение
 `local_accepted_import` сохраняется отдельно от CI compilation.
+Публикация тех же bytes выполнена workflow39294754335; runtime QA canonical
+projection и её public SHA связаны release manifest. Оба Ed25519 full-update
+feed указывают на проверенные публичные APK/EXE.
+[Проверка доставки](evidence/release-v0.1.8.json).
 
 
 ## Дополнение: восстановление упаковки Shorebird-базы, 2026-10-19

@@ -15,7 +15,7 @@ build wrappers, SDK/signing pins, dependencies, native, assets и build identity
 **908884**. CLI **1.6.129**, Flutter **5bef02a**, engine **4b936a0**, прежние APK
 signer и RSA public pin сохранены. Actual apply уже подтверждён на Windows и
 Android emulator. Повреждённый кэш и облачный rollback обоих номеров приняты;
-публичная доставка ожидает отдельного workflow и download/feed audit.
+публичный Preview опубликован и прошёл независимый download/feed audit.
 
 | Артефакт | Подтверждённое состояние |
 |---|---|
@@ -49,7 +49,12 @@ beta возвращает свой патч с проверенной RSA, stabl
 Реальный SDK после холодного запуска показал Windows current/next **1/1**,
 Android **2/2**, `uiRevision=1`; базовые bytes и пользовательские данные сохранены.
 [Actual apply](evidence/shorebird29-device-apply.json). **E6-012 подтверждён**.
-Неизменяемый tag `v0.1.8` закреплён на C7, публичного release пока нет.
+Неизменяемый tag `v0.1.8` закреплён на C7.
+[Публичный Preview](https://github.com/Extectick/ExVPN/releases/tag/v0.1.8) выпущен
+workflow [39294754335](https://github.com/Extectick/ExVPN/actions/runs/39294754335)
+на publisher source `ae4acee1` без rebuild. Все 18 скачанных assets, 17 checksum
+records, 16 manifest rows, прежние APK/EXE/receipts и оба Ed25519 feed проверены.
+[Аудит](evidence/release-v0.1.8.json).
 
 На Android один байт cached AOT отвергнут при native проверке подписи, SDK
 загрузил базу/ui0. Затем восстановлены оба SDK roots целиком, включая bytes,
@@ -59,7 +64,7 @@ patch2/ui1. После облачного rollback №2 Android и №1 Windows 
 базовые APK/EXE/AOT неизменны. Патчи №1/№2 отозваны намеренно после QA.
 [Полный roundtrip](evidence/shorebird29-roundtrip.json),
 [publisher gate](evidence/shorebird29-runtime-qa.json).
-**E6-004, E6-012–014 приняты. E7-013 ожидает публичной доставки.**
+**E6-004, E6-012–014 и E7-013 приняты.**
 Физический Android, E1, точный post-link SBOM, Windows Authenticode и стабильная
 VPN-приёмка остаются открытыми.
 

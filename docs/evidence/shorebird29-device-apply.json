@@ -25,6 +25,8 @@
   },
   "negativeCacheRejectionConfirmed": true,
   "deviceRollbackConfirmed": true,
-  "publicPreviewConfirmed": false,
-  "stableAccepted": false
+  "publicPreviewConfirmed": true,
+  "stableAccepted": false,
+  "publicationEvidence": "release-v0.1.8.json",
+  "publisherRunId": 39294754335
 }
