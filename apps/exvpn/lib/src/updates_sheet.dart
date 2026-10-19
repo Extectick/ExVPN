@@ -30,6 +30,7 @@ class UpdatesSheet extends StatefulWidget {
 }
 
 class _UpdatesSheetState extends State<UpdatesSheet> {
+  static const _actionHeight = 40.0;
   AppUpdatesController? _controller;
 
   @override
@@ -154,15 +155,15 @@ class _UpdatesSheetState extends State<UpdatesSheet> {
           key: const Key('updates-primary'),
           clipBehavior: Clip.antiAlias,
           style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(56),
-            fixedSize: const Size.fromHeight(56),
+            minimumSize: const Size.fromHeight(_actionHeight),
+            fixedSize: const Size.fromHeight(_actionHeight),
             visualDensity: VisualDensity.standard,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             padding: busy
                 ? EdgeInsets.zero
                 : const EdgeInsets.symmetric(horizontal: 16),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
             ),
             disabledBackgroundColor: busy
                 ? Colors.transparent
@@ -186,7 +187,7 @@ class _UpdatesSheetState extends State<UpdatesSheet> {
               ? AppUpdateProgress(
                   key: const Key('updates-progress'),
                   progress: downloading ? fraction : null,
-                  height: 56,
+                  height: _actionHeight,
                 )
               : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -197,9 +198,9 @@ class _UpdatesSheetState extends State<UpdatesSheet> {
                           : controller?.canRestart == true
                           ? Icons.restart_alt_rounded
                           : Icons.refresh_rounded,
-                      size: 21,
+                      size: 18,
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     Flexible(
                       child: Text(
                         context.tr(label),

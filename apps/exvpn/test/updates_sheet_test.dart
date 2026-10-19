@@ -192,7 +192,7 @@ void main() {
           final button = find.byKey(const Key('updates-primary'));
           final before = tester.getRect(button);
           final versionsBefore = tester.getRect(find.text('ExVPN $appVersion'));
-          expect(before.height, 56);
+          expect(before.height, 40);
           backend.pendingCheck!.complete(offer);
           await tester.pumpAndSettle();
           expect(
