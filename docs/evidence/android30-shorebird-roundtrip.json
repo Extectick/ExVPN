@@ -1,0 +1,176 @@
+{
+  "schema": 1,
+  "date": "2026-10-20",
+  "platform": "android",
+  "version": "0.1.9+30",
+  "baseSourceCommit": "f98b75d38a656fc6a708cac9ba692ad7502c47c2",
+  "baseRelease": 910468,
+  "patchNumber": 2,
+  "patchId": 732166,
+  "track": "beta",
+  "stage": "verified_applied_and_cloud_rolled_back",
+  "base": {
+    "version": "0.1.9+30",
+    "uiRevision": 1,
+    "vpnPhase": "disconnected",
+    "available": true,
+    "current": null,
+    "next": null,
+    "restartRequired": false,
+    "track": "beta"
+  },
+  "staged": {
+    "version": "0.1.9+30",
+    "uiRevision": 1,
+    "vpnPhase": "disconnected",
+    "available": true,
+    "current": null,
+    "next": 2,
+    "restartRequired": true,
+    "track": "beta"
+  },
+  "applied": {
+    "version": "0.1.9+30",
+    "uiRevision": 2,
+    "vpnPhase": "disconnected",
+    "available": true,
+    "current": 2,
+    "next": 2,
+    "restartRequired": false,
+    "track": "beta"
+  },
+  "coldRestart": {
+    "oldProcessAbsentObserved": true,
+    "newProcessObserved": true,
+    "apkUnchanged": true,
+    "uidUnchanged": true,
+    "method": "owned_idle_force_stop_and_activity_start"
+  },
+  "baseInstalledIdentity": {
+    "version": "0.1.9",
+    "build": 30,
+    "uid": 10169,
+    "apkSha256": "c7e62ed64784c3718229103c0bd938bdd142d95fe497dec41ec64f7517e05eb5"
+  },
+  "appliedInstalledIdentity": {
+    "version": "0.1.9",
+    "build": 30,
+    "uid": 10169,
+    "apkSha256": "c7e62ed64784c3718229103c0bd938bdd142d95fe497dec41ec64f7517e05eb5"
+  },
+  "continuity": {
+    "userDataFourFilesUnchanged": true,
+    "restoredModeUidGidSelinuxEqual": true,
+    "primaryUploadDelta": 26379,
+    "primaryDownloadDelta": 55103,
+    "backupUploadDelta": 42242,
+    "backupDownloadDelta": 95248
+  },
+  "signatureAcceptanceProvenByRealSdkApply": true,
+  "nativeInitializationProvenByActualCurrent2AndUi2": true,
+  "patchReceiptSha256": "c55fda45931f326a7e1ab8bb143897e8954fb6b71d3b69da69251434fa91435e",
+  "old29SdkCacheOrPointersRestored": false,
+  "initialDiagnosticsSnapshotRejected": {
+    "reason": "static_report_opened_before_sdk_initialization_completed_dartAvailable_null",
+    "strictParserPreserved": true,
+    "resolution": "freshly_opened_diagnostics_after_initialization"
+  },
+  "rollbackVerified": true,
+  "computerUse": false,
+  "hostNetworkChanged": false,
+  "cloudRollbackRun": 39328414028,
+  "cloudRollbackReceiptSha256": "1c7888b371fdd0dbb19a9ea8b890103d358daae1db91d91382d4d9c9db398fcc",
+  "rollbackStaged": {
+    "version": "0.1.9+30",
+    "uiRevision": 2,
+    "vpnPhase": "disconnected",
+    "available": true,
+    "current": 2,
+    "next": null,
+    "restartRequired": true,
+    "track": "beta"
+  },
+  "rolledBack": {
+    "version": "0.1.9+30",
+    "uiRevision": 1,
+    "vpnPhase": "disconnected",
+    "available": true,
+    "current": null,
+    "next": null,
+    "restartRequired": false,
+    "track": "beta"
+  },
+  "rollbackColdRestart": {
+    "oldProcessAbsentObserved": true,
+    "newProcessObserved": true,
+    "apkUnchanged": true,
+    "uidUnchanged": true,
+    "method": "owned_idle_force_stop_and_activity_start"
+  },
+  "rolledBackInstalledIdentity": {
+    "version": "0.1.9",
+    "build": 30,
+    "uid": 10169,
+    "apkSha256": "c7e62ed64784c3718229103c0bd938bdd142d95fe497dec41ec64f7517e05eb5"
+  },
+  "finalContinuity": {
+    "fourOriginalFilesUnchanged": true,
+    "modeUidGidSelinuxUnchanged": true,
+    "uid": 10169,
+    "apkSha256": "c7e62ed64784c3718229103c0bd938bdd142d95fe497dec41ec64f7517e05eb5",
+    "original29SdkRestored": false,
+    "oldHelperApksRestored": true,
+    "vpnPhase": "disconnected"
+  },
+  "proofs": [
+    {
+      "id": "sdk-base-snapshot.json",
+      "sha256": "56a421780328500cbb9afd339b0b2a5c03cbe1701760715bf94d3a944c817af0"
+    },
+    {
+      "id": "sdk-staged-snapshot.json",
+      "sha256": "0ddbe8d2664a911f8698fae61cde3204975bba8b2ff8ef508d2d89505d39bc13"
+    },
+    {
+      "id": "sdk-applied-snapshot.json",
+      "sha256": "b7f54aedc3d358a8bf508d6cad203509047bbfac3320a4d0c444ef00da64b490"
+    },
+    {
+      "id": "sdk-rollback-staged-snapshot.json",
+      "sha256": "ce5eb2d0fac7413d42c8bc28c88c8200c7e406407ba931eb887cda3279a4cb03"
+    },
+    {
+      "id": "sdk-rolledback-snapshot.json",
+      "sha256": "56a421780328500cbb9afd339b0b2a5c03cbe1701760715bf94d3a944c817af0"
+    },
+    {
+      "id": "sdk-apply-cold-restart.json",
+      "sha256": "ee57e4cb937ea0dd3042606375bfe267708e0cdc1454d5bd6735ae517a520d30"
+    },
+    {
+      "id": "sdk-rollback-cold-restart.json",
+      "sha256": "ee57e4cb937ea0dd3042606375bfe267708e0cdc1454d5bd6735ae517a520d30"
+    },
+    {
+      "id": "sdk-base-identity.json",
+      "sha256": "5217cac1c9e32fbe9fdbefeb3eec5b75d01c87a486cc1198a7422564cac9be4c"
+    },
+    {
+      "id": "sdk-applied-identity.json",
+      "sha256": "5217cac1c9e32fbe9fdbefeb3eec5b75d01c87a486cc1198a7422564cac9be4c"
+    },
+    {
+      "id": "sdk-rolledback-identity.json",
+      "sha256": "5217cac1c9e32fbe9fdbefeb3eec5b75d01c87a486cc1198a7422564cac9be4c"
+    },
+    {
+      "id": "sdk-final-continuity.json",
+      "sha256": "b4fd8a7f99195993323d780c232b4c8a049bc35b4ba9831387d17f33f8cc3f2c"
+    }
+  ],
+  "limitations": [
+    "API30 emulator only; no physical Android acceptance",
+    "Cold starts were explicit owned idle restarts after real SDK staging, not a claim about automatic OS process restart",
+    "No additional damaged-patch negative test repeated for this base"
+  ]
+}
