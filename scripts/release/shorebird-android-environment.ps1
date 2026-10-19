@@ -23,6 +23,22 @@ function Assert-ShorebirdAndroidToolPath([string]$Path) {
     $full
 }
 
+function Assert-ShorebirdAndroidLiteralToolPath([string]$Literal) {
+    # GetFullPath can expand an existing 8.3 name on Windows. Validate the
+    # physical path separately; return the exact Win32 spelling for the tools.
+    if (!$Literal -or $Literal.Length -gt 2048 -or
+        $Literal -cnotmatch '^[A-Za-z]:\\[A-Za-z0-9_.~\\-]+$') {
+        throw 'shorebird_android_tool_literal_invalid'
+    }
+    foreach ($part in ($Literal.Substring(3) -split '\\')) {
+        if (!$part -or $part -in @('.','..') -or $part.EndsWith('.')) {
+            throw 'shorebird_android_tool_literal_invalid'
+        }
+    }
+    $null=Assert-ShorebirdAndroidToolPath $Literal
+    $Literal
+}
+
 function Initialize-ShorebirdAndroidPathInterop {
     if ('ExVpnShorebirdAndroidPath' -as [type]) { return }
     Add-Type -TypeDefinition @'
@@ -156,6 +172,7 @@ function Initialize-ShorebirdAndroidToolEnvironment {
     $leases=[Collections.Generic.List[IDisposable]]::new()
     $proof=[ordered]@{schemaVersion=1;status='failed';phase=$phase;errorCode=$null
         shortPathAvailable=$false;shortPathContainsSpace=$null;sdkDirectoryIdentityMatched=$false
+        literalSdkAliasPreserved=$false;literalAnalyzerAliasPreserved=$false
         analyzerFileIdentityMatched=$false;heldIdentitiesRechecked=$false;sourcePinsMatched=$false
         privateSettingsExact=$false;processAppDataOnlyChanged=$false;dartVersionMatched=$false
         dartSha256=$null;analyzerSha256=$null;settingsSha256=$null;syntheticExitCode=$null
@@ -202,11 +219,15 @@ function Initialize-ShorebirdAndroidToolEnvironment {
         $proof.dartVersionMatched=$true
         $phase='sdk_short_identity'
         Initialize-ShorebirdAndroidPathInterop
-        $short=Assert-ShorebirdAndroidToolPath ([ExVpnShorebirdAndroidPath]::ShortPath($sdk))
-        $proof.shortPathAvailable=$true; $proof.shortPathContainsSpace=$short.Contains(' ')
-        if ($short -cnotmatch '^[A-Za-z]:\\[A-Za-z0-9_.~\\-]+$') { throw 'short_path' }
+        $literalShort=[ExVpnShorebirdAndroidPath]::ShortPath($sdk)
+        $proof.shortPathAvailable=$true; $proof.shortPathContainsSpace=$literalShort.Contains(' ')
+        $short=Assert-ShorebirdAndroidLiteralToolPath $literalShort
+        $proof.literalSdkAliasPreserved=$short -ceq $literalShort
         $analyzer=Assert-ShorebirdAndroidToolPath (Join-Path $sdk 'cmdline-tools/latest/bin/apkanalyzer.bat')
-        $shortAnalyzer=Assert-ShorebirdAndroidToolPath (Join-Path $short 'cmdline-tools/latest/bin/apkanalyzer.bat')
+        # Avoid provider/path normalization here as well as for the SDK root.
+        $literalAnalyzer=$short+'\cmdline-tools\latest\bin\apkanalyzer.bat'
+        $shortAnalyzer=Assert-ShorebirdAndroidLiteralToolPath $literalAnalyzer
+        $proof.literalAnalyzerAliasPreserved=$shortAnalyzer -ceq $literalAnalyzer
         foreach ($record in @(@($sdk,$true),@($short,$true),@($analyzer,$false),@($shortAnalyzer,$false))) {
             $leases.Add([ExVpnShorebirdAndroidPath]::Hold($record[0],$record[1]))
         }

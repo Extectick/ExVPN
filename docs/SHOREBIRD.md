@@ -2,6 +2,22 @@
 
 ## Реальный цикл 0.1.8+29, 2026-10-19 — в работе
 
+CI39276484132 (`2158474`) подтвердил Windows packaging audit и SDK longpaths
+исправление. Android остановлен в раннем preflight до сборки приложения:
+`.NET GetFullPath` внутри проверки пути разворачивает корректное DOS8.3 имя
+обратно в путь с пробелами. Это воспроизведено локально без SDK/сборки.
+Требуется сохранять буквальное короткое имя отдельно от физической проверки
+каталога и file IDs. Readback после завершения: release908884 содержит только
+Windows; Android release и Dart-патчи ещё не опубликованы.
+[Причина](evidence/shorebird29-shortpath-normalization.json),
+[облако](evidence/shorebird29-sixth-attempt-readback.json).
+Helper теперь проверяет физический путь отдельно и сохраняет буквальное
+Win32 имя SDK и analyzer для Flutter/Dart.38 focused checks PASS, включая
+реальный ProgramFiles с пробелами; один existing-SDK preflight PASS за5,4с.
+Сохранены no-reparse, held file IDs, source/hash/config проверки. Сборок,
+облачных операций и действий с устройствами0; Full не повторялся.
+[Preflight](evidence/shorebird29-literal-alias-preflight.json).
+
 Уточнение CI39269602856 (`e3a9939`): Android AAB содержит engine debug metadata
 для обеих ABI. Реальный отказ — `apkanalyzer.bat` из SDK с пробелами в пути:
 некавыченный `toolsdir` JVM option приводит к `ClassNotFoundException: Files`.

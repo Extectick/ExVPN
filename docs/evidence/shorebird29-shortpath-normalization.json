@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "runId": 39276484132,
+  "sourceCommit": "215847463b03e737fb4fd2106ae686b72f6d88cf",
+  "target": "Android",
+  "status": "environment_preflight_failed_before_application_build",
+  "errorCode": "shorebird_android_sdk_short_identity_failed",
+  "phase": "sdk_short_identity",
+  "sourceCause": "dotnet_getfullpath_expands_83_alias",
+  "localReadOnlyProbe": {
+    "win32ShortContainsSpace": false,
+    "assertedShortContainsSpace": true,
+    "assertReturnedCanonicalLongPath": true,
+    "sdkExecuted": false,
+    "sourceWritten": false
+  },
+  "ciReceipt": {
+    "shortPathAvailable": true,
+    "shortPathContainsSpace": true,
+    "sourcePinsMatched": true,
+    "dartVersionMatched": true,
+    "applicationBuilds": 0,
+    "privateSettingsExact": false
+  },
+  "sourceModified": false
+}

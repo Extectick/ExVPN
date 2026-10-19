@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "failedRunId": 39275503636,
   "failedSourceCommit": "8794bf143e610a09bee124867b38f4940a38a143",
-  "bothTargetsFailedBeforeSdk": true,
+  "bothTargetsFailedBeforeShorebirdSdkPrepare": true,
   "failedStep": "Test pipeline guards without SDK or cloud mutations",
   "failure": "outdated_recovery_negative_fixture_for_reviewed_patch_wrapper",
   "nativeBuilds": 0,
@@ -12,5 +12,6 @@
   "pipelineChecks": 285,
   "pipelineExitCode": 0,
   "fullRepeated": false,
-  "sourceState": "working_tree_commit_pending"
+  "sourceState": "committed",
+  "verificationCommit": "215847463b03e737fb4fd2106ae686b72f6d88cf"
 }

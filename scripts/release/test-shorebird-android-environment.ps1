@@ -57,10 +57,18 @@ Reject { Assert-ShorebirdAndroidToolProbe @{schema=1} } 'shorebird_android_tool_
 foreach ($invalid in @('relative/sdk','C:\sdk\..\other','C:\sdk\tool:stream','C:\sdk\trailing.','\\server\sdk')) {
     Reject { Assert-ShorebirdAndroidToolPath $invalid } 'shorebird_android_tool_path_invalid'
 }
+foreach ($invalid in @('C:\Program Files\sdk','C:\sdk\..\other','C:\sdk\\bin','C:\sdk\trailing.','C:\sdk\tool:stream',('C:\'+('a'*2048)))) {
+    Reject { Assert-ShorebirdAndroidLiteralToolPath $invalid } 'shorebird_android_tool_literal_invalid'
+}
 if ([OperatingSystem]::IsWindows()) {
     Initialize-ShorebirdAndroidPathInterop
     $physical=Assert-ShorebirdAndroidToolPath $env:ProgramFiles
-    $short=Assert-ShorebirdAndroidToolPath ([ExVpnShorebirdAndroidPath]::ShortPath($physical))
+    $rawShort=[ExVpnShorebirdAndroidPath]::ShortPath($physical)
+    $short=Assert-ShorebirdAndroidLiteralToolPath $rawShort
+    Check ($physical.Contains(' ') -and !$rawShort.Contains(' ')) 'real_spaced_directory_has_8_3_alias'
+    Check ($short -ceq $rawShort -and !$short.Contains(' ')) 'literal_8_3_not_expanded_to_physical'
+    $analyzerSpelling=$short+'\cmdline-tools\latest\bin\apkanalyzer.bat'
+    Check ((Assert-ShorebirdAndroidLiteralToolPath $analyzerSpelling) -ceq $analyzerSpelling) 'literal_child_spelling_not_expanded'
     $first=[ExVpnShorebirdAndroidPath]::Hold($physical,$true)
     $second=[ExVpnShorebirdAndroidPath]::Hold($short,$true)
     try { Assert-ShorebirdAndroidToolPair $first $second $true; $script:checks++ }

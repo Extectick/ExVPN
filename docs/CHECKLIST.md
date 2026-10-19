@@ -58,6 +58,10 @@ bytes не меняются. Патч и откат ещё не проверен
   через проверенное8.3 имя. Подготовка исправлений не закрывает runtime gate.
   [Windows](evidence/shorebird29-sdk-longpaths-probe.json),
   [Android](evidence/shorebird29-android-shortpath-probe.json).
+  CI39276484132 (`2158474`): Windows audit PASS; Android preflight отказал
+  до app build, поскольку `.NET GetFullPath` снова раскрыл короткий SDK path.
+  [Наблюдение](evidence/shorebird29-shortpath-normalization.json),
+  [readback](evidence/shorebird29-sixth-attempt-readback.json).
 - [ ] **EXVPN-E6-013** — Применить подписанный Dart-патч на обеих платформах.
   Критерий: реальные platform-specific patch IDs/numbers, current/next SDK,
   `uiRevision` 0→1 после полного запуска; APK/EXE и данные неизменны.
