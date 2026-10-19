@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "recordedAtUtc": "2026-10-19T11:17:15.0576681Z",
+  "scope": "successful synthetic suites report correct Actions process exit; failed assertions remain fatal",
+  "pipelineChecks": 101,
+  "publicationChecks": 34,
+  "before": {
+    "publicationInheritedActionsExit": 1,
+    "pipelineActionsExit": 64
+  },
+  "after": {
+    "publicationInheritedActionsExit": 0,
+    "syntheticFailingAssertionExit": 1,
+    "pipelineActionsExit": 0
+  },
+  "androidCiLog": {
+    "run": 39242872001,
+    "exitOneLine": 394,
+    "job": 118027653874,
+    "passLine": 393
+  },
+  "actualSdkExecuted": false,
+  "buildExecuted": false,
+  "cloudMutationExecuted": false,
+  "fullSuiteRepeated": false,
+  "files": [
+    {
+      "path": "scripts/release/test-shorebird-pipeline.ps1",
+      "sha256": "5971a54da84da6280db53399a1229ec1c831e169ac81a964e7b8ee9e783598d9"
+    },
+    {
+      "path": "scripts/release/test-shorebird-publication.ps1",
+      "sha256": "33ca40d98d12edc172a0ae932b7d9d0f0ca12c33b2490942ba72430308b38e67"
+    }
+  ]
+}

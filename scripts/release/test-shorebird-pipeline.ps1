@@ -339,3 +339,6 @@ Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized cloud recovery iden
 Assert-Test ($workflow -cmatch '(?s)name: Preserve sanitized SDK preparation diagnosis even after failure\s+if: always\(\).*?path: artifacts/shorebird-prepare/\*\.json') 'prepare_diagnosis_upload_always_and_allowlisted'
 
 Write-Host "Shorebird pipeline guards: $script:checks checks PASS; no SDK, private signing inputs or cloud operations."
+# Expected refusal fixtures leave native exit codes behind. Actions propagates
+# LASTEXITCODE after this script; clear it only after every assertion passed.
+$global:LASTEXITCODE=0
