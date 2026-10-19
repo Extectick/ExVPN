@@ -491,3 +491,5 @@ runtime aggregate остаются открытыми.
 
 Источники: [закреплённый CLI](https://github.com/shorebirdtech/shorebird/tree/9fe1370bdd1d2f117cc08c57ae416b794ed92440),
 [подпись патчей](https://docs.shorebird.dev/code-push/guides/patch-signing/).
+
+Финальный Full metadata-fix b9d43ab: **12/12 PASS за347,2с**,373 app tests, source unchanged; [отчёт](evidence/fast-validation-shorebird29-metadata.json). Повторная сетевая матрица не запускалась.

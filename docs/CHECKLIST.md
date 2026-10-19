@@ -7,7 +7,7 @@
 ## Сводка этапов
 
 Цикл **0.1.8+29 / Shorebird beta**, 2026-10-19: база/упаковка989329b;
-исправление Android notice metadata — рабочее дерево; commit ожидается.
+исправление Android notice metadata — b9d43ab. Последний Full12/12 PASS за347,2с,373 app tests, fingerprint unchanged; [отчёт](evidence/fast-validation-shorebird29-metadata.json).
 Служебный developer API key и существующий RSA signing key сохранены через `gh`
 в protected environment `demo-release`. SDK pins не менялись; реальные базы,
 подписанный патч и откат ниже пока не приняты. [Методика](SHOREBIRD.md).
