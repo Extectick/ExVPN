@@ -148,3 +148,101 @@ jobs:
           name: shorebird-sdk-cache-probe
           path: ${{ runner.temp }}/shorebird-sdk-cache-probe.json
           if-no-files-found: error
+      - name: Compare physical SDK full and 8.3 paths with pinned Dart Process
+        run: |
+          $ErrorActionPreference='Stop'
+          $pin=Get-Content -LiteralPath scripts/bootstrap/shorebird.lock.json -Raw|ConvertFrom-Json
+          $sdkEvidence=Get-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'shorebird-sdk-cache-probe.json') -Raw|ConvertFrom-Json
+          $flutter=$sdkEvidence.repositories|Where-Object repository -CEQ flutter
+          $safe=[ordered]@{schemaVersion=1;status='not_run';phase='cache_pin';errorCode=$null;shortPathAvailable=$false;shortPathContainsSpace=$null;sdkDirectoryIdentityMatched=$false;analyzerFileIdentityMatched=$false;physicalSdkContainsSpace=$null;dartVersionMatched=$false;dartSha256=$null;results=@();applicationBuilds=0;nativeBuilds=0;cacheSaved=$false;rawLogsExported=$false}
+          try {
+            if(!$flutter.pinMatched -or $flutter.longPathsTrackedChangedCount -ne 0 -or !$flutter.longPathsDiffEmpty){throw 'cached_flutter_not_verified'}
+            $safe.phase='native_identity'
+            Add-Type -TypeDefinition @'
+          using System;
+          using System.Text;
+          using System.Runtime.InteropServices;
+          using Microsoft.Win32.SafeHandles;
+          public static class ExVpnSdkPathIdentity {
+            [StructLayout(LayoutKind.Sequential)] public struct Info {
+              public uint attributes; public System.Runtime.InteropServices.ComTypes.FILETIME creation, access, write;
+              public uint volume, sizeHigh, sizeLow, links, indexHigh, indexLow;
+            }
+            [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern uint GetShortPathNameW(string path,StringBuilder value,uint size);
+            [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern SafeFileHandle CreateFileW(string path,uint access,uint share,IntPtr security,uint creation,uint flags,IntPtr template);
+            [DllImport("kernel32.dll",SetLastError=true)] static extern bool GetFileInformationByHandle(SafeFileHandle handle,out Info value);
+            public static string Short(string path) { var value=new StringBuilder(32768);uint n=GetShortPathNameW(path,value,(uint)value.Capacity);return n>0&&n<value.Capacity?value.ToString():null; }
+            public static bool Same(string first,string second) {
+              using(var a=CreateFileW(first,0,7,IntPtr.Zero,3,0x02200000,IntPtr.Zero))
+              using(var b=CreateFileW(second,0,7,IntPtr.Zero,3,0x02200000,IntPtr.Zero)) {
+                Info x,y;return !a.IsInvalid&&!b.IsInvalid&&GetFileInformationByHandle(a,out x)&&GetFileInformationByHandle(b,out y)
+                  &&(x.attributes&0x400)==0&&(y.attributes&0x400)==0&&x.volume==y.volume&&x.indexHigh==y.indexHigh&&x.indexLow==y.indexLow;
+              }
+            }
+          }
+          '@
+            $safe.phase='sdk_root'
+            $sdk=Get-Item -LiteralPath $env:ANDROID_HOME -Force
+            if($sdk.Attributes -band [IO.FileAttributes]::ReparsePoint){$sdk=$sdk.ResolveLinkTarget($false)}
+            if($sdk -isnot [IO.DirectoryInfo] -or ($sdk.Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'sdk_root_not_physical'}
+            $safe.phase='short_path'
+            $full=$sdk.FullName
+            $short=[ExVpnSdkPathIdentity]::Short($full)
+            $safe.physicalSdkContainsSpace=$full.Contains(' ')
+            $safe.shortPathAvailable=![string]::IsNullOrWhiteSpace($short)
+            if(!$safe.shortPathAvailable){throw 'short_path_unavailable'}
+            $safe.shortPathContainsSpace=$short.Contains(' ')
+            $safe.sdkDirectoryIdentityMatched=[ExVpnSdkPathIdentity]::Same($full,$short)
+            $fullTool=Join-Path $full 'cmdline-tools/latest/bin/apkanalyzer.bat'
+            $shortTool=[ExVpnSdkPathIdentity]::Short($fullTool)
+            $safe.analyzerFileIdentityMatched=![string]::IsNullOrWhiteSpace($shortTool) -and [ExVpnSdkPathIdentity]::Same($fullTool,$shortTool)
+            if($safe.shortPathContainsSpace -or !$safe.sdkDirectoryIdentityMatched -or !$safe.analyzerFileIdentityMatched){throw 'short_path_identity_failed'}
+            $safe.phase='dart_pin'
+            $sdkRoot=Join-Path (Get-Location) ('.tools/shorebird-1.6.129/bin/cache/flutter/'+$pin.flutter.revision)
+            $safe.dartVersionMatched=([IO.File]::ReadAllText((Join-Path $sdkRoot 'bin/cache/dart-sdk/version')).Trim() -ceq $pin.flutter.dartVersion)
+            if(!$safe.dartVersionMatched){throw 'dart_pin_failed'}
+            $dart=Join-Path $sdkRoot 'bin/cache/dart-sdk/bin/dart.exe'
+            $safe.dartSha256=(Get-FileHash -LiteralPath $dart -Algorithm SHA256).Hash.ToLowerInvariant()
+            $zipPath=Join-Path $env:RUNNER_TEMP 'exvpn-dart-analyzer-probe.zip'
+            $archive=[IO.Compression.ZipFile]::Open($zipPath,[IO.Compression.ZipArchiveMode]::Create)
+            try{$entry=$archive.CreateEntry('BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/libflutter.so.sym');$stream=$entry.Open();try{$stream.WriteByte(1)}finally{$stream.Dispose()}}finally{$archive.Dispose()}
+            $program=Join-Path $env:RUNNER_TEMP 'exvpn-dart-analyzer-probe.dart'
+            @'
+          import 'dart:convert';
+          import 'dart:io';
+          Future<void> main(List<String> args) async {
+            final results=<Map<String,Object?>>[];
+            for(var i=1;i<=2;i++) {
+              var code=-1;var output='';var error='';
+              try {
+                final p=await Process.start(args[i],['files','list',args[0]],runInShell:false);
+                final out=p.stdout.transform(utf8.decoder).join();final err=p.stderr.transform(utf8.decoder).join();
+                code=await p.exitCode.timeout(const Duration(seconds:30),onTimeout:(){p.kill();return -2;});
+                output=await out.timeout(const Duration(seconds:5));error=await err.timeout(const Duration(seconds:5));
+              } catch (_) { }
+              final text=output+error;
+              final marker=text.contains('ClassNotFoundException: Files')?'class_not_found_files':code==0?'none':code==-2?'timeout':'other';
+              results.add({'variant':i==1?'physical_full':'short_8_3','exitCode':code,'expectedMetadataListed':output.contains('libflutter.so.sym'),'errorMarker':marker});
+            }
+            await File(args[3]).writeAsString(jsonEncode(results));
+          }
+          '@|Set-Content -LiteralPath $program -Encoding utf8NoBOM
+            $resultPath=Join-Path $env:RUNNER_TEMP 'exvpn-dart-analyzer-result.json'
+            $env:JAVA_HOME=$env:JAVA_HOME_21_X64
+            $env:DART_SUPPRESS_ANALYTICS='true'
+            $safe.phase='dart_process'
+            & $dart $program $zipPath $fullTool $shortTool $resultPath 1> (Join-Path $env:RUNNER_TEMP 'dart-analyzer-private.out') 2> (Join-Path $env:RUNNER_TEMP 'dart-analyzer-private.err')
+            if($LASTEXITCODE -ne 0){throw 'dart_probe_failed'}
+            $safe.results=@(Get-Content -LiteralPath $resultPath -Raw|ConvertFrom-Json)
+            $safe.status='completed';$safe.phase='complete'
+          } catch {
+            $safe.status='preflight_unavailable'
+            $safe.errorCode=if($_.Exception.Message -cin @('cached_flutter_not_verified','sdk_root_not_physical','short_path_unavailable','short_path_identity_failed','dart_pin_failed','dart_probe_failed')){$_.Exception.Message}else{'probe_failed'}
+          }
+          $safe|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'shorebird-android-sdk-path-probe.json') -Encoding utf8NoBOM
+          $global:LASTEXITCODE=0
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: shorebird-android-sdk-path-probe
+          path: ${{ runner.temp }}/shorebird-android-sdk-path-probe.json
+          if-no-files-found: error
