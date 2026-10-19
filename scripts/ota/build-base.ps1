@@ -87,11 +87,12 @@ foreach ($item in $plan) {
 $fingerprints = [ordered]@{}
 foreach ($category in @('native','assets','plugins','dependencies')) {
     $selected = @($protectedInputs | Where-Object {
+        $record=$_
         switch ($category) {
-            native { $_.path -match '^(native/|apps/exvpn/(android|windows)/)' }
-            assets { $_.path -match '^apps/exvpn/assets/' }
-            plugins { $_.path -match '(generated_plugin|GeneratedPlugin|registrant|pubspec\.(yaml|lock)$)' }
-            dependencies { $_.path -match '(pubspec\.(yaml|lock)$|go\.(mod|sum)$|\.lock\.json$)' }
+            native { $record.path -match '^(native/|apps/exvpn/(android|windows)/)' }
+            assets { $record.path -match '^apps/exvpn/assets/' }
+            plugins { $record.path -match '(generated_plugin|GeneratedPlugin|registrant|pubspec\.(yaml|lock)$)' }
+            dependencies { $record.path -match '(pubspec\.(yaml|lock)$|go\.(mod|sum)$|\.lock\.json$)' }
         }
     })
     $fingerprints[$category] = Get-ExvpnOtaInputsFingerprint $selected

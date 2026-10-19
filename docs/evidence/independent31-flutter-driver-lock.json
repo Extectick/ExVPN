@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-20",
+  "scope": "Build-tool dependency and source-driver provenance; no new runtime dependency or native-base rebuild.",
+  "flutterRevision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+  "driverEntrypoint": {
+    "sdkPath": "packages/flutter_tools/bin/flutter_tools.dart",
+    "sha256": "554f38c4b048cd82e821a1ca296ec40cfc05f07f26cf1882d98b8a74af8b2a0b"
+  },
+  "sdkToolPubspec": {
+    "sdkPath": "packages/flutter_tools/pubspec.yaml",
+    "sha256": "8d0143e1f5a4b0447ccf7f0c902f01c5ce0b36eebb826eccc517a6924cd2b5e1",
+    "sourceUrl": "https://github.com/shorebirdtech/flutter/blob/5bef02a16146a0effc07da4acccaafe90a2739ce/packages/flutter_tools/pubspec.yaml"
+  },
+  "sdkRootLock": {
+    "sdkPath": "pubspec.lock",
+    "sha256": "e147a7ca8d33c1e204fade9fc48d92907b8f0c4499b0efae6fb3c82fd2614c35",
+    "packages": 169,
+    "sourceUrl": "https://github.com/shorebirdtech/flutter/blob/5bef02a16146a0effc07da4acccaafe90a2739ce/pubspec.lock"
+  },
+  "exvpnToolLock": {
+    "path": "scripts/ota/flutter-tools.lock",
+    "sha256": "fa1786981448876ba5cdda3033749262e83d40d651d0e3399e48250cd6d9a854",
+    "packages": 102,
+    "hostedResolutionsCompared": 101,
+    "hostedResolutionFields": ["source", "description", "version"],
+    "hostedMismatches": 0,
+    "additionalPinnedGitDependency": {
+      "name": "shorebird_build_trace",
+      "url": "https://github.com/shorebirdtech/shorebird.git",
+      "ref": "cff436f66534e14618cddcaf93f0d0e9862c937a",
+      "resolvedRef": "cff436f66534e14618cddcaf93f0d0e9862c937a",
+      "path": "packages/shorebird_build_trace",
+      "version": "0.1.0",
+      "declaredBy": "tracked SDK packages/flutter_tools/pubspec.yaml"
+    }
+  },
+  "verification": {
+    "offlineLockedPubSucceeded": true,
+    "offlineInitialProbeSeconds": 8.153,
+    "offlineSourceDriverPreparationSeconds": 2.741,
+    "resolvedPackageRoots": 103,
+    "lockBytesUnchanged": true,
+    "sdkFilesMutated": false,
+    "sourceDriverFixturesPassed": 32,
+    "actualAotPatchExecutionIncluded": false
+  },
+  "policy": {
+    "executeHostGeneratedFlutterJitSnapshot": false,
+    "sdkSourcesRequirePinnedCleanCheckout": true,
+    "packageRootsRequireOwnedPubCacheOrExactSdkToolSource": true,
+    "patchCompilerPinsRemainRawSha256": true,
+    "builderDependencyResolutionOfflineByDefault": true,
+    "onlinePreparationRequiresExplicitOptInAndSameLock": true,
+    "shorebirdCloudApiUsed": false
+  }
+}

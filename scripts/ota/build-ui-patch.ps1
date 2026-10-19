@@ -13,6 +13,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'aot-inputs.ps1')
+. (Join-Path $PSScriptRoot 'source-driver.ps1')
 
 function Assert-OtaPinnedTool([string]$Root, [object]$Record, [string]$ExpectedRelative) {
     if ($null -eq $Record -or $Record.path -isnot [string] -or $Record.sha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'ota_tool_pin_missing' }
@@ -22,7 +23,7 @@ function Assert-OtaPinnedTool([string]$Root, [object]$Record, [string]$ExpectedR
     $path
 }
 
-function Invoke-OtaPinnedProcess([string]$Executable, [string[]]$Arguments, [string]$WorkingDirectory, [string]$LogPath) {
+function Invoke-OtaPinnedProcess([string]$Executable, [string[]]$Arguments, [string]$WorkingDirectory, [string]$LogPath, [hashtable]$EnvironmentOverrides=@{}) {
     $info = [Diagnostics.ProcessStartInfo]::new()
     $info.FileName = $Executable
     $info.WorkingDirectory = $WorkingDirectory
@@ -32,6 +33,7 @@ function Invoke-OtaPinnedProcess([string]$Executable, [string[]]$Arguments, [str
     $info.RedirectStandardError = $true
     $info.Environment['FLUTTER_SUPPRESS_ANALYTICS'] = 'true'
     $info.Environment['CI'] = 'true'
+    foreach($name in $EnvironmentOverrides.Keys){$info.Environment[$name]=$EnvironmentOverrides[$name]}
     foreach ($argument in $Arguments) { $info.ArgumentList.Add($argument) }
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = $info
@@ -71,7 +73,10 @@ $sdkCommit = (& git -C $sdk rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0 -or $sdkCommit -cne $receipt.flutterRevision) { throw 'ota_flutter_revision_mismatch' }
 if ([IO.File]::ReadAllText((Join-Path $sdk 'bin/internal/engine.version')).Trim() -cne $receipt.engineRevision) { throw 'ota_engine_revision_mismatch' }
 $dart = Assert-OtaPinnedTool $sdk $receipt.tools.dart 'bin/cache/dart-sdk/bin/dart.exe'
-$flutter = Assert-OtaPinnedTool $sdk $receipt.tools.flutter 'bin/cache/flutter_tools.snapshot'
+# Retain the base's host-JIT hash as provenance, but never execute that cache:
+# its bytes embed checkout paths and cannot match a different CI machine.
+if($receipt.tools.flutter.path -cne 'bin/cache/flutter_tools.snapshot' -or $receipt.tools.flutter.sha256 -cnotmatch '^[a-f0-9]{64}$'){throw 'ota_flutter_driver_metadata_invalid'}
+Assert-ExvpnOtaDriverCheckout $sdk $receipt.flutterRevision
 $null = Assert-OtaPinnedTool $sdk $receipt.tools.frontend 'bin/cache/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot'
 $null = Assert-OtaPinnedTool $sdk $receipt.tools.dartAotRuntime 'bin/cache/dart-sdk/bin/dartaotruntime.exe'
 $null = Assert-OtaPinnedTool $sdk $receipt.tools.platformDill 'bin/cache/artifacts/engine/common/flutter_patched_sdk_product/platform_strong.dill'
@@ -124,14 +129,16 @@ try {
     if (![string]::Equals([IO.Path]::GetFullPath($packageRoot).TrimEnd('\','/'),[IO.Path]::GetFullPath((Join-Path $sdk 'packages/flutter')).TrimEnd('\','/'),[StringComparison]::OrdinalIgnoreCase)) { throw 'ota_flutter_package_sdk_mismatch' }
     $artifacts = [Collections.Generic.List[object]]::new()
     $started = [DateTime]::UtcNow
+    $driver=Initialize-ExvpnOtaSourceDriver $root $sdk $dart $logs
     foreach ($item in $plan) {
         $archOutput = Join-Path $output $item.key
         New-Item -ItemType Directory -Path $archOutput | Out-Null
         $buildOutputs = Join-Path $logs ($item.key + '-outputs.txt')
         $encodedDefines = (@($expectedDefines | ForEach-Object { [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($_)) }) -join ',')
-        $arguments = @($flutter,'--no-version-check','--suppress-analytics','assemble',('--output=' + $archOutput),('--build-outputs=' + $buildOutputs),
+        Assert-ExvpnOtaSourceDriver $sdk $driver
+        $arguments = @(('--packages='+$driver.packageConfig),$driver.entrypoint,'--no-version-check','--suppress-analytics','assemble',('--output=' + $archOutput),('--build-outputs=' + $buildOutputs),
             ('-dTargetPlatform=' + $item.platform),'-dBuildMode=release','-dTargetFile=lib/main.dart','-dTrackWidgetCreation=false','-dDartObfuscation=false',('-dDartDefines=' + $encodedDefines),'kernel_snapshot_program')
-        Invoke-OtaPinnedProcess $dart $arguments $app (Join-Path $logs ($item.key + '-kernel.log'))
+        Invoke-OtaPinnedProcess $dart $arguments $app (Join-Path $logs ($item.key + '-kernel.log')) @{FLUTTER_ROOT=$sdk}
         $kernels = @(Get-Content -LiteralPath $buildOutputs | Where-Object { $_.Replace('\','/') -match '/app\.dill$' })
         if ($kernels.Count -ne 1) { throw 'ota_kernel_output_ambiguous' }
         $kernel = Resolve-ExvpnOtaPath $app $kernels[0]
@@ -160,11 +167,12 @@ try {
     }
     $null = Assert-OtaPinnedTool $root $receipt.tools.patch '.tools/shorebird-1.6.129/bin/cache/artifacts/patch/patch.exe'
     $null = Assert-OtaPinnedTool $sdk $receipt.tools.dart 'bin/cache/dart-sdk/bin/dart.exe'
-    $null = Assert-OtaPinnedTool $sdk $receipt.tools.flutter 'bin/cache/flutter_tools.snapshot'
+    Assert-ExvpnOtaSourceDriver $sdk $driver
     $null = Assert-OtaPinnedTool $sdk $receipt.tools.frontend 'bin/cache/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot'
     $null = Assert-OtaPinnedTool $sdk $receipt.tools.dartAotRuntime 'bin/cache/dart-sdk/bin/dartaotruntime.exe'
     $null = Assert-OtaPinnedTool $sdk $receipt.tools.platformDill 'bin/cache/artifacts/engine/common/flutter_patched_sdk_product/platform_strong.dill'
-    $result = [ordered]@{schemaVersion=1;version=$receipt.version;baseSourceCommit=$receipt.sourceCommit;sourceCommit=$sourceCommit;target=$Target;patchNumber=$PatchNumber;flutterRevision=$receipt.flutterRevision;engineRevision=$receipt.engineRevision;protectedInputsSha256=$fingerprint;baseReceiptSha256=(Get-ExvpnOtaSha256 $receiptPath);signingPublicKeySha256=(Get-ExvpnOtaSha256 $publicPath);artifacts=$artifacts.ToArray();cloudCalls=$false;nativeBuild=$false;startedAt=$started.ToString('o');completedAt=[DateTime]::UtcNow.ToString('o');elapsedSeconds=[Math]::Round(([DateTime]::UtcNow-$started).TotalSeconds,3)}
+    $driverEvidence=[ordered]@{kind=$driver.kind;sdkCommit=$driver.sdkCommit;entrypointSha256=$driver.entrypointSha256;dependencyLockSha256=$driver.dependencyLockSha256;packageConfigSha256=$driver.packageConfigSha256}
+    $result = [ordered]@{schemaVersion=1;version=$receipt.version;baseSourceCommit=$receipt.sourceCommit;sourceCommit=$sourceCommit;target=$Target;patchNumber=$PatchNumber;flutterRevision=$receipt.flutterRevision;engineRevision=$receipt.engineRevision;protectedInputsSha256=$fingerprint;baseReceiptSha256=(Get-ExvpnOtaSha256 $receiptPath);signingPublicKeySha256=(Get-ExvpnOtaSha256 $publicPath);artifacts=$artifacts.ToArray();buildDriver=$driverEvidence;cloudCalls=$false;nativeBuild=$false;startedAt=$started.ToString('o');completedAt=[DateTime]::UtcNow.ToString('o');elapsedSeconds=[Math]::Round(([DateTime]::UtcNow-$started).TotalSeconds,3)}
     $resultPath = Join-Path $output 'patch-receipt.json'
     [IO.File]::WriteAllText($resultPath,($result | ConvertTo-Json -Depth 12),[Text.UTF8Encoding]::new($false))
     [ordered]@{receipt=$resultPath;target=$Target;patchNumber=$PatchNumber;architectures=$artifacts.Count;elapsedSeconds=$result.elapsedSeconds;cloudCalls=$false;nativeBuild=$false} | ConvertTo-Json -Compress

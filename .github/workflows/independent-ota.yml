@@ -16,7 +16,7 @@ on:
         options: [Both, Android, Windows]
         default: Both
       base_run_id:
-        description: Successful independent base run (patch/publish)
+        description: Optional for patch (defaults to immutable release inputs); required for publish_base
         type: string
       base_source_commit:
         description: Immutable base source SHA (patch/publish)
@@ -69,7 +69,7 @@ jobs:
       - name: Validate explicit operation identity
         run: |
           if ($env:EXVPN_VERSION -cnotmatch '^\d+\.\d+\.\d+\+[1-9]\d*$') { throw 'ota_version_invalid' }
-          if ($env:EXVPN_OPERATION -ceq 'patch' -and ($env:EXVPN_BASE_SHA -cnotmatch '^[a-f0-9]{40}$' -or $env:EXVPN_BASE_RUN_ID -cnotmatch '^[1-9]\d*$' -or $env:EXVPN_PATCH_NUMBER -cnotmatch '^[1-9]\d{0,8}$')) { throw 'ota_patch_identity_invalid' }
+          if ($env:EXVPN_OPERATION -ceq 'patch' -and ($env:EXVPN_BASE_SHA -cnotmatch '^[a-f0-9]{40}$' -or ($env:EXVPN_BASE_RUN_ID -and $env:EXVPN_BASE_RUN_ID -cnotmatch '^[1-9]\d*$') -or $env:EXVPN_PATCH_NUMBER -cnotmatch '^[1-9]\d{0,8}$')) { throw 'ota_patch_identity_invalid' }
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -105,16 +105,24 @@ jobs:
         run: |
           ./scripts/ota/test-ui-patch.ps1
           ./scripts/ota/test-independent-publication.ps1
+          ./scripts/ota/test-base-capsule.ps1
+          ./scripts/ota/test-source-driver.ps1
       - name: Prepare pinned SDK without an account
         run: ./scripts/release/prepare-shorebird.ps1 -Target $env:EXVPN_TARGET
       - name: Download exact independent base and AOT inputs
-        if: inputs.operation == 'patch'
+        if: inputs.operation == 'patch' && inputs.base_run_id != ''
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: independent-base-${{ matrix.target }}-${{ inputs.base_source_commit }}
           path: artifacts/independent-base
           run-id: ${{ inputs.base_run_id }}
           github-token: ${{ github.token }}
+      - name: Restore accepted base from immutable release
+        if: inputs.operation == 'patch' && inputs.base_run_id == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ./scripts/ota/download-base.ps1 -ReleaseVersion $env:EXVPN_VERSION -BaseSourceCommit $env:EXVPN_BASE_SHA -Target $env:EXVPN_TARGET -OutputDirectory artifacts/independent-base
       - name: Resolve exact dependencies using pinned runtime
         run: |
           . ./scripts/release/flutter-runtime-inputs.ps1
@@ -125,6 +133,12 @@ jobs:
             & (Join-Path $runtime.SdkRoot 'bin/flutter.bat') pub get --enforce-lockfile
             if ($LASTEXITCODE -ne 0) { throw 'ota_locked_pub_failed' }
           } finally { Pop-Location }
+      - name: Prepare exact source driver dependencies for cold patch caches
+        if: inputs.operation == 'patch'
+        run: |
+          $bases=@(Get-ChildItem artifacts/independent-base -File -Recurse -Filter base-receipt.json)
+          if ($bases.Count -ne 1) { throw 'ota_base_receipt_ambiguous' }
+          ./scripts/ota/prepare-driver.ps1 -BaseReceipt $bases[0].FullName -OnlineDependencies
       - name: Reuse or build Android JNI for a new base only
         if: inputs.operation == 'base' && matrix.target == 'Android'
         run: ./native/android/build.ps1

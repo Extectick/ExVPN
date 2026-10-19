@@ -230,3 +230,20 @@ ordinary-сборки и прежние лицензии не меняются. 
 входит в sidecar ZIP; неподдержанный компонент или другой engine вызывают отказ.
 41 synthetic checks прошли; сам helper не запускает Gradle и не создаёт APK.
 Это отдельная Preview-policy, не изменение stable inventory/аудита.
+
+## Инструменты независимого Dart OTA, 0.1.10+31
+
+`scripts/ota/flutter-tools.lock` закрепляет 102 зависимости драйвера сборки;
+они не добавляются в приложение. 101 hosted resolution (версия, URL и SHA-256)
+проверен против committed `pubspec.lock` Flutter `5bef02a16146a0effc07da4acccaafe90a2739ce`.
+Оставшийся `shorebird_build_trace` закреплён в SDK `pubspec.yaml` на Git commit
+`cff436f66534e14618cddcaf93f0d0e9862c937a`. Хеши и результат проверки —
+[`independent31-flutter-driver-lock.json`](evidence/independent31-flutter-driver-lock.json).
+
+AOT builder исполняет исходный `flutter_tools.dart` из проверенного чистого SDK;
+порождаемый на компьютере `flutter_tools.snapshot` остаётся только метаданными
+базовой сборки. Отдельный private resolver использует точный lock и
+`pub get --offline --enforce-lockfile`; явная сетевая подготовка холодного CI-кэша
+также использует `--enforce-lockfile`. Хеши Dart, frontend, platform dill,
+`gen_snapshot` и diff tool проверяются отдельно. Это изменение инструментов
+сборки, оно не заменяет runtime-лицензии или проверки подписанных патчей на устройстве.

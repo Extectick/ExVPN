@@ -25,6 +25,7 @@ $repository=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'shorebird-preview-lib.ps1')
 . (Join-Path $PSScriptRoot 'shorebird-publication-lib.ps1')
 . (Join-Path $PSScriptRoot 'shorebird-runtime-notices.ps1')
+if ($Independent) { . (Join-Path $PSScriptRoot '../ota/base-capsule.ps1') }
 $repo='Extectick/ExVPN'
 $head=Get-ShorebirdSourceCommit $repository
 $null=Invoke-ShorebirdGit $repository @('merge-base','--is-ancestor',$BaseSourceCommit,$head)
@@ -103,6 +104,9 @@ try {
         # Full original base receipt has only bounded relative file names and
         # public SDK evidence, and its exact hash is covered by the runtime gate.
         Copy-Item -LiteralPath $base.receiptPath -Destination (Join-Path $stage "$stem-shorebird-base.json")
+        # CI artifacts expire; retain the exact accepted base AOT and compiler
+        # receipt permanently beside the immutable APK/EXE without rebuilding.
+        $capsule=if ($Independent) { New-ExvpnOtaBaseCapsule $base $ReleaseVersion $BaseSourceCommit $target $folder } else { $null }
         if ($target -ceq 'Android') {
             foreach ($name in @('android-maven-notices.zip','android-maven-notices.json')) {
                 $file=Get-ShorebirdBasePublicFile $base.root $base.base $name
@@ -118,7 +122,7 @@ try {
             runtimeQaSha256=$qaHash;notices=$base.notices.asset;flutterRuntime=$base.base.packagedRuntime
             signature=$(if ($target -ceq 'Android') {$signature} else {$null})
         }
-        if ($Independent) { $build['otaProvider']='exvpn' }
+        if ($Independent) { $build['otaProvider']='exvpn';$build['otaInputsCapsule']=$capsule.asset }
         $build | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath (Join-Path $folder "$stem-build.json") -Encoding utf8NoBOM
         Assert-ShorebirdPublicBuild $build $ReleaseVersion $BaseSourceCommit $base.binary.asset.file $base.binary.asset.sha256 $base.binary.asset.bytes
     }
