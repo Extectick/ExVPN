@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "recordedAtUtc": "2026-10-19T21:10:31.469965+00:00",
+  "recordedAtUtc": "2026-10-20T04:10:31.469965+07:00",
   "purpose": "Sanitized CI base and signed patch provenance only; not runtime acceptance.",
   "version": "0.1.9+30",
   "track": "beta",
@@ -270,13 +270,55 @@
       "assetDiffsAllowed": false,
       "deviceApplyVerifiedAtReceipt": false,
       "runtimeAcceptancePending": true
+    },
+    {
+      "target": "Android",
+      "workflowRunId": 39320947039,
+      "receiptPath": "artifacts/shorebird30-patch-ci/Android/patch.json",
+      "receiptSha256": "c55fda45931f326a7e1ab8bb143897e8954fb6b71d3b69da69251434fa91435e",
+      "cloudAccepted": true,
+      "signed": true,
+      "publicKeySha256": "b275456f18ac7037d511ae414f73f719f419177bac0443942ade6a1ccb4fb859",
+      "releaseId": 910468,
+      "patchNumber": 2,
+      "patchId": 732166,
+      "artifacts": [
+        {
+          "platform": "android",
+          "arch": "aarch64",
+          "sha256": "18e6255800765fd7f615c29e7584a9a6e3471fdc6b87ce3b2199ebb7bf30fcfc",
+          "bytes": 275
+        },
+        {
+          "platform": "android",
+          "arch": "x86_64",
+          "sha256": "07182f405be757768522dff0e058b6ccf43eedcba7d3eacdb355e5002e733385",
+          "bytes": 283
+        }
+      ],
+      "baseReceiptSha256": "6b5faa40e99576d0d3a370b5095b4994dc9ef5b503612366a08d907468a81973",
+      "source": {
+        "baseCommit": "f98b75d38a656fc6a708cac9ba692ad7502c47c2",
+        "sourceCommit": "1be30d5c597ccb7d84036eca36c2fc7378490636",
+        "paths": [
+          "apps/exvpn/lib/ui_revision.dart",
+          "docs/ARCHITECTURE.md",
+          "docs/TESTING_WORKFLOW.md",
+          "docs/evidence/fast-validation-v0.1.9-final.json",
+          "docs/releases/0.1.9.md"
+        ],
+        "onlyDartProductionChanges": true
+      },
+      "nativeDiffsAllowed": false,
+      "assetDiffsAllowed": false,
+      "deviceApplyVerifiedAtReceipt": false,
+      "runtimeAcceptancePending": true
     }
   ],
-  "androidPatchReceiptAvailable": false,
+  "androidPatchReceiptAvailable": true,
   "limitations": [
     "Cloud registration and signed Dart patch receipts do not prove SDK apply, cold restart or rollback.",
     "Windows installer has no verified Authenticode publisher signature; Dart patch signing is separate.",
-    "Real TUN, IPv4/IPv6, DNS, exclusions and persistent guard acceptance remain separate runtime gates.",
-    "No Android patch receipt is recorded until an actual artifact is available."
+    "Real TUN, IPv4/IPv6, DNS, exclusions and persistent guard acceptance remain separate runtime gates."
   ]
 }
