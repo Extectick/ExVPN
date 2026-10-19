@@ -74,13 +74,26 @@ decoder; canonical-проверка подписанного каталога с
 31 отозван, финальная база получает новый build 32.
 [Наблюдение и причина](evidence/independent31-rejected-runtime.json).
 
-- [ ] Строгий каталог, replay/withdrawal и локальный protocol adapter.
-- [ ] Ранняя native NO_PROXY и кэш JNI/service с проверкой результата.
-- [ ] Локальные AOT-only build/sign/withdraw commands без Shorebird API.
-- [ ] Одна новая подписанная база обеих платформ со всеми текущими UI-правками.
-- [ ] Реальный independent patch → cold launch → withdrawal → cold rollback
+- [x] Строгий каталог, replay/withdrawal и локальный protocol adapter.
+- [x] Ранняя native NO_PROXY и кэш JNI/service с проверкой результата.
+- [x] Локальные AOT-only build/sign/withdraw commands без Shorebird API.
+- [x] Одна новая база обеих платформ с подписанным Android APK и подписанной
+  метадатой доставки, со всеми текущими UI-правками. Windows Authenticode открыт.
+- [x] Реальный independent patch → cold launch → withdrawal → cold rollback
   на Android-эмуляторе и Windows Sandbox, сохранение данных и байтов базы.
 - [ ] Публичные пакеты и собственные feeds проверены скачиванием/подписями.
+
+Приёмка 2026-10-20: [реальные SDK-состояния](evidence/independent32-runtime.json),
+[область, скорость и ограничения](evidence/independent32-scope.json),
+[12/12 Full](evidence/fast-validation-v0.1.10-base32.json).
+База `f99ea90`, UI-патч `440fc3d`; рабочее дерево доказательств, commit ожидается.
+Обе активации и откаты подтверждены после полного ручного перезапуска.
+Windows automatic handoff вернул `handoff_failed` (E6-008 открыт); на Android
+нужен холодный запуск. Отзыв дошёл через GitHub CDN примерно за пять минут,
+поэтому мгновенная отзывчивость каталога не обещается.
+
+Следующие изменения интерфейса: [команды AOT-патча и отзыва](INDEPENDENT_OTA_RELEASE.md).
+Первый проверочный номер 1 отозван, следующий номер этой базы — 2.
 
 Полные ранее принятые VPN-матрицы повторно не запускаются без изменения
 затрагиваемой логики. Новые native-настройки Kill Switch требуют отдельного

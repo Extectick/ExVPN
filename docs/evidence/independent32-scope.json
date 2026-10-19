@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-20",
+  "version": "0.1.10+32",
+  "baseSourceCommit": "f99ea90df9555e4f598142a24d73a105004933dc",
+  "platforms": {
+    "Windows": {"stand": "Windows Sandbox", "activation": "normal tray exit and same-owner medium-token cold launch", "automaticRestartAccepted": false, "automaticRestartFailure": "handoff_failed", "opaqueAndBaseFilesUnchanged": 6},
+    "Android": {"stand": "owned Android 11 emulator x86_64", "activation": "owned idle force-stop and MainActivity cold start", "automaticRestartAccepted": false, "opaqueFilesUnchanged": 3, "apkAndUidUnchanged": true, "arm64RuntimeTested": false}
+  },
+  "wireRequests": "Real pinned SDK pretty JSON accepted; signed catalog canonical parser unchanged.",
+  "revocation": {"catalogRevision": 6, "nativeSdkRollbackAccepted": true, "observedCdnPropagationSecondsApprox": 300, "instantRevocationPromised": false},
+  "performanceSeconds": {"fullValidation": 124.75, "windowsBase": 155.387, "androidBase": 258.882, "windowsAotPatch": 38.523, "androidAotPatchBothAbis": 69.047},
+  "performanceScope": "Observed warm local runs, not a controlled benchmark or a guarantee for arbitrary UI changes. Patch changed Dart revision marker only.",
+  "validation": {"fullLanesPassed": 12, "flutterAppTestsPassed": 447, "androidJvmTestsPassed": 61, "fullVpnMatrixRepeated": false, "computerUse": false, "manualSdkCacheMutation": false, "hostNetworkChanged": false},
+  "remainingStableGates": ["Windows automatic handoff EXVPN-E6-008", "physical Android acceptance", "full E1 matrix", "native IPv6 underlay case", "Windows Authenticode"],
+  "runtimeDependency": "Delivery does not use Shorebird Cloud/account/API. Pinned prebuilt Flutter/Dart fork remains a toolchain dependency.",
+  "published": false
+}

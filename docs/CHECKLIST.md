@@ -767,9 +767,13 @@ Production signing/delivery, Windows native OTA и Shorebird остаются о
   реальные independent apply/cold launch/withdraw/cold rollback, неизменные
   APK/EXE и пользовательские данные; replay/signature/compatibility отказ закрыт;
   AOT-only workflow без Cloud API и source-bound cache service/JNI.
-  Подготовка 2026-10-20: 23 Dart adapter/catalog теста, 59 AOT, 68 publication,
-  24 cache и 16 Python catalog fixtures PASS; runtime и публикация ожидаются.
-  [План](INDEPENDENT_OTA_PLAN.md). Рабочее дерево; commit ожидается.
+  2026-10-20: 12/12 Full, 447 app tests, 61 свежий JVM test PASS;
+  AOT-only патчи Windows 38,52 с / Android двух ABI 69,05 с без Cloud/Gradle/CMake.
+  Реальные SDK/UI 2→3→2 и patch null→1→null подтверждены в Sandbox и x64 AVD,
+  данные и APK/EXE неизменны. Перезапуски ручные; автоматический handoff и физический
+  Android не приняты. Публичная проверка ожидается.
+  [План](INDEPENDENT_OTA_PLAN.md), [runtime](evidence/independent32-runtime.json),
+  [ограничения](evidence/independent32-scope.json). Рабочее дерево; commit ожидается.
 
 - [x] **EXVPN-E7-006** — Не пересобирать native-пакеты в CI при доказанных QA-only изменениях, сохранив все тесты. Зависимость: E7-001, E7-005. Критерий: консервативный selector отклоняет неизвестные изменения/ошибки Git, Android выполняет самостоятельные JVM tests без APK/JNI, фактический QA-only GitHub run проходит обе платформы без выгрузки native artifacts; product/PR/manual run остаётся полным.
   Доказательство 2026-10-17: [run 38991041038](https://github.com/Extectick/ExVPN/actions/runs/38991041038) на [8b24160](https://github.com/Extectick/ExVPN/commit/8b24160fd06dff2daff1651da20c769804cb1da6) прошёл обе платформы: Windows 374 с, Android 773 с. Actual selector и повторная проверка подтвердили QA-only; 6/6 exact cache HIT, 8 свежих JVM tests, 143-task graph, отсутствие native outputs и 0 uploaded artifacts. [Отчёт](evidence/ci-qa-only-build12.json). Полный +12 run также прошёл обе платформы: [cold-cache отчёт](evidence/ci-build12-cold-cache.json). Разные объёмы workflow не сравниваются как контролируемый benchmark.
@@ -1054,6 +1058,10 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   из обычного Explorer; полный автоматический package OTA остаётся открыт.
   Исходники: [c7e169a3](https://github.com/Extectick/ExVPN/commit/c7e169a3c483b2b4ac4f2ee0703ebd388c2857db).
   [Диагноз](evidence/windows-update-0.1.5-diagnosis.json).
+  2026-10-20, 0.1.10+32: настоящий Dart-патч скачан/проверен и SDK next=1,
+  но автоматический restart-ui вернул `handoff_failed` после secure staging.
+  Ручной штатный cold launch подтвердил current=1/UI3 и последующий отзыв/UI2;
+  это не закрывает автоматический handoff. [Область](evidence/independent32-scope.json).
 - [x] **EXVPN-E6-010** — Восстановить установленный Windows-клиент и проверить
   настоящий helper restart отдельно от package OTA. Критерий: публичный installer
   совпадает с проверенными bytes/hash; old UI закрыт без force-kill; новая версия,
