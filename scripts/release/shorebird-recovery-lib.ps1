@@ -17,6 +17,7 @@ function Get-ShorebirdRecoveryBlob([string]$Repository,[string]$Commit,[string]$
 function Assert-ShorebirdRecoveryPaths([string[]]$Paths) {
     $tooling=@('scripts/release/shorebird-release.ps1','scripts/release/shorebird-pipeline-lib.ps1',
         'scripts/release/shorebird-recovery-lib.ps1','scripts/release/test-shorebird-pipeline.ps1','.github/workflows/shorebird.yml',
+        '.github/workflows/android-analyzer-probe.yml',
         'scripts/release/shorebird-runtime-notices.ps1','scripts/release/test-shorebird-runtime-notices.ps1',
         'scripts/release/shorebird-runtime-notices.lock.json',
         'scripts/release/licenses/shorebird-runtime-4b936a0c03e13389ddfb1ac48823f187964975c2/inventory.json',

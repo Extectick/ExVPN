@@ -1,0 +1,50 @@
+name: ExVPN Android analyzer probe (no application build)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Probe installed analyzer and Java combinations using a synthetic ZIP
+        run: |
+          $ErrorActionPreference='Stop'
+          $PSNativeCommandUseErrorActionPreference=$false
+          $zipPath=Join-Path $env:RUNNER_TEMP 'exvpn-analyzer-probe.zip'
+          $archive=[IO.Compression.ZipFile]::Open($zipPath,[IO.Compression.ZipArchiveMode]::Create)
+          try {
+            $entry=$archive.CreateEntry('BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/libflutter.so.sym')
+            $stream=$entry.Open();try{$stream.WriteByte(1)}finally{$stream.Dispose()}
+          }finally{$archive.Dispose()}
+          $java=@{current=$env:JAVA_HOME;java21=$env:JAVA_HOME_21_X64;studio='C:/Program Files/Android/Android Studio/jbr';studioCompact='C:/Program Files/Android/AndroidStudio/jbr'}
+          $tools=@(Get-ChildItem -LiteralPath (Join-Path $env:ANDROID_HOME 'cmdline-tools') -Directory | Where-Object {Test-Path (Join-Path $_.FullName 'bin/apkanalyzer.bat')})
+          $results=@()
+          foreach($tool in $tools){
+            foreach($label in $java.Keys | Sort-Object){
+              if(!$java[$label] -or !(Test-Path (Join-Path $java[$label] 'bin/java.exe'))){continue}
+              $env:JAVA_HOME=$java[$label]
+              $stdout=Join-Path $env:RUNNER_TEMP ('analyzer-'+[guid]::NewGuid().ToString('N')+'.out')
+              $stderr=$stdout+'.err'
+              & (Join-Path $tool.FullName 'bin/apkanalyzer.bat') files list $zipPath 1>$stdout 2>$stderr
+              $code=$LASTEXITCODE
+              $out=[IO.File]::ReadAllText($stdout);$err=[IO.File]::ReadAllText($stderr)
+              $marker=if(($out+$err) -match 'JAVA_HOME is not set|JAVA_HOME is set to an invalid directory|could not find java'){'java_not_found'}elseif(($out+$err) -match 'UnsupportedClassVersionError|class file version'){'class_version'}elseif(($out+$err) -match 'requires Java|Java version'){'java_version_gate'}elseif($code-eq0){'none'}else{'other'}
+              $results+=@{toolVersion=$tool.Name;javaContext=$label;exitCode=$code;expectedMetadataListed=$out.Contains('libflutter.so.sym');errorMarker=$marker;stderrBytes=(Get-Item $stderr).Length;stdoutBytes=(Get-Item $stdout).Length}
+            }
+          }
+          @{schemaVersion=1;results=$results;toolCount=$tools.Count;applicationBuilds=0;nativeBuilds=0;secretsUsed=$false;rawLogsExported=$false}|ConvertTo-Json -Depth 5|Set-Content (Join-Path $env:RUNNER_TEMP 'android-analyzer-probe.json') -Encoding utf8NoBOM
+          Get-Content (Join-Path $env:RUNNER_TEMP 'android-analyzer-probe.json')
+          $global:LASTEXITCODE=0
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: android-analyzer-probe
+          path: ${{ runner.temp }}/android-analyzer-probe.json
+          if-no-files-found: error
