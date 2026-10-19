@@ -1,6 +1,7 @@
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 
 import '../services/subscription_loader.dart';
 import '../services/subscription_persistence.dart';
@@ -17,12 +18,14 @@ class ImportDialog extends StatefulWidget {
     this.persistence,
     this.qrReader,
     this.loader,
+    this.fullscreen = false,
   });
   final AppController controller;
   final SubscriptionGroup? group;
   final SubscriptionPersistence? persistence;
   final Future<String?> Function()? qrReader;
   final SubscriptionLoader? loader;
+  final bool fullscreen;
   @override
   State<ImportDialog> createState() => _ImportDialogState();
 }
@@ -36,6 +39,8 @@ class _ImportDialogState extends State<ImportDialog> {
   bool _reviewing = false;
   String? _error;
   bool _qrRead = false;
+  bool _qrMode = false;
+  bool _showName = false;
   @override
   void initState() {
     super.initState();
@@ -63,6 +68,7 @@ class _ImportDialogState extends State<ImportDialog> {
         _input.text = value;
         _link = Uri.tryParse(value)?.scheme.toLowerCase() == 'https';
         _qrRead = true;
+        _qrMode = false;
       });
     } on QrImportException catch (error) {
       if (!mounted) return;
@@ -215,141 +221,247 @@ class _ImportDialogState extends State<ImportDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: !_loading,
-    child: AlertDialog(
-      title: Text(
-        context.tr(
-          widget.group == null ? 'Добавить подписку' : 'Обновить подписку',
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final fullscreen = widget.fullscreen;
+    return PopScope(
+      canPop: !_loading,
+      child: Dialog(
+        key: const Key('subscription-import-dialog'),
+        insetPadding: fullscreen ? EdgeInsets.zero : const EdgeInsets.all(20),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(fullscreen ? 0 : 20),
         ),
-      ),
-      content: SizedBox(
-        width: 440,
-        child: SingleChildScrollView(
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(
+          width: 440,
+          height: fullscreen ? MediaQuery.sizeOf(context).height : null,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: fullscreen ? MainAxisSize.max : MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextField(
-                controller: _name,
-                enabled: !_loading && widget.group == null,
-                maxLength: 80,
-                key: const Key('subscription-name'),
-                decoration: InputDecoration(
-                  labelText: context.tr('Название подписки'),
-                  hintText: context.tr('Необязательно'),
-                  counterText: '',
-                ),
-              ),
-              const SizedBox(height: 18),
-              SlidingSegments<bool>(
-                width: 440,
-                height: 40,
-                items: [
-                  SlidingSegment(
-                    value: true,
-                    label: context.tr('Ссылка'),
-                    icon: Icons.link,
-                  ),
-                  SlidingSegment(
-                    value: false,
-                    label: context.tr('Текст'),
-                    icon: Icons.notes_rounded,
-                  ),
-                ],
-                value: _link,
-                onChanged: _loading
-                    ? null
-                    : (value) => setState(() {
-                        _link = value;
-                        _error = null;
-                      }),
-              ),
-              const SizedBox(height: 18),
-              OutlinedButton.icon(
-                key: const Key('qr-import-button'),
-                onPressed: _loading ? null : _readQr,
-                icon: const Icon(Icons.qr_code, size: 20),
-                label: Text(context.tr('QR из изображения')),
-              ),
-              if (_qrRead)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    context.tr(
-                      'QR-код прочитан. Проверьте данные и подтвердите импорт.',
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 8, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        context.tr(
+                          widget.group == null
+                              ? 'Добавить подписку'
+                              : 'Обновить подписку',
+                        ),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('subscription-input'),
-                controller: _input,
-                enabled: !_loading,
-                minLines: _link ? 2 : 4,
-                maxLines: 6,
-                autocorrect: false,
-                enableSuggestions: false,
-                keyboardType: _link
-                    ? TextInputType.url
-                    : TextInputType.multiline,
-                decoration: InputDecoration(
-                  labelText: context.tr(
-                    _link ? 'Ссылка HTTPS' : 'Ссылки подключений или JSON',
-                  ),
-                  hintText: _link
-                      ? 'https://…'
-                      : 'VLESS, VMess, Trojan, Shadowsocks, Hysteria2',
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                context.tr(
-                  widget.persistence == null
-                      ? 'В этой сборке подписки хранятся только до закрытия приложения.'
-                      : 'Подписки сохраняются в защищённом хранилище устройства.',
-                ),
-                style: TextStyle(
-                  fontSize: 12,
-                  height: 1.5,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 14),
-                  child: Text(
-                    context.tr(_error!),
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Theme.of(context).colorScheme.error,
+                    IconButton(
+                      tooltip: context.tr('Закрыть'),
+                      onPressed: _loading ? null : () => Navigator.pop(context),
+                      icon: const Icon(CupertinoIcons.xmark, size: 18),
                     ),
+                  ],
+                ),
+              ),
+              Flexible(
+                fit: fullscreen ? FlexFit.tight : FlexFit.loose,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      LayoutBuilder(
+                        builder: (context, constraints) =>
+                            SlidingSegments<String>(
+                              width: constraints.maxWidth,
+                              height: 38,
+                              items: [
+                                SlidingSegment(
+                                  value: 'link',
+                                  label: context.tr('Ссылка'),
+                                  icon: CupertinoIcons.link,
+                                ),
+                                SlidingSegment(
+                                  value: 'text',
+                                  label: context.tr('Текст'),
+                                  icon: CupertinoIcons.text_alignleft,
+                                ),
+                                const SlidingSegment(
+                                  value: 'qr',
+                                  label: 'QR',
+                                  icon: CupertinoIcons.qrcode,
+                                ),
+                              ],
+                              value: _qrMode
+                                  ? 'qr'
+                                  : _link
+                                  ? 'link'
+                                  : 'text',
+                              onChanged: _loading
+                                  ? null
+                                  : (value) => setState(() {
+                                      _qrMode = value == 'qr';
+                                      if (!_qrMode) _link = value == 'link';
+                                      _error = null;
+                                    }),
+                            ),
+                      ),
+                      const SizedBox(height: 16),
+                      if (_qrMode)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 22,
+                            horizontal: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: scheme.surfaceContainerHighest.withValues(
+                              alpha: .35,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                CupertinoIcons.qrcode,
+                                size: 36,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(height: 12),
+                              TextButton.icon(
+                                key: const Key('qr-import-button'),
+                                onPressed: _loading ? null : _readQr,
+                                icon: const Icon(
+                                  CupertinoIcons.photo,
+                                  size: 18,
+                                ),
+                                label: Text(context.tr('QR из изображения')),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        TextField(
+                          key: const Key('subscription-input'),
+                          controller: _input,
+                          enabled: !_loading,
+                          minLines: _link ? 1 : 4,
+                          maxLines: _link ? 2 : 5,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          keyboardType: _link
+                              ? TextInputType.url
+                              : TextInputType.multiline,
+                          decoration: InputDecoration(
+                            labelText: context.tr(
+                              _link
+                                  ? 'Ссылка HTTPS'
+                                  : 'Ссылки подключений или JSON',
+                            ),
+                            hintText: _link
+                                ? 'https://…'
+                                : 'VLESS, VMess, Trojan…',
+                            prefixIcon: _link
+                                ? const Icon(CupertinoIcons.link, size: 18)
+                                : null,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 14,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      if (_qrRead)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            context.tr(
+                              'QR-код прочитан. Проверьте данные и подтвердите импорт.',
+                            ),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      if (widget.group == null)
+                        if (_showName)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: TextField(
+                              controller: _name,
+                              enabled: !_loading,
+                              maxLength: 80,
+                              key: const Key('subscription-name'),
+                              decoration: InputDecoration(
+                                labelText: context.tr('Название подписки'),
+                                hintText: context.tr('Необязательно'),
+                                counterText: '',
+                                isDense: true,
+                              ),
+                            ),
+                          )
+                        else
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: TextButton.icon(
+                              onPressed: _loading
+                                  ? null
+                                  : () => setState(() => _showName = true),
+                              icon: const Icon(CupertinoIcons.pencil, size: 15),
+                              label: Text(
+                                context.tr('Название подписки'),
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              style: TextButton.styleFrom(
+                                foregroundColor: scheme.onSurfaceVariant,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                      if (_error != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Text(
+                            context.tr(_error!),
+                            style: TextStyle(fontSize: 13, color: scheme.error),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                child: SizedBox(
+                  height: 42,
+                  child: FilledButton(
+                    key: const Key('import-submit'),
+                    onPressed: _loading || _qrMode ? null : _submit,
+                    child: _loading && !_reviewing
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(
+                            context.tr(
+                              widget.group == null ? 'Добавить' : 'Обновить',
+                            ),
+                          ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _loading ? null : () => Navigator.pop(context),
-          child: Text(context.tr('Отмена')),
-        ),
-        FilledButton(
-          key: const Key('import-submit'),
-          onPressed: _loading ? null : _submit,
-          child: _loading && !_reviewing
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(
-                  context.tr(widget.group == null ? 'Добавить' : 'Обновить'),
-                ),
-        ),
-      ],
-    ),
-  );
+    );
+  }
 }

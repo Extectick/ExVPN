@@ -235,30 +235,33 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
                           child: AnimatedOpacity(
                             opacity: _restartCurtain ? 0 : 1,
                             duration: const Duration(milliseconds: 180),
-                            child: HomeScreen(
-                              key: ValueKey(_homeGeneration),
-                              initialDesktopLayout: _layout,
-                              previewVersion: _previewVersion,
-                              previewBuild: _previewVersion == '0.1.1'
-                                  ? 21
-                                  : 20,
-                              controller: _app,
-                              vpn: _vpn,
-                              themeMode: _appearance.themeMode,
-                              onThemeChanged: (mode) => _appearance.setChoice(
-                                mode == ThemeMode.light
-                                    ? ThemeChoice.light
-                                    : mode == ThemeMode.dark
-                                    ? ThemeChoice.dark
-                                    : ThemeChoice.system,
+                            child: _previewCanvas(
+                              canvas,
+                              HomeScreen(
+                                key: ValueKey(_homeGeneration),
+                                initialDesktopLayout: _layout,
+                                previewVersion: _previewVersion,
+                                previewBuild: _previewVersion == '0.1.1'
+                                    ? 21
+                                    : 20,
+                                controller: _app,
+                                vpn: _vpn,
+                                themeMode: _appearance.themeMode,
+                                onThemeChanged: (mode) => _appearance.setChoice(
+                                  mode == ThemeMode.light
+                                      ? ThemeChoice.light
+                                      : mode == ThemeMode.dark
+                                      ? ThemeChoice.dark
+                                      : ThemeChoice.system,
+                                ),
+                                previewPowerAction: _togglePreviewPower,
+                                previewRefreshAction: _previewRefreshAll,
+                                latencyProbe: _previewLatency,
+                                appUpdate: _appUpdate,
+                                onAppUpdate: _startAppUpdate,
+                                onDesktopLayoutChanged: (mode) =>
+                                    setState(() => _layout = mode),
                               ),
-                              previewPowerAction: _togglePreviewPower,
-                              previewRefreshAction: _previewRefreshAll,
-                              latencyProbe: _previewLatency,
-                              appUpdate: _appUpdate,
-                              onAppUpdate: _startAppUpdate,
-                              onDesktopLayoutChanged: (mode) =>
-                                  setState(() => _layout = mode),
                             ),
                           ),
                         ),
@@ -307,6 +310,23 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  // Dialogs belong to the logical app window, not to the surrounding browser.
+  Widget _previewCanvas(Size canvas, Widget child) => ClipRect(
+    child: FittedBox(
+      fit: BoxFit.contain,
+      child: SizedBox.fromSize(
+        size: canvas,
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(size: canvas),
+          child: Navigator(
+            pages: [MaterialPage<void>(child: child)],
+            onDidRemovePage: (_) {},
           ),
         ),
       ),

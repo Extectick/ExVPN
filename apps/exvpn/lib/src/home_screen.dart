@@ -150,10 +150,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _add({SubscriptionGroup? group}) => showDialog<void>(
     context: context,
+    useRootNavigator: false,
     builder: (_) => ImportDialog(
       controller: widget.controller,
       group: group,
       persistence: widget.persistence,
+      fullscreen: _desktop && _layout == DesktopLayout.minimal,
     ),
   );
 
@@ -741,10 +743,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           child: LayoutBuilder(
             builder: (context, constraints) => Dialog(
               key: const Key('connection-picker-dialog'),
-              insetPadding: const EdgeInsets.all(16),
+              insetPadding: _layout == DesktopLayout.minimal
+                  ? EdgeInsets.zero
+                  : const EdgeInsets.all(16),
+              shape: _layout == DesktopLayout.minimal
+                  ? const RoundedRectangleBorder()
+                  : null,
               child: SizedBox(
-                width: (constraints.maxWidth - 32).clamp(0.0, 520.0),
-                height: (constraints.maxHeight - 32).clamp(0.0, 600.0),
+                width: _layout == DesktopLayout.minimal
+                    ? constraints.maxWidth
+                    : (constraints.maxWidth - 32).clamp(0.0, 520.0),
+                height: _layout == DesktopLayout.minimal
+                    ? constraints.maxHeight
+                    : (constraints.maxHeight - 32).clamp(0.0, 600.0),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: _scrollingServers(
@@ -806,9 +817,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 onPressed: () => showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
-                  showDragHandle: true,
+                  showDragHandle:
+                      !(_desktop && _layout == DesktopLayout.minimal),
                   useSafeArea: true,
-                  constraints: const BoxConstraints(maxWidth: 600),
+                  shape: _desktop && _layout == DesktopLayout.minimal
+                      ? const RoundedRectangleBorder()
+                      : null,
+                  constraints: BoxConstraints(
+                    maxWidth: _desktop && _layout == DesktopLayout.minimal
+                        ? double.infinity
+                        : 600,
+                  ),
                   builder: (_) => ModalSheetScrollScope(
                     child: SettingsSheet(
                       controller: widget.controller,
@@ -819,6 +838,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       onAdd: () => _add(),
                       previewVersion: widget.previewVersion,
                       previewBuild: widget.previewBuild,
+                      fullscreen: _desktop && _layout == DesktopLayout.minimal,
                     ),
                   ),
                 ),
@@ -1341,7 +1361,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   );
 
   bool _groupRefreshFailed(SubscriptionGroup group) =>
-      _refreshes.failed.contains(group.id) ||
+      _refreshes.errorCode(group.id) != null ||
       _manualRefreshFailures[group.id] == group.contentRevision;
 
   Widget _group(SubscriptionGroup group, {VoidCallback? onSelected}) => Column(
@@ -1382,18 +1402,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  if (_groupRefreshFailed(group) ||
-                      group.issues.isNotEmpty ||
-                      widget.controller.pendingUpdate(group.id) != null)
+                  if (_groupRefreshFailed(group))
                     SizedBox.square(
                       dimension: 30,
                       child: IconButton(
                         key: ValueKey('subscription-issues-${group.id}'),
-                        tooltip: context.tr(
-                          _groupRefreshFailed(group)
-                              ? 'Не удалось обновить подписку'
-                              : 'Проверить замечания к подписке',
-                        ),
+                        tooltip: context.tr('Не удалось обновить подписку'),
                         onPressed: () => _reviewSubscription(group.id),
                         constraints: const BoxConstraints.tightFor(
                           width: 30,
@@ -1403,9 +1417,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         icon: Icon(
                           CupertinoIcons.exclamationmark_circle,
                           size: 17,
-                          color: _groupRefreshFailed(group)
-                              ? Theme.of(context).colorScheme.error
-                              : Theme.of(context).colorScheme.primary,
+                          color: Theme.of(context).colorScheme.error,
                         ),
                       ),
                     ),

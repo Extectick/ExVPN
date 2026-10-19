@@ -31,6 +31,7 @@ class SettingsSheet extends StatefulWidget {
     this.persistence,
     this.previewVersion,
     this.previewBuild,
+    this.fullscreen = false,
   });
   final AppController controller;
   final ThemeMode themeMode;
@@ -40,6 +41,7 @@ class SettingsSheet extends StatefulWidget {
   final SubscriptionPersistence? persistence;
   final String? previewVersion;
   final int? previewBuild;
+  final bool fullscreen;
   @override
   State<SettingsSheet> createState() => _SettingsSheetState();
 }
@@ -187,9 +189,15 @@ class _SettingsSheetState extends State<SettingsSheet> {
     return ListenableBuilder(
       listenable: appearance,
       builder: (context, _) => SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.85,
+        height:
+            MediaQuery.sizeOf(context).height * (widget.fullscreen ? 1 : .85),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          padding: EdgeInsets.fromLTRB(
+            widget.fullscreen ? 16 : 24,
+            widget.fullscreen ? 8 : 0,
+            widget.fullscreen ? 16 : 24,
+            24,
+          ),
           children: [
             Row(
               children: [
