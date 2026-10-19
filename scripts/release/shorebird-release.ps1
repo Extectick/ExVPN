@@ -125,6 +125,8 @@ $cloudRegisteredVerified = $false
 $recoveryPath = $null
 $phase = 'environment'
 $subphase='pub';$recoveredUi=$null
+$releaseStartedUtc=[datetime]::MinValue
+$releaseProcessPathLength=0
 
 function Assert-CompiledUpdater([string]$Text) {
     $compiled = Read-ExVpnUpdaterConfig $Text -Compiled
@@ -233,12 +235,14 @@ try {
     # enabled. Shorebird resets it with a normal pub get between AAB and APK,
     # so --no-pub would leave dev-only integration_test in release Java code.
     # Dependencies were verified offline above; reject any lock change below.
-    $arguments += @('--', $(if ($Target -eq 'Android') { '--pub' } else { '--no-pub' }))
+    $arguments += @(Get-ShorebirdBaseForwardingArguments $Target ($env:GITHUB_ACTIONS -ceq 'true'))
     $phase = 'shorebird_release'
     $subphase='release'
     if ($PublishCloud) {
         $null=Write-ShorebirdRecovery -Repository $repository -Action base -Version $version -Target $Target -SourceCommit $sourceCommit -Status attempting -CloudOutcome unknown -Phase $phase -Subphase $subphase -Path $recoveryPath
     }
+    $releaseStartedUtc=[datetime]::UtcNow
+    $releaseProcessPathLength=$(if($env:PATH){$env:PATH.Length}else{0})
     $cloud = Invoke-ShorebirdJson $shorebird $arguments 'release' $privateRun 'release'
     if ($PublishCloud) {
         if ($cloud.app_id -cne $appId -or @($cloud.releases).Count -ne 1) { throw 'shorebird_cloud_release_invalid' }
@@ -361,6 +365,11 @@ try {
     $safeErrorCode=Get-ShorebirdSafeFailureCode $_.Exception.Message
     $safeFailureLeaf=Get-ShorebirdSafeFailureLeaf $_.InvocationInfo.ScriptName
     $safeFailureLine=$_.InvocationInfo.ScriptLineNumber
+    if($Target -ceq 'Android' -and $phase -ceq 'shorebird_release' -and $releaseStartedUtc -ne [datetime]::MinValue){
+        # Diagnostics must never replace the original CLI failure or weaken
+        # Flutter's strip validation. Paths and raw process logs stay private.
+        try{$null=Write-ShorebirdAndroidFailureDiagnostic $repository $runtime.SdkRoot $AndroidSdkPath $privateRun $releaseStartedUtc $releaseProcessPathLength}catch{ }
+    }
     ($_ | Out-String) | Set-Content -LiteralPath (Join-Path $privateRun 'failure.log') -Encoding utf8NoBOM
     if ($recoveryPath) {
         $null=Write-ShorebirdRecovery -Repository $repository -Action base -Version $version -Target $Target -SourceCommit $sourceCommit -Status failed -CloudOutcome $(if ($cloudRegisteredVerified) {'registered'} else {'unknown'}) -Phase $phase -Subphase $subphase -ErrorCode $safeErrorCode -FailureLeaf $safeFailureLeaf -FailureLine $safeFailureLine -ReleaseId $(if ($cloudRegisteredVerified) {$cloudRelease.id} else {0}) -Path $recoveryPath

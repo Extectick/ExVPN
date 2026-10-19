@@ -681,6 +681,110 @@ function Assert-ShorebirdAndroidAotBinding([string]$Apk,[string]$Aab) {
     $apkAot
 }
 
+function Get-ShorebirdBaseForwardingArguments([ValidateSet('Android','Windows')][string]$Target,[bool]$GitHubActions) {
+    $arguments=@('--',$(if($Target -ceq 'Android'){'--pub'}else{'--no-pub'}))
+    # Flutter's trace stays in Invoke-ShorebirdJson's private stderr file and
+    # optional encrypted diagnostic. It never joins the public JSON stream.
+    if($Target -ceq 'Android' -and $GitHubActions){$arguments+='--verbose'}
+    $arguments
+}
+
+function Get-ShorebirdAndroidAabInventory([string]$Path,[datetime]$NotBefore=[datetime]::MinValue) {
+    $safe=[ordered]@{status='missing';sha256=$null;bytes=$null;entries=@()}
+    if(!(Test-Path -LiteralPath $Path -PathType Leaf)){return $safe}
+    try {
+        Assert-AuditNoLinks $Path
+        $file=Get-Item -LiteralPath $Path
+        if($file.LastWriteTimeUtc -lt $NotBefore){$safe.status='stale';return $safe}
+        if($file.Length -le 0 -or $file.Length -gt 1GB){$safe.status='size_limit';return $safe}
+        # Android ZIP paths are case-sensitive; generic JAR collision rules do
+        # not apply. This still rejects traversal, links and exact duplicates.
+        $files=Get-AuditZipFiles $Path -Apk
+        $entries=@()
+        foreach($abi in @('arm64-v8a','x86_64')){
+            foreach($library in @('libflutter.so','libapp.so','libexvpn.so')){
+                foreach($name in @("base/lib/$abi/$library",
+                    "BUNDLE-METADATA/com.android.tools.build.debugsymbols/$abi/$library.sym",
+                    "BUNDLE-METADATA/com.android.tools.build.debugsymbols/$abi/$library.dbg")){
+                    $present=$files.ContainsKey($name)
+                    $entries+=[ordered]@{path=$name;present=$present;size=$(if($present){$files[$name].size}else{$null});sha256=$(if($present){$files[$name].sha256}else{$null})}
+                }
+            }
+        }
+        $safe.status='inspected';$safe.sha256=Get-AuditSha256 $Path;$safe.bytes=$file.Length;$safe.entries=$entries
+    } catch {$safe.status='invalid_archive'}
+    $safe
+}
+
+function Get-ShorebirdAndroidToolStatus([string]$SdkRoot) {
+    $safe=[ordered]@{cmdlineToolsPresent=$false;analyzerPath=$null;analyzerSha256=$null;ndkReadelfPresent=$false;processJavaHomeSet=![string]::IsNullOrWhiteSpace($env:JAVA_HOME);processJavaBinaryPresent=$false;processPathLength=$(if($env:PATH){$env:PATH.Length}else{0});flutterJavaSelection='not_observed'}
+    try {
+        Assert-AuditNoLinks $SdkRoot
+        $safe.cmdlineToolsPresent=Test-Path -LiteralPath (Join-Path $SdkRoot 'cmdline-tools') -PathType Container
+        # Record the same latest/versioned/legacy search order as the pinned
+        # AndroidSdk.getCmdlineToolsPath, without changing Flutter config.
+        $candidates=@('cmdline-tools/latest/bin/apkanalyzer.bat')
+        if($safe.cmdlineToolsPresent){
+            $versions=@(Get-ChildItem -LiteralPath (Join-Path $SdkRoot 'cmdline-tools') -Directory | Where-Object {$_.Name -cmatch '^\d+\.\d+(?:\.\d+)?$'} | Sort-Object {[version]$_.Name} -Descending)
+            $candidates+=@($versions|ForEach-Object {'cmdline-tools/'+$_.Name+'/bin/apkanalyzer.bat'})
+        }
+        $candidates+='tools/bin/apkanalyzer.bat'
+        foreach($relative in $candidates){
+            $path=Join-Path $SdkRoot $relative
+            if(Test-Path -LiteralPath $path -PathType Leaf){Assert-AuditNoLinks $path;$safe.analyzerPath=$relative;$safe.analyzerSha256=Get-AuditSha256 $path;break}
+        }
+        $readelf=Join-Path $SdkRoot 'ndk/27.1.12297006/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-readelf.exe'
+        if(Test-Path -LiteralPath $readelf -PathType Leaf){Assert-AuditNoLinks $readelf;$safe.ndkReadelfPresent=$true}
+        if($safe.processJavaHomeSet){$safe.processJavaBinaryPresent=Test-Path -LiteralPath (Join-Path $env:JAVA_HOME 'bin/java.exe') -PathType Leaf}
+    } catch { }
+    $safe
+}
+
+function ConvertFrom-ShorebirdElfSections([string]$Text) {
+    if($Text.Length -gt 1MB -or $Text -cnotmatch '(?m)^Section Headers:'){throw 'shorebird_elf_sections_invalid'}
+    [ordered]@{debugInfoPresent=($Text -cmatch '(?m)^\s*\[\s*\d+\]\s+\.(?:zdebug_info|debug_info)\s');symbolTablePresent=($Text -cmatch '(?m)^\s*\[\s*\d+\]\s+\.symtab\s')}
+}
+
+function Get-ShorebirdAndroidEngineDebug([string]$FlutterSdkRoot,[string]$AndroidSdkRoot,[string]$PrivateDirectory) {
+    $readelf=Join-Path $AndroidSdkRoot 'ndk/27.1.12297006/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-readelf.exe'
+    foreach($abi in @(@('android-arm64','arm64-v8a'),@('android-x64','x86_64'))){
+        $relative="bin/cache/artifacts/engine/$($abi[0])-release/flutter.jar"
+        $safe=[ordered]@{arch=$abi[1];jarPath=$relative;jarSha256=$null;engineSha256=$null;engineBytes=$null;elfStatus='unavailable';debugInfoPresent=$null;symbolTablePresent=$null}
+        try {
+            $jar=Join-Path $FlutterSdkRoot $relative;Assert-AuditNoLinks $jar
+            if((Get-Item -LiteralPath $jar).Length -gt 512MB){throw 'shorebird_engine_jar_size_limit'}
+            $safe.jarSha256=Get-AuditSha256 $jar
+            $output=Join-Path $PrivateDirectory ('diagnostic-engine-'+$abi[1]+'-'+[guid]::NewGuid().ToString('N')+'.so')
+            $engine=Get-ReleaseRuntimeJarEngine $jar "lib/$($abi[1])/libflutter.so" $output
+            $safe.engineSha256=$engine.sha256;$safe.engineBytes=$engine.size
+            Assert-AuditNoLinks $readelf
+            $sections=Invoke-AuditTool $readelf @('--sections','--wide',$output) 30
+            # Only booleans derived from anchored section names are public.
+            $elf=ConvertFrom-ShorebirdElfSections $sections
+            $safe.elfStatus='inspected';$safe.debugInfoPresent=$elf.debugInfoPresent;$safe.symbolTablePresent=$elf.symbolTablePresent
+        } catch { }
+        $safe
+    }
+}
+
+function Write-ShorebirdAndroidFailureDiagnostic([string]$Repository,[string]$FlutterSdkRoot,[string]$AndroidSdkRoot,[string]$PrivateDirectory,[datetime]$NotBefore,[ValidateRange(0,1048576)][int]$PreBuildPathLength=0) {
+    # Fixed input paths and fields only. Do not export process output, Gradle
+    # arguments, environment values, arbitrary archive names or exceptions.
+    $safe=[ordered]@{schemaVersion=1;action='android_aab_failure_diagnostic';target='Android';preBuildPathLength=$PreBuildPathLength;tools=(Get-ShorebirdAndroidToolStatus $AndroidSdkRoot)
+        aab=(Get-ShorebirdAndroidAabInventory (Join-Path $Repository 'apps/exvpn/build/app/outputs/bundle/release/app-release.aab') $NotBefore)
+        engineJars=@(Get-ShorebirdAndroidEngineDebug $FlutterSdkRoot $AndroidSdkRoot $PrivateDirectory);rawLogsExported=$false}
+    $directory=Join-Path $Repository 'artifacts/shorebird-recovery'
+    $ancestor=$directory
+    while(!(Test-Path -LiteralPath $ancestor)){$ancestor=[IO.Path]::GetDirectoryName($ancestor)}
+    Assert-AuditNoLinks $ancestor
+    [void][IO.Directory]::CreateDirectory($directory);Assert-AuditNoLinks $directory
+    $path=Join-Path $directory ('android-aab-'+[guid]::NewGuid().ToString('N')+'.json')
+    $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($safe|ConvertTo-Json -Depth 7))
+    $stream=[IO.File]::Open($path,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+    try{$stream.Write($bytes,0,$bytes.Length)}finally{$stream.Dispose()}
+    $path
+}
+
 function Get-ShorebirdRollbackGroups([int]$AndroidPatchNumber,[int]$WindowsPatchNumber) {
     if ($AndroidPatchNumber -le 0 -or $WindowsPatchNumber -le 0) { throw 'shorebird_rollback_numbers_invalid' }
     if ($AndroidPatchNumber -eq $WindowsPatchNumber) {

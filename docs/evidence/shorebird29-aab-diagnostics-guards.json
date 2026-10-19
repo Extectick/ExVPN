@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "status": "focused_pass",
+  "sourceState": "working_tree_commit_pending",
+  "focusedCommand": "scripts/release/test-shorebird-pipeline.ps1 -AndroidBuildDiagnosticsOnly",
+  "focusedChecks": 27,
+  "actionsStyleExitCode": 0,
+  "parseChecks": [
+    "scripts/release/shorebird-release.ps1",
+    "scripts/release/shorebird-pipeline-lib.ps1",
+    "scripts/release/test-shorebird-pipeline.ps1"
+  ],
+  "diffCheckPassed": true,
+  "applicationBuilds": 0,
+  "nativeBuilds": 0,
+  "cloudOperations": 0,
+  "keysUsed": false,
+  "fullSuiteRerun": false,
+  "oversizeFixtureCleanup": "exact_owned_file_only",
+  "remainingOversizedFixtures": 0,
+  "sourceFiles": [
+    {
+      "path": "scripts/release/shorebird-release.ps1",
+      "sha256": "986306148819b3cfd46e85c563c88cc44da37c0adaee82d25a1a9bedfd495ea6"
+    },
+    {
+      "path": "scripts/release/shorebird-pipeline-lib.ps1",
+      "sha256": "b62987090a40ec43dd0b4b4a3c7dbf40fffb005f5460099774cc77dabe9f87ee"
+    },
+    {
+      "path": "scripts/release/test-shorebird-pipeline.ps1",
+      "sha256": "ebe5c8e1dbf3af07e18a05335a78cf8d40cf25bb4f90a79699aa1de64e9e175f"
+    }
+  ]
+}

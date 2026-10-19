@@ -1,0 +1,31 @@
+{
+  "secretsUsed": false,
+  "schemaVersion": 1,
+  "results": [
+    {
+      "stderrBytes": 0,
+      "exitCode": 0,
+      "expectedMetadataListed": true,
+      "javaContext": "current",
+      "stdoutBytes": 617,
+      "errorMarker": "none",
+      "toolVersion": "latest"
+    },
+    {
+      "stderrBytes": 0,
+      "exitCode": 0,
+      "expectedMetadataListed": true,
+      "javaContext": "java21",
+      "stdoutBytes": 627,
+      "errorMarker": "none",
+      "toolVersion": "latest"
+    }
+  ],
+  "nativeBuilds": 0,
+  "rawLogsExported": false,
+  "toolCount": 1,
+  "applicationBuilds": 0,
+  "runId": 39268311413,
+  "sourceCommit": "4593b3eed1b5d550f94359cd8745eb7a770fccd3",
+  "conclusion": "success"
+}

@@ -48,6 +48,10 @@ bytes не меняются. Патч и откат ещё не проверен
   Android/Windows. Критерий: один build/upload на платформу, прежний APK signer,
   strict RSA public pin, проверенные runtime notices/AOT и cloud receipts;
   установленная база читает настоящий updater. Зависимость: E6-004.
+  2026-10-19, `a5f38ef`: Windows packaging audit PASS, Android после Gradle
+  остановлен Flutter strip-validation; Android cloud platform отсутствует.
+  [Фактический отказ](evidence/shorebird29-android-strip-validation.json).
+  Подписанный патч не публиковался; критерий остаётся открытым.
 - [ ] **EXVPN-E6-013** — Применить подписанный Dart-патч на обеих платформах.
   Критерий: реальные platform-specific patch IDs/numbers, current/next SDK,
   `uiRevision` 0→1 после полного запуска; APK/EXE и данные неизменны.

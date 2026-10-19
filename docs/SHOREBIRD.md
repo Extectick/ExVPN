@@ -2,6 +2,29 @@
 
 ## Реальный цикл 0.1.8+29, 2026-10-19 — в работе
 
+Актуальный отказ Android в CI39263632874 (`a5f38ef`): Gradle собрал AAB,
+но Flutter остановился на итоговой проверке debug symbols нативных библиотек.
+Отдельная зашифрованная диагностика успешно сохранена CI и прочитана локально;
+ключ диагностики отделён от ключей приложения и патчей. После завершения run
+readback подтвердил Windows active и отсутствие Android registration.
+Причина внутри `apkanalyzer`/debug metadata пока уточняется отдельным hosted
+probe без сборки приложения. Проверка strip не отключается, SDK pins прежние.
+[Отказ](evidence/shorebird29-android-strip-validation.json),
+[облако после run](evidence/shorebird29-third-attempt-readback.json).
+Windows-пакет этого run прошёл аудит, но ещё не установлен; установленный
+ранний пакет ниже не считается runtime-проверкой новых служебных bytes.
+Standalone probe39268311413 (`4593b3e`) подтвердил exit0 и наличие synthetic
+debug metadata в `apkanalyzer files list` для обоих доступных Java contexts.
+Application/native builds=0; ключи и подписки не использовались. Это исключает
+общий отказ установленного инструмента, но ещё не объясняет содержимое AAB.
+[Проверка](evidence/shorebird29-hosted-analyzer-probe.json).
+Следующий CI Android передаёт Flutter `--verbose`; raw trace остаётся
+приватным и сохраняется только зашифрованным. При отказе сохраняются лишь
+18 фиксированных native/debug paths AAB, hashes/sizes, признаки ELF sections
+двух engine JAR и скалярные сведения об инструментах. Новые27 focused checks
+прошли с Actions exit0; полный набор и сетевые тесты повторно не запускались.
+[Проверка инструментария](evidence/shorebird29-aab-diagnostics-guards.json).
+
 Windows-база cloud release908884 установлена из audited CI39254177224:
 NSIS exit0, 731 payload files и 283 cloud UI files совпали, прежние подписки
 и оформление сохранены. Реальный SDK сообщил `available=true`, beta,
@@ -9,7 +32,7 @@ current/next=null, `uiRevision=0`. Это базовый snapshot, примен�
 патча и откат ещё не подтверждены.
 [Windows runtime](evidence/shorebird29-windows-base-runtime.json).
 
-Android того же CI завершился nonzero внутри официального CLI; readback
+Android раннего CI39254177224 завершился nonzero внутри официального CLI; readback
 подтвердил только Windows, Android не зарегистрирован. Приватные inner logs
 на ephemeral runner не сохранились; точная причина этого отказа неизвестна.
 [Отказ](evidence/shorebird29-android-ci-attempt.json). Для следующего вызова

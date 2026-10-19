@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "status": "PASS_MAVEN_SUPPLEMENT_ONLY",
+  "recordedAtUtc": "2026-10-19T14:06:16.3374952Z",
+  "durationSeconds": 9.03,
+  "appVersion": "0.1.8+29",
+  "apkSha256": "f3cea2508d2d9457c70e1bbe162d759482aa4f712da251c593b24b0183f72976",
+  "archiveSha256": "b7bd90923ccc80274d7b8f1a1773efb8faac1ce5d2c4b1b6c51230ab9f8ea7d8",
+  "inputGraphSha256": "3da626f235537b14f850a51c38bb420a6423cc1c9dc45da6e06680e2c53500fe",
+  "runtimeMavenComponents": 52,
+  "selectedSupplementComponents": 49,
+  "separateFlutterComponents": 3,
+  "fullTextFiles": 61,
+  "flutterRuntime": {
+    "kind": "shorebird",
+    "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+    "sourcePinSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305"
+  },
+  "postR8InventoryComplete": false,
+  "releaseAccepted": false,
+  "knownPackageRejection": "missing_git_metadata_asset_and_prior_notice_inventory",
+  "sourceModified": false,
+  "builds": 0,
+  "tests": 0,
+  "deviceActions": 0
+}

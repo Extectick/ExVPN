@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #requires -Version 7.0
 # Synthetic guard regressions only: no SDK, actual keys, cloud, VPN or builds.
+param([switch]$AndroidBuildDiagnosticsOnly)
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'shorebird-pipeline-lib.ps1')
@@ -18,6 +19,69 @@ function Assert-Refuses([scriptblock]$Action,[string]$Name) {
     Assert-Test $threw $Name
 }
 function Copy-Fixture($Value) { $Value | ConvertTo-Json -Depth 20 | ConvertFrom-Json -AsHashtable }
+
+$diagnosticRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+$diagnosticFixture=Join-Path $diagnosticRoot ('.private/shorebird-diagnostic-tests/'+[guid]::NewGuid().ToString('N'))
+[void][IO.Directory]::CreateDirectory($diagnosticFixture)
+foreach($target in @('Android','Windows')){
+    foreach($ci in @($true,$false)){
+        $forward=@(Get-ShorebirdBaseForwardingArguments $target $ci)
+        Assert-Test ($forward[0] -ceq '--' -and $forward[1] -ceq $(if($target -ceq 'Android'){'--pub'}else{'--no-pub'})) 'base_forwarded_pub_mode_unchanged'
+        Assert-Test (($forward -ccontains '--verbose') -eq ($target -ceq 'Android' -and $ci)) 'only_ci_android_forwards_verbose_after_separator'
+    }
+}
+function New-SyntheticDiagnosticZip([string]$Path,[string[]]$Names,[int]$Attributes=0){
+    $stream=[IO.File]::Open($Path,[IO.FileMode]::CreateNew)
+    $zip=[IO.Compression.ZipArchive]::new($stream,[IO.Compression.ZipArchiveMode]::Create)
+    try{foreach($name in $Names){$entry=$zip.CreateEntry($name);$entry.ExternalAttributes=$Attributes;$out=$entry.Open();try{$out.Write([byte[]]@(7,8,9),0,3)}finally{$out.Dispose()}}}
+    finally{$zip.Dispose();$stream.Dispose()}
+}
+$diagnosticZip=Join-Path $diagnosticFixture 'symbols.aab'
+$nativeEntry='base/lib/arm64-v8a/libflutter.so'
+$symbolEntry='BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/libflutter.so.sym'
+New-SyntheticDiagnosticZip $diagnosticZip @($nativeEntry,$symbolEntry,'base/res/Aa.xml','base/res/aa.xml','base/assets/private-should-not-export.txt')
+$inventory=Get-ShorebirdAndroidAabInventory $diagnosticZip
+Assert-Test ($inventory.status -ceq 'inspected' -and $inventory.entries.Count -eq 18) 'aab_inventory_fixed_eighteen_paths_accept_android_case_variants'
+$actual=@($inventory.entries|Where-Object present)
+Assert-Test ($actual.Count -eq 2 -and $actual[0].path -ceq $nativeEntry -and $actual[1].path -ceq $symbolEntry -and $actual[0].size -eq 3 -and $actual[0].sha256 -cmatch '^[a-f0-9]{64}$') 'aab_inventory_hashes_actual_native_and_symbol_bytes'
+Assert-Test (!(($inventory|ConvertTo-Json -Depth 6 -Compress).Contains('private-should-not-export'))) 'aab_inventory_never_exports_other_archive_paths'
+Assert-Test ((Get-ShorebirdAndroidAabInventory $diagnosticZip ([datetime]::UtcNow.AddDays(1))).status -ceq 'stale') 'aab_inventory_refuses_stale_output'
+Assert-Test ((Get-ShorebirdAndroidAabInventory (Join-Path $diagnosticFixture 'missing.aab')).status -ceq 'missing') 'aab_inventory_reports_missing_without_claims'
+foreach($names in @(@('duplicate.bin','duplicate.bin'),@('../escape.bin'),@('base/lib/arm64-v8a/libflutter.so','base/lib/arm64-v8a/libflutter.so/child'))){
+    $bad=Join-Path $diagnosticFixture ([guid]::NewGuid().ToString('N')+'.aab');New-SyntheticDiagnosticZip $bad $names
+    $rejected=Get-ShorebirdAndroidAabInventory $bad
+    Assert-Test ($rejected.status -ceq 'invalid_archive' -and $rejected.entries.Count -eq 0 -and $null -eq $rejected.sha256) 'aab_diagnostic_rejects_duplicate_traversal_file_directory_collision'
+}
+$linkZip=Join-Path $diagnosticFixture 'link.aab';New-SyntheticDiagnosticZip $linkZip @($nativeEntry) (0xa000 -shl 16)
+Assert-Test ((Get-ShorebirdAndroidAabInventory $linkZip).status -ceq 'invalid_archive') 'aab_diagnostic_rejects_zip_symlink'
+$large=Join-Path $diagnosticFixture 'oversized.aab';$stream=[IO.File]::Open($large,[IO.FileMode]::CreateNew);try{$stream.SetLength(1GB+1)}finally{$stream.Dispose()}
+Assert-Test ((Get-ShorebirdAndroidAabInventory $large).status -ceq 'size_limit') 'aab_diagnostic_checks_size_before_zip_parse'
+Remove-Item -LiteralPath $large
+$sectionText="Section Headers:`n  [ 1] .debug_info PROGBITS 0 0`n  [27] .symtab SYMTAB 0 0`nprivate-should-not-export"
+$elf=ConvertFrom-ShorebirdElfSections $sectionText
+Assert-Test ($elf.debugInfoPresent -and $elf.symbolTablePresent -and $elf.Count -eq 2) 'elf_diagnostic_only_exports_section_presence'
+Assert-Test (!(ConvertFrom-ShorebirdElfSections "Section Headers:`n  [ 1] .text PROGBITS 0 0").debugInfoPresent) 'elf_diagnostic_reports_stripped_engine'
+Assert-Refuses {ConvertFrom-ShorebirdElfSections 'tool failed .debug_info'} 'elf_diagnostic_does_not_infer_sections_from_error_text'
+$sdk=Join-Path $diagnosticFixture 'sdk';$latest=Join-Path $sdk 'cmdline-tools/latest/bin';$versioned=Join-Path $sdk 'cmdline-tools/19.0/bin'
+[void][IO.Directory]::CreateDirectory($latest);[void][IO.Directory]::CreateDirectory($versioned)
+[IO.File]::WriteAllText((Join-Path $latest 'apkanalyzer.bat'),'synthetic latest, never executed')
+[IO.File]::WriteAllText((Join-Path $versioned 'apkanalyzer.bat'),'synthetic versioned, never executed')
+$tools=Get-ShorebirdAndroidToolStatus $sdk
+Assert-Test ($tools.analyzerPath -ceq 'cmdline-tools/latest/bin/apkanalyzer.bat' -and $tools.analyzerSha256 -cmatch '^[a-f0-9]{64}$' -and $tools.flutterJavaSelection -ceq 'not_observed') 'tool_status_prefers_latest_without_claiming_flutter_java'
+Remove-Item -LiteralPath (Join-Path $latest 'apkanalyzer.bat')
+Assert-Test ((Get-ShorebirdAndroidToolStatus $sdk).analyzerPath -ceq 'cmdline-tools/19.0/bin/apkanalyzer.bat') 'tool_status_versioned_fallback_matches_flutter_order'
+$diagnosticOutput=Write-ShorebirdAndroidFailureDiagnostic $diagnosticFixture (Join-Path $diagnosticFixture 'missing-flutter') $sdk $diagnosticFixture ([datetime]::MinValue) 9876
+$exported=Get-Content -LiteralPath $diagnosticOutput -Raw|ConvertFrom-Json -AsHashtable
+Assert-Test ($exported.aab.status -ceq 'missing' -and $exported.engineJars.Count -eq 2 -and $exported.engineJars[0].elfStatus -ceq 'unavailable' -and $exported.rawLogsExported -eq $false) 'missing_failure_inputs_remain_unknown_and_safe_diagnostic_is_retained'
+Assert-Test (!([IO.File]::ReadAllText($diagnosticOutput).Contains($diagnosticFixture))) 'public_failure_diagnostic_excludes_absolute_paths'
+Assert-Test ($exported.preBuildPathLength -eq 9876 -and $exported.tools.processPathLength -eq $env:PATH.Length) 'diagnostic_records_only_before_and_after_path_lengths'
+$diagRelease=Get-Content -LiteralPath (Join-Path $diagnosticRoot 'scripts/release/shorebird-release.ps1') -Raw
+Assert-Test ($diagRelease.Contains('Get-ShorebirdBaseForwardingArguments $Target ($env:GITHUB_ACTIONS -ceq ''true'')') -and $diagRelease.Contains('try{$null=Write-ShorebirdAndroidFailureDiagnostic')) 'actual_wrapper_uses_ci_forwarding_and_best_effort_failure_diagnostic'
+if($AndroidBuildDiagnosticsOnly){
+    Write-Host "Shorebird Android build diagnostics: $script:checks focused checks PASS; no SDK, keys, cloud or builds."
+    $global:LASTEXITCODE=0
+    return
+}
 
 foreach ($path in @('apps/exvpn/lib/ui_revision.dart','apps/exvpn/lib/src/home_screen.dart','packages/exvpn_updates/lib/src/controller.dart')) {
     Assert-ShorebirdPatchPaths @($path); Assert-Test $true 'owned_dart'
