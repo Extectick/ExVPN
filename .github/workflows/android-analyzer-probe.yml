@@ -80,8 +80,10 @@ jobs:
           $cli=Join-Path $repository '.tools/shorebird-1.6.129'
           $roots=@(@{kind='cli';path=$cli;expected=$pin.cli.revision},@{kind='flutter';path=(Join-Path $cli ('bin/cache/flutter/'+$pin.flutter.revision));expected=$pin.flutter.revision})
           $privateLog=Join-Path $env:RUNNER_TEMP 'sdk-cache-git-private.log'
-          function Invoke-ProbeGit([string]$Root,[string[]]$Arguments){
-            $result=& git --no-optional-locks -c core.fsmonitor=false -c core.quotepath=false -c status.renames=false -C $Root @Arguments 2>>$privateLog
+          function Invoke-ProbeGit([string]$Root,[string[]]$Arguments,[bool]$LongPaths=$false){
+            $gitSettings=@('--no-optional-locks','-c','core.fsmonitor=false','-c','core.quotepath=false','-c','status.renames=false')
+            if($LongPaths){$gitSettings+=@('-c','core.longpaths=true')}
+            $result=& git @gitSettings -C $Root @Arguments 2>>$privateLog
             [ordered]@{text=($result -join "`n");exitCode=$LASTEXITCODE}
           }
           function Test-ProbeRegularPath([string]$Path,[string]$Root){
@@ -96,7 +98,7 @@ jobs:
           }
           $records=@()
           foreach($root in $roots){
-            $record=[ordered]@{repository=$root.kind;expectedHead=$root.expected;head=$null;pinMatched=$false;status='missing';trackedChangedCount=0;omittedCount=0;diffEmpty=$null;paths=@()}
+            $record=[ordered]@{repository=$root.kind;expectedHead=$root.expected;head=$null;pinMatched=$false;status='missing';trackedChangedCount=0;omittedCount=0;diffEmpty=$null;maxChangedFullPathLength=0;longPathsStatusExitCode=$null;longPathsTrackedChangedCount=$null;longPathsDiffEmpty=$null;paths=@()}
             if(!(Test-Path -LiteralPath $root.path -PathType Container)){$records+=$record;continue}
             if(!(Test-ProbeRegularPath $root.path $repository) -or !(Test-ProbeRegularPath (Join-Path $root.path '.git') $repository)){$record.status='linked_input';$records+=$record;continue}
             $head=Invoke-ProbeGit $root.path @('rev-parse','--verify','HEAD')
@@ -107,6 +109,7 @@ jobs:
             $changes=@($status.text.Split([char]0)|Where-Object {$_})
             $record.trackedChangedCount=$changes.Count
             foreach($entry in $changes){
+              if($entry.Length -gt 3){$record.maxChangedFullPathLength=[Math]::Max($record.maxChangedFullPathLength,$root.path.Length+1+$entry.Length-3)}
               if($record.paths.Count -ge 64 -or $entry -cnotmatch '^([ MADRCUT?!]{2}) ([A-Za-z0-9_. /-]{1,240})$'){$record.omittedCount++;continue}
               $flags=$Matches[1];$relative=$Matches[2]
               if($relative -match '(?:^|/)\.{1,2}(?:/|$)|//|^/|/$'){$record.omittedCount++;continue}
@@ -122,11 +125,23 @@ jobs:
             }
             $diff=Invoke-ProbeGit $root.path @('diff','--quiet','HEAD','--')
             if($diff.exitCode -in @(0,1)){$record.diffEmpty=$diff.exitCode -eq 0;$record.status='inspected'}else{$record.status='git_failed'}
+            # A command-scoped comparison only: no git config/source writes,
+            # reset, SDK execution or cache save. Keep the default result above.
+            $longStatus=Invoke-ProbeGit $root.path @('status','--porcelain=v1','-z','--untracked-files=no') $true
+            $longDiff=Invoke-ProbeGit $root.path @('diff','--quiet','HEAD','--') $true
+            $record.longPathsStatusExitCode=$longStatus.exitCode
+            if($longStatus.exitCode -eq 0 -and $longStatus.text.Length -le 1MB){$record.longPathsTrackedChangedCount=@($longStatus.text.Split([char]0)|Where-Object {$_}).Count}
+            if($longDiff.exitCode -in @(0,1)){$record.longPathsDiffEmpty=$longDiff.exitCode -eq 0}
             $records+=$record
           }
           $key=$env:EXVPN_SDK_CACHE_KEY
           if($key -cnotmatch '^exvpn-shorebird-sdk-v1-Windows-X64-Windows-[a-f0-9]{64}$'){$key=$null}
-          [ordered]@{schemaVersion=1;cacheHit=($env:EXVPN_SDK_CACHE_HIT -ceq 'true');cacheKey=$key;repositories=$records;applicationBuilds=0;nativeBuilds=0;sdkCommands=0;cacheSaved=$false;sourceReset=$false;rawLogsExported=$false}|ConvertTo-Json -Depth 7|Set-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'shorebird-sdk-cache-probe.json') -Encoding utf8NoBOM
+          $tooLongMarkers=0
+          if(Test-Path -LiteralPath $privateLog -PathType Leaf){
+            $stream=[IO.File]::OpenRead($privateLog)
+            try{[void]$stream.Seek([Math]::Max(0L,$stream.Length-1MB),[IO.SeekOrigin]::Begin);$reader=[IO.StreamReader]::new($stream);$tail=$reader.ReadToEnd();$tooLongMarkers=[regex]::Matches($tail,'(?i)Filename too long|File name too long').Count}finally{$stream.Dispose()}
+          }
+          [ordered]@{schemaVersion=1;cacheHit=($env:EXVPN_SDK_CACHE_HIT -ceq 'true');cacheKey=$key;repositories=$records;gitTooLongMarkers=$tooLongMarkers;longPathsProcessOverrideCompared=$true;applicationBuilds=0;nativeBuilds=0;sdkCommands=0;cacheSaved=$false;sourceReset=$false;rawLogsExported=$false}|ConvertTo-Json -Depth 7|Set-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'shorebird-sdk-cache-probe.json') -Encoding utf8NoBOM
           $global:LASTEXITCODE=0
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
