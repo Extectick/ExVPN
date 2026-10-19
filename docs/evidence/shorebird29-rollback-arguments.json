@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "recordedLocalDate": "2026-10-20",
+  "version": "0.1.8+29",
+  "failureBeforeFix": {
+    "phase": "readback",
+    "command": "patches info",
+    "errorCode": "software_error",
+    "missingOption": "release-version",
+    "cloudMutations": 0
+  },
+  "fix": "Three separately validated native-process arguments; no string-plus-array concatenation",
+  "checks": 298,
+  "result": "passed",
+  "nativeOrAssetDiffOverrides": false,
+  "sdkInvocations": 0,
+  "applicationBuilds": 0,
+  "fullApplicationSuiteRepeated": false,
+  "sourceState": "working tree; commit pending"
+}

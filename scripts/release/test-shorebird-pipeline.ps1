@@ -107,6 +107,19 @@ Assert-Test $true 'test_prose_with_dart'
 Assert-ShorebirdPatchPaths @('apps/exvpn/lib/ui_revision.dart','docs/evidence/release-v0.1.7.json')
 Assert-Test $true 'noncompiled_json_proof_with_dart'
 Assert-Refuses { Assert-ShorebirdPatchPaths @('apps/exvpn/lib/ui_revision.dart','docs/elsewhere/proof.json') } 'only_scoped_json_evidence'
+foreach ($path in @('scripts/release/shorebird-rollback.ps1','scripts/release/shorebird-pipeline-lib.ps1','scripts/release/test-shorebird-pipeline.ps1')) {
+    Assert-ShorebirdPatchPaths @('apps/exvpn/lib/ui_revision.dart',$path)
+    Assert-Test $true 'noncompiled_rollback_maintenance_with_dart'
+    Assert-Refuses { Assert-ShorebirdPatchPaths @($path) } 'maintenance_alone_is_not_patch'
+}
+foreach ($path in @('scripts/release/shorebird-release.ps1','.github/workflows/shorebird.yml','scripts/release/shorebird-rollback-all.ps1')) {
+    Assert-Refuses { Assert-ShorebirdPatchPaths @('apps/exvpn/lib/ui_revision.dart',$path) } 'unreviewed_tooling_still_refused'
+}
+$lookup=@(Get-ShorebirdPatchLookupArguments '0.1.8+29' 2)
+Assert-Test ($lookup.Count -eq 3) 'lookup_separate_native_arguments'
+Assert-Test ($lookup[0] -ceq "--app-id=$((Get-ShorebirdPolicy).appId)" -and $lookup[1] -ceq '--release-version=0.1.8+29' -and $lookup[2] -ceq '--patch-number=2') 'lookup_exact_identity_options'
+Assert-Refuses { Get-ShorebirdPatchLookupArguments latest 2 } 'lookup_requires_exact_version'
+Assert-Refuses { Get-ShorebirdPatchLookupArguments '0.1.8+29' 0 } 'lookup_requires_positive_patch'
 
 $dry=@(Get-ShorebirdPatchArguments Android '0.1.7+28' 'PUBLIC.pem' 'PRIVATE.pem')
 $live=@(Get-ShorebirdPatchArguments Windows '0.1.7+28' 'PUBLIC.pem' 'PRIVATE.pem' -PublishCloud)

@@ -36,8 +36,8 @@ try {
         Assert-ShorebirdCloudRelease $release.release $ReleaseVersion $base.target $releaseId
     }
     if (!$targets.Contains('Android') -or !$targets.Contains('Windows') -or $targets.Count -ne 2) { throw 'shorebird_rollback_both_base_receipts_required' }
-    $args = @('--app-id=' + $policy.appId,"--release-version=$ReleaseVersion","--patch-number=$PatchNumber")
-    $before = Invoke-ShorebirdJson $cli (@('patches','info') + $args) 'patches info' $privateRun 'before'
+    $patchArguments = @(Get-ShorebirdPatchLookupArguments $ReleaseVersion $PatchNumber)
+    $before = Invoke-ShorebirdJson $cli (@('patches','info') + $patchArguments) 'patches info' $privateRun 'before'
     if ($before.patch.number -ne $PatchNumber -or $before.patch.channel -cne 'beta' -or $before.patch.id -le 0) { throw 'shorebird_rollback_patch_mismatch' }
     if ($ExpectedPatchId -gt 0 -and $before.patch.id -ne $ExpectedPatchId) { throw 'shorebird_rollback_patch_id_changed' }
     $platforms = @($before.patch.artifacts | ForEach-Object platform | Sort-Object -Unique)
@@ -47,11 +47,11 @@ try {
     $changed = $false
     if ($PublishCloud) {
         $phase = 'rollback'
-        $mutation = Invoke-ShorebirdJson $cli (@('patches','rollback') + $args) 'patches rollback' $privateRun 'rollback'
+        $mutation = Invoke-ShorebirdJson $cli (@('patches','rollback') + $patchArguments) 'patches rollback' $privateRun 'rollback'
         if ($mutation.app_id -cne $policy.appId -or $mutation.release_version -cne $ReleaseVersion -or
             $mutation.patch_number -ne $PatchNumber -or $mutation.action -cne 'rollback' -or !$mutation.patch.is_rolled_back) { throw 'shorebird_rollback_response_invalid' }
         $changed = $mutation.changed
-        $after = Invoke-ShorebirdJson $cli (@('patches','info') + $args) 'patches info' $privateRun 'after'
+        $after = Invoke-ShorebirdJson $cli (@('patches','info') + $patchArguments) 'patches info' $privateRun 'after'
         if ($after.patch.id -ne $before.patch.id -or $after.patch.number -ne $PatchNumber -or !$after.patch.is_rolled_back) { throw 'shorebird_rollback_readback_failed' }
         if ((@($after.patch.artifacts | ForEach-Object platform | Sort-Object -Unique) -join ',') -cne ($platforms -join ',')) { throw 'shorebird_rollback_platform_coverage_changed' }
     }

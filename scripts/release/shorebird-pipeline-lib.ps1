@@ -118,7 +118,13 @@ function Assert-ShorebirdPatchPaths([string[]]$Paths) {
         if ($path -cmatch '^packages/(?:exvpn_domain|exvpn_client_state|exvpn_updates)/lib/[a-zA-Z0-9_/-]+\.dart$') {
             $production++; continue
         }
-        # Tests and prose do not enter the app. Tooling/config changes still fail.
+        # These noncompiled rollback/validation helpers may be maintained
+        # without replacing a native base. Build wrappers, pins, dependencies,
+        # native code and assets remain forbidden; upstream diff checks stay on.
+        if ($path -cin @('scripts/release/shorebird-rollback.ps1',
+            'scripts/release/shorebird-pipeline-lib.ps1',
+            'scripts/release/test-shorebird-pipeline.ps1')) { continue }
+        # Tests and prose do not enter the app. Other tooling/config changes fail.
         if ($path -cmatch '^(?:apps/exvpn|packages/(?:exvpn_domain|exvpn_client_state|exvpn_updates))/test/[a-zA-Z0-9_/-]+\.dart$' -or
             $path -cmatch '^docs/[a-zA-Z0-9_./-]+\.md$' -or
             $path -cmatch '^docs/evidence/(?:[a-zA-Z0-9_.-]+/)*[a-zA-Z0-9_.-]+\.json$') { continue }
@@ -783,6 +789,15 @@ function Write-ShorebirdAndroidFailureDiagnostic([string]$Repository,[string]$Fl
     $stream=[IO.File]::Open($path,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
     try{$stream.Write($bytes,0,$bytes.Length)}finally{$stream.Dispose()}
     $path
+}
+
+function Get-ShorebirdPatchLookupArguments([string]$Version, [int]$PatchNumber) {
+    if ($Version -cnotmatch '^\d+\.\d+\.\d+\+[1-9]\d*$' -or $PatchNumber -le 0) {
+        throw 'shorebird_patch_lookup_identity_invalid'
+    }
+    # Each option must be its own native-process argument. A string '+' before
+    # comma-separated items can concatenate the entire array in PowerShell.
+    @("--app-id=$((Get-ShorebirdPolicy).appId)", "--release-version=$Version", "--patch-number=$PatchNumber")
 }
 
 function Get-ShorebirdRollbackGroups([int]$AndroidPatchNumber,[int]$WindowsPatchNumber) {

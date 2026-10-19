@@ -1,5 +1,14 @@
 # Shorebird: подготовка Dart OTA
 
+Исправление инструмента отката, 2026-10-20: PowerShell должен передавать
+`--app-id`, `--release-version`, `--patch-number` тремя отдельными аргументами.
+Прежняя конкатенация останавливала CLI до облачной мутации. Точные некомпилируемые
+rollback/policy/test helpers допускают обслуживание без замены базового пакета;
+build wrappers, SDK/signing pins, dependencies, native, assets и build identity
+по-прежнему запрещены в Dart-патче. Upstream native/assets diff checks включены.
+Изменение одних helpers не считается Dart-патчем. 298 pipeline guards PASS;
+общий Full приложения и сборки не повторялись.
+
 ## Реальный цикл 0.1.8+29, 2026-10-19 — в работе
 
 CI39276484132 (`2158474`) подтвердил Windows packaging audit и SDK longpaths
