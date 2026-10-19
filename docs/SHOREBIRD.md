@@ -34,6 +34,12 @@ metadata, exit0. SDK/source/signing identities не менялись, окруж
 checks, включая восстановление APPDATA. В CI новые чистые fixtures выполняются
 только в Android job. [Реальный preflight](evidence/shorebird29-android-environment-local-preflight.json),
 [wiring](evidence/shorebird29-android-environment-wiring.json).
+CI39275503636 остановился на устаревшем negative fixture recovery-allowlist:
+он всё ещё запрещал проверенный patch wrapper. Оба native/UI/cloud build
+шага были skipped. Ожидание обновлено на новый явно непроверенный соседний
+wrapper; полный набор285 pipeline guards прошёл (не общий Full приложения).
+[Проверка](evidence/shorebird29-recovery-fixture-fix.json). При изменении
+recovery-allowlist нужен весь pipeline script, focused diagnostics его не заменяет.
 
 Актуальный отказ Android в CI39263632874 (`a5f38ef`): Gradle собрал AAB,
 но Flutter остановился на итоговой проверке debug symbols нативных библиотек.

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "failedRunId": 39275503636,
+  "failedSourceCommit": "8794bf143e610a09bee124867b38f4940a38a143",
+  "bothTargetsFailedBeforeSdk": true,
+  "failedStep": "Test pipeline guards without SDK or cloud mutations",
+  "failure": "outdated_recovery_negative_fixture_for_reviewed_patch_wrapper",
+  "nativeBuilds": 0,
+  "applicationBuilds": 0,
+  "cloudReleaseStep": "skipped_both_targets",
+  "fix": "reviewed_wrapper_moved_to_positive_and_unreviewed_neighbor_still_rejected",
+  "pipelineChecks": 285,
+  "pipelineExitCode": 0,
+  "fullRepeated": false,
+  "sourceState": "working_tree_commit_pending"
+}

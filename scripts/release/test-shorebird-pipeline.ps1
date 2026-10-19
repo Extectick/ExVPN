@@ -469,10 +469,12 @@ Assert-Refuses { Write-ShorebirdRecovery -Repository $fixture -Action base -Vers
 # A single reviewed cloud recovery, never a caller-selected release or URL.
 $fixedRecovery=Get-ShorebirdWindowsRecoveryPolicy
 Assert-Test ($fixedRecovery.version -ceq '0.1.8+29' -and $fixedRecovery.releaseId -eq 908884 -and $fixedRecovery.artifactId -eq 4043762 -and $fixedRecovery.bytes -eq 30552700 -and $fixedRecovery.files -eq 283) 'recovery_fixed_cloud_identity'
-foreach($path in @('apps/exvpn/lib/ui_revision.dart','native/core/core.go','apps/exvpn/assets/a.png','apps/exvpn/pubspec.yaml','apps/exvpn/pubspec.lock','scripts/bootstrap/shorebird.lock.json','config/signing/shorebird-beta-public.pem','scripts/release/shorebird-patch.ps1','docs/elsewhere/proof.json','docs/../apps/exvpn/lib/main.dart')){
+foreach($path in @('apps/exvpn/lib/ui_revision.dart','native/core/core.go','apps/exvpn/assets/a.png','apps/exvpn/pubspec.yaml','apps/exvpn/pubspec.lock','scripts/bootstrap/shorebird.lock.json','config/signing/shorebird-beta-public.pem','scripts/release/unreviewed-patch-wrapper.ps1','docs/elsewhere/proof.json','docs/../apps/exvpn/lib/main.dart')){
     Assert-Refuses {Assert-ShorebirdRecoveryPaths @($path)} 'recovery_rejects_compiled_or_unreviewed_change'
 }
-Assert-ShorebirdRecoveryPaths @('scripts/release/shorebird-recovery-lib.ps1','.github/workflows/shorebird.yml','docs/SHOREBIRD.md','docs/evidence/recovery.json')
+Assert-ShorebirdRecoveryPaths @('scripts/release/shorebird-recovery-lib.ps1','.github/workflows/shorebird.yml','docs/SHOREBIRD.md','docs/evidence/recovery.json',
+    'scripts/release/flutter-runtime-inputs.ps1','scripts/release/shorebird-patch.ps1',
+    'scripts/release/shorebird-android-environment.ps1','scripts/release/test-shorebird-android-environment.ps1')
 Assert-Test $true 'recovery_exact_packaging_and_proof_paths'
 $attrsBefore=Get-ShorebirdRecoveryBlob $root $fixedRecovery.compiledSourceCommit '.gitattributes'
 $crateBefore=Get-ShorebirdRecoveryBlob $root $fixedRecovery.compiledSourceCommit 'scripts/release/shorebird-updater-notices-crates.lock.json'
