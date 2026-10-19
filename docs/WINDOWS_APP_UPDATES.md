@@ -13,8 +13,40 @@
 
 Исправление опубликовано в **0.1.5+26 Preview**, source c7e169a3. Source/release CI,
 пакет и Windows Ed25519 feed проверены. [Аудит](evidence/release-v0.1.5.json).
-Для старого неисправного helper нужен один ручной переход; на этой машине он
-пока ожидает отключения ExVPN и штатного закрытия UI пользователем.
+Для старого неисправного helper нужен один ручной переход. На этой машине
+координатор закрыл старый UI встроенной native-командой без принудительного
+завершения и установил публичный 0.1.5+26 через UAC. Новая версия открыта,
+service Running, установленный helper check — exit0/upToDate.
+[Bootstrap](evidence/windows-bootstrap26-local.json).
+
+Отдельно подтверждён реальный установленный `restart-ui`: helper accepted,
+старый UI завершился, detached worker открыл новый UI, служба продолжила работу.
+[Restart](evidence/windows26-installed-restart.json). Это проверка handoff/restart,
+а не полный автоматический цикл установки следующего подписанного пакета;
+EXVPN-E6-008/006 остаются открытыми до такого цикла.
+
+### Контекст запуска диагностического стенда
+
+Прямой запуск CLI из Codex наследовал перенаправление новых AppData-папок в MSIX
+LocalCache даже при `GetPackageFamilyName=NO_PACKAGE`. Существующий update-cache
+открывался по обычному физическому пути, новые handoff-папки — по другому;
+`finalPath` правильно отклонял это как `cache_unavailable`. ACL и длина имени
+не были причиной этого отдельного отказа. Native-проверки не ослаблялись.
+
+Установленный restart проверен из обычного Explorer-процесса без повышения прав.
+Для такого запуска нужен именно desktop broker существующего Explorer:
+
+```powershell
+$exvpnShell = New-Object -ComObject Shell.Application
+$exvpnWindows = $exvpnShell.Windows()
+$exvpnDesktopHwnd = 0
+$exvpnDesktop = $exvpnWindows.FindWindowSW(0, 0, 8, [ref]$exvpnDesktopHwnd, 1)
+$exvpnDesktop.Document.Application.ShellExecute(
+  'C:\Program Files\ExVPN\exvpn.exe', '', '', 'open', 1)
+```
+
+Обычный `$exvpnShell.ShellExecute` не гарантировал Explorer-parent. Для CLI-проб
+desktop broker запускает отдельный обычный runner; затем уже он запускает helper.
 
 Запись ниже описывает первоначальное внедрение. Проверка available/ready сама
 по себе не подтверждает handoff → UAC → установка → новый процесс.

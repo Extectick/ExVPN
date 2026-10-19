@@ -1,0 +1,24 @@
+diff --git a/apps/exvpn/lib/build_identity.dart b/apps/exvpn/lib/build_identity.dart
+index 9b0e5e6..10ed843 100644
+--- a/apps/exvpn/lib/build_identity.dart
++++ b/apps/exvpn/lib/build_identity.dart
+@@ -1,4 +1,4 @@
+ // Keep in sync with pubspec.yaml; scripts/ci/verify.ps1 enforces this identity.
+-const appVersion = '0.1.5';
+-const appBuild = 26;
++const appVersion = '0.1.4';
++const appBuild = 25;
+ const appVersionLabel = '$appVersion+$appBuild';
+diff --git a/apps/exvpn/pubspec.yaml b/apps/exvpn/pubspec.yaml
+index ff51bc8..8f4e8bb 100644
+--- a/apps/exvpn/pubspec.yaml
++++ b/apps/exvpn/pubspec.yaml
+@@ -1,7 +1,7 @@
+ name: exvpn
+ description: ExVPN cross-platform client interface.
+ publish_to: none
+-version: 0.1.5+26
++version: 0.1.4+25
+ environment:
+   sdk: '>=3.13.0 <4.0.0'
+ dependencies:

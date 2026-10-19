@@ -1,0 +1,27 @@
+[
+  {
+    "file": "android-updater26-runtime.json",
+    "sha256": "6d0f5109704e6b336fe63a8df677de9e9a9860dcdf394b9af363ff5c0b1ff5ff",
+    "bytes": 8834
+  },
+  {
+    "file": "android-updater26-qa-version-only.patch",
+    "sha256": "07955d8b0154d5f9667bb6dbd0b3a3a06f141166310eb0c1a8f79295ca9860e3",
+    "bytes": 793
+  },
+  {
+    "file": "android-updater26-system-installer.png",
+    "sha256": "6b97a55862434893eab94a315813bedd9307cecddb895a786f8cb219db7bee53",
+    "bytes": 313830
+  },
+  {
+    "file": "android-updater26-versions.png",
+    "sha256": "2ac2ac74551305c8d490e4a84a40e393059c90a4682c92dbe4b76df796f9bd3e",
+    "bytes": 199455
+  },
+  {
+    "file": "android-updater26-policy.png",
+    "sha256": "f9b38e385f6c9221df7ce1c978a81e8e4e774d6012e058017b245ec64764dd2d",
+    "bytes": 199532
+  }
+]

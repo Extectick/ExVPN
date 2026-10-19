@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "scope": "installed restart-ui from Explorer; not full package OTA",
+  "startedUtc": "2026-10-19T07:23:36.2287833Z",
+  "status": "passed",
+  "forcedTermination": false,
+  "serviceChanged": false,
+  "parentProcess": "explorer",
+  "elevated": false,
+  "helperExitCode": 0,
+  "reply": {
+    "type": "result",
+    "status": "accepted"
+  },
+  "stderrEmpty": true,
+  "endedUtc": "2026-10-19T07:24:34.9213206Z",
+  "harnessCorrection": "Native window class corrected to observed EXVPN_RUNNER_WIN32_WINDOW; same accepted worker used",
+  "oldUiPid": 55676,
+  "newUiPid": 51596,
+  "reopenedByWorker": true,
+  "serviceStatus": "Running",
+  "initialHarnessError": "native_ui_close_failed",
+  "installedVersion": "0.1.5+26",
+  "fullPackageOtaVerified": false
+}

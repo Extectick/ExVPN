@@ -15,6 +15,26 @@ notices/SBOM и оба подписанных Windows/Android feed прошли 
 Локальный и публичный APK имеют разные хеши; install/upgrade проверяется на
 публичном APK отдельно. Это Preview, не закрытие E1 или полной приёмки E6/E7.
 
+Windows 2026-10-19: публичный 0.1.5+26 установлен поверх 0.1.3+24 через UAC;
+service Running, helper check exit0/upToDate. Настоящий installed helper restart
+прошёл из обычного Explorer runner: accepted → old UI exit → new UI от worker,
+без изменения службы. [Bootstrap](evidence/windows-bootstrap26-local.json),
+[restart](evidence/windows26-installed-restart.json).
+Прямой запуск из Codex давал MSIX write virtualization и другой physical path
+для новых handoff-папок; это отдельный отказ стенда, не повод ослаблять guards.
+[Правильный контекст](WINDOWS_APP_UPDATES.md#контекст-запуска-диагностического-стенда).
+Полный автоматический package OTA до следующего выпуска ещё не подтверждён.
+
+Android 2026-10-19: реальный production feed → загрузка публичного APK →
+разрешение установки для ExVPN → системный installer → **0.1.5+26** прошли
+в API30 emulator. Установленный SHA-256 совпал с публичным, UID и синтетические
+подписки/выбор/политика приложений сохранились.
+[Runtime](evidence/android-updater26-runtime.json). Исходная QA-версия +25
+содержала код c7e169a3 с изменением только двух файлов версии (72c34b56);
+старый публичный +25 не имел updater. Feed, signer и production guards не
+подменялись. Отмена системного installer в runtime и физический Android ещё
+не проверены; unit coverage не закрывает эти ограничения.
+
 Публикация 0.1.4+25: source CI39145319784 и release CI39145366138 на исходниках
 576a392 успешны для Android и Windows. Скачаны все 15 публичных assets,
 проверены SHA256SUMS, APK release certificate, notices/SBOM и Windows Ed25519 feed.

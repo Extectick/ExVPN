@@ -817,9 +817,21 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   переход старого UI через UAC в новую версию подтверждены. Найдено на установленной
   0.1.3+24: правильный пакет 0.1.4+25 скачан, но staging 40 ошибочно сравнивался
   с 39. Prepare-only воспроизвёл отказ без commit/выхода/установки. Native
-  regression tests и vet PASS; установленное исправление ещё не проверено.
+  regression tests и vet PASS. Установленный 0.1.5+26 check/restart подтверждён
+  из обычного Explorer; полный автоматический package OTA остаётся открыт.
   Исходники: [c7e169a3](https://github.com/Extectick/ExVPN/commit/c7e169a3c483b2b4ac4f2ee0703ebd388c2857db).
   [Диагноз](evidence/windows-update-0.1.5-diagnosis.json).
+- [x] **EXVPN-E6-010** — Восстановить установленный Windows-клиент и проверить
+  настоящий helper restart отдельно от package OTA. Критерий: публичный installer
+  совпадает с проверенными bytes/hash; old UI закрыт без force-kill; новая версия,
+  service Running, helper check, accepted/old-exit/new-process подтверждены.
+  Проверено 2026-10-19: 0.1.3+24 → публичный 0.1.5+26 через UAC; helper
+  exit0/upToDate; Explorer-parent unelevated runner получил accepted, тот же
+  detached worker запустил новый UI после выхода прежнего. Native source c7e169a3.
+  [Установка](evidence/windows-bootstrap26-local.json),
+  [restart](evidence/windows26-installed-restart.json). Прямой Codex CLI выявил
+  MSIX AppData redirection; correct Explorer context подтверждён отдельно.
+  Source/ACL/finalPath guards сохранены. Полный package OTA этим не закрыт.
 - [ ] **EXVPN-E6-009** — Добавить Android полные APK updates. Критерий: отдельный
   подписанный feed, platform/domain/expiry/build/compatibility и HTTPS/size/hash
   проверки; private staging; native package/version/release signer PIN; явное
@@ -827,15 +839,29 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   Требуется реальное обновление с сохранением данных в эмуляторе отдельно от
   unit-тестов; физическое устройство остаётся общей приёмкой. Предыдущие ordinary
   APK не имели full backend, нужен один ручной bootstrap. Реализация c7e169a3
-  прошла Full и 47 JVM tests; signed APK/feed опубликованы. Runtime ещё открыт.
+  прошла Full и 47 JVM tests; signed APK/feed опубликованы. Реальное обновление
+  из production feed в публичный +26 и сохранение данных подтверждены в E6-011.
+  Отмена системного installer в runtime ещё не проверена; пункт остаётся открыт.
   [Сборка](evidence/android-candidate26-build.json), [доставка](evidence/release-v0.1.5.json).
+- [x] **EXVPN-E6-011** — Подтвердить настоящий Android APK upgrade и сохранение
+  данных отдельно от отмены установки. Критерий: production feed, реальная
+  загрузка, разрешение источника и системный installer без подмены native guards;
+  установленный публичный APK, UID и синтетические данные совпадают с ожидаемыми.
+  Проверено 2026-10-19: API30, публичный 0.1.5+26, точный SHA-256, прежний UID,
+  три группы, выбранное подключение и exclude/count1 сохранены. Native idle и
+  отсутствие ошибки подтверждены. Исходники c7e169a3; закрытый QA baseline
+  72c34b56 меняет только два файла версии на 0.1.4+25 и не является старым
+  публичным +25. [Отчёт](evidence/android-updater26-runtime.json).
+  Отмена installer и физический телефон этим пунктом не закрываются.
 - [ ] **EXVPN-E7-010** — Выпустить 0.1.5+26 Preview с исправленным updater.
   Критерий: Full после заморозки исходников, Android/Windows сборки, runtime gates,
   новый immutable tag, обе CI платформы, опубликованные файлы и оба подписанных
   feed проверены скачиванием. Windows Authenticode и E1 не закрываются этим выпуском.
   2026-10-19: Full 12/12 PASS, 366 app tests, 216,79 с, source unchanged;
   [отчёт](evidence/fast-validation-v0.1.5.json). Native сборки, immutable tag
-  v0.1.5 на c7e169a3 и публичная доставка проверены; runtime ещё открыт.
+  v0.1.5 на c7e169a3 и публичная доставка проверены. Windows bootstrap/restart
+  и Android upgrade подтверждены в E6-010/011; полный Windows package OTA и
+  runtime-отмена Android installer остаются открытыми.
 - [x] **EXVPN-E7-011** — Проверить публичную доставку 0.1.5+26 отдельно от установки.
   Критерий: обе CI-платформы, source/tag, все файлы и checksums, APK signer,
   notices/SBOM и оба Ed25519 feed соответствуют фактическим пакетам. Проверено

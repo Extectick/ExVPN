@@ -1,0 +1,258 @@
+{
+  "schema": 1,
+  "purpose": "Android updater positive runtime QA",
+  "date": "2026-10-19",
+  "positiveUpgradeStatus": "PASS",
+  "installerCancellationRuntimeStatus": "NOT_RUN",
+  "source": {
+    "productCommit": "c7e169a3c483b2b4ac4f2ee0703ebd388c2857db",
+    "qaBaselineCommit": "72c34b562d95c78ace35f5ab1ba91317323d2812",
+    "qaBaselineParentEqualsProduct": true,
+    "baselineQAOnly": true,
+    "baselineNeverPublished": true,
+    "changedVersionFiles": [
+      "apps/exvpn/lib/build_identity.dart",
+      "apps/exvpn/pubspec.yaml"
+    ],
+    "versionOnlyPatch": "android-updater26-qa-version-only.patch",
+    "versionOnlyPatchSha256": "07955d8b0154d5f9667bb6dbd0b3a3a06f141166310eb0c1a8f79295ca9860e3",
+    "productionCodeHelpersFeedAndTrustUnchanged": true,
+    "testBackdoorsOrProductionTrustOverrides": false,
+    "qaCheckoutCleanAfterGeneratedOutputRestoration": true
+  },
+  "baseline": {
+    "version": "0.1.4+25",
+    "sha256": "ad9820b1924ae9051648796f1f4a8e5545e5dc4199b862bdf6a37eeda85cc930",
+    "bytes": 134393767,
+    "artifactLocation": "private QA workspace only; not a product release",
+    "strictBuildHelperStatus": "PASS",
+    "apkCompileAttempts": 1,
+    "toolchainSetupRefusalsBeforeCompile": 2,
+    "privateToolchainCorrections": [
+      "verified immutable pinned Xray proxy physical cache copy",
+      "core.longpaths=true in private Flutter SDK local Git config"
+    ],
+    "jvm": {
+      "skipped": 0,
+      "tests": 47,
+      "suites": 7,
+      "errors": 0,
+      "failures": 0
+    },
+    "signature": {
+      "trustedSignerMatched": true,
+      "v2Verified": true,
+      "certificateSha256": "2a43b65b5261da825b1793e8d9a2196b868fa0887b2e87c5908298b4ccbc7093"
+    },
+    "noticesEngineAndFullArtifactAudit": "PASS",
+    "installedWithAdbRForManualBootstrap": true,
+    "installedBaseHashMatched": true,
+    "syntheticProfilesCompiledIn": false
+  },
+  "publicTarget": {
+    "version": "0.1.5+26",
+    "sourceCommit": "c7e169a3c483b2b4ac4f2ee0703ebd388c2857db",
+    "releaseWorkflow": "39210171570",
+    "fixedProductionFeed": "https://github.com/Extectick/ExVPN/releases/download/android-beta/android.json",
+    "sha256": "563564b7e385e8d327f6b4300ba5d63148c909a5a43cf2335c3102ef3d525a3d",
+    "bytes": 134393771,
+    "independentPublicAuditReportedByCoordinator": "PASS",
+    "localProduct26ApkSubstituted": false
+  },
+  "runtime": {
+    "serial": "emulator-5582",
+    "api": 30,
+    "abi": "x86_64",
+    "baselineUid": 10169,
+    "installedUid": 10169,
+    "uidPreserved": true,
+    "productionSignedFeedOfferObserved": true,
+    "apkDownloadedByProductionAppBackend": true,
+    "firstObservedUiPercent": 8,
+    "monotonicProgressSamples": [
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:27:39.8834941Z",
+        "uiPercent": 25
+      },
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:27:59.7075029Z",
+        "uiPercent": 31
+      },
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:28:13.9405054Z",
+        "uiPercent": 35
+      },
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:28:33.6405949Z",
+        "uiPercent": 39
+      },
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:28:49.6759032Z",
+        "uiPercent": 45
+      },
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:29:09.8603495Z",
+        "uiPercent": 49
+      },
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:30:45.50694Z",
+        "uiPercent": 72
+      },
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:31:01.6849785Z",
+        "uiPercent": 76
+      },
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:31:15.8792599Z",
+        "uiPercent": 80
+      },
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:31:30.4911908Z",
+        "uiPercent": 84
+      },
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:31:44.8268733Z",
+        "uiPercent": 87
+      },
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:31:59.3645575Z",
+        "uiPercent": 91
+      },
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:32:14.118266Z",
+        "uiPercent": 95
+      },
+      {
+        "phase": "downloading",
+        "utc": "2026-10-19T07:32:28.7159051Z",
+        "uiPercent": 99
+      }
+    ],
+    "downloadCompletionObservedAsNativeSourcePermissionScreen": true,
+    "sourcePermission": {
+      "restoredToInitiallyDisallowed": true,
+      "adbGrantOrInstallerBypassUsed": false,
+      "grantedThroughActualAndroidSettingsUi": true,
+      "initiallyAllowed": false
+    },
+    "systemInstallerPackage": "com.google.android.packageinstaller",
+    "existingApplicationUpdateConfirmationObserved": true,
+    "installTapCount": 1,
+    "targetInstalledBySystemInstaller": true,
+    "targetInstalledWithAdb": false,
+    "installedBaseHashExactlyMatchesPublicTarget": true,
+    "dataBefore": {
+      "selectedCount": 1,
+      "selected": true,
+      "createdUtc": "2026-10-19T07:25:58.8858137Z",
+      "syntheticProfile": "QA route include",
+      "selectedApplication": "ExVPN QA excluded",
+      "visibleSyntheticGroups": [
+        "QA routing disabled",
+        "QA routing exclude",
+        "QA routing include"
+      ],
+      "policyMode": "exclude",
+      "schema": 1
+    },
+    "dataAfter": {
+      "visibleSyntheticGroups": [
+        "QA routing disabled",
+        "QA routing exclude",
+        "QA routing include"
+      ],
+      "profileSelectionPreserved": true,
+      "syntheticProfile": "QA route include",
+      "version": "0.1.5+26",
+      "selected": true,
+      "syntheticGroupsPreserved": true,
+      "schema": 1
+    },
+    "nativePolicyAfter": {
+      "mode": "exclude",
+      "selectedApplication": "ExVPN QA excluded",
+      "otherProbe": "ExVPN QA protected",
+      "selectedCount": 1,
+      "otherProbeChecked": false,
+      "selectedApplicationChecked": true,
+      "schema": 1,
+      "policyPreserved": true,
+      "loadedFromNativeAfterPackageUpdate": true
+    },
+    "actualDiagnosticsAfter": {
+      "vpnPhase": "disconnected",
+      "secureStorageAvailable": true,
+      "schema": 1,
+      "processCrashProtection": false,
+      "version": "0.1.5+26",
+      "coreVersion": "26.10.10-exvpn.5",
+      "errorCode": null
+    },
+    "cleanup": {
+      "noReverse": true,
+      "otherEmulator5564Untouched": true,
+      "schema": 1,
+      "noVpn": true,
+      "rotation": 0,
+      "initialSourcePermissionAllowed": false,
+      "serial": "emulator-5582",
+      "nativeDisconnected": true,
+      "sourcePermissionRestoredViaOsUi": true,
+      "version": "0.1.5+26",
+      "appCrashNotFoundInLast1500CrashBufferLines": true,
+      "noService": true,
+      "finalSourcePermissionAllowed": false,
+      "currentFeedUpdateOfferAbsent": true,
+      "rotationBaselinePreserved": true,
+      "syntheticProfileStillSelected": true,
+      "autoRotation": 1,
+      "completedUtc": "2026-10-19T07:42:41.7197092Z",
+      "uid": 10169,
+      "hostNetworkUnchanged": true
+    }
+  },
+  "limitations": [
+    "Installer Cancel/Back/retry runtime was not exercised: Install had already been confirmed before the cancellation request arrived. No downgrade or extra build was performed.",
+    "QA baseline uses the new updater implementation with only package identity changed to0.1.4+25; the original published0.1.4 APK has no Android updater backend.",
+    "Runtime covered the owned API30x86_64 emulator; no physical Android device or new full VPN traffic matrix was tested.",
+    "One10second UI dump timed out; a30second dump resumed observation without stopping or restarting the application download.",
+    "Source permission return required another user action; cache verification and actual installer staging were observed."
+  ],
+  "screenshots": [
+    {
+      "file": "android-updater26-system-installer.png",
+      "edited": false,
+      "sha256": "6b97a55862434893eab94a315813bedd9307cecddb895a786f8cb219db7bee53",
+      "safeSyntheticOrSystemScreen": true,
+      "bytes": 313830
+    },
+    {
+      "file": "android-updater26-versions.png",
+      "edited": false,
+      "sha256": "2ac2ac74551305c8d490e4a84a40e393059c90a4682c92dbe4b76df796f9bd3e",
+      "safeSyntheticOrSystemScreen": true,
+      "bytes": 199455
+    },
+    {
+      "file": "android-updater26-policy.png",
+      "edited": false,
+      "sha256": "f9b38e385f6c9221df7ce1c978a81e8e4e774d6012e058017b245ec64764dd2d",
+      "safeSyntheticOrSystemScreen": true,
+      "bytes": 199532
+    }
+  ],
+  "createdUtc": "2026-10-19T07:44:39.5957849Z"
+}
