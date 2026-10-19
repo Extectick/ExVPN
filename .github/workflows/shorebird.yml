@@ -1,0 +1,226 @@
+name: ExVPN signed Shorebird beta
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        options: [base, patch, rollback]
+        required: true
+      version:
+        description: Exact base SemVer+build; patches never change it
+        type: string
+        required: true
+      publish_cloud:
+        description: Explicitly publish to Shorebird; false validates only
+        type: boolean
+        default: false
+      base_run_id:
+        description: Successful base workflow run ID (patch/rollback)
+        type: string
+      base_source_commit:
+        description: Reviewed exact base source SHA (patch/rollback)
+        type: string
+      android_patch_number:
+        description: Actual Android patch number (rollback only)
+        type: string
+      windows_patch_number:
+        description: Actual Windows patch number (rollback only; may differ)
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: exvpn-shorebird-beta
+  cancel-in-progress: false
+
+jobs:
+  deliver:
+    if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/main' && inputs.operation != 'rollback'
+    name: Shorebird ${{ inputs.operation }} ${{ matrix.target }}
+    runs-on: windows-2025
+    environment: demo-release
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [Android, Windows]
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      CI: 'true'
+      GOTOOLCHAIN: local
+      FLUTTER_SUPPRESS_ANALYTICS: 'true'
+      DART_SUPPRESS_ANALYTICS: 'true'
+      EXVPN_OPERATION: ${{ inputs.operation }}
+      EXVPN_VERSION: ${{ inputs.version }}
+      EXVPN_PUBLISH: ${{ inputs.publish_cloud }}
+      EXVPN_BASE_SHA: ${{ inputs.base_source_commit }}
+      EXVPN_TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Validate explicit identity and source
+        run: |
+          if ($env:EXVPN_VERSION -cnotmatch '^\d+\.\d+\.\d+\+[1-9]\d*$') { throw 'shorebird_version_invalid' }
+          if ($env:EXVPN_OPERATION -ceq 'patch' -and $env:EXVPN_BASE_SHA -cnotmatch '^[a-f0-9]{40}$') { throw 'shorebird_base_source_invalid' }
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .tools/downloads/go1.27.2.windows-amd64.zip
+            .tools/downloads/flutter_windows_3.47.7-stable.zip
+            .tools/cache/pub
+            .tools/cache/shorebird-pub
+            .tools/cache/go/pkg/mod
+            .tools/cache/go-build
+          key: exvpn-shorebird-inputs-v1-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/*.lock.json', 'apps/exvpn/pubspec.lock', 'native/**/go.sum') }}
+      - name: Cache exact Shorebird checkout and SDK (verified after restore)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tools/shorebird-1.6.129
+          key: exvpn-shorebird-sdk-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.target }}-${{ hashFiles('scripts/bootstrap/shorebird.lock.json') }}
+      - name: Prepare pinned ordinary tools and Android inputs
+        run: |
+          ./scripts/bootstrap/bootstrap.ps1
+          if (!$env:JAVA_HOME_21_X64 -or !$env:ANDROID_HOME) { throw 'shorebird_runner_jdk_sdk_missing' }
+          "JAVA_HOME=$env:JAVA_HOME_21_X64" >> $env:GITHUB_ENV
+          $env:JAVA_HOME = $env:JAVA_HOME_21_X64
+          if ($env:EXVPN_TARGET -ceq 'Android') {
+            & (Join-Path $env:ANDROID_HOME 'cmdline-tools/latest/bin/sdkmanager.bat') 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358' 'ndk;27.1.12297006'
+            if ($LASTEXITCODE -ne 0) { throw 'shorebird_android_packages_failed' }
+          }
+          ./scripts/release/prepare-archive-inspector.ps1
+      - name: Test pipeline guards without SDK or cloud mutations
+        run: ./scripts/release/test-shorebird-pipeline.ps1
+      - name: Analyze and test the reviewed Dart source
+        run: |
+          if ($env:EXVPN_OPERATION -ceq 'base') {
+            ./scripts/ci/verify.ps1 -Target Checks
+          } else {
+            ./scripts/qa/run-fast-validation.ps1 -Changed -BaseRef $env:EXVPN_BASE_SHA
+          }
+      - name: Prepare exact Shorebird CLI and Flutter
+        run: ./scripts/release/prepare-shorebird.ps1 -Target $env:EXVPN_TARGET
+      - name: Build Android JNI for base only
+        if: inputs.operation == 'base' && matrix.target == 'Android'
+        run: ./native/android/build.ps1
+      - name: Build Windows service for base only
+        if: inputs.operation == 'base' && matrix.target == 'Windows'
+        run: |
+          ./scripts/windows/build.ps1
+          ./scripts/windows/prepare-wintun.ps1
+      - name: Download immutable base receipts and sealed inputs
+        if: inputs.operation == 'patch'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: shorebird-base-${{ matrix.target }}-${{ inputs.base_source_commit }}
+          path: artifacts/shorebird-base
+          run-id: ${{ inputs.base_run_id }}
+          github-token: ${{ github.token }}
+      - name: Build once and optionally publish signed beta
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+          EXVPN_ANDROID_KEYSTORE_BASE64: ${{ matrix.target == 'Android' && secrets.EXVPN_ANDROID_KEYSTORE_BASE64 || '' }}
+          EXVPN_ANDROID_STORE_PASSWORD: ${{ matrix.target == 'Android' && secrets.EXVPN_ANDROID_STORE_PASSWORD || '' }}
+          EXVPN_ANDROID_KEY_PASSWORD: ${{ matrix.target == 'Android' && secrets.EXVPN_ANDROID_STORE_PASSWORD || '' }}
+          EXVPN_ANDROID_KEY_ALIAS: exvpn
+          EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64: ${{ inputs.operation == 'patch' && secrets.EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64 || '' }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (!$env:SHOREBIRD_TOKEN) { throw 'shorebird_api_key_missing' }
+          $keyPath = Join-Path $env:RUNNER_TEMP ('exvpn-shorebird-' + [guid]::NewGuid().ToString('N') + '.p12')
+          try {
+            if ($env:EXVPN_TARGET -ceq 'Android') {
+              if (!$env:EXVPN_ANDROID_KEYSTORE_BASE64 -or !$env:EXVPN_ANDROID_STORE_PASSWORD) { throw 'shorebird_android_signing_missing' }
+              [IO.File]::WriteAllBytes($keyPath,[Convert]::FromBase64String($env:EXVPN_ANDROID_KEYSTORE_BASE64))
+              $env:EXVPN_ANDROID_KEYSTORE_BASE64 = $null
+              $env:EXVPN_ANDROID_KEYSTORE = $keyPath
+            }
+            . ./scripts/bootstrap/enter-environment.ps1
+            $arguments = @{Target=$env:EXVPN_TARGET;ReleaseVersion=$env:EXVPN_VERSION;PublishCloud=($env:EXVPN_PUBLISH -ceq 'true')}
+            if ($env:EXVPN_OPERATION -ceq 'base') {
+              $result = ./scripts/release/shorebird-release.ps1 @arguments
+            } else {
+              if (!$env:EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64) { throw 'shorebird_patch_signing_missing' }
+              $receipts = @(Get-ChildItem artifacts/shorebird-base -File -Recurse -Filter build.json)
+              if ($receipts.Count -ne 1) { throw 'shorebird_base_receipt_ambiguous' }
+              $result = ./scripts/release/shorebird-patch.ps1 @arguments -BaseReceipt $receipts[0].FullName -BaseSourceCommit $env:EXVPN_BASE_SHA
+            }
+            "EXVPN_SHOREBIRD_OUTPUT=$($result.OutputDirectory)" >> $env:GITHUB_ENV
+          } finally {
+            $env:EXVPN_ANDROID_KEYSTORE = $null
+            $env:EXVPN_ANDROID_STORE_PASSWORD = $null
+            $env:EXVPN_ANDROID_KEY_PASSWORD = $null
+            $env:EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64 = $null
+            if (Test-Path -LiteralPath $keyPath) { Remove-Item -LiteralPath $keyPath -Force }
+          }
+      - name: Upload audited artifacts and sanitized receipts only
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: shorebird-${{ inputs.operation }}-${{ matrix.target }}-${{ github.sha }}
+          path: ${{ env.EXVPN_SHOREBIRD_OUTPUT }}
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 90
+      - name: Preserve sanitized cloud recovery identity even after failure
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: shorebird-recovery-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/shorebird-recovery/*.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+  rollback:
+    if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/main' && inputs.operation == 'rollback'
+    runs-on: windows-2025
+    environment: demo-release
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      EXVPN_VERSION: ${{ inputs.version }}
+      EXVPN_ANDROID_PATCH_NUMBER: ${{ inputs.android_patch_number }}
+      EXVPN_WINDOWS_PATCH_NUMBER: ${{ inputs.windows_patch_number }}
+      EXVPN_PUBLISH: ${{ inputs.publish_cloud }}
+      EXVPN_BASE_SHA: ${{ inputs.base_source_commit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download both base receipts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: shorebird-base-*-${{ inputs.base_source_commit }}
+          path: artifacts/shorebird-base
+          run-id: ${{ inputs.base_run_id }}
+          github-token: ${{ github.token }}
+      - name: Prepare exact CLI
+        run: |
+          ./scripts/bootstrap/bootstrap.ps1
+          ./scripts/release/prepare-shorebird.ps1 -Target Windows
+      - name: Verify or roll back the exact beta patch
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+        run: |
+          if ($env:EXVPN_BASE_SHA -cnotmatch '^[a-f0-9]{40}$' -or $env:EXVPN_ANDROID_PATCH_NUMBER -cnotmatch '^[1-9][0-9]*$' -or $env:EXVPN_WINDOWS_PATCH_NUMBER -cnotmatch '^[1-9][0-9]*$') { throw 'shorebird_rollback_identity_invalid' }
+          $receipts = @(Get-ChildItem artifacts/shorebird-base -File -Recurse -Filter build.json)
+          if ($receipts.Count -ne 2) { throw 'shorebird_rollback_receipts_missing' }
+          foreach ($receipt in $receipts) {
+            $base = Get-Content -LiteralPath $receipt.FullName -Raw | ConvertFrom-Json
+            if ($base.sourceCommit -cne $env:EXVPN_BASE_SHA) { throw 'shorebird_rollback_source_mismatch' }
+          }
+          $result = ./scripts/release/shorebird-rollback-all.ps1 -ReleaseVersion $env:EXVPN_VERSION -AndroidPatchNumber ([int]$env:EXVPN_ANDROID_PATCH_NUMBER) -WindowsPatchNumber ([int]$env:EXVPN_WINDOWS_PATCH_NUMBER) -BaseReceipts @($receipts.FullName) -PublishCloud:($env:EXVPN_PUBLISH -ceq 'true')
+          "EXVPN_SHOREBIRD_OUTPUT=$($result.OutputDirectory)" >> $env:GITHUB_ENV
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: shorebird-rollback-${{ github.run_id }}
+          path: ${{ env.EXVPN_SHOREBIRD_OUTPUT }}
+          if-no-files-found: error
+          retention-days: 90

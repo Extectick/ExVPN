@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "status": "TARGETED_OFFLINE_CHECKS_PASS",
+  "utc": "2026-10-19T10:18:47.4973431+00:00",
+  "scope": "Pinned source-notice superset and same-build Maven selector; no SDK/build/install/cloud/VPN commands",
+  "sourceFiles": [
+    {
+      "path": "scripts/release/collect-notices.ps1",
+      "bytes": 16224,
+      "sha256": "48330de9b0e4692fc55574223ad433766f273572db2d06cf4febf06bb82f06d7"
+    },
+    {
+      "path": "scripts/release/prepare-demo-maven-notices.ps1",
+      "bytes": 13381,
+      "sha256": "dfc3529073e1f17947453ec3c8e4e0ac7ae2a20a02b13de4c5366423c1f29b2a"
+    },
+    {
+      "path": "scripts/release/test-demo-maven-notices.ps1",
+      "bytes": 10589,
+      "sha256": "de88d622b34c449271f87b5a5f8c910c846bdb910656095f2cc227fd7b3cb2c4"
+    },
+    {
+      "path": "scripts/release/shorebird-runtime-notices.ps1",
+      "bytes": 7820,
+      "sha256": "640963f5185e6d4fb60a21de40501b21f9dd11509da6d2f4629c865e1412d15c"
+    },
+    {
+      "path": "scripts/release/shorebird-runtime-notices.lock.json",
+      "bytes": 508,
+      "sha256": "366be75d78a567ebbfa1d542dcfde61d949d50ca5d22062cd93c0b130cbb0510"
+    },
+    {
+      "path": "scripts/release/test-shorebird-runtime-notices.ps1",
+      "bytes": 5192,
+      "sha256": "cd47d0801d9de4a28ce57f346f6c80a01e8cb6637b15a7bc7077c7860c22386d"
+    },
+    {
+      "path": "scripts/release/test-notice-inputs.ps1",
+      "bytes": 60906,
+      "sha256": "56025446580fdcac67f9ec7d96af26b08fd12ee0ad97f49ea4e565e7824f9ca4"
+    },
+    {
+      "path": "docs/DEPENDENCIES.md",
+      "bytes": 37003,
+      "sha256": "863ceddcb4cccf04d1527097c920b2e5060d8eb365e2bbb9ccba1d4f1c943b37"
+    }
+  ],
+  "inventory": {
+    "path": "scripts/release/licenses/shorebird-runtime-4b936a0c03e13389ddfb1ac48823f187964975c2/inventory.json",
+    "sha256": "bf4886f683436415923de72aaf4f504b696cece8f98960189700a76789f78c4a",
+    "bytes": 229840,
+    "embeddedFiles": 200,
+    "sourceCrates": 282,
+    "productionAndBuildSourceClosure": 200
+  },
+  "tests": [
+    {
+      "command": "pwsh -NoProfile -File scripts/release/test-shorebird-runtime-notices.ps1",
+      "checks": 220,
+      "status": "PASS"
+    },
+    {
+      "command": "pwsh -NoProfile -File scripts/release/test-demo-maven-notices.ps1",
+      "checks": 41,
+      "status": "PASS"
+    },
+    {
+      "command": "pwsh -NoProfile -File scripts/release/test-notice-inputs.ps1",
+      "checks": 177,
+      "updaterCrateChecks": 43,
+      "status": "PASS"
+    }
+  ],
+  "included": "Full checksum-pinned comde crate with declared Apache-2.0 branch; published crate notices and exact-source supplements; exact Rust COPYRIGHT/REUSE/license metadata/full texts",
+  "exclusions": [
+    "sacabase/sacapart belong to patch CLI closure, not updater production/build roots",
+    "vex-sdk is Rust std target_os=vexos only"
+  ],
+  "limitations": [
+    "Source-based conservative superset; not publisher toolchain attestation",
+    "Not exact post-link SBOM or upstream-generated COPYRIGHT-library.html",
+    "Actual APK/NSIS inclusion, exact engine binding and same-build Maven graph must pass separate packaged audit",
+    "No stable readiness claim"
+  ]
+}

@@ -3,20 +3,27 @@
 .SYNOPSIS
 Builds a pinned Shorebird beta base release with signed-patch verification.
 .DESCRIPTION
-Uses Shorebird's online dry-run: it builds but does not publish. Cloud publication
-requires a separate reviewed step after validation of the packaged bytes.
+Dry-run by default. -PublishCloud explicitly authorizes the single official
+build-and-publish operation; packaged audit then gates distribution of its bytes.
 Native JNI/service builds are separate and are not rebuilt by this wrapper.
 #>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][ValidateSet('Android', 'Windows')][string]$Target,
-    [string]$AndroidSdkPath = ''
+    [string]$AndroidSdkPath = '',
+    [Parameter(Mandatory)][ValidatePattern('^\d+\.\d+\.\d+\+[1-9]\d*$')][string]$ReleaseVersion,
+    [switch]$PublishCloud
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 . (Join-Path $PSScriptRoot 'flutter-runtime-inputs.ps1')
 . (Join-Path $PSScriptRoot 'notice-inputs.ps1')
+. (Join-Path $PSScriptRoot 'shorebird-pipeline-lib.ps1')
+. (Join-Path $PSScriptRoot 'shorebird-preview-lib.ps1')
+. (Join-Path $PSScriptRoot 'demo-android-lib.ps1')
+. (Join-Path $PSScriptRoot 'shorebird-runtime-notices.ps1')
+$sourceCommit = Get-ShorebirdSourceCommit $repository
 if ($Target -eq 'Android') { $AndroidSdkPath = Get-ReleaseAndroidSdkPath $AndroidSdkPath }
 function Read-ExVpnUpdaterConfig([string]$Text, [switch]$Compiled) {
     # Deliberately accept only this project's flat config, not arbitrary YAML.
@@ -72,6 +79,9 @@ $shorebird = Join-Path $repository ".tools/$($pin.cli.folder)/bin/shorebird.ps1"
 Assert-ExVpnShorebirdCache (Join-Path $repository ".tools/$($pin.cli.folder)") $pin.cli.revision $pin.flutter.revision
 $app = Join-Path $repository 'apps/exvpn'
 $version = Get-NoticeAppVersion ([IO.File]::ReadAllText((Join-Path $app 'pubspec.yaml'))) ([IO.File]::ReadAllText((Join-Path $app 'lib/build_identity.dart')))
+if ($version -cne $ReleaseVersion) { throw 'shorebird_source_version_mismatch' }
+$versionParts = $version.Split('+')
+$null = Get-ShorebirdCli $repository
 $publicKeyPath = Join-Path $repository 'config/signing/shorebird-beta-public.pem'
 $publicKey = [Security.Cryptography.RSA]::Create()
 try {
@@ -85,20 +95,27 @@ if ($appId -cne 'ea97a683-02e5-4d86-9aa1-779d6b4bc81e') {
     throw 'The beta updater configuration does not match the reviewed project policy.'
 }
 $runId = [Guid]::NewGuid().ToString('N')
-$privateRun = Join-Path $repository ".private/shorebird-builds/$runId"
+$privateRun = New-ShorebirdPrivateDirectory $repository 'base'
 $output = Join-Path $repository "artifacts/shorebird/$version-$($Target.ToLowerInvariant())-$runId"
-New-Item -ItemType Directory -Path $privateRun, $output | Out-Null
+$stage = Join-Path $privateRun 'public'
+New-Item -ItemType Directory -Path $stage | Out-Null
 $lockHash = (Get-FileHash (Join-Path $app 'pubspec.lock') -Algorithm SHA256).Hash
 $configHash = (Get-FileHash (Join-Path $app 'shorebird.yaml') -Algorithm SHA256).Hash
 $environmentNames = @('PATH','PUB_CACHE','GRADLE_USER_HOME','CI','FLUTTER_SUPPRESS_ANALYTICS',
     'DART_SUPPRESS_ANALYTICS','FLUTTER_STORAGE_BASE_URL','ANDROID_HOME','ANDROID_SDK_ROOT',
     'GOTOOLCHAIN','GOPATH','GOCACHE','GOPROXY','GOSUMDB','GONOSUMDB','GOWORK',
     'JAVA_HOME','EXVPN_ANDROID_PACKAGE_INPUTS','EXVPN_FLUTTER_RUNTIME','EXVPN_FLUTTER_BUILD_MODE',
+    'EXVPN_DEMO_MAVEN_GRAPH',
     'EXVPN_ANDROID_KEYSTORE','EXVPN_ANDROID_KEY_ALIAS','EXVPN_ANDROID_STORE_PASSWORD','EXVPN_ANDROID_KEY_PASSWORD')
 $savedEnvironment = @{}
 foreach ($name in $environmentNames) { $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process') }
 $passwordBytes = $null
 $packageInputs = $null
+$hook = $null; $hookOwned = $false; $hookHash = $null
+$cloudRelease = $null
+$cloudRegisteredVerified = $false
+$recoveryPath = $null
+$phase = 'environment'
 
 function Assert-CompiledUpdater([string]$Text) {
     $compiled = Read-ExVpnUpdaterConfig $Text -Compiled
@@ -124,7 +141,7 @@ try {
     $env:FLUTTER_SUPPRESS_ANALYTICS = 'true'
     $env:DART_SUPPRESS_ANALYTICS = 'true'
     $env:FLUTTER_STORAGE_BASE_URL = 'https://download.shorebird.dev'
-    $env:JAVA_HOME = 'C:\PROGRA~1\Android\ANDROI~1\jbr'
+    if (!$env:JAVA_HOME) { $env:JAVA_HOME = 'C:\PROGRA~1\Android\ANDROI~1\jbr' }
     if ($Target -eq 'Android') {
         $env:ANDROID_HOME = $AndroidSdkPath
         $env:ANDROID_SDK_ROOT = $AndroidSdkPath
@@ -133,17 +150,39 @@ try {
     & $flutter pub get --offline --enforce-lockfile *> (Join-Path $privateRun 'pub-private.log')
     if ($LASTEXITCODE -ne 0) { throw 'Pinned Flutter dependency resolution failed; inspect private build log.' }
     if ($Target -eq 'Android') {
-        $signingRoot = Join-Path $repository '.private/signing/android'
-        $passwordBytes = [Security.Cryptography.ProtectedData]::Unprotect(
-            [IO.File]::ReadAllBytes((Join-Path $signingRoot 'store-password.dpapi')), $null,
-            [Security.Cryptography.DataProtectionScope]::CurrentUser)
-        $env:EXVPN_ANDROID_KEYSTORE = Join-Path $signingRoot 'release.p12'
-        $env:EXVPN_ANDROID_KEY_ALIAS = 'exvpn'
-        $env:EXVPN_ANDROID_STORE_PASSWORD = [Text.Encoding]::UTF8.GetString($passwordBytes)
-        $env:EXVPN_ANDROID_KEY_PASSWORD = $env:EXVPN_ANDROID_STORE_PASSWORD
+        if (!$env:EXVPN_ANDROID_KEYSTORE -and !$env:EXVPN_ANDROID_STORE_PASSWORD -and !$env:EXVPN_ANDROID_KEY_PASSWORD -and !$env:EXVPN_ANDROID_KEY_ALIAS) {
+            $signingRoot = Join-Path $repository '.private/signing/android'
+            Assert-AuditNoLinks $signingRoot
+            $passwordBytes = [Security.Cryptography.ProtectedData]::Unprotect(
+                [IO.File]::ReadAllBytes((Join-Path $signingRoot 'store-password.dpapi')), $null,
+                [Security.Cryptography.DataProtectionScope]::CurrentUser)
+            $env:EXVPN_ANDROID_KEYSTORE = Join-Path $signingRoot 'release.p12'
+            $env:EXVPN_ANDROID_KEY_ALIAS = 'exvpn'
+            $env:EXVPN_ANDROID_STORE_PASSWORD = [Text.Encoding]::UTF8.GetString($passwordBytes)
+            $env:EXVPN_ANDROID_KEY_PASSWORD = $env:EXVPN_ANDROID_STORE_PASSWORD
+        }
+        $signing = Get-DemoAndroidSigningInput
+        $expectedSigner = Get-DemoAndroidCertificateSha256 (Join-Path $repository 'config/signing/android-release-cert.pem') -Pem
+        $keytool = Join-Path $env:JAVA_HOME 'bin/keytool.exe'
+        $exportedCertificate = Join-Path $privateRun 'signer.der'
+        $null = Invoke-AuditTool $keytool @('-exportcert','-alias',$signing.Alias,'-keystore',$signing.Path,
+            '-storepass:env','EXVPN_ANDROID_STORE_PASSWORD','-file',$exportedCertificate)
+        if ((Get-DemoAndroidCertificateSha256 $exportedCertificate) -cne $expectedSigner) { throw 'shorebird_apk_signer_mismatch' }
         $packageInputs = & (Join-Path $PSScriptRoot 'prepare-android-notices.ps1') -FlutterRuntime shorebird -FlutterBuildMode release
         if (!$packageInputs.InputDirectory) { throw 'A fresh Android native/notices snapshot is required.' }
         $env:EXVPN_ANDROID_PACKAGE_INPUTS = $packageInputs.InputDirectory
+        $rawGraph = Join-Path $privateRun 'android-maven-inputs.json'
+        $env:EXVPN_DEMO_MAVEN_GRAPH = $rawGraph
+        $hookDirectory = Join-Path $env:GRADLE_USER_HOME 'init.d'
+        New-Item -ItemType Directory -Path $hookDirectory -Force | Out-Null
+        Assert-AuditNoLinks $hookDirectory
+        $hook = Join-Path $hookDirectory 'exvpn-demo-maven-notices.gradle'
+        $hookSource = Join-Path $PSScriptRoot 'prepare-demo-maven-notices.init.gradle'
+        $hookHash = Get-AuditSha256 $hookSource
+        $hookStream = [IO.File]::Open($hook,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+        $hookOwned = $true
+        try { $bytes = [IO.File]::ReadAllBytes($hookSource); $hookStream.Write($bytes,0,$bytes.Length) }
+        finally { $hookStream.Dispose() }
     }
     $env:EXVPN_FLUTTER_RUNTIME = 'shorebird'
     $env:EXVPN_FLUTTER_BUILD_MODE = 'release'
@@ -151,16 +190,32 @@ try {
     # CLI's final system-Flutter pub get also uses the exact Shorebird SDK.
     $env:PATH = (Join-Path $runtime.SdkRoot 'bin') + [IO.Path]::PathSeparator + $savedEnvironment.PATH
     $arguments = @('release', $Target.ToLowerInvariant(), "--flutter-version=$($pin.flutter.revision)",
-        "--public-key-path=$publicKeyPath", '--dart-define=EXVPN_DART_UPDATE_TRACK=beta')
+        "--public-key-path=$publicKeyPath", '--dart-define=EXVPN_DART_UPDATE_TRACK=beta','--dart-define=EXVPN_DEMO=false')
     if ($Target -eq 'Android') { $arguments += @('--artifact=apk','--target-platform=android-arm64,android-x64') }
-    $arguments += '--dry-run'
+    if (!$PublishCloud) { $arguments += '--dry-run' }
     # Android's release plugin registrant is regenerated only when --pub is
     # enabled. Shorebird resets it with a normal pub get between AAB and APK,
     # so --no-pub would leave dev-only integration_test in release Java code.
     # Dependencies were verified offline above; reject any lock change below.
     $arguments += @('--', $(if ($Target -eq 'Android') { '--pub' } else { '--no-pub' }))
-    & $shorebird @arguments *> (Join-Path $privateRun 'shorebird-private.log')
-    if ($LASTEXITCODE -ne 0) { throw "Shorebird build failed (exit $LASTEXITCODE); inspect private build log." }
+    $phase = 'shorebird_release'
+    if ($PublishCloud) {
+        $recoveryPath=Write-ShorebirdRecovery -Repository $repository -Action base -Version $version -Target $Target -SourceCommit $sourceCommit -Status attempting -CloudOutcome unknown -Phase $phase
+    }
+    $cloud = Invoke-ShorebirdJson $shorebird $arguments 'release' $privateRun 'release'
+    if ($PublishCloud) {
+        if ($cloud.app_id -cne $appId -or @($cloud.releases).Count -ne 1) { throw 'shorebird_cloud_release_invalid' }
+        $cloudRelease = $cloud.releases[0]
+        Assert-ShorebirdCloudRelease $cloudRelease $version $Target
+        $cloudRegisteredVerified = $true
+        $null=Write-ShorebirdRecovery -Repository $repository -Action base -Version $version -Target $Target -SourceCommit $sourceCommit -Status cloud_registered -CloudOutcome registered -Phase $phase -ReleaseId $cloudRelease.id -Path $recoveryPath
+        # Preserve cloud-registration evidence immediately. A later audit failure
+        # must not be mistaken for an unpublished release or retried blindly.
+        [ordered]@{schemaVersion=1;action='cloud_registered';version=$version;target=$Target;sourceCommit=$sourceCommit;releaseId=$cloudRelease.id;published=$true;distributionApproved=$false} |
+            ConvertTo-Json | Set-Content -LiteralPath (Join-Path $privateRun 'cloud-registered.json') -Encoding utf8NoBOM
+    } elseif (!$cloud.dry_run -or $cloud.release_version -cne $version) { throw 'shorebird_dry_run_response_invalid' }
+    if ($hookOwned) { Remove-DemoAndroidOwnedHook $hook $hookHash; $hookOwned = $false }
+    $phase = 'package_audit'
     if ((Get-FileHash (Join-Path $app 'pubspec.lock')).Hash -cne $lockHash -or
         (Get-FileHash (Join-Path $app 'shorebird.yaml')).Hash -cne $configHash) {
         throw 'Source lock or updater policy changed during the build.'
@@ -171,40 +226,100 @@ try {
     }
     if ($Target -eq 'Android') {
         . (Join-Path $PSScriptRoot 'android-notice-inputs.ps1')
+        $noticeBundle = Join-Path $packageInputs.InputDirectory 'assets/exvpn_notices'
+        $noticeInventory = Get-Content -LiteralPath (Join-Path $noticeBundle 'inventory.json') -Raw | ConvertFrom-Json -AsHashtable
+        Assert-ShorebirdRuntimeNotices $noticeInventory (Get-ShorebirdRuntimeNotices $repository $runtimeAfter) $noticeBundle
         $apk = Join-Path $app 'build/app/outputs/flutter-apk/app-release.apk'
         $aab = Join-Path $app 'build/app/outputs/bundle/release/app-release.aab'
         $packagedRuntime = Assert-AndroidPackagedNotices $repository $packageInputs.InputDirectory $apk `
             -FlutterRuntime shorebird -FlutterBuildMode release -PassThruRuntime -AndroidSdkPath $AndroidSdkPath
         Assert-ZipUpdater $apk 'assets/flutter_assets/shorebird.yaml'
         Assert-ZipUpdater $aab 'base/assets/flutter_assets/shorebird.yaml'
-        Copy-Item -LiteralPath $apk -Destination (Join-Path $output "ExVPN-$version-shorebird-beta.apk")
-        Copy-Item -LiteralPath $aab -Destination (Join-Path $output "ExVPN-$version-shorebird-beta.aab")
+        # Shorebird records the AAB's Dart libraries, but testers install the
+        # APK. Both base libraries must be identical before distribution.
+        $baseAot = @(Assert-ShorebirdAndroidAotBinding $apk $aab)
+        $jvmStarted = [datetime]::UtcNow
+        Push-Location (Join-Path $app 'android')
+        try {
+            & './gradlew.bat' @(Get-DemoAndroidJvmArguments) *> (Join-Path $privateRun 'jvm.log')
+            if ($LASTEXITCODE -ne 0) { throw 'shorebird_android_jvm_failed' }
+        } finally { Pop-Location }
+        $jvm = Get-DemoAndroidJvmSummary (Join-Path $app 'build/app/test-results/testReleaseUnitTest') $jvmStarted
+        $signatureText = Invoke-AuditTool (Join-Path $env:JAVA_HOME 'bin/java.exe') @('-jar',(Join-Path $AndroidSdkPath 'build-tools/36.0.0/lib/apksigner.jar'),'verify','--verbose','--print-certs',$apk)
+        $signature = ConvertFrom-DemoAndroidSignature $signatureText $expectedSigner
+        $identity = ConvertFrom-DemoAndroidIdentity (Invoke-AuditTool (Join-Path $AndroidSdkPath 'build-tools/36.0.0/aapt2.exe') @('dump','badging',$apk)) $version
+        Copy-Item -LiteralPath $apk -Destination (Join-Path $stage "ExVPN-$($versionParts[0])-$($versionParts[1])-android.apk")
+        Copy-Item -LiteralPath $aab -Destination (Join-Path $stage "ExVPN-$($versionParts[0])-$($versionParts[1])-android.aab")
+        # Retain the exact sealed JNI/notices inputs for later Dart-only patches.
+        Copy-Item -LiteralPath $packageInputs.InputDirectory -Destination (Join-Path $stage 'patch-inputs') -Recurse
+        [IO.Compression.ZipFile]::CreateFromDirectory($noticeBundle,(Join-Path $stage 'android-notices.zip'))
+        & (Join-Path $PSScriptRoot 'prepare-demo-maven-notices.ps1') -ResolvedGraph $rawGraph -ArtifactPath $apk -AppVersion $version -OutputDirectory $stage -FlutterRuntime shorebird *> (Join-Path $privateRun 'maven-notices.log')
+        if (!$?) { throw 'shorebird_maven_notices_failed' }
+        Export-ShorebirdPreviewAudit $repository Android $apk $stage $version $privateRun $AndroidSdkPath $expectedSigner
     } else {
         $ui = Join-Path $app 'build/windows/x64/runner/Release'
+        $null = Get-AuditTreeFiles $ui
         Assert-CompiledUpdater ([IO.File]::ReadAllText((Join-Path $ui 'data/flutter_assets/shorebird.yaml')))
-        Copy-Item -LiteralPath $ui -Destination (Join-Path $output 'ui') -Recurse
+        $baseAot = @([ordered]@{platform='windows';arch='x86_64';sha256=(Get-AuditSha256 (Join-Path $ui 'data/app.so'));bytes=(Get-Item -LiteralPath (Join-Path $ui 'data/app.so')).Length})
+        Copy-Item -LiteralPath $ui -Destination (Join-Path $stage 'ui') -Recurse
         . (Join-Path $PSScriptRoot 'artifact-audit-lib.ps1')
-        $packagedRuntime = Get-ReleasePackagedFlutterEvidence $runtimeAfter.Evidence (Get-AuditTreeFiles $output) -RequireByteMatch
+        $packagedRuntime = Get-ReleasePackagedFlutterEvidence $runtimeAfter.Evidence (Get-AuditTreeFiles $stage) -RequireByteMatch
+        $packageRoot = Join-Path $repository 'artifacts/windows'
+        $previous = @(Get-ChildItem -LiteralPath $packageRoot -Directory -Filter 'package-*' | ForEach-Object FullName)
+        $msvc = & (Join-Path $repository 'scripts/windows/prepare-ci-msvc-runtime.ps1')
+        & (Join-Path $repository 'scripts/windows/build-installer.ps1') -FlutterRuntime shorebird -UiDirectory (Join-Path $stage 'ui') -RuntimeDirectory $msvc.RuntimeDirectory -DumpbinPath $msvc.DumpbinPath *> (Join-Path $privateRun 'installer.log')
+        if (!$?) { throw 'shorebird_installer_failed' }
+        $packages = @(Get-ChildItem -LiteralPath $packageRoot -Directory -Filter 'package-*' | Where-Object FullName -CNotIn $previous)
+        if ($packages.Count -ne 1) { throw 'shorebird_installer_ambiguous' }
+        $artifact = Get-Content -LiteralPath (Join-Path $packages[0].FullName 'artifact.json') -Raw | ConvertFrom-Json
+        $noticeBundle = Join-Path $packages[0].FullName 'payload/control/notices'
+        $noticeInventory = Get-Content -LiteralPath (Join-Path $noticeBundle 'inventory.json') -Raw | ConvertFrom-Json -AsHashtable
+        Assert-ShorebirdRuntimeNotices $noticeInventory (Get-ShorebirdRuntimeNotices $repository $runtimeAfter) $noticeBundle
+        Copy-Item -LiteralPath (Join-Path $packages[0].FullName $artifact.file) -Destination (Join-Path $stage $artifact.file)
+        [IO.Compression.ZipFile]::CreateFromDirectory((Join-Path $packages[0].FullName 'payload/control'),(Join-Path $stage 'windows-notices.zip'))
+        Export-ShorebirdPreviewAudit $repository Windows $packages[0].FullName $stage $version $privateRun
     }
     if (!$packagedRuntime.engineBytesBound) {
         throw 'Packaged Flutter engine is not bound to the pinned SDK or verified Android strip transform.'
     }
+    if ((Get-ShorebirdSourceCommit $repository) -cne $sourceCommit) { throw 'shorebird_source_changed' }
+    $phase = 'promotion'
     [ordered]@{
-        schemaVersion=1; version=$version; target=$Target; track='beta'; published=$false
+        schemaVersion=2; action='base'; version=$version; target=$Target; track='beta'; published=[bool]$PublishCloud
+        appId=$appId; sourceCommit=$sourceCommit; releaseId=$(if ($cloudRelease) { $cloudRelease.id } else { $null })
+        auditAccepted=$true; stableReady=$false
+        baseAot=$baseAot
         publicKeySha256=(Get-FileHash $publicKeyPath -Algorithm SHA256).Hash.ToLowerInvariant()
         updaterPolicyVerified=$true; autoUpdate=$false; patchVerification='strict'
         runtime=$runtimeAfter.Evidence; packagedRuntime=$packagedRuntime; sourceLockUnchanged=$true
-        files=@(Get-ChildItem -LiteralPath $output -File -Recurse | ForEach-Object {
-            [ordered]@{path=[IO.Path]::GetRelativePath($output,$_.FullName).Replace('\','/');sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
+        android=$(if ($Target -ceq 'Android') { $identity } else { $null }); signature=$(if ($Target -ceq 'Android') { $signature } else { $null })
+        jvm=$(if ($Target -ceq 'Android') { $jvm } else { $null })
+        files=@(Get-ChildItem -LiteralPath $stage -File -Recurse | ForEach-Object {
+            [ordered]@{path=[IO.Path]::GetRelativePath($stage,$_.FullName).Replace('\','/');sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
         })
         limitations=@('Controlled beta base; not stable VPN acceptance.','Patch download/restart/rollback and channel isolation need device tests.','Native signing and complete release audit are separate checks.')
-    } | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath (Join-Path $output 'build.json') -Encoding utf8NoBOM
+    } | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath (Join-Path $stage 'build.json') -Encoding utf8NoBOM
+    New-Item -ItemType Directory -Path ([IO.Path]::GetDirectoryName($output)) -Force | Out-Null
+    Assert-AuditNoLinks ([IO.Path]::GetDirectoryName($output))
+    Move-Item -LiteralPath $stage -Destination $output
+    if ($recoveryPath) {
+        $null=Write-ShorebirdRecovery -Repository $repository -Action base -Version $version -Target $Target -SourceCommit $sourceCommit -Status ready -CloudOutcome registered -Phase $phase -ReleaseId $cloudRelease.id -Path $recoveryPath
+    }
+} catch {
+    ($_ | Out-String) | Set-Content -LiteralPath (Join-Path $privateRun 'failure.log') -Encoding utf8NoBOM
+    if ($recoveryPath) {
+        $null=Write-ShorebirdRecovery -Repository $repository -Action base -Version $version -Target $Target -SourceCommit $sourceCommit -Status failed -CloudOutcome $(if ($cloudRegisteredVerified) {'registered'} else {'unknown'}) -Phase $phase -ReleaseId $(if ($cloudRegisteredVerified) {$cloudRelease.id} else {0}) -Path $recoveryPath
+    }
+    throw "shorebird_base_failed phase=$phase; private diagnostics retained; inspect cloud registration before retry"
 } finally {
     Pop-Location
-    if ($passwordBytes) { [Security.Cryptography.CryptographicOperations]::ZeroMemory($passwordBytes) }
-    foreach ($name in $savedEnvironment.Keys) {
-        if ($null -eq $savedEnvironment[$name]) { Remove-Item -LiteralPath "Env:\$name" -ErrorAction SilentlyContinue }
-        else { [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name], 'Process') }
+    try { if ($hookOwned) { Remove-DemoAndroidOwnedHook $hook $hookHash } }
+    finally {
+        if ($passwordBytes) { [Security.Cryptography.CryptographicOperations]::ZeroMemory($passwordBytes) }
+        foreach ($name in $savedEnvironment.Keys) {
+            if ($null -eq $savedEnvironment[$name]) { Remove-Item -LiteralPath "Env:\$name" -ErrorAction SilentlyContinue }
+            else { [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name], 'Process') }
+        }
     }
 }
-[pscustomobject]@{OutputDirectory=$output; PrivateLogDirectory=$privateRun; Published=$false; Version=$version; Target=$Target}
+[pscustomobject]@{OutputDirectory=$output; PrivateLogDirectory=$privateRun; Published=[bool]$PublishCloud; Version=$version; Target=$Target}

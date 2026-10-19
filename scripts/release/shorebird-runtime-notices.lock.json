@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "directory": "scripts/release/licenses/shorebird-runtime-4b936a0c03e13389ddfb1ac48823f187964975c2",
+  "inventorySha256": "bf4886f683436415923de72aaf4f504b696cece8f98960189700a76789f78c4a",
+  "inventorySize": 229840,
+  "flutterRevision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+  "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+  "updaterRevision": "70ff1e336798474e39586d3f5ac2ca386ef32d9e",
+  "rustSourceRevision": "b940084d7eb6a299eb4bfeb8e34901bc051e7ac4"
+}

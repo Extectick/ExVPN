@@ -47,6 +47,7 @@ void main() {
     expect(fields['processCrashProtection'], true);
     expect(fields['coreVersion'], '26.10.10');
     expect(fields['errorCode'], 'tunnel_https_failed');
+    expect(fields['uiRevision'], isA<int>());
   });
 
   test('explicit diagnostics retains update identity without arbitrary backend strings', () {

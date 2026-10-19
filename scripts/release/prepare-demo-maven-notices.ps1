@@ -6,6 +6,7 @@ param(
     [string]$ArtifactPath,
     [string]$OutputDirectory,
     [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$')][string]$AppVersion = '0.1.0+18',
+    [ValidateSet('ordinary','shorebird')][string]$FlutterRuntime = 'ordinary',
     [switch]$LibraryOnly
 )
 Set-StrictMode -Version Latest
@@ -40,6 +41,22 @@ function Assert-DemoMavenTexts($Policy, [string]$LicenseRoot) {
             if (!$known.Contains($path)) { throw 'demo_maven_license_missing' }
         }
     }
+}
+function Get-DemoMavenRuntimePolicy($Policy, [string]$Repository, [string]$Runtime) {
+    if ($Runtime -ceq 'ordinary') { return $Policy }
+    if ($Runtime -cne 'shorebird') { throw 'demo_maven_runtime_invalid' }
+    $path = Join-Path $Repository 'scripts/bootstrap/shorebird.lock.json'
+    $pin = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable
+    if ($pin.schemaVersion -ne 1 -or $pin.cli.version -cne '1.6.129' -or
+        $pin.flutter.revision -cne '5bef02a16146a0effc07da4acccaafe90a2739ce' -or
+        $pin.flutter.engineRevision -cne '4b936a0c03e13389ddfb1ac48823f187964975c2') {
+        throw 'demo_maven_shorebird_pin_invalid'
+    }
+    # Reuse only the immutable non-Flutter POM/artifact/license supplement.
+    # The separately verified Shorebird engine bundle covers its own runtime.
+    $selected = @{} + $Policy
+    $selected.engineRevision = $pin.flutter.engineRevision
+    return $selected
 }
 function Get-DemoMavenVerifiedGraph($Graph, $Policy) {
     if ($Graph.schema -ne 1 -or $Graph.status -cne 'RESOLVED_DEMO_RELEASE_INPUTS' -or
@@ -117,8 +134,19 @@ if ((Get-DemoMavenHash $policyPath) -cne 'e2564888a8b905a8cab6ac1b2ec3f58b9fc036
 }
 $policy = Get-Content -LiteralPath $policyPath -Raw | ConvertFrom-Json -AsHashtable
 Assert-DemoMavenTexts $policy $licenseRoot
+$repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
+$verificationPolicy = Get-DemoMavenRuntimePolicy $policy $repository $FlutterRuntime
+$runtimePinHash = if ($FlutterRuntime -ceq 'shorebird') {
+    Get-DemoMavenHash (Join-Path $repository 'scripts/bootstrap/shorebird.lock.json')
+} else { $null }
 $graph = Get-Content -LiteralPath $ResolvedGraph -Raw | ConvertFrom-Json -AsHashtable
-$safeGraph = Get-DemoMavenVerifiedGraph $graph $policy
+$safeGraph = Get-DemoMavenVerifiedGraph $graph $verificationPolicy
+if ($FlutterRuntime -ceq 'shorebird') {
+    $safeGraph.flutterRuntime = [ordered]@{
+        kind = 'shorebird'; engineRevision = $verificationPolicy.engineRevision
+        sourcePinSha256 = $runtimePinHash
+    }
+}
 $apk = Get-Item -LiteralPath $ArtifactPath
 if ($apk.Extension -cne '.apk' -or $apk.Length -le 0 -or ($apk.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
     throw 'demo_maven_apk_invalid'
@@ -154,9 +182,18 @@ try {
         appVersion=$AppVersion;apkSha256=$apkHash;inputGraphSha256=$graphHash;
         licenseInventorySha256=(Get-DemoMavenHash $policyPath);postR8InventoryComplete=$false;stableReleaseReady=$false
     })
+    if ($FlutterRuntime -ceq 'shorebird') {
+        Write-DemoMavenJson (Join-Path $stage 'flutter-runtime-selection.json') $safeGraph.flutterRuntime
+    }
     # Validate source inputs again after copy; no successful report can bind a
     # changed artifact, POM, license text or APK.
-    [void](Get-DemoMavenVerifiedGraph $graph $policy)
+    [void](Get-DemoMavenVerifiedGraph $graph $verificationPolicy)
+    $runtimeAfter = Get-DemoMavenRuntimePolicy $policy $repository $FlutterRuntime
+    if ($runtimeAfter.engineRevision -cne $verificationPolicy.engineRevision -or
+        ($FlutterRuntime -ceq 'shorebird' -and
+        (Get-DemoMavenHash (Join-Path $repository 'scripts/bootstrap/shorebird.lock.json')) -cne $runtimePinHash)) {
+        throw 'demo_maven_runtime_changed'
+    }
     Assert-DemoMavenTexts $policy $licenseRoot
     if ((Get-DemoMavenHash $apk.FullName) -cne $apkHash) { throw 'demo_maven_apk_changed' }
     [IO.Compression.ZipFile]::CreateFromDirectory($stage,$zipPath,[IO.Compression.CompressionLevel]::Optimal,$false)
@@ -172,6 +209,7 @@ try {
         exclusions=@('Flutter engine and own/Dart/Go/plugin notices use the separately verified embedded notice bundle.',
             'No claim to identify final linked classes after R8, the complete SBOM, or stable release acceptance.')
     }
+    if ($FlutterRuntime -ceq 'shorebird') { $report.flutterRuntime = $safeGraph.flutterRuntime }
     Write-DemoMavenJson $jsonPath $report
     Write-Host ('Demo Maven notice supplement verified: '+$report.runtimeComponentsCoveredBySupplement+' selected components; '+$report.fullTextFiles+' full text files.')
 } finally {

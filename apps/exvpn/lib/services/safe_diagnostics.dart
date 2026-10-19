@@ -4,6 +4,7 @@ import 'package:exvpn_domain/exvpn_domain.dart';
 
 import 'native_vpn_bridge.dart';
 import '../build_identity.dart';
+import '../ui_revision.dart';
 
 /// A small explicit schema, never a dump of app/native state. No profiles,
 /// addresses, IDs, URLs, package paths, traffic logs or raw errors enter it.
@@ -42,6 +43,7 @@ String safeDiagnostics({
     'schema': 1,
     'application': 'ExVPN',
     'version': appVersionLabel,
+    'uiRevision': appUiRevision,
     'platform': os,
     'coreVersion': core,
     'vpnPhase': status?.phase.name ?? 'unavailable',

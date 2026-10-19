@@ -3,7 +3,10 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$')][string]$ReleaseVersion,
-    [ValidateSet('Windows','Android')][string]$Target = 'Windows'
+    [ValidateSet('Windows','Android')][string]$Target = 'Windows',
+    [switch]$ShorebirdPreview,
+    [string]$ShorebirdDeliveryDirectory = '',
+    [ValidatePattern('^$|^[a-f0-9]{40}$')][string]$BaseSourceCommit = ''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -40,17 +43,32 @@ $feedNotes = if ($isAndroid) {
     'Signed Windows beta update feed. Installers are published in immutable version releases. Windows publisher signing and stable acceptance remain pending.'
 }
 $commit = (& git -C $repository rev-parse HEAD).Trim()
-if ($LASTEXITCODE -ne 0 -or $env:GITHUB_REPOSITORY -cne $repo -or
-    $env:GITHUB_REF -cne 'refs/heads/main' -or $env:GITHUB_EVENT_NAME -cne 'workflow_dispatch' -or
-    $env:GITHUB_SHA -cne $commit -or !$env:GH_TOKEN -or !$env:EXVPN_WINDOWS_UPDATE_SEED_BASE64) {
-    throw 'preview_feed_requires_authorized_release_dispatch'
+if ($ShorebirdPreview) {
+    . (Join-Path $PSScriptRoot 'shorebird-pipeline-lib.ps1')
+    . (Join-Path $PSScriptRoot 'shorebird-publication-lib.ps1')
+    . (Join-Path $PSScriptRoot 'artifact-audit-lib.ps1')
+    if ($LASTEXITCODE -ne 0 -or !$BaseSourceCommit -or !$env:GH_TOKEN -or !$env:EXVPN_WINDOWS_UPDATE_SEED_BASE64 -or
+        ($env:GITHUB_ACTIONS -ceq 'true' -and ($env:GITHUB_REPOSITORY -cne $repo -or $env:GITHUB_REF -cne 'refs/heads/main' -or
+        $env:GITHUB_EVENT_NAME -cne 'workflow_dispatch' -or $env:GITHUB_SHA -cne $commit))) { throw 'shorebird_feed_requires_explicit_preview_identity' }
+    $sourceCommit=$BaseSourceCommit
+    $delivery=[IO.Path]::GetFullPath($ShorebirdDeliveryDirectory)
+    $allowed=[IO.Path]::GetFullPath((Join-Path $repository 'artifacts/shorebird-preview')) + [IO.Path]::DirectorySeparatorChar
+    if (!$delivery.StartsWith($allowed,[StringComparison]::OrdinalIgnoreCase)) { throw 'shorebird_feed_delivery_path_invalid' }
+    Assert-AuditNoLinks $delivery
+} else {
+    if ($LASTEXITCODE -ne 0 -or $env:GITHUB_REPOSITORY -cne $repo -or
+        $env:GITHUB_REF -cne 'refs/heads/main' -or $env:GITHUB_EVENT_NAME -cne 'workflow_dispatch' -or
+        $env:GITHUB_SHA -cne $commit -or !$env:GH_TOKEN -or !$env:EXVPN_WINDOWS_UPDATE_SEED_BASE64) {
+        throw 'preview_feed_requires_authorized_release_dispatch'
+    }
+    $sourceCommit=$commit
 }
 $parts = $ReleaseVersion.Split('+')
 $tag = "v$($parts[0])"
-$folder = Join-Path $repository "artifacts/preview/$platformFolder"
+$folder = if ($ShorebirdPreview) { Join-Path $delivery $platformFolder } else { Join-Path $repository "artifacts/preview/$platformFolder" }
 $build = Get-Content -LiteralPath (Join-Path $folder "$platformFolder-build.json") -Raw | ConvertFrom-Json
 $expectedName = if ($isAndroid) { "ExVPN-$($parts[0])-$($parts[1])-android.apk" } else { "ExVPN-$($parts[0])-$($parts[1])-windows-x64-development.exe" }
-if ($build.version -cne $ReleaseVersion -or $build.sourceCommit -cne $commit -or $build.stableReady -or
+if ($build.version -cne $ReleaseVersion -or $build.sourceCommit -cne $sourceCommit -or $build.stableReady -or
     $build.artifact.file -cne $expectedName) {
     throw 'preview_feed_build_identity_failed'
 }
@@ -58,6 +76,16 @@ $binary = Join-Path $folder $build.artifact.file
 $asset = Get-DemoAssetRecord $binary
 if ($asset.sha256 -cne $build.artifact.sha256 -or $asset.bytes -ne $build.artifact.bytes) {
     throw 'preview_feed_local_asset_changed'
+}
+if ($ShorebirdPreview) {
+    Assert-ShorebirdPublicBuild $build $ReleaseVersion $sourceCommit $expectedName $asset.sha256 $asset.bytes
+    $proofPath=Join-Path $delivery 'shorebird-runtime-qa.json'
+    if ((Get-AuditSha256 $proofPath) -cne $build.runtimeQaSha256 -or
+        (Get-AuditSha256 (Join-Path $delivery "$platformFolder-shorebird-base.json")) -cne $build.baseReceiptSha256) { throw 'shorebird_feed_qa_binding_failed' }
+    $localManifestPath=Join-Path $delivery 'delivery/release-manifest.json'
+    $manifest=Get-Content -LiteralPath $localManifestPath -Raw | ConvertFrom-Json
+    if ($manifest.runtime -cne 'shorebird' -or $manifest.dartOtaAvailable -ne $true -or $manifest.sourceCommit -cne $sourceCommit -or
+        $manifest.runtimeQaSha256 -cne $build.runtimeQaSha256 -or $manifest.version -cne $parts[0] -or $manifest.build -ne [int]$parts[1]) { throw 'shorebird_feed_manifest_identity_failed' }
 }
 function Invoke-FeedGh([string[]]$Arguments) {
     $result = & gh @Arguments
@@ -67,9 +95,13 @@ function Invoke-FeedGh([string[]]$Arguments) {
 # Only advertise bytes already published in the immutable version release.
 $release = Invoke-FeedGh @('api',"repos/$repo/releases/tags/$tag") | ConvertFrom-Json
 $published = @($release.assets | Where-Object name -CEQ $asset.file)
-if ($release.draft -or !$release.prerelease -or $release.target_commitish -cne $commit -or
+if ($release.draft -or !$release.prerelease -or $release.target_commitish -cne $sourceCommit -or
     $published.Count -ne 1 -or $published[0].size -ne $asset.bytes -or
     $published[0].digest -cne "sha256:$($asset.sha256)") { throw 'preview_feed_remote_asset_mismatch' }
+if ($ShorebirdPreview) {
+    $remoteManifest=@($release.assets | Where-Object name -CEQ 'release-manifest.json')
+    if ($remoteManifest.Count -ne 1 -or $remoteManifest[0].digest -cne ('sha256:'+(Get-AuditSha256 $localManifestPath))) { throw 'shorebird_feed_remote_manifest_mismatch' }
+}
 $work = Join-Path $repository ('.private/' + $platformFolder + '-feed-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $work | Out-Null
 $seedFile = Join-Path $work 'signing.seed'
@@ -92,7 +124,7 @@ try {
         '--seed-file', $seedFile, '--output', (Join-Path $work $feedFile))
     if ($exists) {
         $existingFeed = Invoke-FeedGh @('api',"repos/$repo/releases/tags/$feedTag") | ConvertFrom-Json
-        $existingAsset = Get-FeedResumeAsset $existingFeed $commit $feedTitle $feedNotes $feedTag $feedFile
+        $existingAsset = Get-FeedResumeAsset $existingFeed $sourceCommit $feedTitle $feedNotes $feedTag $feedFile
         if ($null -ne $existingAsset) {
             $previous = Join-Path $work 'previous'
             New-Item -ItemType Directory -Path $previous | Out-Null
@@ -116,7 +148,7 @@ try {
     if (!$exists) {
         $notes = Join-Path $work 'feed-notes.md'
         [IO.File]::WriteAllText($notes, $feedNotes)
-        $null = Invoke-FeedGh @('release','create',$feedTag,'--repo',$repo,'--target',$commit,
+        $null = Invoke-FeedGh @('release','create',$feedTag,'--repo',$repo,'--target',$sourceCommit,
             '--title',$feedTitle,'--notes-file',$notes,'--prerelease','--latest=false')
     }
     # This single signed pointer is intentionally mutable. Version artifacts

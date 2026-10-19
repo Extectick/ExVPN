@@ -22,6 +22,7 @@ $expectedSuites = @(
     'scripts/qa/test-fast-validation-runner.ps1|7',
     'scripts/qa/android-https-probe/test.ps1|7',
     'scripts/qa/test-android-lifecycle-tools.ps1|7',
+    'scripts/qa/test-shorebird-android-tools.ps1|7',
     'scripts/qa/test-android-exclusions-selectors.ps1|7',
     'scripts/qa/android-dns-capture/test.ps1|7',
     'scripts/qa/test-windows-transport-lifecycle.ps1|7',
@@ -40,6 +41,9 @@ $expectedSuites = @(
     'scripts/core/test-xray-patch.ps1|7',
     'scripts/release/test-demo-release.ps1|7',
     'scripts/release/test-demo-maven-notices.ps1|7',
+    'scripts/release/test-shorebird-pipeline.ps1|7',
+    'scripts/release/test-shorebird-publication.ps1|7',
+    'scripts/release/test-shorebird-runtime-notices.ps1|7',
     'scripts/release/test-build-demo-android.ps1|7',
     'scripts/windows/test-ci-msvc-runtime.ps1|7',
     'scripts/windows/test-prepare-nsis.ps1|7'
@@ -47,7 +51,7 @@ $expectedSuites = @(
 $actualSuites = @($dispatchSuites | ForEach-Object { $_.suite + '|' + $_.hostVersion })
 $ciSuites = @($dispatchSuites | Where-Object lane -CEQ 'ci')
 if ((($actualSuites | Sort-Object) -join ',') -cne (($expectedSuites | Sort-Object) -join ',') -or
-    $actualSuites.Count -ne 25 -or $ciSuites.Count -ne 1 -or $ciSuites[0].suite -cne 'scripts/ci/test-build-impact.ps1') {
+    $actualSuites.Count -ne 29 -or $ciSuites.Count -ne 1 -or $ciSuites[0].suite -cne 'scripts/ci/test-build-impact.ps1') {
     throw 'Scripts/CI partition lost, duplicated or substituted a required suite or PowerShell host.'
 }
 $fixture = Join-Path $repository ('artifacts/qa/runner-fixture-' + [Guid]::NewGuid().ToString('N'))

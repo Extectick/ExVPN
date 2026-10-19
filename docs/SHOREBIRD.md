@@ -1,5 +1,42 @@
 # Shorebird: подготовка Dart OTA
 
+## Реальный цикл 0.1.7+28, 2026-10-19 — в работе
+
+Пользователь поручил выпустить настоящую Android/Windows базу, подписанный
+Dart-патч и проверить откат. Версия базы — **0.1.7+28 / beta**. CLI 1.6.129,
+Flutter 5bef02a, engine 4b936a0 и существующие APK/RSA ключи сохраняются.
+Будущие совместимые Dart/UI изменения должны проходить patch workflow;
+native/assets/plugins/engine изменения требуют нового полного базового пакета.
+
+OAuth CLI подтверждён, тариф free, overage=0. Через официальный OpenAPI и
+`shorebird api` создана служебная учётная запись роли `developer`; её ключ
+действителен до 2027-10-19 и сохранён через `gh` в protected environment
+`demo-release` как `SHOREBIRD_TOKEN`. Там же сохранён существующий RSA patch key
+после проверки против public pin. Локальная резервная копия CI token защищена
+DPAPI и ACL; значения ключей/учётные данные в Git не входят. Платный план
+и новые signing identities не создавались.
+
+Android QA владеет только emulator-5582; Windows QA — установленным ExVPN.
+Сетевая VPN-матрица не повторяется. Решающий OTA gate: неизменные bytes
+APK/EXE/base + реальные current/next номера SDK + Dart `uiRevision` 0→1→0
+после холодного запуска. Нулевой/base snapshot сам по себе не доказывает
+здоровую native-конфигурацию updater. Реальная облачная публикация и
+runtime-приёмка пока не выполнены; EXVPN-E6-004 остаётся открыт.
+
+Подготовка принята 2026-10-19: final Full **12/12 PASS за 120,30 с**,
+373 app tests, source fingerprint неизменен.
+[Full](evidence/fast-validation-shorebird28.json),
+[pipeline guards](evidence/shorebird28-pipeline.json),
+[runtime notices closure](evidence/shorebird28-notice-closure.json).
+Первый Full выявил устаревший список suite dispatch (25 вместо29) после
+добавления OTA-проверок; список расширен без удаления прежних наборов.
+Подготовлены отдельные `shorebird.yml` (base/patch/rollback) и
+`shorebird-publish.yml` (публикация тех же bytes после реальной приёмки).
+Патч сохраняет версию базы, требует чистый Git и только допустимые Dart-изменения;
+изменения native/assets/dependencies отклоняются. Оба фактических номера патчей
+проверяются перед откатом. CI сохраняет обезличенную cloud recovery-квитанцию
+даже при последующей ошибке упаковки; повтор требует readback.
+
 ## Проект и клиент, 2026-10-17
 
 Пользователь завершил вход в CLI. Проверка аккаунта подтвердила тариф **free**;

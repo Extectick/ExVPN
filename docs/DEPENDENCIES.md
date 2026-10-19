@@ -176,3 +176,44 @@ Android Maven supplement: 66 закреплённых компонентов, 61
 Tink shaded Protobuf включён отдельно. Это проверка уведомлений входных
 зависимостей, а не утверждение о полном post-R8 SBOM. Стабильный лицензионный
 аудит остаётся открытым. Обычный Flutter не включает native Shorebird updater.
+
+## Комплект Shorebird Preview 0.1.7+28
+
+2026-10-19 подготовлен отдельный offline source-notice supplement для точных
+Flutter `5bef02a16146a0effc07da4acccaafe90a2739ce`, engine
+`4b936a0c03e13389ddfb1ac48823f187964975c2`, native updater
+`70ff1e336798474e39586d3f5ac2ca386ef32d9e` и наблюдавшегося Rust source
+`b940084d7eb6a299eb4bfeb8e34901bc051e7ac4`.
+[Pin и хеш inventory](../scripts/release/shorebird-runtime-notices.lock.json)
+связывают 200 файлов: полные опубликованные тексты из консервативного набора
+282 crates, проверенные дополнения из точных исходных commits, собственные
+лицензии/`COPYRIGHT`/`REUSE.toml`/`license-metadata.json` Rust и исходные архивы,
+требуемые отдельными выбранными лицензиями. Полные исходные Rust metadata
+сохранены без объявления compiler-only компонентов частью приложения.
+
+`comde 0.3.1` объявляет `Apache-2.0 OR MIT`, но его точный опубликованный crate
+не содержит полного LICENSE, NOTICE или copyright-текста. Выбрана объявленная
+ветка Apache-2.0: приложен полный стандартный Apache-текст с явным происхождением
+и полный исходный crate с SHA-256; авторство не придумано и этот текст не
+выдаётся за отсутствующий файл upstream. Из 282 source records без полных
+текстов остаются `sacabase`/`sacapart` из отдельного patch CLI и `vex-sdk`,
+который точный Rust std manifest ограничивает `target_os="vexos"`.
+Эти три записи явно отмечены как не входящие в рассматриваемые Android/Windows
+runtime roots. Все 200 узлов консервативного updater production/build closure
+имеют тексты; это source-closure, а не доказательство окончательной линковки.
+
+`collect-notices.ps1` добавляет этот комплект только при явном Shorebird runtime;
+ordinary-сборки и прежние лицензии не меняются. Новый offline checker проверяет
+точный набор, хеши и runtime binding, отклоняет подмену/лишние файлы и сохраняет
+`exactLinkedMembership=false`, `completePostLinkSbom=false`,
+`stableReleaseReady=false`. Проверено: 220 focused checks, без SDK, сборки,
+установки или облачной публикации. Включение комплекта в фактические APK/NSIS
+проверяется отдельно перед распространением.
+
+Для same-build Android Maven supplement добавлен явный
+`prepare-demo-maven-notices.ps1 -FlutterRuntime shorebird`. Он использует
+закреплённый Shorebird engine вместо ordinary engine и сохраняет прежние
+проверки всех non-Flutter GAV/POM/AAR/JAR и полных текстов. Runtime selection
+входит в sidecar ZIP; неподдержанный компонент или другой engine вызывают отказ.
+41 synthetic checks прошли; сам helper не запускает Gradle и не создаёт APK.
+Это отдельная Preview-policy, не изменение stable inventory/аудита.

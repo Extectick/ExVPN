@@ -118,9 +118,13 @@ class _SettingsSheetState extends State<SettingsSheet> {
                 ),
               ),
               const SizedBox(height: 16),
-              SelectableText(
-                report,
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              Semantics(
+                label: report,
+                excludeSemantics: true,
+                child: SelectableText(
+                  report,
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                ),
               ),
             ],
           ),

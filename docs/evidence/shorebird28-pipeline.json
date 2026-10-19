@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "source": "working tree; commit pending",
+  "scope": "synthetic cold bootstrap and strict JSON; sanitized atomic cloud recovery; source/hash/ZIP/publication guards",
+  "pipelineChecks": 84,
+  "publicationChecks": 34,
+  "powerShellParseChangedFiles": 5,
+  "diffCheck": true,
+  "sdkCommands": 0,
+  "cloudOperations": 0,
+  "files": [
+    {
+      "path": "scripts/release/shorebird-release.ps1",
+      "sha256": "956640639d1c1068d18d2216d55e76413aebfd3d960924f2a5fb0bf9e289fc38"
+    },
+    {
+      "path": "scripts/release/shorebird-pipeline-lib.ps1",
+      "sha256": "b76b468627b545575596f1093e9356da98fc46b72297b4fc22b41365b1be5d25"
+    },
+    {
+      "path": "scripts/release/shorebird-preview-lib.ps1",
+      "sha256": "4bf3101ece7608f6e6b33ddcda34ce664fbc844f9b89ee017b08716ee03dd808"
+    },
+    {
+      "path": "scripts/release/shorebird-patch.ps1",
+      "sha256": "80b8208cb7bfda6e29f9312f94e864043d7d5a33a268e561fd877115939c895b"
+    },
+    {
+      "path": "scripts/release/shorebird-rollback.ps1",
+      "sha256": "6c5439dd37aee95d6d95dd6295493ce53663be133ce48a030abf2ac40c579052"
+    },
+    {
+      "path": "scripts/release/shorebird-rollback-all.ps1",
+      "sha256": "737c616ebdf047cdaf31293cf11e4030b89efc87e575eccc3d1489b476f363ee"
+    },
+    {
+      "path": "scripts/release/prepare-shorebird.ps1",
+      "sha256": "2dc76d092d39ad5f337dac241529306b865e01b139920f6c45bd15aa106aff70"
+    },
+    {
+      "path": "scripts/release/test-shorebird-pipeline.ps1",
+      "sha256": "22c8b3980474595b42c09d573060306ae19ad29374dc1e0b9153647256998f5c"
+    },
+    {
+      "path": "scripts/release/shorebird-publication-lib.ps1",
+      "sha256": "3615885c72b69d51fe322e7765a7cf6d0935188a5ba6d5581f431599c8740aab"
+    },
+    {
+      "path": "scripts/release/publish-shorebird-preview.ps1",
+      "sha256": "acc8fca96f4d7b7ac7387239ea00ad41ea5647e3e3ce0c5a5192854f21fd90c5"
+    },
+    {
+      "path": "scripts/release/test-shorebird-publication.ps1",
+      "sha256": "53d3456db6eed5726ee52d38a172b8e7ed78807c36edcdb68b3d43b49d44ba88"
+    },
+    {
+      "path": "scripts/release/publish-windows-feed.ps1",
+      "sha256": "9e85b858d0dc64cce57ac6b12039121f6673e22ea48f6529157d313f947c0a5e"
+    },
+    {
+      "path": ".github/workflows/shorebird.yml",
+      "sha256": "9f06bc4f1a3e797a5dbc4762520af17f92d3218335298cc0e45e1f412f128502"
+    },
+    {
+      "path": ".github/workflows/shorebird-publish.yml",
+      "sha256": "f4974d1822a3ca25fa70d6dad59cf11983eebe605495228d4e74043149efa3a6"
+    }
+  ]
+}

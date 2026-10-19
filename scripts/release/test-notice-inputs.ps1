@@ -733,12 +733,13 @@ if ($updaterErrors.Count) { throw 'Updater wrapper parse failed.' }
 # Exercise the real wrapper cleanup without running a build, reading keys, or
 # contacting Shorebird. Preserve unset SDK variables as unset, not empty strings.
 $wrapperFinally=@($updaterAst.FindAll({param($node) $node -is [Management.Automation.Language.TryStatementAst] -and
-    $null -ne $node.Finally -and $node.Finally.Extent.Text.Contains('$savedEnvironment.Keys')},$false))
+    $null -ne $node.Finally -and $node.Finally.Extent.Text.Contains('$savedEnvironment.Keys') -and
+    @($node.Finally.Statements | Where-Object { $_.Extent.Text -ceq 'Pop-Location' }).Count -eq 1},$false))
 if ($wrapperFinally.Count -ne 1) { throw 'Expected exactly one actual wrapper environment cleanup.' }
 $sdkEnvironmentBefore=@{}
 foreach ($name in @('ANDROID_HOME','ANDROID_SDK_ROOT')) { $sdkEnvironmentBefore[$name]=[Environment]::GetEnvironmentVariable($name,'Process') }
 try {
-    $savedEnvironment=@{ANDROID_HOME='preserved caller SDK';ANDROID_SDK_ROOT=$null}; $passwordBytes=$null
+    $savedEnvironment=@{ANDROID_HOME='preserved caller SDK';ANDROID_SDK_ROOT=$null}; $passwordBytes=$null; $hookOwned=$false
     $env:ANDROID_HOME='temporary SDK'; $env:ANDROID_SDK_ROOT='temporary SDK'
     $beforeLocation=Get-Location
     Push-Location $fixture

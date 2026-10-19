@@ -1,0 +1,97 @@
+name: Publish audited Shorebird Preview bytes
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact audited base SemVer+build
+        type: string
+        required: true
+      base_run_id:
+        description: Successful Shorebird base build run ID
+        type: string
+        required: true
+      base_source_commit:
+        description: Exact base SHA; immutable version tag must point here
+        type: string
+        required: true
+      runtime_evidence:
+        description: Tracked sanitized docs/evidence JSON from both device gates
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: exvpn-preview-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'Extectick/ExVPN' && github.ref == 'refs/heads/main'
+    runs-on: windows-2025
+    environment: demo-release
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      EXVPN_VERSION: ${{ inputs.version }}
+      EXVPN_BASE_SHA: ${{ inputs.base_source_commit }}
+      EXVPN_QA_PATH: ${{ inputs.runtime_evidence }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Validate explicit inputs
+        run: |
+          if ($env:EXVPN_VERSION -cnotmatch '^\d+\.\d+\.\d+\+[1-9]\d*$' -or $env:EXVPN_BASE_SHA -cnotmatch '^[a-f0-9]{40}$' -or $env:EXVPN_QA_PATH -cnotmatch '^docs/evidence/[a-z0-9][a-z0-9-]*\.json$') { throw 'shorebird_public_inputs_invalid' }
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: shorebird-base-*-${{ inputs.base_source_commit }}
+          path: artifacts/shorebird-base
+          run-id: ${{ inputs.base_run_id }}
+          github-token: ${{ github.token }}
+      - name: Prepare read-only package inspectors
+        run: |
+          ./scripts/release/prepare-archive-inspector.ps1
+          if (!$env:JAVA_HOME_21_X64 -or !$env:ANDROID_HOME) { throw 'shorebird_public_inspectors_missing' }
+          "JAVA_HOME=$env:JAVA_HOME_21_X64" >> $env:GITHUB_ENV
+          & (Join-Path $env:ANDROID_HOME 'cmdline-tools/latest/bin/sdkmanager.bat') 'build-tools;36.0.0'
+          if ($LASTEXITCODE -ne 0) { throw 'shorebird_public_build_tools_missing' }
+      - name: Prepare pinned feed signing Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13.16'
+          architecture: x64
+      - name: Prepare exact signing dependency closure
+        run: |
+          $wheels = Join-Path $env:RUNNER_TEMP 'exvpn-shorebird-feed-wheels'
+          python -m pip download --disable-pip-version-check --only-binary=:all: --require-hashes --no-deps --dest $wheels -r scripts/release/windows-feed-requirements.txt
+          if ($LASTEXITCODE -ne 0) { throw 'shorebird_public_signing_wheels_missing' }
+          python -m pip install --disable-pip-version-check --no-index --find-links $wheels --only-binary=:all: --require-hashes --no-deps --force-reinstall -r scripts/release/windows-feed-requirements.txt
+          if ($LASTEXITCODE -ne 0) { throw 'shorebird_public_signing_dependency_failed' }
+          python -m pip check
+          if ($LASTEXITCODE -ne 0) { throw 'shorebird_public_signing_closure_failed' }
+      - name: Test publication policy
+        run: ./scripts/release/test-shorebird-publication.ps1
+      - name: Promote the same bytes and sign both feeds after device QA
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXVPN_WINDOWS_UPDATE_SEED_BASE64: ${{ secrets.EXVPN_WINDOWS_UPDATE_SEED_BASE64 }}
+        run: |
+          $receipts = @(Get-ChildItem artifacts/shorebird-base -File -Recurse -Filter build.json)
+          if ($receipts.Count -ne 2) { throw 'shorebird_public_receipt_set_invalid' }
+          $byTarget = @{}
+          foreach ($receipt in $receipts) {
+            $base = Get-Content -LiteralPath $receipt.FullName -Raw | ConvertFrom-Json
+            if ($base.target -cnotin @('Android','Windows') -or $byTarget.ContainsKey($base.target)) { throw 'shorebird_public_receipt_target_invalid' }
+            $byTarget[$base.target] = $receipt.FullName
+          }
+          ./scripts/release/publish-shorebird-preview.ps1 -ReleaseVersion $env:EXVPN_VERSION -BaseSourceCommit $env:EXVPN_BASE_SHA -AndroidBaseReceipt $byTarget.Android -WindowsBaseReceipt $byTarget.Windows -RuntimeEvidence $env:EXVPN_QA_PATH -PublishCloud

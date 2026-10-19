@@ -6,6 +6,34 @@
 
 ## Сводка этапов
 
+Цикл **0.1.7+28 / Shorebird beta**, 2026-10-19: рабочее дерево; commit ожидается.
+Служебный developer API key и существующий RSA signing key сохранены через `gh`
+в protected environment `demo-release`. SDK pins не менялись; реальные базы,
+подписанный патч и откат ниже пока не приняты. [Методика](SHOREBIRD.md).
+Подготовка: final Full 12/12 PASS, 120,30 с, source fingerprint неизменен;
+[отчёт](evidence/fast-validation-shorebird28.json). Реальные cloud/device gates
+ещё не заменяются этой отметкой.
+
+- [ ] **EXVPN-E6-012** — Опубликовать настоящую Shorebird-базу 0.1.7+28
+  Android/Windows. Критерий: один build/upload на платформу, прежний APK signer,
+  strict RSA public pin, проверенные runtime notices/AOT и cloud receipts;
+  установленная база читает настоящий updater. Зависимость: E6-004.
+- [ ] **EXVPN-E6-013** — Применить подписанный Dart-патч на обеих платформах.
+  Критерий: реальные platform-specific patch IDs/numbers, current/next SDK,
+  `uiRevision` 0→1 после полного запуска; APK/EXE и данные неизменны.
+  Недействительный патч отклоняется в локальном управляемом стенде без публикации.
+  Зависимость: E6-012.
+- [ ] **EXVPN-E6-014** — Проверить облачный откат Android/Windows к базе.
+  Критерий: отозваны оба фактических номера, current/next и `uiRevision` 1→0
+  после полного запуска на прежних пакетах; данные сохранены.
+  Зависимость: E6-013.
+- [ ] **EXVPN-E7-013** — Доставить принятую Shorebird-базу через существующие
+  Preview release и оба подписанных full-update feed без повторной сборки.
+  Критерий: immutable source tag, реальные QA evidence, публичные bytes/подписи
+  и ссылки проверены; будущие совместимые Dart/UI выпуски используют patch flow.
+  Зависимости: E6-012–014. Windows Authenticode и физическая Android-приёмка
+  остаются отдельными открытыми критериями стабильного выпуска.
+
 Выпуск **0.1.6+27**, 2026-10-19: итоговый Full **12/12 PASS за 126,78 с**,
 373 app tests, fingerprint неизменен; tag `v0.1.6`, исходники `ae35c9a`.
 Android и Windows собраны и опубликованы одним release workflow39226424305;

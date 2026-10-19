@@ -61,6 +61,31 @@ $json=$result | ConvertTo-Json -Depth 30
 Check (!$json.Contains($fixture)) 'absolute_paths_redacted'
 Check (@($result.components | Where-Object coverage -CEQ 'pinned-full-text-supplements').Count -eq 1) 'separate_flutter_coverage'
 
+$ordinaryPolicy = Get-DemoMavenRuntimePolicy $policy $repository 'ordinary'
+Check ($ordinaryPolicy.engineRevision -ceq $engine) 'ordinary_engine_unchanged'
+$shorebirdPolicy = Get-DemoMavenRuntimePolicy $policy $repository 'shorebird'
+Check ($shorebirdPolicy.engineRevision -ceq '4b936a0c03e13389ddfb1ac48823f187964975c2') 'shorebird_exact_engine'
+Check ($policy.engineRevision -ceq $engine) 'source_policy_not_mutated'
+$shorebirdGraph = Clone $graph
+foreach ($component in $shorebirdGraph.components) {
+    if (!$component.id.StartsWith('maven:io.flutter:')) { continue }
+    $component.id = $component.id.Replace($engine, $shorebirdPolicy.engineRevision)
+    $component.pom = FixtureFile ($component.pom.name.Replace($engine, $shorebirdPolicy.engineRevision)) '<project>synthetic Shorebird</project>'
+    $component.artifacts = @((FixtureFile ($component.artifacts[0].name.Replace($engine, $shorebirdPolicy.engineRevision)) 'synthetic Shorebird engine'))
+}
+$shorebirdResult = Get-DemoMavenVerifiedGraph $shorebirdGraph $shorebirdPolicy
+Check ($shorebirdResult.components.Count -eq 4 -and !$shorebirdResult.postR8InventoryComplete) 'shorebird_no_final_link_claim'
+Reject { Get-DemoMavenVerifiedGraph $shorebirdGraph $ordinaryPolicy } 'demo_maven_flutter_component_invalid'
+Reject { Get-DemoMavenVerifiedGraph $graph $shorebirdPolicy } 'demo_maven_flutter_component_invalid'
+Reject { Get-DemoMavenRuntimePolicy $policy $repository 'future' } 'demo_maven_runtime_invalid'
+$badShorebirdGraph = Clone $shorebirdGraph
+$badShorebirdGraph.components[0].id = 'maven:uncovered:library:1.0'
+Reject { Get-DemoMavenVerifiedGraph $badShorebirdGraph $shorebirdPolicy } 'demo_maven_component_not_covered'
+$fakeRepository = Join-Path $fixture 'wrong-sdk-pin'
+[IO.Directory]::CreateDirectory((Join-Path $fakeRepository 'scripts/bootstrap')) | Out-Null
+[IO.File]::WriteAllText((Join-Path $fakeRepository 'scripts/bootstrap/shorebird.lock.json'), '{"schemaVersion":1,"cli":{"version":"1.6.129"},"flutter":{"revision":"5bef02a16146a0effc07da4acccaafe90a2739ce","engineRevision":"0000000000000000000000000000000000000000"}}')
+Reject { Get-DemoMavenRuntimePolicy $policy $fakeRepository 'shorebird' } 'demo_maven_shorebird_pin_invalid'
+
 $bad=Clone $graph; $bad.variant='debug'
 Reject { Get-DemoMavenVerifiedGraph $bad $policy } 'demo_maven_graph_invalid'
 $bad=Clone $graph; $bad.postR8InventoryComplete=$true
