@@ -33,6 +33,50 @@ function Resolve-ExvpnOtaPath([string]$BaseDirectory, [string]$Path) {
     $absolute
 }
 
+function Assert-ExvpnOtaFreshBuildFile([string]$Path, [long]$MinimumSize, [long]$MaximumSize, [DateTime]$StartedAtUtc, [DateTime]$CompletedAtUtc) {
+    Assert-ExvpnOtaNoLinks $Path
+    if (!(Test-Path -LiteralPath $Path -PathType Leaf)) { throw 'ota_kernel_build_file_missing' }
+    $file = Get-Item -LiteralPath $Path -Force
+    if ($file.Length -lt $MinimumSize -or $file.Length -gt $MaximumSize) { throw 'ota_kernel_build_file_size_invalid' }
+    # The output directory is new for every invocation and participates in the
+    # pinned Flutter build ID. Its marker and intermediates must be from this run.
+    if ($file.LastWriteTimeUtc -lt $StartedAtUtc.AddSeconds(-2) -or $file.LastWriteTimeUtc -gt $CompletedAtUtc.AddSeconds(2)) { throw 'ota_kernel_build_file_stale' }
+}
+
+function Get-ExvpnOtaKernelOutput([string]$AppDirectory, [string]$OutputDirectory, [DateTime]$StartedAtUtc, [DateTime]$CompletedAtUtc) {
+    if ($CompletedAtUtc -lt $StartedAtUtc) { throw 'ota_kernel_build_time_invalid' }
+    $marker = Resolve-ExvpnOtaPath $OutputDirectory '.last_build_id'
+    Assert-ExvpnOtaFreshBuildFile $marker 32 32 $StartedAtUtc $CompletedAtUtc
+    $buildId = [IO.File]::ReadAllText($marker,[Text.UTF8Encoding]::new($false,$true))
+    if ($buildId -cnotmatch '^[a-f0-9]{32}$') { throw 'ota_kernel_build_id_invalid' }
+    $buildDirectory = Resolve-ExvpnOtaPath $AppDirectory ('.dart_tool/flutter_build/' + $buildId)
+    $kernel = Resolve-ExvpnOtaPath $buildDirectory 'app.dill'
+    $recorded = Resolve-ExvpnOtaPath $buildDirectory 'recorded_uses.json'
+    $stampPath = Resolve-ExvpnOtaPath $buildDirectory 'kernel_snapshot_program.stamp'
+    Assert-ExvpnOtaFreshBuildFile $stampPath 2 16777216 $StartedAtUtc $CompletedAtUtc
+    try { $stamp = [IO.File]::ReadAllText($stampPath,[Text.UTF8Encoding]::new($false,$true)) | ConvertFrom-Json -AsHashtable }
+    catch { throw 'ota_kernel_stamp_invalid' }
+    if ($stamp -isnot [Collections.IDictionary] -or !$stamp.Contains('inputs') -or !$stamp.Contains('outputs') -or
+        $stamp.inputs -isnot [array] -or $stamp.outputs -isnot [array] -or $stamp.inputs.Count -gt 65536 -or
+        $stamp.outputs.Count -eq 0 -or $stamp.outputs.Count -gt 8) { throw 'ota_kernel_stamp_invalid' }
+    $kernelDeclared = $false
+    foreach ($declared in $stamp.outputs) {
+        if ($declared -isnot [string] -or ![IO.Path]::IsPathFullyQualified($declared)) { throw 'ota_kernel_stamp_output_invalid' }
+        $path = Resolve-ExvpnOtaPath $buildDirectory $declared
+        if ([string]::Equals($path,$kernel,[StringComparison]::OrdinalIgnoreCase)) { $kernelDeclared = $true }
+        elseif ([string]::Equals($path,$recorded,[StringComparison]::OrdinalIgnoreCase)) {
+            Assert-ExvpnOtaFreshBuildFile $recorded 0 8388608 $StartedAtUtc $CompletedAtUtc
+        } else { throw 'ota_kernel_stamp_output_invalid' }
+    }
+    if (!$kernelDeclared) { throw 'ota_kernel_stamp_output_invalid' }
+    Assert-ExvpnOtaFreshBuildFile $kernel 4096 536870912 $StartedAtUtc $CompletedAtUtc
+    $header = [byte[]]::new(4)
+    $stream = [IO.File]::Open($kernel,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+    try { $stream.ReadExactly($header,0,$header.Length) } finally { $stream.Dispose() }
+    if ([Convert]::ToHexString($header) -cne '90ABCDEF') { throw 'ota_kernel_header_invalid' }
+    $kernel
+}
+
 function Test-ExvpnOtaProtectedPath([string]$Path) {
     $value = $Path.Replace('\','/')
     if ($value -match '(^|/)(build|\.dart_tool|\.gradle|\.cxx|ephemeral|\.idea)/') { return $false }

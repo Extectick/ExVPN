@@ -176,21 +176,21 @@ try {
     foreach ($item in $plan) {
         $archOutput = Join-Path $output $item.key
         New-Item -ItemType Directory -Path $archOutput | Out-Null
-        $buildOutputs = Join-Path $logs ($item.key + '-outputs.txt')
         Assert-ExvpnOtaSourceDriver $sdk $driver
-        $arguments = @(('--packages='+$driver.packageConfig),$driver.entrypoint,'--no-version-check','--suppress-analytics','assemble',('--output=' + $archOutput),('--build-outputs=' + $buildOutputs),
+        $arguments = @(('--packages='+$driver.packageConfig),$driver.entrypoint,'--no-version-check','--suppress-analytics','assemble',('--output=' + $archOutput),
             ('-dTargetPlatform=' + $item.platform),'-dBuildMode=release','-dTargetFile=lib/main.dart','-dTrackWidgetCreation=false','-dDartObfuscation=false')
         # Pinned assemble accepts each app define as base64, separately from
         # its deprecated comma-splitting -d target configuration options.
         $arguments += @($expectedDefines | ForEach-Object { '--dart-define=' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($_)) })
         $arguments += 'kernel_snapshot_program'
+        $kernelStarted = [DateTime]::UtcNow
         Invoke-OtaPinnedProcess $dart $arguments $app (Join-Path $logs ($item.key + '-kernel.log')) @{FLUTTER_ROOT=$sdk}
-        $kernels = @(Get-Content -LiteralPath $buildOutputs | Where-Object { $_.Replace('\','/') -match '/app\.dill$' })
-        if ($kernels.Count -ne 1) { throw 'ota_kernel_output_ambiguous' }
-        $kernel = Resolve-ExvpnOtaPath $app $kernels[0]
-        $registrants = @(Get-ChildItem -LiteralPath (Join-Path $app '.dart_tool/flutter_build') -Filter dart_plugin_registrant.dart -Recurse -File -ErrorAction SilentlyContinue)
-        foreach ($registrant in $registrants) {
-            if ([IO.File]::ReadAllText($registrant.FullName) -match 'integration_test|integrationTest') { throw 'ota_development_plugin_in_release' }
+        # kernel_snapshot_program's outputs are BUILD_DIR intermediates; the
+        # public --build-outputs list can therefore be empty in this pinned SDK.
+        $kernel = Get-ExvpnOtaKernelOutput $app $archOutput $kernelStarted ([DateTime]::UtcNow)
+        $registrant = Resolve-ExvpnOtaPath (Split-Path -Parent $kernel) 'dart_plugin_registrant.dart'
+        if (Test-Path -LiteralPath $registrant -PathType Leaf) {
+            if ([IO.File]::ReadAllText($registrant) -match 'integration_test|integrationTest') { throw 'ota_development_plugin_in_release' }
         }
         $aot = Join-Path $archOutput 'app.so'
         Invoke-OtaPinnedProcess $item.snapshotPath @('--deterministic','--snapshot_kind=app-aot-elf',('--elf=' + $aot),'--strip',$kernel) $app (Join-Path $logs ($item.key + '-snapshot.log'))

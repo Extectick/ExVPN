@@ -85,6 +85,92 @@ $android = @(Get-ExvpnOtaAotPlan 'Android')
 Check ($windows.Count -eq 1 -and $windows[0].platform -ceq 'windows-x64') 'windows_architecture'
 Check ($android.Count -eq 2 -and $android[0].arch -ceq 'aarch64' -and $android[1].arch -ceq 'x86_64') 'both_android_architectures'
 Reject { Get-ExvpnOtaAotPlan 'iOS' } 'ota_target_invalid'
+$kernelApp = Join-Path $fixture 'kernel-app'
+$kernelOutput = Join-Path $fixture 'kernel-output'
+$kernelId = 'f993e5352b3657324b7d9b026cea1365'
+$kernelDirectory = Join-Path $kernelApp ('.dart_tool/flutter_build/' + $kernelId)
+New-Item -ItemType Directory -Path $kernelDirectory,$kernelOutput -Force | Out-Null
+$kernelPath = Join-Path $kernelDirectory 'app.dill'
+$stampPath = Join-Path $kernelDirectory 'kernel_snapshot_program.stamp'
+$markerPath = Join-Path $kernelOutput '.last_build_id'
+$recordedPath = Join-Path $kernelDirectory 'recorded_uses.json'
+$kernelBytes = [byte[]]::new(4096)
+$kernelBytes[0]=0x90; $kernelBytes[1]=0xab; $kernelBytes[2]=0xcd; $kernelBytes[3]=0xef
+$kernelBegin = [DateTime]::UtcNow.AddSeconds(-1)
+function ResetKernelFixture {
+    [IO.File]::WriteAllText($markerPath,$kernelId,[Text.UTF8Encoding]::new($false))
+    [IO.File]::WriteAllBytes($kernelPath,$kernelBytes)
+    [IO.File]::WriteAllText($recordedPath,'{}',[Text.UTF8Encoding]::new($false))
+    # The pinned SDK repeats app.dill in the depfile outputs; duplicates here
+    # are legitimate, while two distinct kernel locations are never accepted.
+    $stamp = @{inputs=@((Join-Path $kernelApp 'lib/main.dart'));outputs=@($kernelPath,$recordedPath,$kernelPath)}
+    [IO.File]::WriteAllText($stampPath,($stamp | ConvertTo-Json -Depth 4),[Text.UTF8Encoding]::new($false))
+}
+function ReadKernelFixture { Get-ExvpnOtaKernelOutput $kernelApp $kernelOutput $kernelBegin ([DateTime]::UtcNow) }
+ResetKernelFixture
+Check ((ReadKernelFixture) -ceq $kernelPath) 'official_intermediate_kernel_selected_without_public_outputs'
+[IO.File]::WriteAllText((Join-Path $kernelOutput 'outputs.txt'),'',[Text.UTF8Encoding]::new($false))
+Check ((ReadKernelFixture) -ceq $kernelPath) 'empty_public_output_list_does_not_hide_kernel'
+[IO.File]::WriteAllText($markerPath,('../' + ('a'*29)),[Text.UTF8Encoding]::new($false))
+Reject { ReadKernelFixture } 'ota_kernel_build_id_invalid'
+ResetKernelFixture
+[IO.File]::WriteAllText($markerPath,$kernelId.ToUpperInvariant(),[Text.UTF8Encoding]::new($false))
+Reject { ReadKernelFixture } 'ota_kernel_build_id_invalid'
+ResetKernelFixture
+[IO.File]::WriteAllText($markerPath,('a'*65),[Text.UTF8Encoding]::new($false))
+Reject { ReadKernelFixture } 'ota_kernel_build_file_size_invalid'
+ResetKernelFixture
+Remove-Item -LiteralPath $markerPath
+Reject { ReadKernelFixture } 'ota_kernel_build_file_missing'
+ResetKernelFixture
+[IO.File]::SetLastWriteTimeUtc($markerPath,[DateTime]::UtcNow.AddHours(-1))
+Reject { ReadKernelFixture } 'ota_kernel_build_file_stale'
+ResetKernelFixture
+[IO.File]::SetLastWriteTimeUtc($stampPath,[DateTime]::UtcNow.AddHours(-1))
+Reject { ReadKernelFixture } 'ota_kernel_build_file_stale'
+ResetKernelFixture
+[IO.File]::SetLastWriteTimeUtc($kernelPath,[DateTime]::UtcNow.AddHours(-1))
+Reject { ReadKernelFixture } 'ota_kernel_build_file_stale'
+ResetKernelFixture
+[IO.File]::SetLastWriteTimeUtc($kernelPath,[DateTime]::UtcNow.AddHours(1))
+Reject { ReadKernelFixture } 'ota_kernel_build_file_stale'
+ResetKernelFixture
+[IO.File]::WriteAllText($stampPath,'not json',[Text.UTF8Encoding]::new($false))
+Reject { ReadKernelFixture } 'ota_kernel_stamp_invalid'
+ResetKernelFixture
+[IO.File]::WriteAllText($stampPath,'{"inputs":[],"outputs":"app.dill"}',[Text.UTF8Encoding]::new($false))
+Reject { ReadKernelFixture } 'ota_kernel_stamp_invalid'
+ResetKernelFixture
+$outsideKernel = Join-Path $fixture 'unrelated-app.dill'
+$invalidStamp = @{inputs=@();outputs=@($kernelPath,$outsideKernel)} | ConvertTo-Json -Depth 4
+[IO.File]::WriteAllText($stampPath,$invalidStamp,[Text.UTF8Encoding]::new($false))
+Reject { ReadKernelFixture } 'ota_kernel_stamp_output_invalid'
+ResetKernelFixture
+$invalidStamp = @{inputs=@();outputs=@('app.dill')} | ConvertTo-Json -Depth 4
+[IO.File]::WriteAllText($stampPath,$invalidStamp,[Text.UTF8Encoding]::new($false))
+Reject { ReadKernelFixture } 'ota_kernel_stamp_output_invalid'
+ResetKernelFixture
+$invalidStamp = @{inputs=@();outputs=@($recordedPath)} | ConvertTo-Json -Depth 4
+[IO.File]::WriteAllText($stampPath,$invalidStamp,[Text.UTF8Encoding]::new($false))
+Reject { ReadKernelFixture } 'ota_kernel_stamp_output_invalid'
+ResetKernelFixture
+[IO.File]::WriteAllText($kernelPath,'small',[Text.UTF8Encoding]::new($false))
+Reject { ReadKernelFixture } 'ota_kernel_build_file_size_invalid'
+ResetKernelFixture
+$invalidKernel = [byte[]]::new(4096)
+[IO.File]::WriteAllBytes($kernelPath,$invalidKernel)
+Reject { ReadKernelFixture } 'ota_kernel_header_invalid'
+ResetKernelFixture
+$parkedKernelDirectory = $kernelDirectory + '-parked'
+Move-Item -LiteralPath $kernelDirectory -Destination $parkedKernelDirectory
+try {
+    $null = New-Item -ItemType Junction -Path $kernelDirectory -Target $parkedKernelDirectory
+    Reject { ReadKernelFixture } 'ota_path_link_rejected'
+} finally {
+    if ((Get-Item -LiteralPath $kernelDirectory -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) { Remove-Item -LiteralPath $kernelDirectory }
+    Move-Item -LiteralPath $parkedKernelDirectory -Destination $kernelDirectory
+}
+Reject { Get-ExvpnOtaKernelOutput $kernelApp $kernelOutput ([DateTime]::UtcNow.AddHours(1)) $kernelBegin } 'ota_kernel_build_time_invalid'
 $elf = [byte[]]::new(4096)
 $elf[0]=0x7f; $elf[1]=0x45; $elf[2]=0x4c; $elf[3]=0x46; $elf[4]=2; $elf[5]=1; $elf[18]=62
 $elfPath = Join-Path $fixture 'synthetic-aot.so'
@@ -122,6 +208,7 @@ Check ($builder -match 'merge-base --is-ancestor' -and $builder -match 'sources_
 Check ($builder -match 'ota_signing_key_mismatch' -and $builder -match 'ota_signature_public_check_failed') 'signing_guards'
 Check ($builder -match 'ota_flutter_package_sdk_mismatch' -and $builder -match 'ota_development_plugin_in_release') 'runtime_sdk_and_registrant_guards'
 Check ($builder.Contains('$diffSize -gt 67108864') -and !$builder.Contains('$diffSize -gt 134217728')) 'diff_limit_matches_catalog_64_mib'
+Check ($builder.Contains('Get-ExvpnOtaKernelOutput $app $archOutput $kernelStarted') -and !$builder.Contains('--build-outputs=')) 'kernel_selection_uses_official_build_marker'
 $releasePath = Join-Path $root 'scripts/release/shorebird-release.ps1'
 $releaseErrors=$null; $releaseTokens=$null
 $releaseAst=[Management.Automation.Language.Parser]::ParseFile($releasePath,[ref]$releaseTokens,[ref]$releaseErrors)
