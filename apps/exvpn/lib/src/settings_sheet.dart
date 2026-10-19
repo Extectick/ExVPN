@@ -395,9 +395,13 @@ class _SettingsSheetState extends State<SettingsSheet> {
                   unawaited(dartUpdates?.initialize());
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
+                      settings: const RouteSettings(
+                        name: UpdatesSheet.routeName,
+                      ),
                       builder: (_) => UpdatesSheet(
                         updates: updates,
                         dartUpdates: dartUpdates,
+                        previewVersion: widget.previewVersion,
                       ),
                     ),
                   );

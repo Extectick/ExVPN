@@ -14,12 +14,19 @@ import 'dart_updates_test.dart' show FakeDartUpdates;
 import 'updates_sheet_test.dart' show tapVisible;
 import 'vpn_controller_test.dart' show FakeBridge, running;
 
-Widget _russianUpdates(Widget home) => MaterialApp(
-  locale: const Locale('ru'),
-  supportedLocales: const [Locale('ru')],
-  localizationsDelegates: GlobalMaterialLocalizations.delegates,
-  home: home,
-);
+Widget _russianUpdates(UpdatesSheet home) {
+  final appUpdates = AppUpdatesController(
+    fullBackend: const DisabledFullUpdatesBackend(),
+    dartUpdates: home.dartUpdates,
+  );
+  addTearDown(appUpdates.dispose);
+  return MaterialApp(
+    locale: const Locale('ru'),
+    supportedLocales: const [Locale('ru')],
+    localizationsDelegates: GlobalMaterialLocalizations.delegates,
+    home: AppUpdatesScope(controller: appUpdates, child: home),
+  );
+}
 
 void main() {
   testWidgets(
@@ -40,10 +47,8 @@ void main() {
       );
       expect(find.text('Недоступен в этой сборке'), findsNothing);
       expect(find.text('Базовый выпуск'), findsNothing);
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('dart-updates-unavailable')),
-        200,
-      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('updates-primary')), findsOneWidget);
       expect(find.byKey(const Key('dart-updates-check')), findsNothing);
       expect(find.byKey(const Key('dart-updates-download')), findsNothing);
       expect(find.byType(ExpansionTile), findsNothing);
@@ -86,21 +91,16 @@ void main() {
       await tapVisible(tester, find.byKey(const Key('settings-button')));
       await tapVisible(tester, find.text('Версии и обновления'));
       expect(backend.reads, 1);
-      expect(backend.checks, 1);
+      expect(backend.checks, 2);
       expect(find.text('Патч 7'), findsNothing);
       expect(dart.snapshot!.current, 7);
-      await tapVisible(tester, find.byKey(const Key('dart-updates-check')));
       backend.saved = const DartPatchSnapshot(
         available: true,
         current: 7,
         next: 8,
       );
-      await tapVisible(tester, find.byKey(const Key('dart-updates-download')));
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('dart-updates-pending')),
-        -160,
-      );
-      expect(find.text('Обновление готово к перезапуску.'), findsOneWidget);
+      await tapVisible(tester, find.byKey(const Key('updates-primary')));
+      expect(find.text('Установить и перезапустить'), findsOneWidget);
       expect(dart.snapshot!.current, 7);
       expect(backend.downloads, 1);
       expect(bridge.disconnects, 0);
@@ -137,14 +137,9 @@ void main() {
       );
       expect(find.text('Патч 4'), findsNothing);
       expect(dart.snapshot!.current, 4);
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('dart-updates-pending')),
-        200,
-      );
-      expect(
-        find.text('Подготовлен возврат к исходной версии интерфейса.'),
-        findsOneWidget,
-      );
+      await tester.pumpAndSettle();
+      expect(find.text('Установить и перезапустить'), findsOneWidget);
+      expect(dart.snapshot!.next, isNull);
       expect(find.byKey(const Key('dart-updates-download')), findsNothing);
       expect(tester.takeException(), isNull);
     },
@@ -170,16 +165,14 @@ void main() {
     expect(find.text('Dart-патч'), findsNothing);
     expect(find.byType(ExpansionTile), findsNothing);
     expect(find.text('Базовый выпуск'), findsNothing);
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('dart-updates-error')),
-      200,
-    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('updates-error')), findsOneWidget);
     expect(find.textContaining('private token'), findsNothing);
     backend.readError = null;
-    await tapVisible(tester, find.byKey(const Key('dart-updates-read')));
+    await tapVisible(tester, find.byKey(const Key('updates-primary')));
     expect(dart.snapshot!.available, true);
     expect(dart.snapshot!.current, isNull);
-    expect(backend.checks, 0);
+    expect(backend.checks, 1);
     expect(tester.takeException(), isNull);
   });
 }

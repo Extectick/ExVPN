@@ -11,6 +11,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'services/vpn_controller.dart';
 import 'services/subscription_loader.dart';
+import 'build_identity.dart';
+import 'services/app_updates.dart';
+import 'services/data_updates.dart';
+import 'src/updates_sheet.dart';
 import 'src/desktop_layout.dart';
 import 'src/home_screen.dart';
 import 'src/appearance.dart';
@@ -41,6 +45,12 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
     initiallyConnected: Uri.base.queryParameters['state'] == 'connected',
   );
   late final VpnController _vpn = VpnController(_bridge)..initialize();
+  late final _previewUpdateBackend = _DesignUpdatesBackend();
+  late final _previewData = DataUpdatesController(
+    vpn: _vpn,
+    backend: DisabledDataUpdatesBackend(),
+  );
+  late AppUpdatesController _previewUpdates = _createPreviewUpdates();
   final _appearance = AppearanceController(preview: true);
   DesktopLayout _layout = DesktopLayout.values.firstWhere(
     (mode) => mode.name == Uri.base.queryParameters['layout'],
@@ -53,9 +63,30 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
       : const AppUpdatePresentation();
   Timer? _updateTimer;
   int _homeGeneration = 0;
-  String _previewVersion = '0.1.0';
+  String _previewVersion = appVersion;
   bool _restartCurtain = false;
   final _previewLoader = SubscriptionLoader();
+
+  AppUpdatesController _createPreviewUpdates() => AppUpdatesController(
+    fullBackend: _previewUpdateBackend,
+    beforeRestart: (_, handoff) async {
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      if (!mounted) return false;
+      await handoff();
+      setState(() => _restartCurtain = true);
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return false;
+      final previous = _previewUpdates;
+      setState(() {
+        _homeGeneration++;
+        _previewVersion = _DesignUpdatesBackend.offer.version.split('+').first;
+        _previewUpdates = _createPreviewUpdates();
+        _restartCurtain = false;
+      });
+      previous.dispose();
+      return true;
+    },
+  );
 
   Future<SubscriptionDocument> _previewDocument(String source) async {
     if (Uri.tryParse(source)?.host != 'demo.exvpn.invalid') {
@@ -170,6 +201,8 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
 
   @override
   void dispose() {
+    _previewUpdates.dispose();
+    _previewData.dispose();
     _previewLoader.close();
     _updateTimer?.cancel();
     _vpn.dispose();
@@ -255,9 +288,7 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
                                 key: ValueKey(_homeGeneration),
                                 initialDesktopLayout: _layout,
                                 previewVersion: _previewVersion,
-                                previewBuild: _previewVersion == '0.1.1'
-                                    ? 21
-                                    : 20,
+                                previewBuild: appBuild,
                                 controller: _app,
                                 vpn: _vpn,
                                 themeMode: _appearance.themeMode,
@@ -339,14 +370,77 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
         size: canvas,
         child: MediaQuery(
           data: MediaQuery.of(context).copyWith(size: canvas),
-          child: Navigator(
-            pages: [MaterialPage<void>(child: child)],
-            onDidRemovePage: (_) {},
+          child: AppUpdatesScope(
+            controller: _previewUpdates,
+            child: DataUpdatesScope(
+              controller: _previewData,
+              child: Navigator(
+                key: ValueKey(_homeGeneration),
+                pages: [
+                  MaterialPage<void>(
+                    name: Uri.base.queryParameters['page'] == 'updates'
+                        ? UpdatesSheet.routeName
+                        : null,
+                    child: Uri.base.queryParameters['page'] == 'updates'
+                        ? UpdatesSheet(
+                            updates: _previewData,
+                            appUpdates: _previewUpdates,
+                            previewVersion: _previewVersion,
+                          )
+                        : child,
+                  ),
+                ],
+                onDidRemovePage: (_) {},
+              ),
+            ),
           ),
         ),
       ),
     ),
   );
+}
+
+/// Timed visual simulation only; never downloads, installs or exits a process.
+class _DesignUpdatesBackend implements FullUpdatesBackend {
+  static const offer = FullUpdateOffer(version: '0.1.9+30');
+  bool installed = false;
+  @override
+  bool get supported => true;
+  @override
+  Future<FullUpdateOffer?> check() async {
+    await Future<void>.delayed(const Duration(milliseconds: 650));
+    if (Uri.base.queryParameters['updateState'] == 'error') {
+      throw AppUpdatesFailure('network_failed');
+    }
+    return installed || Uri.base.queryParameters['updateState'] == 'current'
+        ? null
+        : offer;
+  }
+
+  @override
+  Future<FullUpdateOffer> download(
+    FullUpdateOffer offer, {
+    required FullUpdateProgressCallback onProgress,
+  }) async {
+    for (var i = 1; i <= 30; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      onProgress(FullUpdateProgress(received: i, total: 30));
+    }
+    return offer;
+  }
+
+  @override
+  Future<FullUpdateHandoff> handoff(FullUpdateOffer offer) async {
+    installed = true;
+    return FullUpdateHandoff.exitUi;
+  }
+
+  @override
+  Future<void> restartUi() async {}
+  @override
+  Future<void> cancel() async {}
+  @override
+  void dispose() {}
 }
 
 /// Explicit visual simulation, isolated from the product entry point.
@@ -488,7 +582,7 @@ class _DesignOnlyBridge
   }
 
   @override
-  Future<String> coreVersion() async => 'preview';
+  Future<String> coreVersion() async => '26.10.10-exvpn.5';
   @override
   Future<Set<String>> getExclusions() async =>
       _routing.mode == ApplicationRoutingMode.exclude

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-20",
+  "status": "PASS_SHARED_UI_AND_BROWSER_DESIGN",
+  "sourceBase": "12c2caa653df7cc04170b55c1f33c16a8abd313b",
+  "localUrl": "http://localhost:8127/?desktop=1&layout=medium&lang=ru&theme=dark&update=none&page=updates",
+  "widgetTests": {
+    "allAccepted": true,
+    "adapted": 4,
+    "new": 4,
+    "rollbackFixtureRecheckedAfterGuardFix": true
+  },
+  "targetedAnalyzer": "4 production files clean",
+  "browser": {
+    "darkMedium": "available, downloading with percentage, after simulated relaunch Check",
+    "syntheticOnly": true,
+    "consoleErrors": 0,
+    "lightMinimal": "checking and Check"
+  },
+  "screenshots": [
+    {
+      "path": "design/screenshots/updates-unified/available-dark.png",
+      "sha256": "3bc75fc4e79fc621e0992e27fecb27d574f421b26dc1546a181c92d80f7c84ad"
+    },
+    {
+      "path": "design/screenshots/updates-unified/current-light-minimal.png",
+      "sha256": "c4fbc0f3cff85a8624f2bb756edbfa67a3671458862a420f979e9cd89a4bdc28"
+    },
+    {
+      "path": "design/screenshots/updates-unified/downloading-dark.png",
+      "sha256": "b3dd44905c1026f7939dcbc191fc5b1d3ddea87c33dc5ad867677d82784ee9f8"
+    }
+  ],
+  "sourceBehavior": {
+    "fullWidthPrimaryButton": true,
+    "automaticCheckOnEntry": true,
+    "windowsReadOnlyUpdaterRouteAllowsRestart": true,
+    "otherModalGuardPreserved": true,
+    "duplicateStartupCheckPrevented": true,
+    "applicationAndCoreOnly": true,
+    "unifiedFullAndPatchController": true
+  },
+  "nativePackagesBuilt": 0,
+  "nativeInstallationsPerformed": 0,
+  "fullSuiteRepeated": false,
+  "ciInvoked": false,
+  "productionUpdatesPublished": false,
+  "limitations": [
+    "Browser download and relaunch are visual simulations; no package downloaded or installed.",
+    "Windows installed runtime and physical Android visual acceptance not repeated.",
+    "Android Dart auto-restart still requires native lifecycle support; existing cold-start application remains."
+  ]
+}

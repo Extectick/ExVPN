@@ -1,20 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
-import 'dart:convert';
+import 'dart:async';
 
-import 'package:exvpn/main.dart';
 import 'package:exvpn/build_identity.dart';
 import 'package:exvpn/services/app_updates.dart';
 import 'package:exvpn/services/data_updates.dart';
 import 'package:exvpn/services/dart_updates.dart';
-import 'package:exvpn/services/vpn_controller.dart';
 import 'package:exvpn/src/updates_sheet.dart';
-import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
 
-import 'data_updates_test.dart' show FakeUpdates;
-import 'vpn_controller_test.dart' show FakeBridge, running, off;
+import 'app_updates_test.dart' show FakeFullUpdates, offer;
 
 Future<void> tapVisible(WidgetTester tester, Finder target) async {
   if (target.evaluate().isEmpty) {
@@ -31,149 +27,162 @@ Future<void> tapVisible(WidgetTester tester, Finder target) async {
   await tester.pumpAndSettle();
 }
 
-Widget _russianUpdates(Widget home) => MaterialApp(
-  locale: const Locale('ru'),
-  supportedLocales: const [Locale('ru')],
-  localizationsDelegates: GlobalMaterialLocalizations.delegates,
-  home: home,
-);
-
 void main() {
+  late FakeFullUpdates backend;
+  late DartUpdatesController dart;
+  late AppUpdatesController app;
+  late DataUpdatesController data;
+  setUp(() {
+    backend = FakeFullUpdates();
+    dart = DartUpdatesController(backend: const DisabledDartUpdatesBackend());
+    app = AppUpdatesController(
+      fullBackend: backend,
+      dartUpdates: dart,
+      beforeRestart: (_, handoff) async {
+        await handoff();
+        return true;
+      },
+    );
+    data = DataUpdatesController(
+      vpn: null,
+      backend: DisabledDataUpdatesBackend(),
+    );
+  });
+  tearDown(() {
+    app.dispose();
+    dart.dispose();
+    data.dispose();
+  });
+  Widget screen() => MaterialApp(
+    locale: const Locale('ru'),
+    supportedLocales: const [Locale('ru')],
+    localizationsDelegates: GlobalMaterialLocalizations.delegates,
+    home: AppUpdatesScope(
+      controller: app,
+      child: UpdatesSheet(updates: data),
+    ),
+  );
+
   testWidgets(
-    'default disabled screen shows real versions and no check action at narrow scale',
+    'auto check once, repeat with same full-width button, only two versions',
     (tester) async {
+      backend.available = null;
+      tester.view.physicalSize = const Size(320, 440);
       tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(320, 740);
       tester.platformDispatcher.textScaleFactorTestValue = 1.5;
-      addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-      final controller = DataUpdatesController(
-        vpn: null,
-        backend: DisabledDataUpdatesBackend(),
-      );
-      addTearDown(controller.dispose);
-      await controller.initialize();
-      await tester.pumpWidget(
-        _russianUpdates(UpdatesSheet(updates: controller)),
-      );
-      expect(find.text('ExVPN $appVersion'), findsOneWidget);
-      expect(find.byKey(const Key('updates-check')), findsNothing);
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('updates-disabled')),
-        250,
-        scrollable: find.byType(Scrollable).last,
-      );
+      await tester.pumpWidget(screen());
       await tester.pumpAndSettle();
-      expect(find.text('Обновления справки пока недоступны.'), findsOneWidget);
-      expect(find.textContaining('доверенного адреса'), findsNothing);
-      expect(find.byType(ExpansionTile), findsNothing);
-      expect(find.byKey(const Key('updates-diagnostics')), findsNothing);
+      expect(backend.checks, 1);
+      expect(find.text('Проверить'), findsOneWidget);
+      expect(find.text('ExVPN $appVersion'), findsOneWidget);
+      expect(find.text('Ядро'), findsOneWidget);
+      expect(find.byType(FilledButton), findsOneWidget);
+      expect(
+        tester.getSize(find.byKey(const Key('updates-primary'))).width,
+        280,
+      );
+      expect(find.textContaining('справк'), findsNothing);
+      expect(find.text('Обновления интерфейса'), findsNothing);
+      await tester.pumpWidget(screen());
+      await tester.pumpAndSettle();
+      expect(backend.checks, 1);
+      await tester.tap(find.byKey(const Key('updates-primary')));
+      await tester.pumpAndSettle();
+      expect(backend.checks, 2);
       expect(tester.takeException(), isNull);
     },
   );
 
-  testWidgets('active VPN disables apply; cancel and later safe apply work', (
-    tester,
-  ) async {
-    final bridge = FakeBridge();
-    final vpn = VpnController(bridge);
-    final backend = FakeUpdates();
-    final controller = DataUpdatesController(vpn: vpn, backend: backend);
-    addTearDown(() async {
-      controller.dispose();
-      vpn.dispose();
-      await bridge.close();
-    });
-    await vpn.initialize();
-    bridge.emit(running());
-    await controller.initialize();
-    await controller.check();
-    await tester.pumpWidget(_russianUpdates(UpdatesSheet(updates: controller)));
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('updates-apply')),
-      250,
-      scrollable: find.byType(Scrollable).last,
-    );
-    await tester.pumpAndSettle();
-    expect(
-      tester
-          .widget<FilledButton>(find.byKey(const Key('updates-apply')))
-          .onPressed,
-      isNull,
-    );
-    await tapVisible(tester, find.byKey(const Key('updates-cancel')));
-    expect(backend.cancelled, 1);
-    expect(backend.applied, 0);
-    expect(bridge.disconnects, 0);
-    bridge.emit(off);
-    await tapVisible(tester, find.byKey(const Key('updates-check')));
-    await tapVisible(tester, find.byKey(const Key('updates-apply')));
-    expect(backend.applied, 1);
-    await tapVisible(tester, find.byKey(const Key('updates-recover')));
-    expect(controller.snapshot.revision, 2);
-    expect(find.text('Ревизия 2'), findsNothing);
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('updates-help')),
-      250,
-      scrollable: find.byType(Scrollable).last,
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Проверенная новая справка.'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+  testWidgets(
+    'download progress prevents double command, then automatic install and restart',
+    (tester) async {
+      backend.pendingDownload = Completer<FullUpdateOffer>();
+      await tester.pumpWidget(screen());
+      await tester.pumpAndSettle();
+      expect(find.text('Скачать и установить'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('updates-primary')));
+      await tester.pump();
+      backend.progress!(const FullUpdateProgress(received: 50, total: 100));
+      await tester.pump();
+      expect(find.text('Загружаем обновление… 50%'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(find.byKey(const Key('updates-primary')))
+            .onPressed,
+        isNull,
+      );
+      await tester.tap(find.byKey(const Key('updates-primary')));
+      expect(backend.downloads, 1);
+      backend.pendingDownload!.complete(offer);
+      await tester.pump();
+      await tester.pump();
+      expect(backend.handoffs, 1);
+      expect(app.phase, AppUpdateStatePhase.restarting);
+      expect(find.text('Установка и перезапуск…'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
 
   testWidgets(
-    'application settings open versions screen through lifetime scope',
+    'one short failure and retry; opening during a running check shares it',
     (tester) async {
-      final backend = FakeUpdates()
-        ..current = const DataUpdateSnapshot(
-          revision: 4,
-          help: 'Сохранённая проверенная справка для подключения.',
-        );
-      final updates = DataUpdatesController(vpn: null, backend: backend);
-      final dart = DartUpdatesController(
-        backend: const DisabledDartUpdatesBackend(),
-      );
-      final appUpdates = AppUpdatesController(
-        fullBackend: const DisabledFullUpdatesBackend(),
-        dartUpdates: dart,
-      );
-      tester.platformDispatcher.localesTestValue = const [Locale('ru')];
-      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      backend.pendingCheck = Completer<FullUpdateOffer?>();
+      final checking = app.check();
+      await tester.pumpWidget(screen());
+      await tester.pump();
+      expect(backend.checks, 1);
+      expect(find.text('Проверяем обновления…'), findsOneWidget);
+      backend.pendingCheck!.completeError(AppUpdatesFailure('network_failed'));
+      await checking;
+      await tester.pumpAndSettle();
+      expect(find.text('Не удалось проверить обновления.'), findsOneWidget);
+      expect(find.textContaining('network_failed'), findsNothing);
+      backend.pendingCheck = null;
+      await tester.tap(find.byKey(const Key('updates-primary')));
+      await tester.pumpAndSettle();
+      expect(backend.checks, 2);
+      expect(find.text('Скачать и установить'), findsOneWidget);
+      expect(find.byKey(const Key('updates-error')), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'navigation permits restart only on read-only updates route, not another dialog',
+    (tester) async {
+      final observer = UpdatesNavigationObserver();
+      final navigator = GlobalKey<NavigatorState>();
       await tester.pumpWidget(
-        ExVpnApp(
-          controller: AppController(),
-          updates: updates,
-          dartUpdates: dart,
-          appUpdates: appUpdates,
+        MaterialApp(
+          navigatorKey: navigator,
+          navigatorObservers: [observer],
+          home: const SizedBox(),
+        ),
+      );
+      unawaited(
+        navigator.currentState!.push(
+          MaterialPageRoute<void>(
+            settings: const RouteSettings(name: UpdatesSheet.routeName),
+            builder: (_) => const Scaffold(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
-      await tapVisible(tester, find.byKey(const Key('settings-button')));
-      await tapVisible(tester, find.text('Версии и обновления'));
-      expect(find.text('Ревизия 4'), findsNothing);
-      expect(find.byType(ExpansionTile), findsNothing);
-      expect(find.text('Dart-патч'), findsNothing);
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('updates-help')),
-        250,
-        scrollable: find.byType(Scrollable).last,
+      expect(observer.showingUpdates, true);
+      unawaited(
+        showDialog<void>(
+          context: navigator.currentState!.overlay!.context,
+          builder: (_) => const AlertDialog(content: Text('Unsaved form')),
+        ),
       );
       await tester.pumpAndSettle();
-      expect(
-        find.text('Сохранённая проверенная справка для подключения.'),
-        findsOneWidget,
-      );
-      expect(tester.takeException(), isNull);
-      await tapVisible(tester, find.byType(BackButton));
-      await tapVisible(tester, find.text('Обезличенная диагностика'));
-      final report = jsonDecode(
-        tester.widget<SelectableText>(find.byType(SelectableText)).data!,
-      ) as Map<String, dynamic>;
-      expect((report['updates'] as Map)['dataRevision'], 4);
-      expect((report['updates'] as Map)['dartAvailable'], false);
-      await tester.pumpWidget(const SizedBox.shrink());
+      expect(observer.showingUpdates, false);
+      navigator.currentState!.pop();
+      await tester.pumpAndSettle();
+      expect(observer.showingUpdates, true);
     },
   );
 }

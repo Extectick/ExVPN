@@ -17,6 +17,7 @@ import 'services/dart_updates.dart';
 import 'services/desktop_tray.dart';
 import 'services/app_updates.dart';
 import 'src/app_update_strip.dart';
+import 'src/updates_sheet.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -88,6 +89,7 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
   SubscriptionPersistence? _persistence;
   DesktopTrayController? _tray;
   final _navigator = GlobalKey<NavigatorState>();
+  final _updateNavigation = UpdatesNavigationObserver();
   final _messenger = GlobalKey<ScaffoldMessengerState>();
   late final DataUpdatesController _updates;
   late final DartUpdatesController _dartUpdates;
@@ -157,7 +159,8 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
         kIsWeb ||
         (defaultTargetPlatform != TargetPlatform.windows && !androidFull) ||
         vpn == null ||
-        _navigator.currentState?.canPop() == true) {
+        (_navigator.currentState?.canPop() == true &&
+            !_updateNavigation.showingUpdates)) {
       return false;
     }
     return vpn.runForApplicationRestart((stillSafe) async {
@@ -281,6 +284,7 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
             animation: Listenable.merge([_appearance, _appUpdates]),
             builder: (context, _) => MaterialApp(
               navigatorKey: _navigator,
+              navigatorObservers: [_updateNavigation],
               scaffoldMessengerKey: _messenger,
               title: 'ExVPN',
               debugShowCheckedModeBanner: false,
