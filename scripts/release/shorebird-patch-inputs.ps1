@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #requires -Version 7.0
-# Scoped byte preparation for the two text assets in an already audited base.
+# Scoped byte preparation for fixed text inputs in an already audited base.
 # No SDK, Git index staging, dependency resolution, or cloud operations.
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'artifact-audit-lib.ps1')
@@ -160,6 +160,59 @@ function Enter-ShorebirdPatchTextAssetsLease {
         }
     } catch {Restore-ShorebirdPatchTextAssetsLease $lease;throw}
     $lease
+}
+
+function Enter-ShorebirdPatchRuntimePinLease {
+    param([Parameter(Mandatory)][string]$Repository,[Parameter(Mandatory)][string]$BaseReceiptPath,
+        [Parameter(Mandatory)]$BaseReceipt,
+        [Parameter(Mandatory)][ValidatePattern('^[a-f0-9]{40}$')][string]$SourceCommit,
+        [Parameter(Mandatory)][string]$PrivateDirectory)
+    $relative='scripts/bootstrap/shorebird.lock.json'
+    $repositoryRoot=[IO.Path]::GetFullPath($Repository).TrimEnd('\','/')
+    if([IO.Path]::GetFullPath((Invoke-ShorebirdPatchInputGit $repositoryRoot @('rev-parse','--show-toplevel'))).TrimEnd('\','/') -ine $repositoryRoot){throw 'shorebird_patch_asset_repository_invalid'}
+    Assert-ShorebirdPatchInputSource $repositoryRoot $SourceCommit
+    $null=Assert-ShorebirdPatchInputFile $BaseReceiptPath 4MB
+    $receiptHash=Get-AuditSha256 $BaseReceiptPath
+    $actual=Get-Content -LiteralPath $BaseReceiptPath -Raw|ConvertFrom-Json -AsHashtable
+    if(($actual|ConvertTo-Json -Depth 100 -Compress) -cne ($BaseReceipt|ConvertTo-Json -Depth 100 -Compress) -or
+        $actual.sourceCommit -cnotmatch '\A[a-f0-9]{40}\z' -or $actual.target -cnotin @('Android','Windows') -or
+        $actual.version -cnotmatch '\A\d+\.\d+\.\d+\+[1-9]\d*\z'){throw 'shorebird_patch_asset_receipt_changed'}
+    if($actual.runtime -isnot [Collections.IDictionary] -or $actual.runtime.identity -isnot [Collections.IDictionary] -or
+        $actual.runtime.identity.pin -isnot [Collections.IDictionary] -or
+        $actual.runtime.identity.pin.path -cne $relative -or $actual.runtime.identity.pin.sha256 -isnot [string] -or
+        $actual.runtime.identity.pin.sha256 -cnotmatch '\A[a-f0-9]{64}\z'){throw 'shorebird_patch_runtime_pin_receipt_invalid'}
+    $private=[IO.Path]::GetFullPath($PrivateDirectory).TrimEnd('\','/')
+    if(!(Test-Path -LiteralPath $private -PathType Container)){throw 'shorebird_patch_asset_private_directory_invalid'}
+    Assert-ShorebirdPatchInputPrivate $private
+    $path=Join-Path $repositoryRoot $relative
+    $item=Assert-ShorebirdPatchInputFile $path 64KB
+    $original=[IO.File]::ReadAllBytes($path)
+    $index=Get-ShorebirdPatchInputIndex $repositoryRoot $relative
+    $head=Get-ShorebirdPatchInputBlob $repositoryRoot $SourceCommit $relative
+    $baseSource=Get-ShorebirdPatchInputBlob $repositoryRoot $actual.sourceCommit $relative
+    $normalized=Get-ShorebirdPatchTextHash $original
+    foreach($bytes in @($head,$baseSource)){if((Get-ShorebirdPatchTextHash $bytes) -cne $normalized){throw 'shorebird_patch_runtime_pin_semantic_change'}}
+    # Accept only the two literal newline encodings of the committed content.
+    # The audited receipt chooses the bytes; no dependency/pin value is edited.
+    $lfText=[Text.UTF8Encoding]::new($false,$true).GetString($original).Replace("`r`n","`n")
+    $raw=$null
+    foreach($text in @($lfText,$lfText.Replace("`n","`r`n"))){
+        $candidate=[Text.UTF8Encoding]::new($false).GetBytes($text)
+        if((Get-ShorebirdPatchInputHash $candidate) -ceq $actual.runtime.identity.pin.sha256){$raw=$candidate;break}
+    }
+    if($null -eq $raw){throw 'shorebird_patch_runtime_pin_hash_unmatched'}
+    $entry=[ordered]@{path=$path;relative=$relative;original=$original;originalHash=(Get-ShorebirdPatchInputHash $original);mtime=$item.LastWriteTimeUtc;index=$index;baseBytes=[byte[]]$raw;baseHash=(Get-ShorebirdPatchInputHash $raw);normalizedHash=$normalized;restoreRequired=$false}
+    if((Get-AuditSha256 $path) -cne $entry.originalHash -or (Get-ShorebirdPatchInputIndex $repositoryRoot $relative) -cne $index){throw 'shorebird_patch_asset_plan_changed'}
+    if((Get-AuditSha256 $BaseReceiptPath) -cne $receiptHash){throw 'shorebird_patch_asset_receipt_changed'}
+    $lease=[ordered]@{repository=$repositoryRoot;sourceCommit=$SourceCommit;receiptPath=$BaseReceiptPath;receiptSha256=$receiptHash;privateDirectory=$private;entries=@($entry);active=$true;restored=$false;summary=@{path=$relative;sourceRawSha256=$entry.originalHash;baseRawSha256=$entry.baseHash;normalizedSha256=$normalized}}
+    try {
+        if($entry.originalHash -cne $entry.baseHash){$entry.restoreRequired=$true;[IO.File]::WriteAllBytes($path,$raw)}
+    } catch {Restore-ShorebirdPatchRuntimePinLease $lease;throw}
+    $lease
+}
+
+function Restore-ShorebirdPatchRuntimePinLease($Lease) {
+    Restore-ShorebirdPatchTextAssetsLease $Lease
 }
 
 function Restore-ShorebirdPatchTextAssetsLease($Lease) {

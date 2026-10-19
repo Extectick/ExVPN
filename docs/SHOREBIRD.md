@@ -1,10 +1,58 @@
 # Shorebird: подготовка Dart OTA
 
+## Подписанные патчи через GitHub Actions, 2026-10-20
+
+Hosted Android preflight принят на `20f4f0b`:
+[run39302667891](https://github.com/Extectick/ExVPN/actions/runs/39302667891).
+Анализатор SDK возвращает пять полных Windows temp-путей с обратными слешами;
+прежняя проверка искала только путь от корня ZIP с `/`. Теперь проверяется
+полный ожидаемый список, а дочерний процесс получает собственные защищённые
+TEMP/TMP. Родительское окружение, настройки SDK, проверка file IDs и настоящий
+Flutter strip-validation сохранены. [Доказательство](evidence/shorebird29-ci-preflight.json).
+
+Патчи используют неизменные принятые базы из run39293255636. Два текстовых
+ресурса приводятся к точным байтам соответствующей базы только после сверки
+LF-нормализованного содержимого с HEAD, исходниками базы и её filemap/AAB.
+`finally` восстанавливает исходные байты, mtime и неизменный Git index.
+Отдельная scoped lease делает то же для представления строк единственного
+`scripts/bootstrap/shorebird.lock.json`: допустимы только LF/CRLF-варианты
+неизменённого Git blob, один из которых обязан иметь точный SHA из
+`base.runtime.identity.pin`. Сами значения pin, версия и Git index не меняются;
+проверка runtime evidence остаётся строгой и выполняется до восстановления.
+Нативные изменения, другие assets, зависимости, SDK/signing pins и build
+identity по-прежнему запрещены; upstream diff overrides не используются.
+
+Для обслуживания CI допускаются только девять явно перечисленных
+некомпилируемых workflow/policy/preflight/patch/rollback/test файлов.
+Полный QA `0d9fdf22` переиспользуется только при неизменных восьми деревьях
+Dart lib/test и проверенной квитанции 374 app tests / 12 lanes. Новый Dart-код
+запускает app и затронутые package lanes с зависимостями. Native Full не
+повторяется для одних CI-изменений. Холодный pub-cache заполняется закреплённым
+SDK с `--enforce-lockfile`; сам wrapper сохраняет offline-проверку.
+
+Выпуск обоих патчей, без нового базового релиза:
+
+```powershell
+gh workflow run shorebird.yml --ref main `
+  -f operation=patch -f version=0.1.8+29 -F publish_cloud=true `
+  -f base_run_id=39293255636 `
+  -f base_source_commit=5bddc7770acd5446ca0c579857f9d1c7b2b1ada3 `
+  -f patch_target=Both
+```
+
+При частичном успехе выбирать `patch_target=Android` или `Windows` только для
+неуспешной платформы и сначала проверять её recovery receipt: неизвестный
+результат cloud upload не означает отсутствие патча. Короткий preflight без
+сборок и облачных вызовов: `operation=diagnose_android`, `publish_cloud=false`.
+Он восстанавливает только точный существующий SDK-cache и отказывается при
+промахе; bootstrap/save в этом режиме отсутствуют. Сырые ошибки сохраняются
+только локально или в зашифрованных diagnostic artifacts.
+
 Исправление инструмента отката, 2026-10-20: PowerShell должен передавать
 `--app-id`, `--release-version`, `--patch-number` тремя отдельными аргументами.
 Прежняя конкатенация останавливала CLI до облачной мутации. Точные некомпилируемые
 rollback/policy/test helpers допускают обслуживание без замены базового пакета;
-build wrappers, SDK/signing pins, dependencies, native, assets и build identity
+остальные build wrappers, SDK/signing pins, dependencies, native, assets и build identity
 по-прежнему запрещены в Dart-патче. Upstream native/assets diff checks включены.
 Изменение одних helpers не считается Dart-патчем. 298 pipeline guards PASS;
 общий Full приложения и сборки не повторялись.

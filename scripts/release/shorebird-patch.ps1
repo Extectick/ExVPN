@@ -34,9 +34,6 @@ if ($base.publicKeySha256 -cne $public.sha256) { throw 'shorebird_base_public_ke
 $app = Join-Path $repository 'apps/exvpn'
 $version = Get-NoticeAppVersion ([IO.File]::ReadAllText((Join-Path $app 'pubspec.yaml'))) ([IO.File]::ReadAllText((Join-Path $app 'lib/build_identity.dart')))
 if ($version -cne $ReleaseVersion) { throw 'shorebird_patch_version_changed' }
-$runtime = Get-ReleaseFlutterRuntime -Repository $repository -Target $Target -FlutterRuntime shorebird -FlutterBuildMode release
-Assert-ReleaseFlutterRuntimeEvidence $runtime.Evidence $base.runtime
-$cli = Get-ShorebirdCli $repository
 $privateRun = New-ShorebirdPrivateDirectory $repository 'patch'
 $output = Join-Path $repository ('artifacts/shorebird/patch-' + $ReleaseVersion + '-' + $Target.ToLowerInvariant() + '-' + [Guid]::NewGuid().ToString('N'))
 $environment = @{}
@@ -45,10 +42,16 @@ foreach ($name in @('PATH','APPDATA','PUB_CACHE','GRADLE_USER_HOME','CI','FLUTTE
     'EXVPN_ANDROID_KEYSTORE','EXVPN_ANDROID_KEY_ALIAS','EXVPN_ANDROID_STORE_PASSWORD','EXVPN_ANDROID_KEY_PASSWORD','EXVPN_SHOREBIRD_PRIVATE_KEY_BASE64')) {
     $environment[$name] = [Environment]::GetEnvironmentVariable($name,'Process')
 }
-$keyPath = $null; $passwordBytes = $null; $textAssetLease = $null; $phase = 'base_lookup'
+$keyPath = $null; $passwordBytes = $null; $textAssetLease = $null; $runtimePinLease = $null
+$runtime = $null; $actualRuntimeEvidence = $null; $cli = $null; $phase = 'runtime_inputs'
 $recoveryPath = $null; $cloudPatchVerified = $false
 Push-Location $app
 try {
+    $runtimePinLease = Enter-ShorebirdPatchRuntimePinLease -Repository $repository -BaseReceiptPath $basePath -BaseReceipt $base -SourceCommit $source.sourceCommit -PrivateDirectory $privateRun
+    $runtime = Get-ReleaseFlutterRuntime -Repository $repository -Target $Target -FlutterRuntime shorebird -FlutterBuildMode release
+    $actualRuntimeEvidence = $runtime.Evidence
+    Assert-ReleaseFlutterRuntimeEvidence $actualRuntimeEvidence $base.runtime
+    $cli = Get-ShorebirdCli $repository
     $env:CI = 'true'; $env:FLUTTER_SUPPRESS_ANALYTICS = 'true'; $env:DART_SUPPRESS_ANALYTICS = 'true'
     $env:PUB_CACHE = Join-Path $repository '.tools/cache/pub'
     $env:GRADLE_USER_HOME = Join-Path $repository '.tools/cache/gradle'
@@ -143,9 +146,11 @@ try {
         }
     } elseif (!$result.dry_run -or $result.release_id -ne $base.releaseId -or $result.release_version -cne $version) { throw 'shorebird_patch_dry_run_invalid' }
     $phase = 'final_inputs'
+    $actualRuntimeEvidence = (Get-ReleaseFlutterRuntime -Repository $repository -Target $Target -FlutterRuntime shorebird -FlutterBuildMode release).Evidence
+    Assert-ReleaseFlutterRuntimeEvidence $actualRuntimeEvidence $runtime.Evidence
+    Restore-ShorebirdPatchRuntimePinLease $runtimePinLease
     $after = Assert-ShorebirdPatchSource $repository $base.sourceCommit
     if ($after.sourceCommit -cne $source.sourceCommit) { throw 'shorebird_patch_source_changed' }
-    Assert-ReleaseFlutterRuntimeEvidence (Get-ReleaseFlutterRuntime -Repository $repository -Target $Target -FlutterRuntime shorebird -FlutterBuildMode release).Evidence $runtime.Evidence
     Assert-ShorebirdReceiptFiles $basePath $base
     New-Item -ItemType Directory -Path $output -Force | Out-Null
     [ordered]@{
@@ -155,12 +160,21 @@ try {
         baseReceiptSha256=Get-AuditSha256 $basePath;source=$source;runtime=$runtime.Identity
         nativeDiffsAllowed=$false;assetDiffsAllowed=$false;deviceApplyVerified=$false
         textAssetInputs=$textAssetLease.summary
+        runtimePinInput=$runtimePinLease.summary
     } | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $output 'patch.json') -Encoding utf8NoBOM
     if ($recoveryPath) {
         $null=Write-ShorebirdRecovery -Repository $repository -Action patch -Version $version -Target $Target -SourceCommit $source.sourceCommit -BaseSourceCommit $base.sourceCommit -ReleaseId $base.releaseId -PatchId $patchId -PatchNumber $patchNumber -Status ready -CloudOutcome registered -Phase $phase -Path $recoveryPath
     }
 } catch {
-    ($_ | Out-String) | Set-Content -LiteralPath (Join-Path $privateRun 'failure.log') -Encoding utf8NoBOM
+    $failure = $_
+    try {
+        ($failure | Out-String) | Set-Content -LiteralPath (Join-Path $privateRun 'failure.log') -Encoding utf8NoBOM
+        $failurePair = Join-Path $privateRun 'failure.json'
+        [ordered]@{schemaVersion=1;action='patch';target=$Target;sourceCommit=$source.sourceCommit;baseSourceCommit=$base.sourceCommit;phase=$phase
+            actualRuntimeEvidence=$actualRuntimeEvidence;expectedRuntimeEvidence=$base.runtime} |
+            ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $failurePair -Encoding utf8NoBOM
+        $null=Write-ShorebirdEncryptedDiagnostic $repository $failurePair
+    } catch { }
     if ($recoveryPath) {
         $null=Write-ShorebirdRecovery -Repository $repository -Action patch -Version $version -Target $Target -SourceCommit $source.sourceCommit -BaseSourceCommit $base.sourceCommit -ReleaseId $base.releaseId -PatchId $(if ($cloudPatchVerified) {$patchId} else {0}) -PatchNumber $(if ($cloudPatchVerified) {$patchNumber} else {0}) -Status failed -CloudOutcome $(if ($cloudPatchVerified) {'registered'} else {'unknown'}) -Phase $phase -Path $recoveryPath
     }
@@ -169,10 +183,13 @@ try {
     Pop-Location
     try { Restore-ShorebirdPatchTextAssetsLease $textAssetLease }
     finally {
-        try { if ($keyPath) { Remove-Item -LiteralPath $keyPath -Force -ErrorAction Stop } }
+        try { Restore-ShorebirdPatchRuntimePinLease $runtimePinLease }
         finally {
-            if ($passwordBytes) { [Security.Cryptography.CryptographicOperations]::ZeroMemory($passwordBytes) }
-            Restore-DemoAndroidEnvironment $environment
+            try { if ($keyPath) { Remove-Item -LiteralPath $keyPath -Force -ErrorAction Stop } }
+            finally {
+                if ($passwordBytes) { [Security.Cryptography.CryptographicOperations]::ZeroMemory($passwordBytes) }
+                Restore-DemoAndroidEnvironment $environment
+            }
         }
     }
 }

@@ -1,5 +1,28 @@
 # ExVPN — архитектура
 
+## Дополнение: CI-подготовка Dart-патчей
+
+Workflow `shorebird.yml` разделяет no-build `diagnose_android` и signed patch
+matrix. Android preflight проверяет полный synthetic ZIP inventory для двух
+форматов SDK; временная папка задаётся только дочернему анализатору и удерживается
+по file ID. Signing/API secrets диагностическому job не передаются.
+
+Patch wrapper проверяет неизменную базу и полный filemap, затем временно
+использует точные bytes двух известных текстовых assets своей платформы.
+Допустимо только эквивалентное изменение LF/CRLF; HEAD/base/checkout/artifact
+должны совпадать по нормализованному содержимому. Bytes/mtime/index восстанавливаются
+через `finally`. Остальные asset/native/dependency/signing/SDK изменения
+отклоняются; штатные upstream diff checks остаются включены.
+Та же граница LF/CRLF применяется отдельно к checkout-представлению фиксированного
+Shorebird lock-файла: HEAD/base/checkout должны иметь одинаковое содержимое,
+а временные bytes — точный SHA из base runtime evidence. Значения pin и Git blob
+остаются прежними; строгая runtime-проверка не подменяется сравнением версий.
+
+Для CI-only изменений переиспользуется конкретный принятый Full при равенстве
+всех Dart lib/test входов; новый Dart запускает соответствующие app/package
+проверки. `patch_target` позволяет повторить одну неуспешную платформу, сохраняя
+фактические разные patch numbers. [Контракт и запуск](SHOREBIRD.md).
+
 ## Дополнение: реальная Shorebird-база и Dart-патчи 0.1.8+29
 
 Cloud registration, приёмка установочного пакета, применение Dart-патча и

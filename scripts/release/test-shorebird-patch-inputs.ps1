@@ -23,10 +23,13 @@ function New-Fixture([string]$Target,[bool]$AutoCrlf=$true,[bool]$CrlfCheckout=$
     $null=Invoke-ShorebirdPatchInputGit $repo @('config','core.autocrlf',$(if($AutoCrlf){'true'}else{'false'}))
     $texts=[ordered]@{'assets/flags/countries.txt'="synthetic-country-list`nNL`nDE`n";'assets/licenses/FlagIcons.txt'="Synthetic asset license`nCopyright fixture`n"}
     foreach($name in $texts.Keys){$path=Join-Path $repo ('apps/exvpn/'+$name);[void][IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($path));[IO.File]::WriteAllBytes($path,(Bytes $texts[$name]))}
-    $null=Invoke-ShorebirdPatchInputGit $repo @('add','--','apps/exvpn/assets')
+    $pinRelative='scripts/bootstrap/shorebird.lock.json';$pinPath=Join-Path $repo $pinRelative
+    $pinText="{`n  `"schemaVersion`": 1,`n  `"fixture`": `"exact synthetic dependency pin`"`n}`n"
+    [void][IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($pinPath));[IO.File]::WriteAllBytes($pinPath,(Bytes $pinText))
+    $null=Invoke-ShorebirdPatchInputGit $repo @('add','--','apps/exvpn/assets',$pinRelative)
     $null=Invoke-ShorebirdPatchInputGit $repo @('-c','user.name=ExVPN fixture','-c','user.email=fixture@example.invalid','-c','commit.gpgsign=false','commit','-qm','synthetic base')
     $commit=Invoke-ShorebirdPatchInputGit $repo @('rev-parse','HEAD')
-    if($CrlfCheckout){$null=Invoke-ShorebirdPatchInputGit $repo @('checkout-index','-f','-u','--','apps/exvpn/assets/flags/countries.txt','apps/exvpn/assets/licenses/FlagIcons.txt')}
+    if($CrlfCheckout){$null=Invoke-ShorebirdPatchInputGit $repo @('checkout-index','-f','-u','--','apps/exvpn/assets/flags/countries.txt','apps/exvpn/assets/licenses/FlagIcons.txt',$pinRelative)}
     $files=@()
     if($Target -ceq 'Windows'){
         foreach($name in $texts.Keys){$relative='ui/data/flutter_assets/'+$name;$path=Join-Path $base $relative;[void][IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($path));[IO.File]::WriteAllBytes($path,(Bytes ($texts[$name].Replace("`n",$BaseEol))));$files+=@{path=$relative;sha256=(Get-AuditSha256 $path)}}
@@ -35,8 +38,8 @@ function New-Fixture([string]$Target,[bool]$AutoCrlf=$true,[bool]$CrlfCheckout=$
         try{foreach($name in $texts.Keys){$entry=$zip.CreateEntry('base/assets/flutter_assets/'+$name);$stream=$entry.Open();try{$bytes=Bytes ($texts[$name].Replace("`n",$BaseEol));$stream.Write($bytes)}finally{$stream.Dispose()}}}finally{$zip.Dispose()}
         $files+=@{path=$relative;sha256=(Get-AuditSha256 $path)}
     }
-    $receipt=[ordered]@{version='0.1.8+29';target=$Target;sourceCommit=$commit;files=$files}
-    $f=@{repo=$repo;base=$base;private=$private;commit=$commit;receipt=$receipt;receiptPath=(Join-Path $base 'build.json');texts=$texts;target=$Target}
+    $receipt=[ordered]@{version='0.1.8+29';target=$Target;sourceCommit=$commit;files=$files;runtime=@{identity=@{pin=@{path=$pinRelative;sha256=(Get-ShorebirdPatchInputHash (Bytes $pinText))}}}}
+    $f=@{repo=$repo;base=$base;private=$private;commit=$commit;receipt=$receipt;receiptPath=(Join-Path $base 'build.json');texts=$texts;target=$Target;pinPath=$pinPath;pinRelative=$pinRelative;pinText=$pinText}
     Save-Receipt $f
     Assert-ShorebirdPatchInputSource $repo $commit
     $f
@@ -44,6 +47,9 @@ function New-Fixture([string]$Target,[bool]$AutoCrlf=$true,[bool]$CrlfCheckout=$
 function Enter-Fixture($Fixture){Enter-ShorebirdPatchTextAssetsLease -Repository $Fixture.repo -Target $Fixture.target -BaseReceiptPath $Fixture.receiptPath -BaseReceipt $Fixture.receipt -SourceCommit $Fixture.commit -PrivateDirectory $Fixture.private}
 function Fingerprints($Fixture){$r=[ordered]@{};foreach($name in $Fixture.texts.Keys){$path='apps/exvpn/'+$name;$r[$name]=@{hash=(Get-AuditSha256 (Join-Path $Fixture.repo $path));mtime=[IO.File]::GetLastWriteTimeUtc((Join-Path $Fixture.repo $path));index=(Get-ShorebirdPatchInputIndex $Fixture.repo $path)}};$r}
 function Check-Restored($Fixture,$Before,[string]$Name){$after=Fingerprints $Fixture;Check (($Before|ConvertTo-Json -Depth 5 -Compress) -ceq ($after|ConvertTo-Json -Depth 5 -Compress)) ($Name+'_bytes_mtime_index');Assert-ShorebirdPatchInputSource $Fixture.repo $Fixture.commit;Check $true ($Name+'_clean_source')}
+function Enter-PinFixture($Fixture){Enter-ShorebirdPatchRuntimePinLease -Repository $Fixture.repo -BaseReceiptPath $Fixture.receiptPath -BaseReceipt $Fixture.receipt -SourceCommit $Fixture.commit -PrivateDirectory $Fixture.private}
+function Pin-Fingerprint($Fixture){@{hash=(Get-AuditSha256 $Fixture.pinPath);mtime=[IO.File]::GetLastWriteTimeUtc($Fixture.pinPath);index=(Get-ShorebirdPatchInputIndex $Fixture.repo $Fixture.pinRelative)}}
+function Check-PinRestored($Fixture,$Before,[string]$Name){$after=Pin-Fingerprint $Fixture;Check (($Before|ConvertTo-Json -Compress) -ceq ($after|ConvertTo-Json -Compress)) ($Name+'_bytes_mtime_index');Assert-ShorebirdPatchInputSource $Fixture.repo $Fixture.commit;Check $true ($Name+'_clean_source')}
 
 foreach($auto in @($true,$false)){
     $f=New-Fixture Windows $auto $false "`r`n";$before=Fingerprints $f;$lease=Enter-Fixture $f
@@ -100,7 +106,59 @@ $f=New-Fixture Windows $true $false "`r`n";$before=Fingerprints $f;$readonly=Joi
 try{Refuses {Enter-Fixture $f} 'partial_write_failure_rejected'}finally{(Get-Item -LiteralPath $readonly).IsReadOnly=$false}
 Check-Restored $f $before 'partial_write_cleanup'
 
+foreach($target in @('Windows','Android')){
+    $f=New-Fixture $target $true $true;$before=Pin-Fingerprint $f;$lease=Enter-PinFixture $f
+    Check ((Get-AuditSha256 $f.pinPath) -ceq $f.receipt.runtime.identity.pin.sha256 -and $lease.summary.path -ceq $f.pinRelative) 'pin_crlf_checkout_exact_receipt_lf'
+    Check ((Get-ShorebirdPatchInputIndex $f.repo $f.pinRelative) -ceq $before.index) 'pin_index_unchanged_during_lease'
+    Assert-ShorebirdPatchInputSource $f.repo $f.commit
+    $caught=$false
+    try{try{throw 'synthetic_runtime_evidence_failure'}finally{Restore-ShorebirdPatchRuntimePinLease $lease}}catch{$caught=$_.Exception.Message -ceq 'synthetic_runtime_evidence_failure'}
+    Check $caught 'pin_runtime_failure_preserved_after_cleanup'
+    Restore-ShorebirdPatchRuntimePinLease $lease
+    Check-PinRestored $f $before ($target+'_pin_cleanup')
+}
+$f=New-Fixture Windows $true;$before=Pin-Fingerprint $f
+$f.receipt.runtime.identity.pin.sha256=Get-ShorebirdPatchInputHash (Bytes ($f.pinText.Replace("`n","`r`n")));Save-Receipt $f
+$lease=Enter-PinFixture $f
+Check ((Get-AuditSha256 $f.pinPath) -ceq $f.receipt.runtime.identity.pin.sha256) 'pin_lf_checkout_exact_receipt_crlf'
+Restore-ShorebirdPatchRuntimePinLease $lease;Check-PinRestored $f $before 'pin_crlf_cleanup'
+
+$f=New-Fixture Windows $true $true;$before=Pin-Fingerprint $f;$assetBefore=Fingerprints $f
+$lease=Enter-PinFixture $f;$assets=Enter-Fixture $f;Restore-ShorebirdPatchTextAssetsLease $assets
+Check ((Get-AuditSha256 $f.pinPath) -ceq $f.receipt.runtime.identity.pin.sha256) 'asset_cleanup_keeps_active_pin_lease'
+Restore-ShorebirdPatchRuntimePinLease $lease
+Check-PinRestored $f $before 'nested_pin_cleanup';Check-Restored $f $assetBefore 'nested_assets_cleanup'
+
+foreach($bad in @('hash','path')){
+    $f=New-Fixture Windows $true $true;$before=Pin-Fingerprint $f
+    if($bad -ceq 'hash'){$f.receipt.runtime.identity.pin.sha256='0'*64}else{$f.receipt.runtime.identity.pin.path='scripts/bootstrap/toolchain.lock.json'}
+    Save-Receipt $f
+    Refuses {Enter-PinFixture $f} ('pin_bad_receipt_'+$bad+'_rejected');Check-PinRestored $f $before ('pin_bad_'+$bad)
+}
+$f=New-Fixture Windows
+[IO.File]::WriteAllBytes($f.pinPath,(Bytes ($f.pinText.Replace('exact synthetic dependency pin','changed dependency'))))
+$null=Invoke-ShorebirdPatchInputGit $f.repo @('add','--',$f.pinRelative)
+$null=Invoke-ShorebirdPatchInputGit $f.repo @('-c','user.name=ExVPN fixture','-c','user.email=fixture@example.invalid','-c','commit.gpgsign=false','commit','-qm','synthetic pin semantic change')
+$f.commit=Invoke-ShorebirdPatchInputGit $f.repo @('rev-parse','HEAD');$before=Pin-Fingerprint $f
+Refuses {Enter-PinFixture $f} 'pin_semantic_change_rejected';Check-PinRestored $f $before 'pin_semantic_rejection'
+
+$f=New-Fixture Windows $true $true;$before=Pin-Fingerprint $f;$lease=Enter-PinFixture $f
+[IO.File]::WriteAllBytes($f.pinPath,(Bytes "unexpected pin write`n"))
+Refuses {Restore-ShorebirdPatchRuntimePinLease $lease} 'unexpected_pin_write_fails_closed'
+Check-PinRestored $f $before 'unexpected_pin_cleanup'
+$backups=@(Get-ChildItem -LiteralPath $f.private -File -Filter 'unexpected-asset-*.bin')
+Check ($backups.Count -eq 1 -and (Get-AuditSha256 $backups[0].FullName) -ceq (Get-ShorebirdPatchInputHash (Bytes "unexpected pin write`n"))) 'unexpected_pin_write_preserved_privately'
+
 $wrapper=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'shorebird-patch.ps1') -Raw
 Check ($wrapper.Contains('finally { Restore-ShorebirdPatchTextAssetsLease $textAssetLease }') -and $wrapper.Contains('try { Restore-ShorebirdPatchTextAssetsLease $textAssetLease }')) 'actual_wrapper_immediate_and_outer_cleanup'
 Check (!$wrapper.Contains('--allow-asset-diffs')) 'upstream_asset_diff_guard_not_bypassed'
-Write-Host "Shorebird text-asset inputs: $script:checks focused checks PASS; no SDK, app/native builds, signing or cloud."
+$tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseInput($wrapper,[ref]$tokens,[ref]$errors)
+Check ($errors.Count -eq 0) 'actual_wrapper_parses'
+$mainTry=@($ast.FindAll({param($node)$node -is [Management.Automation.Language.TryStatementAst] -and $node.CatchClauses.Count -gt 0 -and $node.Body.Extent.Text.Contains('Enter-ShorebirdPatchRuntimePinLease')},$true))
+Check ($mainTry.Count -eq 1) 'runtime_inputs_inside_main_protected_try'
+$body=$mainTry[0].Body.Extent.Text
+Check ($body.IndexOf('Enter-ShorebirdPatchRuntimePinLease') -lt $body.IndexOf('Get-ReleaseFlutterRuntime') -and $body.IndexOf('Get-ReleaseFlutterRuntime') -lt $body.IndexOf('Get-ShorebirdCli')) 'pin_lease_precedes_runtime_and_cli'
+Check ($body.LastIndexOf('Assert-ReleaseFlutterRuntimeEvidence') -lt $body.IndexOf('Restore-ShorebirdPatchRuntimePinLease') -and $body.IndexOf('Restore-ShorebirdPatchRuntimePinLease') -lt $body.IndexOf('runtimePinInput=')) 'pin_restored_after_final_runtime_audit_before_receipt'
+Check ($mainTry[0].Finally.Extent.Text.Contains('Restore-ShorebirdPatchRuntimePinLease') -and $mainTry[0].Finally.Extent.Text.Contains('Restore-DemoAndroidEnvironment')) 'outer_cleanup_keeps_pin_keys_environment_finally'
+Check ($mainTry[0].CatchClauses[0].Body.Extent.Text.Contains("'failure.json'") -and $mainTry[0].CatchClauses[0].Body.Extent.Text.Contains('actualRuntimeEvidence=$actualRuntimeEvidence;expectedRuntimeEvidence=$base.runtime') -and $mainTry[0].CatchClauses[0].Body.Extent.Text.Contains('Write-ShorebirdEncryptedDiagnostic')) 'early_runtime_failure_exports_only_encrypted_private_pair'
+Write-Host "Shorebird fixed text inputs: $script:checks focused checks PASS; no SDK, app/native builds, signing or cloud."

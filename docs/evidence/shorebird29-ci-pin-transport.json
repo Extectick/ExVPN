@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "status": "PIN_TRANSPORT_FIX_READY_FOR_HOSTED_RETRY",
+  "failedRun": 39302907109,
+  "failureCode": "flutter_runtime_evidence_mismatch",
+  "failureBeforeAotBuildAndCloud": true,
+  "transport": {
+    "schemaVersion": 1,
+    "status": "DERIVED_LITERAL_PIN_TRANSPORT_IDENTITIES",
+    "path": "scripts/bootstrap/shorebird.lock.json",
+    "baseSourceCommit": "5bddc7770acd5446ca0c579857f9d1c7b2b1ada3",
+    "headSourceCommit": "20f4f0be59a1624673bd875294bdc59f84f9029f",
+    "headBlobEqualsBaseBlob": true,
+    "headBlobIsLiteralLF": true,
+    "formsHaveEqualJsonSemantics": true,
+    "currentWorktreeForm": "LF",
+    "contract": "one matching file: SHA256(binary SHA256(file bytes)); no hex text/newline/path bytes in outer hash",
+    "contractOrigin": "coordinator-provided hashFiles formula, independently calculated for exact Git blob literal forms",
+    "forms": [
+      {
+        "literalForm": "LF",
+        "bytes": 990,
+        "rawSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305",
+        "hashFilesSingleMatchSha256": "3deb50f77e61935938c39ef7bd1b073bea4d94c90ed897445625b120cfcf89af"
+      },
+      {
+        "literalForm": "CRLF",
+        "bytes": 1012,
+        "rawSha256": "93bebdbf5644d5c25386f60dafb456f01fe6add3be09a427e93afe7d447ae3e7",
+        "hashFilesSingleMatchSha256": "0d9d3d777be33b86590833086d65216457b442a45f96ab8c087c3bc77b88b896"
+      }
+    ],
+    "sdkCalls": 0,
+    "cloudCalls": 0,
+    "testExecutions": 0,
+    "sourceWrites": 0
+  },
+  "lease": {
+    "schemaVersion": 1,
+    "utc": "2026-10-20T01:40:44.5072141+07:00",
+    "sourceHead": "20f4f0be59a1624673bd875294bdc59f84f9029f",
+    "ownedFiles": [
+      {
+        "path": "scripts/release/shorebird-patch.ps1",
+        "sha256": "699eb60096e8506488b372b0ad5efc0cdd24bda447a48c7064513cb8b78ff21b"
+      },
+      {
+        "path": "scripts/release/shorebird-patch-inputs.ps1",
+        "sha256": "2a75551534bf7961fdb7d096705773878e469222beb1516cc6af6b0e8c12f2e4"
+      },
+      {
+        "path": "scripts/release/test-shorebird-patch-inputs.ps1",
+        "sha256": "ae663dd10540a9b9566c573872620bd6463d1bd00b04d5aee993ab5652dc5e89"
+      }
+    ],
+    "focusedChecks": 79,
+    "focusedResult": "passed",
+    "powershellAstFiles": 3,
+    "diffCheck": "passed",
+    "pinPath": "scripts/bootstrap/shorebird.lock.json",
+    "currentRawSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305",
+    "literalLfSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305",
+    "literalCrlfSha256": "93bebdbf5644d5c25386f60dafb456f01fe6add3be09a427e93afe7d447ae3e7",
+    "headBlobNormalizedSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305",
+    "actualBases": [
+      {
+        "receiptPath": "artifacts/shorebird/0.1.8+29-windows-27fbd9291d0b47ed9f09bf4eb1d4cd78/build.json",
+        "baseSourceNormalizedSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305",
+        "receiptSha256": "5c90dc1230236266545eec71e420426ed6654b95f93486ecc637609bff0bf4f7",
+        "expectedRawSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305",
+        "target": "Windows"
+      },
+      {
+        "receiptPath": "artifacts/shorebird/0.1.8+29-android-db5474bc69e848b0a3cacd294be75711/build.json",
+        "baseSourceNormalizedSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305",
+        "receiptSha256": "b0562e74722c3f7730e3c80424bca89e96e5e7041bee8fedf694308a40933d57",
+        "expectedRawSha256": "e157caa19bd7f020645c8c02fc56a71dcf0497e9e7eef6ef8317bd42d33a5305",
+        "target": "Android"
+      }
+    ],
+    "actualPinFileWritten": false,
+    "gitIndexWritten": false,
+    "SDKOrBuildInvoked": false,
+    "cloudInvoked": false,
+    "installedRuntimeTouched": false,
+    "limitations": [
+      "Pure fixtures plus read-only binding to accepted local C7 receipts; hosted CI must still prove complete runtime evidence and actual signed patch flow."
+    ]
+  },
+  "cloudReadback": {
+    "schemaVersion": 1,
+    "failedRun": 39302907109,
+    "patches": [
+      {
+        "patchId": 731624,
+        "patchNumber": 1,
+        "channel": "beta",
+        "rolledBack": true
+      },
+      {
+        "patchId": 731631,
+        "patchNumber": 2,
+        "channel": "beta",
+        "rolledBack": true
+      }
+    ],
+    "cloudMutations": 0
+  },
+  "runtimeReaderChanged": false,
+  "sourceGuardChanged": false,
+  "semanticPinValuesChanged": false
+}
