@@ -249,12 +249,29 @@ function Write-ShorebirdAndroidToolFailureDiagnostic([string]$Repository,
     }
 }
 
-function Invoke-ShorebirdAndroidPrivateProcess([string]$Executable, [string[]]$Arguments,
-    [string]$Directory, [string]$Label) {
+function New-ShorebirdAndroidPrivateProcessStartInfo([string]$Executable, [string[]]$Arguments,
+    [string]$Directory, [string]$TemporaryRoot) {
     $start = [Diagnostics.ProcessStartInfo]::new()
     $start.FileName=$Executable; $start.UseShellExecute=$false; $start.CreateNoWindow=$true
     $start.WorkingDirectory=$Directory; $start.RedirectStandardOutput=$true; $start.RedirectStandardError=$true
     foreach ($argument in $Arguments) { $start.ArgumentList.Add($argument) }
+    if ($TemporaryRoot) {
+        $private=Assert-ShorebirdAndroidToolPath $Directory
+        $temporary=Assert-ShorebirdAndroidToolPath $TemporaryRoot
+        # A single known child, not an arbitrary environment override or a
+        # machine-temp spelling inferred from analyzer output.
+        if ($temporary -cne $TemporaryRoot -or $temporary -cne (Join-Path $private 'analyzer-temp')) {
+            throw 'shorebird_android_tool_path_invalid'
+        }
+        $start.Environment['TEMP']=$temporary
+        $start.Environment['TMP']=$temporary
+    }
+    $start
+}
+
+function Invoke-ShorebirdAndroidPrivateProcess([string]$Executable, [string[]]$Arguments,
+    [string]$Directory, [string]$Label, [string]$TemporaryRoot) {
+    $start=New-ShorebirdAndroidPrivateProcessStartInfo $Executable $Arguments $Directory $TemporaryRoot
     $process=[Diagnostics.Process]::Start($start)
     try {
         $stdout=$process.StandardOutput.ReadToEndAsync(); $stderr=$process.StandardError.ReadToEndAsync()
@@ -284,7 +301,8 @@ function Initialize-ShorebirdAndroidToolEnvironment {
         [Parameter(Mandatory)][string]$AndroidSdkPath, [Parameter(Mandatory)][string]$PrivateDirectory)
     $phase='paths'; $pathCheck='repository'; $privateValid=$false; $success=$false; $savedAppData=$env:APPDATA
     $moduleRepository=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
-    $repositoryRoot=$null;$private=$null
+    $repositoryRoot=$null;$private=$null;$analyzerTemp=$null;$defaultTemp=$null
+    $savedTemp=$env:TEMP;$savedTmp=$env:TMP;$savedJavaOptions=$env:JAVA_OPTS
     $leases=[Collections.Generic.List[IDisposable]]::new()
     $proof=[ordered]@{schemaVersion=1;status='failed';phase=$phase;errorCode=$null
         pathCheck=$pathCheck;failureReason=$null;diagnosticEncrypted=$false
@@ -293,11 +311,13 @@ function Initialize-ShorebirdAndroidToolEnvironment {
         analyzerFileIdentityMatched=$false;heldIdentitiesRechecked=$false;sourcePinsMatched=$false
         privateSettingsExact=$false;processAppDataOnlyChanged=$false;dartVersionMatched=$false
         dartSha256=$null;analyzerSha256=$null;settingsSha256=$null;syntheticExitCode=$null
-        expectedMetadataListed=$false;analyzerStdoutBytes=$null;analyzerStderrBytes=$null
+        expectedMetadataListed=$false;childTempBound=$false;rootMatched=$false
+        analyzerStdoutBytes=$null;analyzerStderrBytes=$null
         analyzerStdoutSha256=$null;analyzerStderrSha256=$null
         applicationBuilds=0;nativeBuilds=0;rawLogsExported=$false}
     try {
         if (![OperatingSystem]::IsWindows()) { throw 'unsupported' }
+        $defaultTemp=[IO.Path]::GetTempPath()
         $repositoryRoot=Assert-ShorebirdAndroidToolPath $Repository
         if ($repositoryRoot -ine $moduleRepository) { throw 'repository' }
         $pathCheck='android_sdk_physical'
@@ -363,6 +383,14 @@ function Initialize-ShorebirdAndroidToolEnvironment {
         Assert-ShorebirdAndroidToolSettings ([IO.File]::ReadAllText($settingsPath)) $short $jdkSetting
         $proof.privateSettingsExact=$true; $proof.settingsSha256=(Get-FileHash -LiteralPath $settingsPath -Algorithm SHA256).Hash.ToLowerInvariant()
         $phase='dart_process_analyzer'
+        $pathCheck='analyzer_temp'
+        $analyzerTemp=Join-Path $private 'analyzer-temp'
+        if (Test-Path -LiteralPath $analyzerTemp) { throw 'private_not_fresh' }
+        [void][IO.Directory]::CreateDirectory($analyzerTemp)
+        $null=Assert-ShorebirdAndroidToolPath $analyzerTemp
+        Set-Acl -LiteralPath $analyzerTemp -AclObject (Get-Acl -LiteralPath $private)
+        $analyzerTemp=Assert-ShorebirdAndroidPrivateDirectory $analyzerTemp $repositoryRoot
+        $leases.Add([ExVpnShorebirdAndroidPath]::Hold($analyzerTemp,$true))
         $zipPath=Join-Path $private 'analyzer-probe.zip'
         $archive=[IO.Compression.ZipFile]::Open($zipPath,[IO.Compression.ZipArchiveMode]::Create)
         try {
@@ -383,10 +411,13 @@ Future<void> main(List<String> args) async {
   await File('${args[2]}/analyzer-probe.json').writeAsString(jsonEncode(proof));
 }
 '@)
-        if ((Invoke-ShorebirdAndroidPrivateProcess $dart @($probePath,$shortAnalyzer,$zipPath,$private) $private 'dart-analyzer') -ne 0) { throw 'dart_process' }
+        $pathCheck='analyzer_execution'
+        if ((Invoke-ShorebirdAndroidPrivateProcess $dart @($probePath,$shortAnalyzer,$zipPath,$private) $private 'dart-analyzer' $analyzerTemp) -ne 0) { throw 'dart_process' }
+        $proof.childTempBound=$true
         $processProbe=Get-Content -LiteralPath (Join-Path $private 'analyzer-probe.json') -Raw | ConvertFrom-Json -AsHashtable
-        $probe=ConvertFrom-ShorebirdAndroidProcessProbe $processProbe ([IO.File]::ReadAllText((Join-Path $private 'analyzer.stdout.private.log')))
+        $probe=ConvertFrom-ShorebirdAndroidProcessProbe $processProbe ([IO.File]::ReadAllText((Join-Path $private 'analyzer.stdout.private.log'))) $analyzerTemp
         $proof.syntheticExitCode=$probe.exitCode; $proof.expectedMetadataListed=$probe.expectedMetadataListed
+        $proof.rootMatched=$probe.expectedMetadataListed
         foreach($stream in @('stdout','stderr')){
             $log=Join-Path $private "analyzer.$stream.private.log"
             $proof['analyzer'+$stream.Substring(0,1).ToUpperInvariant()+$stream.Substring(1)+'Bytes']=(Get-Item -LiteralPath $log).Length
@@ -399,11 +430,15 @@ Future<void> main(List<String> args) async {
             $reopened=[ExVpnShorebirdAndroidPath]::Hold($record[0],$record[1])
             try { Assert-ShorebirdAndroidToolPair $leases[$record[2]] $reopened $record[1] } finally { $reopened.Dispose() }
         }
+        $null=Assert-ShorebirdAndroidPrivateDirectory $analyzerTemp $repositoryRoot
+        $reopened=[ExVpnShorebirdAndroidPath]::Hold($analyzerTemp,$true)
+        try { Assert-ShorebirdAndroidToolPair $leases[4] $reopened $true } finally { $reopened.Dispose() }
         Assert-ShorebirdAndroidToolSettings ([IO.File]::ReadAllText($settingsPath)) $short $jdkSetting
         if ((Get-FileHash -LiteralPath $analyzer -Algorithm SHA256).Hash.ToLowerInvariant() -cne $proof.analyzerSha256 -or
             (Get-FileHash -LiteralPath $dart -Algorithm SHA256).Hash.ToLowerInvariant() -cne $proof.dartSha256 -or
             (Get-FileHash -LiteralPath $settingsPath -Algorithm SHA256).Hash.ToLowerInvariant() -cne $proof.settingsSha256 -or
-            $env:APPDATA -cne $toolHome -or $env:JAVA_HOME -cne $jdkSetting) { throw 'changed' }
+            $env:APPDATA -cne $toolHome -or $env:JAVA_HOME -cne $jdkSetting -or
+            $env:TEMP -cne $savedTemp -or $env:TMP -cne $savedTmp -or $env:JAVA_OPTS -cne $savedJavaOptions) { throw 'changed' }
         $proof.heldIdentitiesRechecked=$true; $proof.status='completed'; $proof.phase='complete';$proof.pathCheck='complete'
         Write-ShorebirdAndroidToolReceipt $repositoryRoot $proof
         $success=$true
@@ -413,7 +448,7 @@ Future<void> main(List<String> args) async {
         $proof.failureReason=Get-ShorebirdAndroidToolFailureReason $_.Exception.Message
         $proof.diagnosticEncrypted=Write-ShorebirdAndroidToolFailureDiagnostic $moduleRepository $private $privateValid $_ $phase $pathCheck @{
             repository=$Repository;flutterSdkRoot=$FlutterSdkRoot;androidSdkPath=$AndroidSdkPath
-            privateDirectory=$PrivateDirectory;jdk=$env:JAVA_HOME}
+            privateDirectory=$PrivateDirectory;jdk=$env:JAVA_HOME;defaultTemp=$defaultTemp;expectedTemp=$analyzerTemp}
         if ($privateValid) { ($_ | Out-String) | Set-Content -LiteralPath (Join-Path $private 'android-tools-failure.private.log') -Encoding utf8NoBOM }
         try { Write-ShorebirdAndroidToolReceipt $moduleRepository $proof } catch { }
         throw 'shorebird_android_environment_preflight_failed'

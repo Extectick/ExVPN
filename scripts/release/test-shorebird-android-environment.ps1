@@ -2,9 +2,11 @@
 #requires -Version 7.0
 # Pure guard fixtures plus read-only Windows directory FileID/8.3 validation.
 # No Flutter, Dart, SDK tool, app/native build, key, cloud or device invocation.
+param([switch]$AnalyzerTempBindingOnly)
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $appDataBefore=$env:APPDATA; $javaBefore=$env:JAVA_HOME
+$tempBefore=$env:TEMP;$tmpBefore=$env:TMP;$javaOptionsBefore=$env:JAVA_OPTS
 . (Join-Path $PSScriptRoot 'shorebird-android-environment.ps1')
 $script:checks=0
 function Check([bool]$Passed,[string]$Label) {
@@ -18,6 +20,41 @@ function Reject([scriptblock]$Body,[string]$Code) {
         if ($_.Exception.Message -cne $Code) { throw "Expected $Code; received $($_.Exception.Message)" }
     }
     Check $failed $Code
+}
+function Test-AnalyzerTempBindingFixtures {
+    $privateRoot='C:\QA-Analyzer\private-run'
+    $extractionRoot=$privateRoot+'\analyzer-temp'
+    $inventory=@('','BUNDLE-METADATA/','BUNDLE-METADATA/com.android.tools.build.debugsymbols/',
+        'BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/',
+        'BUNDLE-METADATA/com.android.tools.build.debugsymbols/arm64-v8a/libflutter.so.sym')
+    $listingRoot=$extractionRoot+'\analyzer-probe.zip18446744073709551615\'
+    $listing=(@($inventory | ForEach-Object {$listingRoot+$_.Replace('/','\')}) -join "`r`n")+"`r`n"
+    Check (Test-ShorebirdAndroidAnalyzerListing $listing $extractionRoot) 'valid_20_digit_nonce_known_child_root'
+    Check (!(Test-ShorebirdAndroidAnalyzerListing $listing 'C:\Different-Process-Temp')) 'ambient_temp_is_not_analyzer_binding'
+    Check (!(Test-ShorebirdAndroidAnalyzerListing ($listing.Replace('18446744073709551615','18446744073709551616')) $extractionRoot)) 'uint64_boundary_still_strict'
+    $shortTemp='C:\Users\RUNNER~1\AppData\Local\Temp'
+    $capturedShape=$listing.Replace($extractionRoot,$shortTemp)
+    Check (Test-ShorebirdAndroidAnalyzerListing $capturedShape $shortTemp) 'captured_20_digit_short_temp_shape'
+    Check (!(Test-ShorebirdAndroidAnalyzerListing $capturedShape 'C:\Users\Runner Account\AppData\Local\Temp')) 'temp_spelling_must_be_explicit_not_assumed'
+
+    $start=New-ShorebirdAndroidPrivateProcessStartInfo 'synthetic-dart.exe' @('probe.dart','argument with spaces') $privateRoot $extractionRoot
+    Check ($start.Environment['TEMP'] -ceq $extractionRoot -and $start.Environment['TMP'] -ceq $extractionRoot) 'only_child_temp_tmp_bound'
+    Check ($env:TEMP -ceq $tempBefore -and $env:TMP -ceq $tmpBefore -and $env:JAVA_OPTS -ceq $javaOptionsBefore) 'parent_temp_and_java_options_unchanged'
+    Check ([string]$start.Environment['JAVA_OPTS'] -ceq [string]$javaOptionsBefore) 'child_java_options_not_overridden'
+    Check (!$start.UseShellExecute -and $start.ArgumentList.Count -eq 2 -and $start.ArgumentList[1] -ceq 'argument with spaces') 'child_binding_preserves_direct_argument_list'
+    $other=New-ShorebirdAndroidPrivateProcessStartInfo 'synthetic-git.exe' @('--version') $privateRoot
+    Check ([string]$other.Environment['TEMP'] -ceq [string]$tempBefore -and [string]$other.Environment['TMP'] -ceq [string]$tmpBefore) 'other_private_processes_keep_inherited_temp'
+    foreach($badRoot in @('C:\outside\analyzer-temp',($privateRoot+'\analyzer-temp-sibling'),($privateRoot+'\other'))){
+        Reject { New-ShorebirdAndroidPrivateProcessStartInfo 'synthetic-dart.exe' @() $privateRoot $badRoot } 'shorebird_android_tool_path_invalid'
+    }
+    Reject { New-ShorebirdAndroidPrivateProcessStartInfo 'synthetic-dart.exe' @() $privateRoot ($privateRoot+'\..\analyzer-temp') } 'shorebird_android_tool_path_invalid'
+    $classified=ConvertFrom-ShorebirdAndroidProcessProbe @{schema=1;exitCode=0;classFilesFailure=$false} $listing $extractionRoot
+    Assert-ShorebirdAndroidToolProbe $classified;$script:checks++
+}
+Test-AnalyzerTempBindingFixtures
+if($AnalyzerTempBindingOnly){
+    Write-Host "Shorebird Android analyzer temp binding: $script:checks focused checks passed; SDK/build/cloud/device invocations=0."
+    return
 }
 Check ($env:APPDATA -ceq $appDataBefore -and $env:JAVA_HOME -ceq $javaBefore) 'dot_source_inert'
 $directory=@{Identity='00112233:0000000000000001';Directory=$true;Reparse=$false;Links=1}
