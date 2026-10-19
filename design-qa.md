@@ -1,3 +1,31 @@
+# Import autofill and QR actions — 2026-10-19
+
+Target: latest user refinement of the approved compact import, retaining existing
+Inter and palette. Before: `design/screenshots/compact-import/minimal-add-light-detail.png`.
+After: `design/screenshots/import-autofill/clipboard-name-light-detail.png`.
+Both400×440 crops were opened together for visual comparison. Originals retain
+the entire IAB viewport779×846 and are not edited; detail copies crop the app only.
+
+- Typography/assets: unchanged local Inter and Cupertino library; name prefix tag
+  matches the link prefix size18. Existing themes, fonts and logo reused.
+- Layout: persistent name above all tabs,48px field and16px gap; QR has only two
+ 64px icon targets. No overflow in observed minimal/light or Text mode.
+- Colors: existing light blue tokens; no new palette or native window changes.
+- Copy: no collapsed name caption; file/clipboard choices appear only on demand.
+- Behavior: synthetic HTTPS clipboard auto-populates, synthetic provider metadata
+  fills ExVPN Demo, name remains when switching Link/Text/QR. Clipboard original
+  restored after QA. Three focused tests cover auto-origin on import, unrelated
+  clipboard, stale metadata/manual override and selection-only notifications.
+
+Targeted analyzer PASS; browser error log empty. Source96444e3. No P0/P1/P2
+findings remain for this scoped design. Physical camera scanning, image clipboard
+runtime, native camera and Android/Windows delivery were not accepted here.
+No full suite, native build, installer, CI or release was run.
+
+final result: passed (scoped web design and autofill only)
+
+---
+
 # Compact import and minimal windows — 2026-10-19
 
 Source: user attachment `codex-clipboard-4bd7389e-5ba3-4cae-b53b-146b40596f36.png`,
