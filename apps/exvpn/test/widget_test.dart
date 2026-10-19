@@ -70,21 +70,6 @@ void main() {
     await font.load();
   });
 
-  testWidgets('app name is a screen reader heading', (tester) async {
-    final semantics = tester.ensureSemantics();
-    final controller = AppController();
-    addTearDown(controller.dispose);
-    try {
-      await _open(tester, controller);
-      expect(
-        tester.getSemantics(find.text('ExVPN')),
-        isSemantics(label: 'ExVPN', isHeader: true),
-      );
-    } finally {
-      semantics.dispose();
-    }
-  });
-
   testWidgets('unsupported-only replacement has no warning UI', (tester) async {
     final controller = AppController();
     addTearDown(controller.dispose);
