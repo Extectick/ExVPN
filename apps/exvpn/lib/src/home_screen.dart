@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 
 import 'import_dialog.dart';
 import 'subscription_issues_dialog.dart';
@@ -24,7 +25,10 @@ import 'country_flag.dart';
 import 'desktop_window_controls.dart';
 import 'app_update_strip.dart';
 import 'subscription_tree.dart';
+import 'subscription_edit_dialog.dart';
 import 'modal_sheet_scroll_behavior.dart';
+
+enum _SubscriptionMenuAction { edit, delete }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -79,6 +83,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _selectionRevision = 0;
   final _serversScroll = ScrollController();
   final _pickerScroll = ScrollController();
+  final _latencyRows = <String, ({GlobalKey key, ConnectionProfile profile})>{};
+  final _pickerLatencyRows =
+      <String, ({GlobalKey key, ConnectionProfile profile})>{};
+  Timer? _autoPingDebounce;
+  bool _foreground = false;
+  VpnPhase? _latencyVpnPhase;
   final _layoutControlKey = GlobalKey(debugLabel: 'desktop-layout-control');
   final _modeControlKey = GlobalKey(debugLabel: 'connection-mode-control');
   final _pickerFocus = FocusScopeNode(
@@ -105,8 +115,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       widget.controller,
       canApply: () => widget.vpn?.applicationRestartPending != true,
     )..addListener(_storageChanged);
-    _latencies = ServerLatencyController(probe: widget.latencyProbe)
-      ..addListener(_storageChanged);
+    _foreground =
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    _latencies = ServerLatencyController(
+      probe: widget.latencyProbe,
+      canProbe: () =>
+          mounted &&
+          _foreground &&
+          ModalRoute.of(context)?.isCurrent != false &&
+          widget.vpn?.connecting != true,
+    )..addListener(_storageChanged);
     unawaited(_refreshes.refreshStale());
     _changes = widget.controller.changes.listen((_) {
       final vpn = widget.vpn;
@@ -123,8 +141,57 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         }
       }
       if (mounted) setState(() {});
+      _scheduleAutoPing();
     });
     _adoptAutomaticGroup();
+    _scheduleAutoPing();
+  }
+
+  void _scheduleAutoPing() {
+    _autoPingDebounce?.cancel();
+    if (!_foreground || !mounted) return;
+    _autoPingDebounce = Timer(const Duration(milliseconds: 180), () {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _pingVisible());
+      WidgetsBinding.instance.ensureVisualUpdate();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _scheduleAutoPing();
+  }
+
+  void _pingVisible() {
+    if (!mounted || !_foreground) return;
+    if (widget.vpn?.connecting == true ||
+        ModalRoute.of(context)?.isCurrent == false) {
+      _latencies.pause();
+      return;
+    }
+    final rows = _serverPickerOpen ? _pickerLatencyRows : _latencyRows;
+    rows.removeWhere((_, row) => row.key.currentContext == null);
+    final visible = <ConnectionProfile>[];
+    for (final row in rows.values) {
+      final box = row.key.currentContext?.findRenderObject();
+      if (box is! RenderBox || !box.attached || !box.hasSize) continue;
+      final abstractViewport = RenderAbstractViewport.maybeOf(box);
+      if (abstractViewport is! RenderBox) continue;
+      final viewport = abstractViewport as RenderBox;
+      if (!viewport.hasSize) continue;
+      final rect = Rect.fromPoints(
+        box.localToGlobal(Offset.zero),
+        box.localToGlobal(Offset(box.size.width, box.size.height)),
+      );
+      final bounds = Rect.fromPoints(
+        viewport.localToGlobal(Offset.zero),
+        viewport.localToGlobal(
+          Offset(viewport.size.width, viewport.size.height),
+        ),
+      );
+      if (rect.overlaps(bounds)) visible.add(row.profile);
+    }
+    unawaited(_latencies.checkVisible(visible));
   }
 
   void _storageChanged() {
@@ -134,6 +201,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _vpnChanged() {
     if (!mounted) return;
     _adoptAutomaticGroup();
+    final phase = widget.vpn?.status.phase;
+    if (phase != _latencyVpnPhase) {
+      _latencyVpnPhase = phase;
+      if (widget.vpn?.connecting == true) {
+        _latencies.pause();
+      } else {
+        _scheduleAutoPing();
+      }
+    }
     if (widget.vpn?.status.phase == VpnPhase.connected) {
       _clock ??= Timer.periodic(const Duration(seconds: 1), (_) {
         if (mounted) setState(() {});
@@ -164,6 +240,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    if (_foreground) {
+      _scheduleAutoPing();
+    } else {
+      _autoPingDebounce?.cancel();
+      _latencies.pause();
+    }
     if (state == AppLifecycleState.resumed) widget.vpn?.refresh();
   }
 
@@ -172,6 +255,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _changes.cancel();
     _clock?.cancel();
     _toastTimer?.cancel();
+    _autoPingDebounce?.cancel();
     widget.vpn?.removeListener(_vpnChanged);
     widget.persistence?.removeListener(_storageChanged);
     _refreshes.dispose();
@@ -472,6 +556,59 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  Future<void> _editSubscription(SubscriptionGroup group) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      useRootNavigator: false,
+      builder: (_) => SubscriptionEditDialog(
+        controller: widget.controller,
+        group: group,
+        persistence: widget.persistence,
+        fullscreen: _desktop && _layout == DesktopLayout.minimal,
+      ),
+    );
+    if (!mounted || saved != true) return;
+    final current = widget.controller.groups
+        .where((g) => g.id == group.id)
+        .firstOrNull;
+    if (current?.sourceUrl != null && current!.sourceUrl != group.sourceUrl) {
+      unawaited(_refresh(groupId: group.id));
+    }
+  }
+
+  Future<void> _deleteSubscription(SubscriptionGroup group) async {
+    final accepted = await showDialog<bool>(
+      context: context,
+      useRootNavigator: false,
+      builder: (ctx) => AlertDialog(
+        title: Text(ctx.tr('Удалить подписку?')),
+        content: Text(
+          ctx.tr(
+            '«{name}» и её подключения будут удалены.',
+            values: {'name': group.name},
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(ctx.tr('Отмена')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(ctx.tr('Удалить')),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || accepted != true) return;
+    _selectionRevision++;
+    widget.controller.removeSubscription(group.id);
+    await widget.persistence?.flush();
+    if (mounted && widget.persistence?.error != null) {
+      _queueToasts(['Не удалось сохранить подписку']);
+    }
+  }
+
   bool get _desktop => kIsWeb
       ? Uri.base.queryParameters['desktop'] == '1'
       : defaultTargetPlatform == TargetPlatform.windows;
@@ -490,12 +627,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     setState(() => _layout = value);
     widget.onDesktopLayoutChanged?.call(value);
     unawaited(applyDesktopLayout(value));
+    _scheduleAutoPing();
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
-      child: _desktop ? _desktopView() : _withToast(_mobileView()),
+    body: NotificationListener<ScrollEndNotification>(
+      onNotification: (_) {
+        _scheduleAutoPing();
+        return false;
+      },
+      child: SafeArea(
+        child: _desktop ? _desktopView() : _withToast(_mobileView()),
+      ),
     ),
   );
 
@@ -792,10 +936,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  void _showServerPicker() => setState(() => _serverPickerOpen = true);
+  void _showServerPicker() {
+    setState(() => _serverPickerOpen = true);
+    _scheduleAutoPing();
+  }
 
   void _closeServerPicker() {
     if (mounted) setState(() => _serverPickerOpen = false);
+    _scheduleAutoPing();
   }
 
   Widget _serverPickerOverlay() => Stack(
@@ -1506,12 +1654,71 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ),
                       ),
                     ),
-                  Text(
-                    _count(group.servers.length),
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  PopupMenuButton<_SubscriptionMenuAction>(
+                    key: ValueKey('subscription-menu-${group.id}'),
+                    tooltip: context.tr('Действия с подпиской'),
+                    position: PopupMenuPosition.under,
+                    padding: EdgeInsets.zero,
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size.square(30),
+                      fixedSize: const Size.square(30),
+                      padding: EdgeInsets.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
+                    onCanceled: _scheduleAutoPing,
+                    constraints: const BoxConstraints(minWidth: 176),
+                    icon: SizedBox.square(
+                      dimension: 20,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          for (var i = 0; i < 3; i++)
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                              child: const SizedBox.square(dimension: 3),
+                            ),
+                        ],
+                      ),
+                    ),
+                    onSelected: (action) => switch (action) {
+                      _SubscriptionMenuAction.edit => unawaited(
+                        _editSubscription(group),
+                      ),
+                      _SubscriptionMenuAction.delete => unawaited(
+                        _deleteSubscription(group),
+                      ),
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: _SubscriptionMenuAction.edit,
+                        child: Row(
+                          children: [
+                            const Icon(CupertinoIcons.tag, size: 18),
+                            const SizedBox(width: 10),
+                            Text(context.tr('Редактировать')),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: _SubscriptionMenuAction.delete,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(context.tr('Удалить')),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1659,6 +1866,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     ServerEntry server, {
     VoidCallback? onSelected,
   }) {
+    final rows = onSelected == null ? _latencyRows : _pickerLatencyRows;
+    final rowId = '${group.id}/${server.id}';
+    final rowKey = rows[rowId]?.key ?? GlobalKey();
+    rows[rowId] = (key: rowKey, profile: server.profile);
     final desired = widget.vpn?.desiredProfileId;
     final selected = desired != null
         ? desired == server.profile.id
@@ -1698,6 +1909,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ? null
                 : () => _selectServer(group, server, onSelected: onSelected),
             child: ConstrainedBox(
+              key: rowKey,
               constraints: const BoxConstraints(minHeight: 48),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -1765,16 +1977,5 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
       ),
     );
-  }
-
-  String _count(int n) {
-    final form = n % 100 >= 11 && n % 100 <= 14
-        ? 'подключений'
-        : switch (n % 10) {
-            1 => 'подключение',
-            2 || 3 || 4 => 'подключения',
-            _ => 'подключений',
-          };
-    return context.tr('{count} $form', values: {'count': n});
   }
 }
