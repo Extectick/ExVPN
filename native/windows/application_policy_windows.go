@@ -23,10 +23,13 @@ import (
 // process-name matcher, API listener or provider-controlled policy is involved.
 type applicationPolicy struct {
 	outbound.Handler
-	fallback outbound.Handler
-	allowed  map[string]bool
-	resolve  ownerResolver
-	mode     string
+	fallback   outbound.Handler
+	allowed    map[string]bool
+	resolve    ownerResolver
+	mode       string
+	siteMode   string
+	site       *exvpn.SiteMatcher
+	siteActive bool
 }
 
 func installApplicationPolicy(instance *core.Instance, exclusions []string) error {
@@ -34,10 +37,19 @@ func installApplicationPolicy(instance *core.Instance, exclusions []string) erro
 }
 
 func installApplicationRouting(instance *core.Instance, routing ApplicationRoutingPolicy) error {
+	return installApplicationPolicies(instance, routing, exvpn.DefaultSiteRoutingState().Policy)
+}
+
+func installApplicationPolicies(instance *core.Instance, routing ApplicationRoutingPolicy, site exvpn.SiteRoutingPolicy) error {
 	if routing.validate() != nil {
 		return Code("application_routing_rejected")
 	}
-	if routing.Mode == exvpn.RoutingDisabled || (routing.Mode == exvpn.RoutingExclude && len(routing.Applications) == 0) {
+	matcher, err := exvpn.NewSiteMatcher(site)
+	if err != nil {
+		return Code("site_routing_rejected")
+	}
+	appActive := routing.Mode == exvpn.RoutingInclude || (routing.Mode == exvpn.RoutingExclude && len(routing.Applications) > 0)
+	if !appActive && !site.Active() {
 		return nil
 	}
 	manager, ok := instance.GetFeature(outbound.ManagerType()).(outbound.Manager)
@@ -55,7 +67,7 @@ func installApplicationRouting(instance *core.Instance, routing ApplicationRouti
 	if manager.RemoveHandler(context.Background(), direct.Tag()) != nil {
 		return Code("owner_policy_unavailable")
 	}
-	policy := &applicationPolicy{Handler: direct, fallback: proxy, allowed: allowed, resolve: resolveProcessOwner, mode: routing.Mode}
+	policy := &applicationPolicy{Handler: direct, fallback: proxy, allowed: allowed, resolve: resolveProcessOwner, mode: routing.Mode, siteMode: site.Mode, site: matcher, siteActive: site.Active()}
 	if manager.AddHandler(context.Background(), policy) != nil {
 		_ = direct.Close()
 		return Code("owner_policy_unavailable")
@@ -118,17 +130,25 @@ func (p *applicationPolicy) Dispatch(ctx context.Context, link *transport.Link) 
 	if valid {
 		owner, err := p.resolve(flow)
 		selected := p.allowed[applicationOwnerKey(owner.path)]
-		direct := selected
-		if p.mode == exvpn.RoutingInclude {
-			direct = !selected
+		siteMode := p.siteMode
+		if siteMode == "" {
+			siteMode = exvpn.RoutingDisabled
 		}
-		if p.mode == exvpn.RoutingDisabled {
-			direct = false
+		domain := exvpn.SiteDomainFromContext(ctx)
+		siteMatched, siteKnown := false, true
+		if p.site != nil {
+			siteMatched = p.site.Match(flow.remote.Addr(), domain)
+			siteKnown = !p.site.HasDomains() || domain != ""
 		}
-		if err == nil && owner.pid > 4 && owner.created != 0 && flow.remote.Port() != 53 && direct {
+		appMode := p.mode
+		if appMode == "" {
+			appMode = exvpn.RoutingExclude
+		}
+		direct := exvpn.RouteDirectForPolicies(appMode, selected, siteMode, siteMatched, siteKnown)
+		if err == nil && owner.pid > 4 && owner.created != 0 && owner.path != "" && flow.remote.Port() != 53 && direct {
 			handler = p.Handler
 			if flow.network == "udp" {
-				check := &datagramOwnerCheck{flow: flow, owner: owner, resolve: p.resolve}
+				check := &datagramOwnerCheck{flow: flow, owner: owner, resolve: p.resolve, strictRemote: p.siteActive}
 				link = &transport.Link{Reader: &ownerCheckedReader{Reader: link.Reader, check: check}, Writer: &ownerCheckedWriter{Writer: link.Writer, check: check}}
 			}
 		}
@@ -144,10 +164,11 @@ func (p *applicationPolicy) Dispatch(ctx context.Context, link *transport.Link) 
 // PID, creation time and exact path for every datagram batch in both directions.
 // Once ownership changes, stop this direct flow; never migrate it to a new PID.
 type datagramOwnerCheck struct {
-	flow    flowTuple
-	owner   processOwner
-	resolve ownerResolver
-	revoked atomic.Bool
+	flow         flowTuple
+	owner        processOwner
+	resolve      ownerResolver
+	revoked      atomic.Bool
+	strictRemote bool
 }
 
 func (c *datagramOwnerCheck) validate(multi buf.MultiBuffer) bool {
@@ -167,6 +188,10 @@ func (c *datagramOwnerCheck) validate(multi buf.MultiBuffer) bool {
 				return false
 			}
 			flow.remote = remote
+		}
+		if c.strictRemote && flow.remote != c.flow.remote {
+			c.revoked.Store(true)
+			return false
 		}
 		// An existing UDP association must not bypass the higher-priority DNS
 		// route by changing its per-packet destination after initial dispatch.

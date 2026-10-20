@@ -19,3 +19,8 @@ ExVPN is not affiliated with or endorsed by their developers.
 Country flag artwork is derived from flag-icons 7.5.0 (MIT).
 Copyright (c) 2013 Panayiotis Lipiridis.
 The full license is included in apps/exvpn/assets/licenses/FlagIcons.txt.
+
+Selected service domains are adapted from v2fly/domain-list-community (MIT),
+revision 497bef95124ac98a70ed865bb8aaaa8e9a4ff66e.
+Copyright (c) 2018-2019, V2Ray.
+The full license is included in apps/exvpn/assets/licenses/DomainListCommunity.txt.

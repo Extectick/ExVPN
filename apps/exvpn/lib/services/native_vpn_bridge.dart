@@ -95,6 +95,10 @@ const _codes = {
   'proxy_bind_failed',
   'application_routing_unsupported',
   'application_routing_rejected',
+  'site_routing_rejected',
+  'site_routing_unavailable',
+  'site_routing_requires_vpn',
+  'site_routing_requires_disconnected',
   'application_icon_unavailable',
   'native_method_unsupported',
   'connection_protection_unavailable',
@@ -108,6 +112,7 @@ final class NativeVpnBridge
         ServerReconnectBridge,
         AutomaticSelectionBridge,
         ApplicationRoutingBridge,
+        SiteRoutingBridge,
         ApplicationIconBridge,
         ConnectionProtectionBridge,
         VpnPermissionSetupBridge,
@@ -248,6 +253,27 @@ final class NativeVpnBridge
     await _invoke('setExclusions', {
       'applications': applicationIds.toList()..sort(),
     });
+  }
+
+  @override
+  Future<SiteRoutingState> getSiteRouting() async {
+    try {
+      return SiteRoutingState.fromJson(await _invoke('getSiteRouting'));
+    } on FormatException {
+      throw const VpnFailure('invalid_native_response');
+    } on VpnFailure catch (error) {
+      if (error.code == 'native_unavailable' ||
+          error.code == 'native_method_unsupported' ||
+          error.code == 'unsupported') {
+        throw const VpnFailure('site_routing_unavailable');
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> setSiteRouting(SiteRoutingState state) async {
+    await _invoke('setSiteRouting', state.toJson());
   }
 
   @override

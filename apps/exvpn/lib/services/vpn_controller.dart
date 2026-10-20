@@ -446,6 +446,44 @@ final class VpnController extends ChangeNotifier {
     mode: ApplicationRoutingMode.disabled,
   );
   ApplicationRoutingPolicy get applicationRouting => _applicationRouting;
+  SiteRoutingState? _siteRouting;
+  SiteRoutingState? get siteRouting => _siteRouting;
+
+  Future<SiteRoutingState> loadSiteRouting() async {
+    if (_policyPending) throw const VpnFailure('operation_in_progress');
+    if (bridge is! SiteRoutingBridge) {
+      throw const VpnFailure('site_routing_unavailable');
+    }
+    final revision = ++_policyRevision;
+    final value = await (bridge as SiteRoutingBridge).getSiteRouting().timeout(
+      const Duration(seconds: 10),
+    );
+    if (!_disposed && revision == _policyRevision) {
+      _siteRouting = value;
+      _changed();
+    }
+    return value;
+  }
+
+  Future<void> setSiteRouting(SiteRoutingState state) async {
+    if (canDisconnect || commandPending) {
+      throw const VpnFailure('site_routing_requires_disconnected');
+    }
+    if (bridge is! SiteRoutingBridge) {
+      throw const VpnFailure('site_routing_unavailable');
+    }
+    final revision = ++_policyRevision;
+    _policyPending = true;
+    _changed();
+    try {
+      await (bridge as SiteRoutingBridge).setSiteRouting(state);
+      if (!_disposed && revision == _policyRevision) _siteRouting = state;
+    } finally {
+      _policyPending = false;
+      _changed();
+    }
+  }
+
   Set<String> get exclusions =>
       _applicationRouting.mode == ApplicationRoutingMode.exclude
       ? _applicationRouting.applicationIds
@@ -1060,6 +1098,13 @@ final class _ConnectionIntent {
 }
 
 String vpnErrorText(String? code) => switch (code) {
+  'site_routing_rejected' => 'Проверьте список доменов и IP-адресов.',
+  'site_routing_unavailable' =>
+    'Для правил сайтов нужен обновлённый модуль VPN.',
+  'site_routing_requires_vpn' =>
+    'Правила сайтов работают в режиме VPN. Отключите их для PROXY.',
+  'site_routing_requires_disconnected' =>
+    'Сначала отключите VPN, затем измените правила сайтов.',
   'native_storage_unavailable' => 'Не удалось прочитать или сохранить защищённые настройки VPN. Соединение не восстановлено автоматически.',
   'exclusions_unavailable' => 'Не удалось прочитать сохранённые исключения. Перезапустите службу или явно сбросьте список в настройках исключений.',
   'system_testing_required' => 'Эта сборка требует проверки VPN в Windows. Системное подключение ещё не разрешено установщиком.',

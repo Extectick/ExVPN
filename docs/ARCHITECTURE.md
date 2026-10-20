@@ -24,6 +24,15 @@ QA WireGuard gateway находится в `native/core/qa/`, не связан 
 core instance. Windows protocol QA сохраняет disposable-marker/LocalSystem/ACL
 проверки перед WFP/TUN; исключения и deny policy не ослабляются ради стенда.
 
+## Локальная политика сайтов и IP
+
+SiteRoutingBridge передаёт закрытую schema1 отдельно от подписок и application
+routing. Immutable snapshot захватывается на срок подключения/reconnect. Direct
+разрешает только существующий owner dispatcher после проверки domain/IP matcher;
+routeOnly sniff не меняет исходный tuple. DNS и unknown-owner/domain gates
+сохраняются. Native storage failure блокирует новый запуск; Android resume4 и
+Windows DPAPI initialized marker исключают silent reset. [SITE_ROUTING.md](SITE_ROUTING.md).
+
 ## Android VPN permission setup, кандидат 0.1.13+35
 
 Recovery capability `getVpnPermissionSetup(null)` имеет закрытую schema1

@@ -77,6 +77,22 @@ func ExVPNValidate(raw *C.char) *C.char {
 
 //export ExVPNStart
 func ExVPNStart(raw *C.char, endpoint *C.char, fd C.int, uidValues *C.int, uidCount C.int, routingMode *C.char) *C.char {
+	return startWithSitePolicy(raw, endpoint, fd, uidValues, uidCount, routingMode, exvpn.DefaultSiteRoutingState().Policy)
+}
+
+//export ExVPNStartRouted
+func ExVPNStartRouted(raw *C.char, endpoint *C.char, fd C.int, uidValues *C.int, uidCount C.int, routingMode *C.char, siteState *C.char) *C.char {
+	if siteState == nil {
+		return C.CString("site_routing_rejected")
+	}
+	sites, err := exvpn.DecodeSiteRoutingState([]byte(C.GoString(siteState)))
+	if err != nil {
+		return C.CString("site_routing_rejected")
+	}
+	return startWithSitePolicy(raw, endpoint, fd, uidValues, uidCount, routingMode, sites.Policy)
+}
+
+func startWithSitePolicy(raw *C.char, endpoint *C.char, fd C.int, uidValues *C.int, uidCount C.int, routingMode *C.char, sites exvpn.SiteRoutingPolicy) *C.char {
 	state.Lock()
 	defer state.Unlock()
 	if state.instance != nil {
@@ -94,7 +110,7 @@ func ExVPNStart(raw *C.char, endpoint *C.char, fd C.int, uidValues *C.int, uidCo
 		uids[i] = int(v)
 	}
 	mode := C.GoString(routingMode)
-	config, err := androidcore.BuildConfigWithRouting(p, C.GoString(endpoint), mode, uids)
+	config, err := androidcore.BuildConfigWithSiteRouting(p, C.GoString(endpoint), mode, uids, sites)
 	if err != nil {
 		return C.CString(err.Error())
 	}
@@ -116,7 +132,7 @@ func ExVPNStart(raw *C.char, endpoint *C.char, fd C.int, uidValues *C.int, uidCo
 		_ = unix.Close(duplicate)
 		return C.CString("core_start_failed")
 	}
-	if err = androidcore.InstallApplicationRouting(instance, mode, uids, resolveApplicationUID); err != nil {
+	if err = androidcore.InstallSiteApplicationRouting(instance, mode, uids, sites, resolveApplicationUID); err != nil {
 		_ = instance.Close()
 		_ = unix.Close(duplicate)
 		return C.CString("owner_policy_unavailable")

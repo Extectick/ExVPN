@@ -10,8 +10,13 @@ internal object ApplicationOwnerConfirmation {
     fun isApplicationUID(uid: Int): Boolean = uid >= 0 && uid % 100000 in 10000..19999
 
     fun confirm(uid: Int, vpnUid: Int, ownerPackages: Set<String>, mode: String,
-        selectedPackages: Set<String>, resolvedSelectedUIDs: Set<Int>): Int {
+        selectedPackages: Set<String>, resolvedSelectedUIDs: Set<Int>, siteRoutingActive: Boolean = false): Int {
         if (!isApplicationUID(uid) || uid == vpnUid || ownerPackages.isEmpty()) return -1
+        // A site rule needs a confirmed ordinary application's exact tuple,
+        // including applications not selected in the application policy.
+        // Shared identities cannot acquire a new destination-based exemption.
+        if (siteRoutingActive && ownerPackages.size != 1) return -1
+        if (mode == "disabled") return if (siteRoutingActive) uid else -1
         if (mode != "exclude" && mode != "include") return -1
         if (uid in resolvedSelectedUIDs) {
             // A shared UID must still belong entirely to the captured selected
@@ -20,6 +25,6 @@ internal object ApplicationOwnerConfirmation {
         }
         // A selected package whose UID changed needs a fresh connection snapshot.
         if (ownerPackages.any { it in selectedPackages }) return -1
-        return if (mode == "include") uid else -1
+        return if (mode == "include" || siteRoutingActive) uid else -1
     }
 }

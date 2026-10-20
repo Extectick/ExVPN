@@ -10,12 +10,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'services/vpn_controller.dart';
+import 'services/native_vpn_bridge.dart' show VpnFailure;
 import 'services/client_logs.dart';
 import 'services/subscription_loader.dart';
 import 'build_identity.dart';
 import 'services/app_updates.dart';
 import 'services/data_updates.dart';
 import 'src/updates_sheet.dart';
+import 'src/site_routing_sheet.dart';
 import 'src/desktop_layout.dart';
 import 'src/home_screen.dart';
 import 'src/appearance.dart';
@@ -392,6 +394,8 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
                               appUpdates: _previewUpdates,
                               previewVersion: _previewVersion,
                             )
+                          : Uri.base.queryParameters['page'] == 'sites'
+                          ? SiteRoutingSheet(vpn: _vpn)
                           : child,
                     ),
                   ],
@@ -457,6 +461,7 @@ class _DesignOnlyBridge
         VpnBridge,
         ConnectionModeBridge,
         ApplicationRoutingBridge,
+        SiteRoutingBridge,
         ConnectionProtectionBridge {
   _DesignOnlyBridge(this.selectedId, {required bool initiallyConnected}) {
     _mode = Uri.base.queryParameters['mode'] == 'proxy'
@@ -646,6 +651,17 @@ class _DesignOnlyBridge
 
   @override
   Future<ApplicationRoutingPolicy> getApplicationRouting() async => _routing;
+  SiteRoutingState _sites = SiteRoutingState.disabled();
+  @override
+  Future<SiteRoutingState> getSiteRouting() async => _sites;
+  @override
+  Future<void> setSiteRouting(SiteRoutingState state) async {
+    if (_status.phase != VpnPhase.disconnected) {
+      throw const VpnFailure('site_routing_requires_disconnected');
+    }
+    _sites = SiteRoutingState.fromJson(state.toJson());
+  }
+
   @override
   Future<void> setApplicationRouting(ApplicationRoutingPolicy policy) async {
     _routing = policy;

@@ -27,6 +27,7 @@ internal object VpnPersistence {
     private const val KEYSTORE = "AndroidKeyStore"
     private const val POLICY = "policy"
     private const val RESUME = "resume"
+    private const val SITE_ROUTING = "site_routing"
 
     @Synchronized fun loadPolicy(context: Context): Set<String> = guarded {
         val policy = loadApplicationRouting(context)
@@ -55,11 +56,26 @@ internal object VpnPersistence {
             .put("packages", JSONArray(checked.sorted())))
     }
 
+    @Synchronized fun loadSiteRouting(context: Context): SiteRoutingState = guarded {
+        // The Keystore alias is created before the first atomic write and is
+        // never removed. A lost record must not turn a previous include policy
+        // into the fresh-install disabled policy.
+        val record = read(context, SITE_ROUTING) ?: return@guarded SiteRoutingRecovery.absent(
+            KeyStore.getInstance(KEYSTORE).apply { load(null) }.containsAlias(alias(SITE_ROUTING)))
+        SiteRoutingJson.decode(record)
+    }
+
+    @Synchronized fun saveSiteRouting(context: Context, state: SiteRoutingState) = guarded {
+        // Reject semantically malformed existing state before any replacement.
+        loadSiteRouting(context)
+        write(context, SITE_ROUTING, SiteRoutingJson.encode(state))
+    }
+
     @Synchronized fun loadResume(context: Context): ConnectRequest? = guarded {
         val record = read(context, RESUME) ?: return@guarded null
         val schema = record.getInt("schema")
         require((schema == 1 && record.length() == 3) || (schema == 2 && record.length() == 4) ||
-            (schema == 3 && record.length() == 5))
+            (schema == 3 && record.length() == 5) || (schema == 4 && record.length() == 6))
         val profile = record.getString("profile")
         require(profile.toByteArray(Charsets.UTF_8).size <= 1_048_576)
         val id = JSONObject(profile).getString("id")
@@ -67,8 +83,11 @@ internal object VpnPersistence {
         val selected = packages(record.getJSONArray("packages"))
         val policy = if (schema == 1) ApplicationRoutingPolicy.legacy(selected)
             else ApplicationRoutingPolicy(record.getString("mode"), selected)
-        val automatic = if (schema == 3) automaticProfiles(record.getJSONArray("automaticProfiles"), profile) else emptyList()
-        ConnectRequest(profile, id, policy.applications, policy.mode, automatic)
+        val automatic = if (schema >= 3) automaticProfiles(record.getJSONArray("automaticProfiles"), profile) else emptyList()
+        val currentSites = loadSiteRouting(context)
+        val sites = if (schema == 4) SiteRoutingJson.decode(record.getJSONObject("siteRouting")) else currentSites
+        require(sites.policy == currentSites.policy)
+        ConnectRequest(profile, id, policy.applications, policy.mode, automatic, sites)
     }
 
     @Synchronized fun saveResume(context: Context, request: ConnectRequest) = guarded {
@@ -77,9 +96,10 @@ internal object VpnPersistence {
         val selected = packages(JSONArray(request.packages.sorted()))
         val policy = ApplicationRoutingPolicy(request.routingMode, selected)
         val automatic = automaticProfiles(JSONArray(request.automaticProfiles), request.profile)
-        write(context, RESUME, JSONObject().put("schema", 3).put("mode", policy.mode)
+        val sites = SiteRoutingJson.encode(request.siteRouting)
+        write(context, RESUME, JSONObject().put("schema", 4).put("mode", policy.mode)
             .put("profile", request.profile).put("packages", JSONArray(selected.sorted()))
-            .put("automaticProfiles", JSONArray(automatic)))
+            .put("automaticProfiles", JSONArray(automatic)).put("siteRouting", sites))
     }
 
     @Synchronized fun clearResume(context: Context) = guarded {

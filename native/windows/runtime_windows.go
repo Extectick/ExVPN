@@ -124,7 +124,8 @@ func startTunnelResolved(ctx context.Context, p exvpn.Profile, exclusions []stri
 	}
 	password := hex.EncodeToString(secret)
 	policy := routingFromContext(ctx, exclusions)
-	b, e := buildTunnelConfigWithRouting(p, policy, exvpn.ProbeOptions{Port: port, Username: "exvpn", Password: password}, resolution)
+	site := siteRoutingFromContext(ctx)
+	b, e := buildTunnelConfigWithPolicies(p, policy, site, exvpn.ProbeOptions{Port: port, Username: "exvpn", Password: password}, resolution)
 	if e != nil {
 		return nil, e
 	}
@@ -149,7 +150,7 @@ func startTunnelResolved(ctx context.Context, p exvpn.Profile, exclusions []stri
 		}
 		return nil, Code("core_start_failed")
 	}
-	if e = installApplicationRouting(i, policy); e != nil {
+	if e = installApplicationPolicies(i, policy, site); e != nil {
 		return &xrayTunnel{instance: i, lease: lease}, e
 	}
 	if e = i.Start(); e != nil {

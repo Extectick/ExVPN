@@ -10,6 +10,21 @@ class ApplicationOwnerConfirmationTest {
         selection: Set<String> = selected, resolved: Set<Int> = selectedUIDs) =
         ApplicationOwnerConfirmation.confirm(uid, 10100, packages, mode, selection, resolved)
 
+    @Test fun siteRulesConfirmUnselectedSingleOwnersWithoutWideningIdentity() {
+        for (mode in listOf("disabled", "exclude", "include")) {
+            assertEquals(10167, ApplicationOwnerConfirmation.confirm(10167, 10100,
+                setOf("sample.unselected"), mode, selected, selectedUIDs, siteRoutingActive = true))
+            assertEquals(-1, ApplicationOwnerConfirmation.confirm(10167, 10100,
+                setOf("sample.first", "sample.second"), mode, selected, selectedUIDs, siteRoutingActive = true))
+            assertEquals(-1, ApplicationOwnerConfirmation.confirm(10100, 10100,
+                setOf("sample.vpn"), mode, selected, selectedUIDs, siteRoutingActive = true))
+        }
+        assertEquals(-1, ApplicationOwnerConfirmation.confirm(10169, 10100, selected,
+            "exclude", selected, selectedUIDs, siteRoutingActive = true))
+        assertEquals(10168, ApplicationOwnerConfirmation.confirm(10168, 10100, selected,
+            "exclude", selected, selectedUIDs, siteRoutingActive = true))
+    }
+
     @Test fun includeConfirmsKnownUnselectedTupleInsteadOfTurningItIntoUnknown() {
         assertEquals(10167, owner(10167, setOf("sample.unselected")))
         assertEquals(10168, owner(10168, selected))

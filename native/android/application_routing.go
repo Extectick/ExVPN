@@ -24,13 +24,22 @@ type applicationPolicy struct {
 	mode     string
 	selected map[int]bool
 	resolve  UIDResolver
+	sites    *exvpn.SiteMatcher
 }
 
 func InstallApplicationRouting(instance *core.Instance, mode string, uids []int, resolve UIDResolver) error {
+	return InstallSiteApplicationRouting(instance, mode, uids, exvpn.DefaultSiteRoutingState().Policy, resolve)
+}
+
+func InstallSiteApplicationRouting(instance *core.Instance, mode string, uids []int, sites exvpn.SiteRoutingPolicy, resolve UIDResolver) error {
 	if _, err := (exvpn.RoutingPolicy{AndroidUIDs: uids, Mode: mode}).Rules("vpn"); err != nil {
 		return err
 	}
-	if mode == exvpn.RoutingDisabled || (mode == exvpn.RoutingExclude && len(uids) == 0) {
+	matcher, err := exvpn.NewSiteMatcher(sites)
+	if err != nil {
+		return err
+	}
+	if !matcher.Active() && (mode == exvpn.RoutingDisabled || (mode == exvpn.RoutingExclude && len(uids) == 0)) {
 		return nil
 	}
 	manager, ok := instance.GetFeature(outbound.ManagerType()).(outbound.Manager)
@@ -48,7 +57,7 @@ func InstallApplicationRouting(instance *core.Instance, mode string, uids []int,
 	if manager.RemoveHandler(context.Background(), direct.Tag()) != nil {
 		return exvpn.CodeError("owner_policy_unavailable")
 	}
-	policy := &applicationPolicy{Handler: direct, fallback: proxy, mode: mode, selected: selected, resolve: resolve}
+	policy := &applicationPolicy{Handler: direct, fallback: proxy, mode: mode, selected: selected, resolve: resolve, sites: matcher}
 	if manager.AddHandler(context.Background(), policy) != nil {
 		_ = direct.Close()
 		return exvpn.CodeError("owner_policy_unavailable")
@@ -108,17 +117,19 @@ func (p *applicationPolicy) Dispatch(ctx context.Context, link *transport.Link) 
 	network, local, remote, valid := routingFlow(ctx)
 	if valid && remote.Port() != 53 {
 		uid, err := p.resolve(network, local, remote)
-		direct := p.selected[uid]
-		if p.mode == exvpn.RoutingInclude {
-			direct = !direct
+		siteMode, siteMatched, domainKnown := exvpn.RoutingDisabled, false, true
+		if p.sites != nil {
+			domain := exvpn.SiteDomainFromContext(ctx)
+			siteMode = p.sites.Mode()
+			siteMatched = p.sites.Match(remote.Addr(), domain)
+			domainKnown = !p.sites.HasDomains() || domain != ""
 		}
-		if p.mode == exvpn.RoutingDisabled {
-			direct = false
-		}
+		direct := exvpn.RouteDirectForPolicies(p.mode, p.selected[uid], siteMode, siteMatched, domainKnown)
 		if err == nil && uid >= 10000 && direct {
 			handler = p.Handler
 			if network == "udp" {
-				check := &datagramUIDCheck{local: local, remote: remote, uid: uid, resolve: p.resolve}
+				check := &datagramUIDCheck{local: local, remote: remote, uid: uid, resolve: p.resolve,
+					fixedRemote: p.sites != nil && p.sites.Active()}
 				link = &transport.Link{Reader: &uidCheckedReader{Reader: link.Reader, check: check}, Writer: &uidCheckedWriter{Writer: link.Writer, check: check}}
 			}
 		}
@@ -134,6 +145,7 @@ type datagramUIDCheck struct {
 	local, remote netip.AddrPort
 	uid           int
 	resolve       UIDResolver
+	fixedRemote   bool
 	revoked       atomic.Bool
 }
 
@@ -156,6 +168,12 @@ func (c *datagramUIDCheck) validate(data buf.MultiBuffer) bool {
 			}
 		}
 		if remote.Port() == 53 {
+			c.revoked.Store(true)
+			return false
+		}
+		if c.fixedRemote && remote != c.remote {
+			// A domain sniff belongs to the original destination only. Never
+			// reuse that exemption for another destination in a UDP association.
 			c.revoked.Store(true)
 			return false
 		}

@@ -21,6 +21,9 @@ void _registerFontLicenses() {
   if (_fontLicensesRegistered) return;
   _fontLicensesRegistered = true;
   LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks([
+      'domain-list-community',
+    ], await rootBundle.loadString('assets/licenses/DomainListCommunity.txt'));
     for (final name in ['NotoSansSC', 'NotoSansArabic']) {
       yield LicenseEntryWithLineBreaks([
         name,

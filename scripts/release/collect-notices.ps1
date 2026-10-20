@@ -158,6 +158,7 @@ Add-SingleNotice 'Noto Sans SC' 'google-fonts:47d54ca1ebb14fd864695f1d39dc734f39
 Add-SingleNotice 'Noto Sans Arabic' 'google-fonts:47d54ca1ebb14fd864695f1d39dc734f39017c33' (Join-Path $repository 'apps/exvpn/assets/fonts/NotoSansArabic-OFL.txt') 'https://github.com/google/fonts/tree/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/notosansarabic'
 Add-SingleNotice 'flag-icons' '7.5.0:7aa5b2bdddd570ece62c812c0cb588ccdc099e2e' (Join-Path $repository 'apps/exvpn/assets/licenses/FlagIcons.txt') 'https://github.com/lipis/flag-icons/tree/7aa5b2bdddd570ece62c812c0cb588ccdc099e2e'
 Add-SingleNotice 'Material Icons' $lock.flutter.version (Join-Path $repository 'apps/exvpn/assets/licenses/MaterialIcons.txt')
+Add-SingleNotice 'domain-list-community selected service domains' '497bef95124ac98a70ed865bb8aaaa8e9a4ff66e' (Join-Path $repository 'apps/exvpn/assets/licenses/DomainListCommunity.txt') 'https://github.com/v2fly/domain-list-community/tree/497bef95124ac98a70ed865bb8aaaa8e9a4ff66e'
 Add-SingleNotice 'Cupertino Icons' '1.0.9' (Join-Path $repository 'apps/exvpn/assets/licenses/CupertinoIcons.txt')
 
 # A conservative superset from pub's resolved graph includes development-only

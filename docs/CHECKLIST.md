@@ -1,5 +1,19 @@
 # ExVPN — проверяемый чеклист
 
+## Сайты и IP — 2026-10-21
+
+- [x] **EXVPN-E2-025** — Отдельная форма сайтов/IP: три режима, закреплённый поиск,
+  нормализация URL/domain/IP/CIDR, пресеты России и сохранение своего списка.
+  Проверено 2026-10-21:9 widget/controller/channel tests,14 Dart contract tests,
+  браузерный светлый/компактный preview. Правила не применяются от простого входа
+  в форму, ошибка native write сохраняет черновик. Рабочее дерево; commit ожидается.
+- [ ] **EXVPN-E1-013** — Принять сайты/IP через реальный TUN на обеих платформах.
+  Реализованы strict schema1, bounded matcher, owner/DNS priority, UDP pinning,
+  encrypted persistence и resume. Focused Go и Kotlin policy/recovery прошли,
+  host Kotlin25 compiled. Открыты Windows C++/Android JNI package, durable storage
+  и isolated IPv4/IPv6/DNS/unknown owner/ECH/UDP/runtime/физический Android.
+  Нужна новая полная Shorebird-база; E1/stable не закрыты. [Контракт](SITE_ROUTING.md).
+
 Начало проекта: **2026-10-16**. Источник требований: [PLAN.md](PLAN.md); границы компонентов: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 `[ ]` — работа не завершена или не подтверждена; `[x]` — критерий проверен. Стабильный ID не переиспользуется. У закрытого пункта указываются дата, проверка и commit/PR. Пока изменения не закоммичены, используется явная пометка «рабочее дерево; commit ожидается»; после публикации её заменяют ссылкой. Ссылка на задачу Linear/GitHub не является доказательством проверки.

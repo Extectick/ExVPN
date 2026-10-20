@@ -16,6 +16,7 @@ import 'app_strings.dart';
 import 'logs_sheet.dart';
 import 'appearance.dart';
 import 'exclusions_sheet.dart';
+import 'site_routing_sheet.dart';
 import 'sliding_segments.dart';
 import 'theme_editor.dart';
 import 'updates_sheet.dart';
@@ -384,6 +385,20 @@ class _SettingsSheetState extends State<SettingsSheet>
                       'Исключения приложений',
                       'Список приложений и правила обхода VPN будут доступны после подключения и проверки системного модуля.',
                     ),
+            ),
+            SettingsNavigationRow(
+              key: const Key('site-routing-settings'),
+              icon: Icons.language,
+              title: context.tr('Сайты и IP'),
+              subtitle: context.tr('Домены, адреса и пресеты'),
+              onTap: widget.vpn != null
+                  ? () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => SiteRoutingSheet(vpn: widget.vpn!),
+                      ),
+                    )
+                  : () =>
+                        _info('Сайты и IP', 'Правила применяются в режиме VPN'),
             ),
             _protection(),
             if (widget.vpn?.supportsNotificationSettings == true)

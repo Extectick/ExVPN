@@ -59,17 +59,26 @@ func BuildConfig(p exvpn.Profile, endpointIP string, uids []int) ([]byte, error)
 // Modern policies use an owned dispatcher. Include never means an inverted
 // process matcher: failure to identify an owner continues through the VPN.
 func BuildConfigWithRouting(p exvpn.Profile, endpointIP, mode string, uids []int) ([]byte, error) {
+	return BuildConfigWithSiteRouting(p, endpointIP, mode, uids, exvpn.DefaultSiteRoutingState().Policy)
+}
+
+// Site rules enter the same owned dispatcher as application selection. Neither
+// a sniffed domain nor a numeric match can grant direct before UID confirmation.
+func BuildConfigWithSiteRouting(p exvpn.Profile, endpointIP, mode string, uids []int, sites exvpn.SiteRoutingPolicy) ([]byte, error) {
 	if mode != exvpn.RoutingDisabled && mode != exvpn.RoutingExclude && mode != exvpn.RoutingInclude {
 		return nil, exvpn.CodeError("application_routing_rejected")
 	}
 	if len(uids) > 500 {
 		return nil, exvpn.CodeError("application_routing_rejected")
 	}
+	if _, err := exvpn.NewSiteMatcher(sites); err != nil {
+		return nil, err
+	}
 	rules, err := (exvpn.RoutingPolicy{AndroidUIDs: uids, Mode: mode}).Rules("vpn")
 	if err != nil {
 		return nil, err
 	}
-	active := mode == exvpn.RoutingInclude || (mode == exvpn.RoutingExclude && len(uids) > 0)
+	active := sites.Active() || mode == exvpn.RoutingInclude || (mode == exvpn.RoutingExclude && len(uids) > 0)
 	if active {
 		rules[2] = map[string]any{"type": "field", "inboundTag": []string{"vpn"}, "network": "tcp,udp", "outboundTag": exvpn.ApplicationPolicyTag}
 	}
@@ -87,6 +96,14 @@ func BuildConfigWithRouting(p exvpn.Profile, endpointIP, mode string, uids []int
 	}
 	rules = append([]map[string]any{{"type": "field", "inboundTag": []string{"healthcheck"}, "outboundTag": "proxy"}}, rules...)
 	config["routing"] = map[string]any{"domainStrategy": "AsIs", "rules": rules}
+	if sites.Active() {
+		for _, raw := range config["inbounds"].([]any) {
+			inbound := raw.(map[string]any)
+			if inbound["tag"] == "vpn" {
+				inbound["sniffing"] = map[string]any{"enabled": true, "destOverride": []string{"http", "tls", "quic"}, "routeOnly": true}
+			}
+		}
+	}
 	if active {
 		config["outbounds"] = append(config["outbounds"].([]any), map[string]any{"tag": "direct-excluded", "protocol": "freedom", "settings": map[string]any{"domainStrategy": "AsIs"}})
 	}

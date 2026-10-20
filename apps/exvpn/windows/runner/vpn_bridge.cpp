@@ -129,6 +129,53 @@ Value Traffic(const JsonObject& traffic) {
   }
   return Value(value);
 }
+Value SiteRoutingPolicy(const JsonObject& policy, size_t& total) {
+  if (policy.Size() != 2) Fail("site_routing_rejected");
+  const auto mode = winrt::to_string(policy.GetNamedString(L"mode"));
+  const auto rules = policy.GetNamedArray(L"rules");
+  if ((mode != "disabled" && mode != "exclude" && mode != "include") ||
+      rules.Size() > 1024 || total + rules.Size() > 2048)
+    Fail("site_routing_rejected");
+  total += rules.Size();
+  List entries;
+  std::set<std::string> seen;
+  for (const auto& item : rules) {
+    const auto value = winrt::to_string(item.GetString());
+    if (value.empty() || value.size() > 253 || !seen.insert(value).second ||
+        value.find_first_of("\r\n\t") != std::string::npos ||
+        value.find('\0') != std::string::npos)
+      Fail("site_routing_rejected");
+    entries.emplace_back(value);
+  }
+  return Value(Map{{Value("mode"), Value(mode)}, {Value("rules"), Value(entries)}});
+}
+Value SiteRoutingState(const JsonObject& state) {
+  if (state.Size() != 4 || state.GetNamedNumber(L"schema") != 1)
+    Fail("site_routing_rejected");
+  size_t total = 0;
+  auto policy = SiteRoutingPolicy(state.GetNamedObject(L"policy"), total);
+  const auto presets = state.GetNamedArray(L"savedPresets");
+  const auto selected = winrt::to_string(state.GetNamedString(L"selectedPreset"));
+  if (presets.Size() > 8 || selected.size() > 64)
+    Fail("site_routing_rejected");
+  List saved;
+  std::set<std::string> ids;
+  for (const auto& item : presets) {
+    const auto preset = item.GetObject();
+    if (preset.Size() != 3) Fail("site_routing_rejected");
+    const auto id = winrt::to_string(preset.GetNamedString(L"id"));
+    const auto name = winrt::to_string(preset.GetNamedString(L"name"));
+    if (id.empty() || id.size() > 64 || !ids.insert(id).second ||
+        name.empty() || name.size() > 320)
+      Fail("site_routing_rejected");
+    saved.emplace_back(Map{
+        {Value("id"), Value(id)}, {Value("name"), Value(name)},
+        {Value("policy"), SiteRoutingPolicy(preset.GetNamedObject(L"policy"), total)}});
+  }
+  return Value(Map{
+      {Value("schema"), Value(1)}, {Value("policy"), std::move(policy)},
+      {Value("savedPresets"), Value(saved)}, {Value("selectedPreset"), Value(selected)}});
+}
 std::wstring ProcessPath(HANDLE process) {
   std::wstring path(32768, L'\0');
   DWORD n = static_cast<DWORD>(path.size());
@@ -206,7 +253,8 @@ JsonObject Request(const std::string& command, const Value* profile,
                    const List& exclusions, const std::string& mode = "",
                    const Value* application_routing = nullptr,
                    const Value* automatic_profiles = nullptr,
-                   const bool* protection_enabled = nullptr) {
+                   const bool* protection_enabled = nullptr,
+                   const Value* site_routing = nullptr) {
   Handle pipe{CreateFileW(
       kPipe, 0x12019b, 0, nullptr, OPEN_EXISTING,
       FILE_FLAG_OVERLAPPED | SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION,
@@ -230,6 +278,8 @@ JsonObject Request(const std::string& command, const Value* profile,
     request.Insert(L"automaticProfiles", Json(*automatic_profiles));
   if (protection_enabled)
     request.Insert(L"enabled", JsonValue::CreateBooleanValue(*protection_enabled));
+  if (site_routing)
+    request.Insert(L"siteRouting", Json(*site_routing));
   std::string body = winrt::to_string(request.Stringify());
   if (body.empty() || body.size() > kMaxFrame) Fail("invalid_native_request");
   uint32_t size = static_cast<uint32_t>(body.size());
@@ -556,6 +606,25 @@ void VpnBridge::Work() {
             {Value("systemManaged"), Value(false)}});
       } else if (job.method == "openSystemProtectionSettings") {
         Fail("system_protection_settings_unsupported");
+      } else if (job.method == "getSiteRouting" ||
+                 job.method == "setSiteRouting") {
+        const bool save = job.method == "setSiteRouting";
+        const auto* arguments = std::get_if<Map>(&job.arguments);
+        if (save) {
+          if (!arguments) Fail("site_routing_rejected");
+          // Validate the closed DTO shape before crossing authenticated IPC;
+          // the service additionally validates canonical rules and owner state.
+          (void)SiteRoutingState(Json(job.arguments).GetObject());
+        } else if (!std::holds_alternative<std::monostate>(job.arguments) &&
+                   (!arguments || !arguments->empty())) {
+          Fail("invalid_native_request");
+        }
+        auto response = Request(save ? "set_site_routing" : "get_site_routing",
+                                nullptr, {}, "", nullptr, nullptr, nullptr,
+                                save ? &job.arguments : nullptr);
+        if (!response.GetNamedBoolean(L"ok"))
+          throw std::runtime_error(winrt::to_string(response.GetNamedString(L"code")));
+        completion.value = SiteRoutingState(response.GetNamedObject(L"siteRouting"));
       } else if (job.method == "setApplicationRouting") {
         const auto* arguments = std::get_if<Map>(&job.arguments);
         const auto* mode = std::get_if<std::string>(&Field(job.arguments, "mode"));

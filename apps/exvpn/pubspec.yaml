@@ -39,6 +39,7 @@ flutter:
     - assets/images/
     - assets/flags/
     - assets/licenses/FlagIcons.txt
+    - assets/licenses/DomainListCommunity.txt
     - assets/fonts/NotoSansSC-OFL.txt
     - assets/fonts/NotoSansArabic-OFL.txt
     - shorebird.yaml

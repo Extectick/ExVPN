@@ -45,6 +45,9 @@ type Controller struct {
 	exclusions         []string
 	exclusionsKnown    bool
 	applicationRouting ApplicationRoutingPolicy
+	siteRouting        exvpn.SiteRoutingState
+	siteRoutingKnown   bool
+	siteStore          SiteRoutingStore
 	guardRecovered     bool
 	policy             PolicyStore
 	protectionEnabled  bool
@@ -115,6 +118,7 @@ func NewControllerWithPolicy(g Guard, f TunnelFactory, validate func([]string) e
 		}
 	}
 	c.initializeConnectionProtection(policy)
+	c.initializeSiteRouting(policy, armed)
 	return c, nil
 }
 func (c *Controller) Status() Status {
@@ -209,6 +213,20 @@ func (c *Controller) Handle(r Request) Response {
 		if err := c.setApplicationRouting(*r.ApplicationRouting); err != nil {
 			return Response{Version: ProtocolVersion, ID: r.ID, Code: safeCode(err, "native_storage_unavailable"), Status: c.Status()}
 		}
+	case "get_site_routing", "set_site_routing":
+		if r.Command == "set_site_routing" {
+			if r.SiteRouting == nil {
+				return Response{Version: ProtocolVersion, ID: r.ID, Code: "site_routing_rejected", Status: c.Status()}
+			}
+			if err := c.setSiteRouting(*r.SiteRouting); err != nil {
+				return Response{Version: ProtocolVersion, ID: r.ID, Code: safeCode(err, "site_routing_unavailable"), Status: c.Status()}
+			}
+		}
+		state, err := c.getSiteRouting()
+		if err != nil {
+			return Response{Version: ProtocolVersion, ID: r.ID, Code: safeCode(err, "site_routing_unavailable"), Status: c.Status()}
+		}
+		return Response{Version: ProtocolVersion, ID: r.ID, OK: true, Code: "ok", Status: c.Status(), SiteRouting: &state}
 	case "probe":
 		p, e := exvpn.DecodeProfile(bytes.NewReader(r.Profile))
 		if e != nil {
@@ -265,6 +283,9 @@ func (c *Controller) resolvePolicyLocked(p exvpn.Profile, paths []string, stored
 			return nil, Code("exclusions_unavailable")
 		}
 		paths = c.exclusions
+	}
+	if !c.siteRoutingKnown {
+		return nil, Code("site_routing_unavailable")
 	}
 	if err := validateTunnelProfile(p, paths); err != nil {
 		return nil, err
@@ -404,6 +425,12 @@ func (c *Controller) connectInModeAutomatic(p exvpn.Profile, paths []string, sto
 	var exclusions []string
 	var err error
 	if mode == ModeProxy {
+		if !c.siteRoutingKnown {
+			return Code("site_routing_unavailable")
+		}
+		if c.siteRouting.Policy.Active() {
+			return Code("site_routing_requires_vpn")
+		}
 		if c.startProxy == nil {
 			return Code("proxy_unavailable")
 		}
@@ -454,6 +481,7 @@ func (c *Controller) connectInModeAutomatic(p exvpn.Profile, paths []string, sto
 	ctx, cancel := context.WithCancel(context.Background())
 	if mode == ModeVPN {
 		ctx = context.WithValue(ctx, applicationRoutingContextKey{}, c.applicationRouting.clone())
+		ctx = context.WithValue(ctx, siteRoutingContextKey{}, c.siteRouting.Clone().Policy)
 	}
 	c.cancel = cancel
 	c.context = ctx

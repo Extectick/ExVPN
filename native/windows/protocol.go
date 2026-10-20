@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"io"
 	"regexp"
+	"strings"
 
 	exvpn "github.com/Extectick/ExVPN/native/core"
 )
@@ -29,6 +30,7 @@ type Request struct {
 	ApplicationRouting *ApplicationRoutingPolicy `json:"applicationRouting,omitempty"`
 	AutomaticProfiles  []json.RawMessage         `json:"automaticProfiles,omitempty"`
 	Enabled            *bool                     `json:"enabled,omitempty"`
+	SiteRouting        *exvpn.SiteRoutingState   `json:"siteRouting,omitempty"`
 }
 
 type Capabilities struct {
@@ -62,6 +64,7 @@ type Response struct {
 	Exclusions           []string                  `json:"exclusions,omitempty"`
 	ApplicationRouting   *ApplicationRoutingPolicy `json:"applicationRouting,omitempty"`
 	ConnectionProtection *ConnectionProtection     `json:"connectionProtection,omitempty"`
+	SiteRouting          *exvpn.SiteRoutingState   `json:"siteRouting,omitempty"`
 }
 type Traffic struct {
 	UploadBytes   int64 `json:"uploadBytes"`
@@ -115,12 +118,25 @@ func DecodeRequest(b []byte) (Request, error) {
 	}
 	d := json.NewDecoder(bytes.NewReader(b))
 	d.DisallowUnknownFields()
-	var r Request
-	if d.Decode(&r) != nil || r.Version != ProtocolVersion || !requestID.MatchString(r.ID) {
+	type requestFields Request
+	var wire struct {
+		requestFields
+		SiteRouting json.RawMessage `json:"siteRouting"`
+	}
+	if d.Decode(&wire) != nil {
+		return Request{}, Code("ipc_invalid_request")
+	}
+	r := Request(wire.requestFields)
+	if r.Version != ProtocolVersion || !requestID.MatchString(r.ID) {
 		return Request{}, Code("ipc_invalid_request")
 	}
 	var fields map[string]json.RawMessage
 	_ = json.Unmarshal(b, &fields)
+	for key := range fields {
+		if key != "siteRouting" && strings.EqualFold(key, "siteRouting") {
+			return Request{}, Code("site_routing_rejected")
+		}
+	}
 	_, hasMode := fields["mode"]
 	if _, present := fields["enabled"]; present && r.Command != "setConnectionProtection" {
 		return Request{}, Code("ipc_unexpected_payload")
@@ -134,6 +150,9 @@ func DecodeRequest(b []byte) (Request, error) {
 	if r.ApplicationRouting != nil && r.Command != "setApplicationRouting" {
 		return Request{}, Code("ipc_unexpected_payload")
 	}
+	if len(wire.SiteRouting) != 0 && r.Command != "set_site_routing" {
+		return Request{}, Code("ipc_unexpected_payload")
+	}
 	if _, present := fields["automaticProfiles"]; present {
 		if (r.Command != "connect" && r.Command != "reconnect") || len(r.AutomaticProfiles) == 0 || len(r.AutomaticProfiles) > 32 {
 			return Request{}, Code("automatic_group_rejected")
@@ -145,7 +164,7 @@ func DecodeRequest(b []byte) (Request, error) {
 		}
 	}
 	switch r.Command {
-	case "status", "stats", "disconnect", "getExclusions", "getApplicationRouting", "clearAutomaticSelection", "getConnectionProtection":
+	case "status", "stats", "disconnect", "getExclusions", "getApplicationRouting", "clearAutomaticSelection", "getConnectionProtection", "get_site_routing":
 		if len(r.Profile) != 0 || r.Exclusions != nil {
 			return Request{}, Code("ipc_unexpected_payload")
 		}
@@ -164,6 +183,15 @@ func DecodeRequest(b []byte) (Request, error) {
 		if len(r.Profile) != 0 || r.Exclusions != nil || r.ApplicationRouting == nil || r.ApplicationRouting.validate() != nil {
 			return Request{}, Code("application_routing_rejected")
 		}
+	case "set_site_routing":
+		if len(r.Profile) != 0 || r.Exclusions != nil || r.ApplicationRouting != nil {
+			return Request{}, Code("site_routing_rejected")
+		}
+		state, err := exvpn.DecodeSiteRoutingState(fields["siteRouting"])
+		if err != nil {
+			return Request{}, Code("site_routing_rejected")
+		}
+		r.SiteRouting = &state
 	case "connect", "reconnect", "validate", "probe":
 		if len(r.Profile) == 0 || len(r.Exclusions) > 128 {
 			return Request{}, Code("ipc_invalid_payload")

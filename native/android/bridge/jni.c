@@ -6,6 +6,7 @@
 
 extern char* ExVPNValidate(char*);
 extern char* ExVPNStart(char*, char*, int, int*, int, char*);
+extern char* ExVPNStartRouted(char*, char*, int, int*, int, char*, char*);
 extern void ExVPNStop(void);
 extern void ExVPNCancel(void);
 extern char* ExVPNHealth(void);
@@ -57,7 +58,7 @@ JNIEXPORT jstring JNICALL Java_ru_exvpn_exvpn_NativeCore_validate(JNIEnv* env,jo
  char* raw=profile_bytes(env,profile);if(!raw)return (*env)->NewStringUTF(env,"profile_invalid_bytes");
  char* result=ExVPNValidate(raw);free(raw);return result_string(env,result);
 }
-JNIEXPORT jstring JNICALL Java_ru_exvpn_exvpn_NativeCore_start(JNIEnv* env,jobject self,jobject owner,jint fd,jbyteArray profile,jstring endpoint,jintArray exclusions,jstring routingMode){
+static jstring start_native(JNIEnv* env,jobject owner,jint fd,jbyteArray profile,jstring endpoint,jintArray exclusions,jstring routingMode,char* sites){
  char* raw=profile_bytes(env,profile);if(!raw)return (*env)->NewStringUTF(env,"profile_invalid_bytes");
  pthread_mutex_lock(&refs);
  if(service){pthread_mutex_unlock(&refs);free(raw);return (*env)->NewStringUTF(env,"core_already_running");}
@@ -68,11 +69,20 @@ JNIEXPORT jstring JNICALL Java_ru_exvpn_exvpn_NativeCore_start(JNIEnv* env,jobje
  const char* ip=(*env)->GetStringUTFChars(env,endpoint,NULL);
  jint* uids=(*env)->GetIntArrayElements(env,exclusions,NULL);jsize count=(*env)->GetArrayLength(env,exclusions);
  const char* mode=(*env)->GetStringUTFChars(env,routingMode,NULL);
- char* result=ExVPNStart((char*)raw,(char*)ip,fd,(int*)uids,count,(char*)mode);
+ char* result=sites?ExVPNStartRouted((char*)raw,(char*)ip,fd,(int*)uids,count,(char*)mode,sites):ExVPNStart((char*)raw,(char*)ip,fd,(int*)uids,count,(char*)mode);
  (*env)->ReleaseStringUTFChars(env,routingMode,mode);
  (*env)->ReleaseIntArrayElements(env,exclusions,uids,JNI_ABORT);free(raw);(*env)->ReleaseStringUTFChars(env,endpoint,ip);
  if(result[0]){pthread_mutex_lock(&refs);(*env)->DeleteGlobalRef(env,service);service=NULL;pthread_mutex_unlock(&refs);}
  return result_string(env,result);
+}
+JNIEXPORT jstring JNICALL Java_ru_exvpn_exvpn_NativeCore_start(JNIEnv* env,jobject self,jobject owner,jint fd,jbyteArray profile,jstring endpoint,jintArray exclusions,jstring routingMode){
+ return start_native(env,owner,fd,profile,endpoint,exclusions,routingMode,NULL);
+}
+JNIEXPORT jint JNICALL Java_ru_exvpn_exvpn_NativeCore_siteRoutingSchema(JNIEnv* env,jobject self){ return 1; }
+JNIEXPORT jstring JNICALL Java_ru_exvpn_exvpn_NativeCore_startRouted(JNIEnv* env,jobject self,jobject owner,jint fd,jbyteArray profile,jstring endpoint,jintArray exclusions,jstring routingMode,jbyteArray siteRouting){
+ if(!siteRouting || (*env)->GetArrayLength(env,siteRouting)>524288)return (*env)->NewStringUTF(env,"site_routing_rejected");
+ char* sites=profile_bytes(env,siteRouting);if(!sites)return (*env)->NewStringUTF(env,"site_routing_rejected");
+ jstring result=start_native(env,owner,fd,profile,endpoint,exclusions,routingMode,sites);free(sites);return result;
 }
 JNIEXPORT void JNICALL Java_ru_exvpn_exvpn_NativeCore_stop(JNIEnv* env,jobject self){
  ExVPNStop();pthread_mutex_lock(&refs);if(service)(*env)->DeleteGlobalRef(env,service);service=NULL;pthread_mutex_unlock(&refs);

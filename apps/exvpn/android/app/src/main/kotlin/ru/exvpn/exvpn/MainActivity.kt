@@ -157,6 +157,26 @@ class MainActivity : FlutterActivity() {
                     knownApplicationIcons.addAll(VpnRuntime.applicationRouting.applications)
                     result.success(VpnRuntime.applicationRouting.wire())
                 }
+                "getSiteRouting" -> {
+                    require(call.arguments == null)
+                    if (!NativeCore.siteRoutingSupported()) {
+                        result.error("site_routing_unavailable", "Site routing unavailable", null); return@setMethodCallHandler
+                    }
+                    VpnRuntime.ensureSiteRouting(this)
+                    result.success(VpnRuntime.siteRouting.wire())
+                }
+                "setSiteRouting" -> {
+                    if (!NativeCore.siteRoutingSupported()) {
+                        result.error("site_routing_unavailable", "Site routing unavailable", null); return@setMethodCallHandler
+                    }
+                    if (VpnRuntime.service != null || consent.pending || VpnRuntime.pending != null || AndroidOtaRestart.pending) {
+                        result.error("site_routing_requires_disconnected", "Disconnect before changing site routing", null); return@setMethodCallHandler
+                    }
+                    val sites = try { SiteRoutingState.fromWire(call.arguments).also { SiteRoutingJson.encode(it) } }
+                        catch (_: Exception) { result.error("site_routing_rejected", "Site routing rejected", null); return@setMethodCallHandler }
+                    VpnRuntime.saveSiteRouting(this, sites)
+                    result.success(VpnRuntime.siteRouting.wire())
+                }
                 "coreVersion" -> result.success("26.10.10-exvpn.5")
                 "connect", "reconnect" -> {
                     if (AndroidOtaRestart.pending) { result.error("operation_in_progress", "Application restart pending", null); return@setMethodCallHandler }
@@ -172,6 +192,7 @@ class MainActivity : FlutterActivity() {
                     val code = NativeCore.validate(raw.toByteArray(Charsets.UTF_8))
                     if (code.isNotEmpty()) { result.error(code, "Profile rejected", null); return@setMethodCallHandler }
                     VpnRuntime.ensurePolicy(this)
+                    VpnRuntime.ensureSiteRouting(this)
                     val routing = VpnRuntime.applicationRouting
                     val primaryId = profile["id"] as? String ?: throw IllegalArgumentException()
                     val automaticInput = call.argument<List<Map<String, Any>>>("automaticProfiles")
@@ -194,7 +215,8 @@ class MainActivity : FlutterActivity() {
                         }
                     }
                     automaticSelectionCleared = false
-                    val request = ConnectRequest(raw, primaryId, routing.applications.toSet(), routing.mode, automatic)
+                    val request = ConnectRequest(raw, primaryId, routing.applications.toSet(), routing.mode, automatic,
+                        VpnRuntime.siteRouting.snapshot())
                     val policyRestricted = permissionSetup.policyRestricted()
                     if (policyRestricted != false) {
                         val error = if (policyRestricted == true) "vpn_permission_restricted" else "vpn_permission_unavailable"

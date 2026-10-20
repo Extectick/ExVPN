@@ -1,5 +1,15 @@
 # Зависимости и лицензии
 
+## Локальные пресеты сайтов, 2026-10-21
+
+Выбранные сервисные домены: `v2fly/domain-list-community`, MIT, commit
+`497bef95124ac98a70ed865bb8aaaa8e9a4ff66e`. Полный текст в
+`apps/exvpn/assets/licenses/DomainListCommunity.txt`, включён в pubspec,
+LicenseRegistry и release notices collector. Добавленных runtime-зависимостей
+нет. Telegram IPv4/IPv6 сети сверены с официальным `core.telegram.org/resources/cidr.txt`.
+RunetFreedom/itdog использованы для исследования, их DAT/конфигурации не поставляются.
+Ревизия, ограничения и источники: [SITE_ROUTING.md](SITE_ROUTING.md).
+
 Дата первичной проверки: **2026-10-16**. Это реестр решений и обязательств; строка «планируется» не означает, что компонент уже установлен или включён в бинарник.
 
 ## Основные компоненты

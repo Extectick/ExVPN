@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import 'package:flutter/material.dart';
 
+import 'site_routing_strings.dart';
+
 const appSupportedLocales = <Locale>[
   Locale('en'),
   Locale('ru'),
@@ -70,6 +72,7 @@ class AppStrings {
 const _languages = ['en', 'kk', 'de', 'fr', 'es', 'pt', 'tr', 'zh', 'ar'];
 
 final Map<String, List<String>> _catalog = {
+  ...siteRoutingTranslations,
   'Не поддерживается': [
     'Not supported',
     'Қолдау көрсетілмейді',

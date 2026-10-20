@@ -102,6 +102,7 @@ class ExVpnService : VpnService() {
                     resetAutomaticPolicy()
                 }
                 VpnRuntime.ensurePolicy(this)
+                VpnRuntime.ensureSiteRouting(this)
                 if (stopping || command != generation.get()) return@execute
                 activeRequestGeneration = command
                 if (!callbackRegistered) {
@@ -262,7 +263,9 @@ class ExVpnService : VpnService() {
             if (stopping || command != generation.get()) return
             if (endpoint == null) { blocked("endpoint_resolution_failed", retryable = true); return }
             ensureTunnel()
-            val code = NativeCore.start(this, tunnel!!.fd, current.profile.toByteArray(Charsets.UTF_8), endpoint, resolvedUIDs.toIntArray(), current.routingMode)
+            val code = NativeCore.startWithSiteRouting(this, tunnel!!.fd, current.profile.toByteArray(Charsets.UTF_8), endpoint,
+                resolvedUIDs.toIntArray(), current.routingMode,
+                SiteRoutingJson.encode(current.siteRouting).toString().toByteArray(Charsets.UTF_8))
             if (stopping || command != generation.get()) { NativeCore.stop(); return }
             if (code.isNotEmpty()) { blocked(code); return }
             checkHealth()
@@ -331,7 +334,9 @@ class ExVpnService : VpnService() {
                 InetSocketAddress(InetAddresses.parseNumericAddress(remoteIP), remotePort))
             val packages = packageManager.getPackagesForUid(uid)?.toSet() ?: emptySet()
             if (stopping || request !== current) -1 else ApplicationOwnerConfirmation.confirm(
-                uid, applicationInfo.uid, packages, current.routingMode, current.packages, resolvedUIDs)
+                uid, applicationInfo.uid, packages, current.routingMode, current.packages, resolvedUIDs,
+                current.siteRouting.policy.mode == "include" ||
+                    (current.siteRouting.policy.mode == "exclude" && current.siteRouting.policy.rules.isNotEmpty()))
         } catch (_: Exception) { -1 }
     }
 
