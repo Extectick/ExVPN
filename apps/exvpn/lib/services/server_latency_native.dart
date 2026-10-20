@@ -12,6 +12,7 @@ Future<ProbeResult> probeServerLatency(ConnectionProfile profile) async {
   const tcpTransports = {'tcp', 'raw', 'ws', 'grpc', 'xhttp'};
   if (profile.protocol == ProxyProtocol.hysteria2 ||
       profile.protocol == ProxyProtocol.wireguard ||
+      profile.protocol == ProxyProtocol.masque ||
       !tcpTransports.contains(profile.transport.type)) {
     return const ProbeResult(
       reachable: false,

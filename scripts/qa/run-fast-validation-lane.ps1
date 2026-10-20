@@ -153,6 +153,7 @@ switch ($Lane) {
         Invoke-ScriptCheck 'scripts/build/test-native-cache.ps1'
         Invoke-ScriptCheck 'scripts/ota/test-ui-patch.ps1'
         Invoke-ScriptCheck 'scripts/ota/test-independent-publication.ps1'
+        Invoke-ScriptCheck 'scripts/qa/android-protocol-matrix-tools-test.ps1'
         break
     }
 }

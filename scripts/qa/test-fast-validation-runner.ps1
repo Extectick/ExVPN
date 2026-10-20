@@ -49,12 +49,13 @@ $expectedSuites = @(
     'scripts/windows/test-prepare-nsis.ps1|7',
     'scripts/build/test-native-cache.ps1|7',
     'scripts/ota/test-ui-patch.ps1|7',
-    'scripts/ota/test-independent-publication.ps1|7'
+    'scripts/ota/test-independent-publication.ps1|7',
+    'scripts/qa/android-protocol-matrix-tools-test.ps1|7'
 )
 $actualSuites = @($dispatchSuites | ForEach-Object { $_.suite + '|' + $_.hostVersion })
 $ciSuites = @($dispatchSuites | Where-Object lane -CEQ 'ci')
 if ((($actualSuites | Sort-Object) -join ',') -cne (($expectedSuites | Sort-Object) -join ',') -or
-    $actualSuites.Count -ne 32 -or $ciSuites.Count -ne 1 -or $ciSuites[0].suite -cne 'scripts/ci/test-build-impact.ps1') {
+    $actualSuites.Count -ne 33 -or $ciSuites.Count -ne 1 -or $ciSuites[0].suite -cne 'scripts/ci/test-build-impact.ps1') {
     throw 'Scripts/CI partition lost, duplicated or substituted a required suite or PowerShell host.'
 }
 $fixture = Join-Path $repository ('artifacts/qa/runner-fixture-' + [Guid]::NewGuid().ToString('N'))

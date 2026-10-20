@@ -220,7 +220,7 @@ func (p Profile) Validate() error {
 	if !clean(p.ID, 128) || !clean(p.Name, 256) || !clean(p.Password, 4096) {
 		return bad("invalid_text")
 	}
-	if !oneOf(p.Protocol, "vless", "vmess", "trojan", "shadowsocks", "hysteria2", "socks5", "http", "wireguard") {
+	if !oneOf(p.Protocol, "vless", "vmess", "trojan", "shadowsocks", "hysteria2", "socks5", "http", "wireguard", "masque") {
 		return bad("unsupported_protocol")
 	}
 	if oneOf(p.Protocol, "vless", "vmess") && !uuidPattern.MatchString(p.UUID) {
@@ -252,7 +252,7 @@ func (p Profile) Validate() error {
 	if p.UUID != "" && !oneOf(p.Protocol, "vless", "vmess") {
 		return bad("unexpected_uuid")
 	}
-	if p.Password != "" && !oneOf(p.Protocol, "trojan", "shadowsocks", "hysteria2", "socks5", "http") {
+	if p.Password != "" && !oneOf(p.Protocol, "trojan", "shadowsocks", "hysteria2", "socks5", "http", "masque") {
 		return bad("unexpected_password")
 	}
 	if p.Cipher != "" && !oneOf(p.Protocol, "shadowsocks", "vmess") {
@@ -276,10 +276,13 @@ func (p Profile) Validate() error {
 	if p.Protocol == "vmess" && !oneOf(p.Cipher, "", "auto", "aes-128-gcm", "chacha20-poly1305") {
 		return bad("unsupported_cipher")
 	}
-	if !oneOf(p.Transport.Type, "tcp", "ws", "grpc", "xhttp", "hysteria") {
+	if !oneOf(p.Transport.Type, "tcp", "ws", "grpc", "xhttp", "hysteria", "masque") {
 		return bad("unsupported_transport")
 	}
 	if (p.Protocol == "hysteria2") != (p.Transport.Type == "hysteria") {
+		return bad("invalid_transport")
+	}
+	if (p.Protocol == "masque") != (p.Transport.Type == "masque") {
 		return bad("invalid_transport")
 	}
 	if p.Protocol == "hysteria2" && (!p.TLS.Enabled || p.TLS.Reality != nil) {

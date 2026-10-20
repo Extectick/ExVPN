@@ -61,6 +61,8 @@ func main() {
 	fixtureProcess := flag.Bool("fixture-process", false, "Internal isolated fixture child; never starts a client tunnel")
 	automaticFailover := flag.Bool("automatic-failover", false, "Exercise production automatic selection in disposable guest")
 	remoteRelay := flag.Bool("remote-relay", false, "Use private fixed remote profile through isolated TCP relays")
+	protocolProfile := flag.Bool("protocol-profile", false, "Exercise one validated profile from the fixed private guest input")
+	wireguardGateway := flag.Bool("wireguard-gateway", false, "Owned loopback WireGuard gateway for the disposable protocol test")
 	flag.Parse()
 	if !*confirm || flag.NArg() != 0 || !validRoutingMode(*routingMode) || validateGuest() != nil {
 		fmt.Println("disposable_system_guest_required")
@@ -86,7 +88,9 @@ func main() {
 	}
 	_ = os.WriteFile(filepath.Join(outputRoot, "guard-error.json"), []byte(`{"operation":"none"}`), 0600)
 	var runError error
-	if *automaticFailover {
+	if *protocolProfile || *wireguardGateway {
+		runError = runProtocolProfile(*interfaceIndex, *routingMode, *wireguardGateway)
+	} else if *automaticFailover {
 		runError = runAutomaticFailover(*interfaceIndex, *remoteRelay)
 	} else {
 		runError = run(*interfaceIndex, *routingMode)

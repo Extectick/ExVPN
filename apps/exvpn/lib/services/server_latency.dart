@@ -72,6 +72,7 @@ final class ServerLatencyController extends ChangeNotifier {
   static bool _supportsTcp(ConnectionProfile p) =>
       p.protocol != ProxyProtocol.hysteria2 &&
       p.protocol != ProxyProtocol.wireguard &&
+      p.protocol != ProxyProtocol.masque &&
       _tcpTransports.contains(p.transport.type);
   static _Endpoint _endpoint(ConnectionProfile p) =>
       (p.server.toLowerCase(), p.port, _supportsTcp(p));
@@ -180,6 +181,7 @@ final class ServerLatencyController extends ChangeNotifier {
     // healthy UDP-only endpoint as unreachable.
     if (profile.protocol == ProxyProtocol.hysteria2 ||
         profile.protocol == ProxyProtocol.wireguard ||
+        profile.protocol == ProxyProtocol.masque ||
         !_tcpTransports.contains(profile.transport.type)) {
       return const LatencySample(null, 'latency_transport_unsupported');
     }

@@ -4,6 +4,12 @@
 
 ## Основные компоненты
 
+Кандидат0.1.14+36, 2026-10-21: MASQUE и расширенные WireGuard imports используют
+только уже закреплённый Xray `v1.260327.1-exvpn.5`, его QUIC/WireGuard/gVisor
+зависимости и существующие Dart packages. Новых dependencies/pins/движков нет.
+QA-only WireGuard gateway имеет Apache-2.0 исходники и не поставляется в UI/службе.
+Notices и SBOM полной базы связываются с новыми байтами в обычном package audit.
+
 Независимая доставка 0.1.10+31 сохраняет прежние pinned Flutter/engine/updater,
 `cryptography`/`crypto` и Python cryptography 46.0.5. Новых зависимостей нет.
 Собственные адаптер, каталог и build scripts — Apache-2.0. Открытый updater

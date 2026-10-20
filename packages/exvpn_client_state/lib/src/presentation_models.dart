@@ -48,13 +48,15 @@ final class ServerEntry {
       ProxyProtocol.http =>
         profile.tls.enabled ? 'HTTPS CONNECT' : 'HTTP · без TLS',
       ProxyProtocol.wireguard => 'WireGuard',
+      ProxyProtocol.masque => 'MASQUE',
     };
     final labels = <String>[
       protocol,
       if ({ProxyProtocol.socks5, ProxyProtocol.http}.contains(profile.protocol))
         'TCP',
     ];
-    if (profile.transport.type != 'tcp') {
+    if (profile.transport.type != 'tcp' &&
+        profile.protocol != ProxyProtocol.masque) {
       labels.add(profile.transport.type.toUpperCase());
     }
     if (profile.tls.reality != null) {

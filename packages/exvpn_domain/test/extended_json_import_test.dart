@@ -46,6 +46,92 @@ void rejected(Map<String, dynamic> node) {
 
 void main() {
   test(
+    'modern REALITY password alias and neutral raw TCP exports preserve authentication',
+    () {
+      final key = base64Url.encode(List.filled(32, 1)).replaceAll('=', '');
+      final v = xray();
+      v['streamSettings'] = {
+        'network': 'raw',
+        'security': 'reality',
+        'realitySettings': {
+          'serverName': 'front.example',
+          'fingerprint': 'chrome',
+          'publicKey': key,
+          'shortId': 'abcd',
+        },
+      };
+      final original = parse(v).profiles.single;
+      v['streamSettings']['realitySettings'].remove('publicKey');
+      v['streamSettings']['realitySettings']['password'] = key;
+      v['streamSettings']['rawSettings'] = {
+        'header': {'type': 'none'},
+        'acceptProxyProtocol': false,
+      };
+      final converted = parse(v).profiles.single;
+      expect(converted.id, original.id);
+      expect(converted.tls.reality!.publicKey, key);
+      expect(converted.transport.type, 'tcp');
+      expect(converted.tls.enabled, isTrue);
+      v['streamSettings']['realitySettings']['publicKey'] = key;
+      expect(parse(v).profiles.single.id, original.id);
+      v['streamSettings']['realitySettings']['publicKey'] = base64Url
+          .encode(List.filled(32, 2))
+          .replaceAll('=', '');
+      rejected(v);
+    },
+  );
+  test(
+    'TCP aliases reject HTTP masks proxy headers extra fields and conflicting aliases',
+    () {
+      for (final tcpKey in ['tcpSettings', 'rawSettings']) {
+        final good = xray()
+          ..['streamSettings'][tcpKey] = {
+            'header': {'type': 'none'},
+          };
+        expect(parse(good).profiles.length, 1);
+        for (final value in <Object>[
+          {
+            'header': {'type': 'http'},
+          },
+          {
+            'header': {'type': 'none', 'request': <String, Object?>{}},
+          },
+          {'header': <String, Object?>{}},
+          {'acceptProxyProtocol': true},
+          {'acceptProxyProtocol': 'false'},
+          {'unknown': true},
+        ]) {
+          rejected(xray()..['streamSettings'][tcpKey] = value);
+        }
+        rejected(
+          xray()
+            ..['streamSettings'] = {
+              'network': 'ws',
+              'security': 'tls',
+              tcpKey: <String, Object?>{},
+            },
+        );
+      }
+      rejected(
+        xray()
+          ..['streamSettings']['tcpSettings'] = <String, Object?>{}
+          ..['streamSettings']['rawSettings'] = <String, Object?>{},
+      );
+      final malformed = xray();
+      malformed['streamSettings'] = {
+        'network': 'tcp',
+        'security': 'reality',
+        'realitySettings': {
+          'serverName': 'front.example',
+          'fingerprint': 'chrome',
+          'password': 32,
+          'shortId': 'abcd',
+        },
+      };
+      rejected(malformed);
+    },
+  );
+  test(
     'typed keepalive survives native projection and changes endpoint identity',
     () {
       final node = xray();

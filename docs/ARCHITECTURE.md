@@ -1,5 +1,29 @@
 # ExVPN — архитектура
 
+## Популярные форматы и MASQUE, кандидат 0.1.14+36
+
+WireGuard `wg://`/`wireguard://`, INI, Xray JSON и one-peer sing-box endpoints
+нормализуются в прежний `WireGuardOptions`. `reserved` допускает ровно три байта
+CSV/Base64; URI декодируется один раз, неизвестные/повторные query fields отвергаются.
+Подписка не создаёт интерфейсы, listeners, detour, прямые маршруты или OS hooks.
+Sing-box VMess/Trojan/Shadowsocks/gRPC используют прежний typed DTO. Псевдонимы
+REALITY password/publicKey и rawSettings/tcpSettings принимаются только без
+конфликтов; нейтральный TCP header none не включает HTTP-маскировку.
+
+MASQUE использует только существующие поля `username/password`, `transport.type`
+и TLS. Обязательны QUIC `masque`, обычный TLS с SNI, ALPN пустой/h3, bounded
+credentials без управляющих символов; username не содержит colon. Provider DNS,
+custom paths/headers/WARP, certificate files, insecure и произвольные socket options
+не проходят границу. DNS-серверы внутри MASQUE задаются локально. Snapshot v3
+сохраняет строковый protocol; новая ветка повторно использует строгий parser для
+проверки credentials/TLS. TCP ping для UDP-only MASQUE/WireGuard не выполняется.
+
+QA WireGuard gateway находится в `native/core/qa/`, не связан с продуктовой
+службой/UI. Он создаёт один случайный peer на loopback, может привязать forwarding
+к проверенному физическому интерфейсу гостя и закрыть/возобновить только свой
+core instance. Windows protocol QA сохраняет disposable-marker/LocalSystem/ACL
+проверки перед WFP/TUN; исключения и deny policy не ослабляются ради стенда.
+
 ## Android VPN permission setup, кандидат 0.1.13+35
 
 Recovery capability `getVpnPermissionSetup(null)` имеет закрытую schema1

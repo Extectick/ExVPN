@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/netip"
 	"strconv"
+	"strings"
 )
 
 // WireGuardOptions is one remote peer, never host networking policy.
@@ -26,7 +27,7 @@ func (p Profile) validateAdditional() error {
 	if (p.WireGuard != nil) != (p.Protocol == "wireguard") {
 		return bad
 	}
-	if p.Username != "" && !p.TCPOnly() {
+	if p.Username != "" && !p.TCPOnly() && p.Protocol != "masque" {
 		return bad
 	}
 	if (p.TCPOnly() || p.Protocol == "wireguard") && (p.Transport.Type != "tcp" || p.Transport.Path != "" || p.Transport.Host != "" || p.Transport.ServiceName != "" || p.Transport.Mode != "" || p.Transport.TCPKeepAliveIdle != nil || p.Transport.TCPKeepAliveInterval != nil || p.Transport.TCPSudoku != nil || p.Transport.WSEarlyDataHeaderName != "") {
@@ -34,6 +35,14 @@ func (p Profile) validateAdditional() error {
 	}
 	if p.TCPOnly() {
 		if p.Transport.Type != "tcp" || p.Transport.Path != "" || p.Transport.Host != "" || p.Transport.ServiceName != "" || p.Transport.Mode != "" || p.Transport.TCPKeepAliveIdle != nil || p.Transport.TCPKeepAliveInterval != nil || p.Transport.TCPSudoku != nil || p.TLS.Reality != nil || (p.Username == "") != (p.Password == "") || !clean(p.Username, 255) || len(p.Password) > 255 {
+			return bad
+		}
+	}
+	if p.Protocol == "masque" {
+		if p.Username == "" || !clean(p.Username, 255) || strings.Contains(p.Username, ":") || p.Password == "" || !clean(p.Password, 255) ||
+			p.Transport.Type != "masque" || p.Transport.Path != "" || p.Transport.Host != "" || p.Transport.ServiceName != "" || p.Transport.Mode != "" ||
+			p.Transport.TCPKeepAliveIdle != nil || p.Transport.TCPKeepAliveInterval != nil || p.Transport.TCPSudoku != nil || p.Transport.WSEarlyDataHeaderName != "" ||
+			!p.TLS.Enabled || p.TLS.ServerName == "" || p.TLS.Fingerprint != "" || p.TLS.Reality != nil || len(p.TLS.ALPN) > 1 || (len(p.TLS.ALPN) == 1 && p.TLS.ALPN[0] != "h3") {
 			return bad
 		}
 	}

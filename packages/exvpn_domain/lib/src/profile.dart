@@ -11,6 +11,7 @@ enum ProxyProtocol {
   socks5,
   http,
   wireguard,
+  masque,
 }
 
 /// One remote WireGuard peer. Never contains OS routes, DNS or hooks.

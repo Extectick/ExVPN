@@ -1,6 +1,151 @@
 part of 'subscription_parser.dart';
 
 extension _AdditionalProtocols on SubscriptionParser {
+  // v2rayNG/v2rayN share format. Secrets are decoded once, never logged.
+  ConnectionProfile _wireguardLink(Uri uri) {
+    if (!uri.hasPort ||
+        (uri.path.isNotEmpty && uri.path != '/') ||
+        uri.userInfo.isEmpty ||
+        uri.queryParametersAll.values.any((values) => values.length != 1)) {
+      throw const _Rejected(ImportIssueCode.invalidProfile);
+    }
+    final q = uri.queryParameters;
+    SubscriptionParser._checkKeys(q, {
+      'publickey',
+      'presharedkey',
+      'address',
+      'mtu',
+      'keepalive',
+      'reserved',
+    });
+    int number(String key, int fallback) {
+      if (!q.containsKey(key)) return fallback;
+      if (!RegExp(r'^(0|[1-9][0-9]*)$').hasMatch(q[key]!)) {
+        throw const _Rejected(ImportIssueCode.invalidProfile);
+      }
+      return int.parse(q[key]!);
+    }
+
+    return _make(
+      name: Uri.decodeComponent(uri.fragment),
+      protocol: ProxyProtocol.wireguard,
+      server: uri.host,
+      port: uri.port,
+      transport: const Transport(),
+      tls: TlsOptions(enabled: false),
+      wireguard: WireGuardOptions(
+        privateKey: Uri.decodeComponent(uri.userInfo),
+        publicKey: SubscriptionParser._string(q['publickey']),
+        preSharedKey: SubscriptionParser._optional(q['presharedkey']),
+        addresses: SubscriptionParser._string(
+          q['address'],
+        ).split(',').map((value) => value.trim()).toList(),
+        mtu: number('mtu', 1420),
+        keepAlive: number('keepalive', 0),
+        reserved: q.containsKey('reserved')
+            ? _wireguardReserved(q['reserved'])
+            : [],
+      ),
+    );
+  }
+
+  // Current sing-box endpoints are distinct from legacy outbounds. Only a
+  // remote one-peer userspace profile is translated; no interface is created.
+  Map<String, Object?> _wireguardEndpoint(Map<String, Object?> node) {
+    if (node['type'] != 'wireguard') {
+      throw const _Rejected(ImportIssueCode.unsupportedProtocol);
+    }
+    SubscriptionParser._checkKeys(node, {
+      'type',
+      'tag',
+      'system',
+      'name',
+      'mtu',
+      'address',
+      'private_key',
+      'listen_port',
+      'peers',
+      'workers',
+      'on_demand',
+    });
+    if ((node.containsKey('system') && node['system'] != false) ||
+        (node.containsKey('name') && node['name'] != '') ||
+        (node.containsKey('listen_port') &&
+            (node['listen_port'] is! int || node['listen_port'] != 0)) ||
+        (node.containsKey('workers') &&
+            (node['workers'] is! int || node['workers'] != 0)) ||
+        (node.containsKey('on_demand') && node['on_demand'] != false)) {
+      throw const _Rejected(ImportIssueCode.unsupportedFeature);
+    }
+    final rawPeers = node['peers'];
+    final peers = rawPeers is Map ? [rawPeers] : rawPeers;
+    if (peers is! List || peers.length != 1) {
+      throw const _Rejected(ImportIssueCode.unsupportedFeature);
+    }
+    final peer = SubscriptionParser._map(peers.single);
+    SubscriptionParser._checkKeys(peer, {
+      'address',
+      'port',
+      'public_key',
+      'pre_shared_key',
+      'allowed_ips',
+      'persistent_keepalive_interval',
+      'reserved',
+    });
+    if (!peer.containsKey('allowed_ips')) {
+      throw const _Rejected(ImportIssueCode.invalidProfile);
+    }
+    if (peer['port'] is! int ||
+        (node.containsKey('mtu') && node['mtu'] is! int) ||
+        (peer.containsKey('persistent_keepalive_interval') &&
+            peer['persistent_keepalive_interval'] is! int)) {
+      throw const _Rejected(ImportIssueCode.invalidProfile);
+    }
+    final addresses = node['address'];
+    return {
+      if (node.containsKey('tag')) 'tag': node['tag'],
+      'protocol': 'wireguard',
+      'settings': {
+        'secretKey': node['private_key'],
+        'address': addresses is String ? [addresses] : addresses,
+        'mtu': node['mtu'] ?? 1408,
+        if (peer.containsKey('reserved'))
+          'reserved': _wireguardReserved(peer['reserved']),
+        'peers': [
+          {
+            'endpoint': _endpoint(
+              SubscriptionParser._string(peer['address']),
+              SubscriptionParser._integer(peer['port']),
+            ),
+            'publicKey': peer['public_key'],
+            if (peer.containsKey('pre_shared_key'))
+              'preSharedKey': peer['pre_shared_key'],
+            'allowedIPs': peer['allowed_ips'],
+            if (peer.containsKey('persistent_keepalive_interval'))
+              'keepAlive': peer['persistent_keepalive_interval'],
+          },
+        ],
+      },
+    };
+  }
+
+  List<int> _wireguardReserved(Object? value) {
+    if (value is List && value.every((item) => item is int)) {
+      return value.cast<int>();
+    }
+    if (value is String) {
+      if (RegExp(r'^[0-9]+,[0-9]+,[0-9]+$').hasMatch(value)) {
+        return value.split(',').map(int.parse).toList();
+      }
+      // The base64 form is used by clients serializing three reserved bytes.
+      final decoded = base64.decode(value);
+      if (decoded.length == 3 && base64.encode(decoded) == value) {
+        return decoded;
+      }
+    }
+    throw const _Rejected(ImportIssueCode.invalidProfile);
+  }
+
   ImportResult _wireguardConfig(String text) {
     var section = '';
     final interface = <String, String>{};
@@ -124,6 +269,7 @@ extension _AdditionalProtocols on SubscriptionParser {
       'streamSettings',
     });
     if (node['protocol'] == 'wireguard') return _wireguardOutbound(node);
+    if (node['protocol'] == 'masque') return _masqueOutbound(node);
     final settings = SubscriptionParser._map(node['settings']);
     SubscriptionParser._checkKeys(settings, {'servers'});
     final servers = settings['servers'];
@@ -192,6 +338,50 @@ extension _AdditionalProtocols on SubscriptionParser {
         serverName: SubscriptionParser._optional(tls['serverName']),
         fingerprint: SubscriptionParser._optional(tls['fingerprint']),
         alpn: alpn == null ? [] : (alpn as List).cast<String>(),
+      ),
+    );
+  }
+
+  /// Only the pinned Xray MASQUE CONNECT-IP default transport is projected.
+  /// Provider DNS, custom paths/headers and local QUIC listeners are not policy.
+  ConnectionProfile _masqueOutbound(Map<String, Object?> node) {
+    final settings = SubscriptionParser._map(node['settings']);
+    SubscriptionParser._checkKeys(settings, {'address', 'port'});
+    final stream = SubscriptionParser._map(node['streamSettings']);
+    SubscriptionParser._checkKeys(stream, {
+      'network',
+      'security',
+      'tlsSettings',
+      'masqueSettings',
+    });
+    if (stream['network'] != 'masque' || stream['security'] != 'tls') {
+      throw const _Rejected(ImportIssueCode.invalidProfile);
+    }
+    final auth = SubscriptionParser._map(stream['masqueSettings']);
+    SubscriptionParser._checkKeys(auth, {'user', 'pass'});
+    final tls = SubscriptionParser._map(stream['tlsSettings']);
+    SubscriptionParser._checkKeys(tls, {'serverName', 'alpn', 'allowInsecure'});
+    if (tls.containsKey('allowInsecure') && tls['allowInsecure'] != false) {
+      throw const _Rejected(ImportIssueCode.invalidProfile);
+    }
+    final alpn = tls['alpn'] ?? <String>[];
+    if (alpn is! List ||
+        alpn.any((value) => value is! String) ||
+        settings['port'] is! int) {
+      throw const _Rejected(ImportIssueCode.invalidProfile);
+    }
+    return _make(
+      name: SubscriptionParser._string(node['tag'] ?? ''),
+      protocol: ProxyProtocol.masque,
+      server: SubscriptionParser._string(settings['address']),
+      port: SubscriptionParser._integer(settings['port']),
+      username: SubscriptionParser._string(auth['user']),
+      password: SubscriptionParser._string(auth['pass']),
+      transport: const Transport(type: 'masque'),
+      tls: TlsOptions(
+        enabled: true,
+        serverName: SubscriptionParser._string(tls['serverName']),
+        alpn: alpn.cast<String>(),
       ),
     );
   }
@@ -329,11 +519,10 @@ extension _AdditionalProtocols on SubscriptionParser {
       throw const _Rejected(ImportIssueCode.invalidProfile);
     }
     final addresses = s['address'];
-    final reserved = s['reserved'] ?? <Object>[];
-    if (addresses is! List ||
-        addresses.any((x) => x is! String) ||
-        reserved is! List ||
-        reserved.any((x) => x is! int)) {
+    final reserved = s.containsKey('reserved')
+        ? _wireguardReserved(s['reserved'])
+        : <int>[];
+    if (addresses is! List || addresses.any((x) => x is! String)) {
       throw const _Rejected(ImportIssueCode.invalidProfile);
     }
     return _make(
@@ -350,7 +539,7 @@ extension _AdditionalProtocols on SubscriptionParser {
         addresses: addresses.cast<String>(),
         mtu: SubscriptionParser._integer(s['mtu'] ?? 1420),
         keepAlive: SubscriptionParser._integer(peer['keepAlive'] ?? 0),
-        reserved: reserved.cast<int>(),
+        reserved: reserved,
       ),
     );
   }
@@ -369,8 +558,29 @@ void _validateAdditional(
 ) {
   final proxy =
       protocol == ProxyProtocol.socks5 || protocol == ProxyProtocol.http;
-  if ((username != null && !proxy) ||
+  final masque = protocol == ProxyProtocol.masque;
+  if ((username != null && !proxy && !masque) ||
       (wg != null) != (protocol == ProxyProtocol.wireguard)) {
+    throw const _Rejected(ImportIssueCode.invalidProfile);
+  }
+  if (masque &&
+      (t.type != 'masque' ||
+          t.toJson().length != 1 ||
+          !tls.enabled ||
+          tls.serverName == null ||
+          tls.serverName!.isEmpty ||
+          !SubscriptionParser._validHost(tls.serverName!) ||
+          tls.fingerprint != null ||
+          tls.reality != null ||
+          !(tls.alpn.isEmpty ||
+              (tls.alpn.length == 1 && tls.alpn.single == 'h3')) ||
+          username == null ||
+          username.isEmpty ||
+          username.contains(':') ||
+          !SubscriptionParser._clean(username, 255) ||
+          password == null ||
+          password.isEmpty ||
+          !SubscriptionParser._clean(password, 255))) {
     throw const _Rejected(ImportIssueCode.invalidProfile);
   }
   if (proxy &&

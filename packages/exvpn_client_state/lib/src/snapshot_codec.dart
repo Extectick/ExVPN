@@ -129,7 +129,11 @@ ConnectionProfile _profile(Object? value) {
   }
   if ((wireguard != null) != (protocol == ProxyProtocol.wireguard) ||
       (p['username'] != null &&
-          !{ProxyProtocol.socks5, ProxyProtocol.http}.contains(protocol))) {
+          !{
+            ProxyProtocol.socks5,
+            ProxyProtocol.http,
+            ProxyProtocol.masque,
+          }.contains(protocol))) {
     _invalidSnapshot();
   }
   final t = _object(p['transport'], {
@@ -152,7 +156,8 @@ ConnectionProfile _profile(Object? value) {
           (earlyDataHeader != 'Sec-WebSocket-Protocol' || type != 'ws'))) {
     _invalidSnapshot();
   }
-  if (!{'tcp', 'ws', 'grpc', 'xhttp', 'hysteria'}.contains(type)) {
+  if (!{'tcp', 'ws', 'grpc', 'xhttp', 'hysteria', 'masque'}.contains(type) ||
+      (protocol == ProxyProtocol.masque) != (type == 'masque')) {
     _invalidSnapshot();
   }
   if ((p.containsKey('encryption') && p['encryption'] == null) ||
@@ -184,6 +189,46 @@ ConnectionProfile _profile(Object? value) {
     ProxyProtocol.socks5,
     ProxyProtocol.http,
   }.contains(protocol);
+  if (protocol == ProxyProtocol.masque) {
+    if (t.length != 1 ||
+        tls['enabled'] != true ||
+        [
+          'uuid',
+          'cipher',
+          'flow',
+          'encryption',
+          'packetEncoding',
+        ].any(p.containsKey)) {
+      _invalidSnapshot();
+    }
+    // Reuse the same bounded credential/TLS/SNI validation as untrusted imports.
+    // This has no network or persistence side effects and never exports input.
+    final validated = const SubscriptionParser().parse(
+      jsonEncode({
+        'outbounds': [
+          {
+            'protocol': 'masque',
+            'settings': {'address': p['server'], 'port': p['port']},
+            'streamSettings': {
+              'network': 'masque',
+              'security': 'tls',
+              'masqueSettings': {'user': p['username'], 'pass': p['password']},
+              'tlsSettings': {
+                'serverName': tls['serverName'],
+                if (tls.containsKey('alpn')) 'alpn': tls['alpn'],
+                if (tls.containsKey('fingerprint'))
+                  'fingerprint': tls['fingerprint'],
+              },
+              if (tls.containsKey('reality')) 'realitySettings': tls['reality'],
+            },
+          },
+        ],
+      }),
+    );
+    if (validated.profiles.length != 1 || validated.issues.isNotEmpty) {
+      _invalidSnapshot();
+    }
+  }
   if ((tcpProxy || protocol == ProxyProtocol.wireguard) &&
       (type != 'tcp' ||
           t.length != 1 ||

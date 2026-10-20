@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "version": "0.1.14+36",
+  "uiRevision": 10,
+  "source": "working tree; commit pending",
+  "full": {
+    "stateTests": 92,
+    "status": "passed",
+    "durationSeconds": 117.94,
+    "domainTests": 225,
+    "lanes": 12,
+    "report": "fast-validation-v0.1.14.json",
+    "appTests": 482,
+    "sourceUnchanged": true
+  },
+  "imports": {
+    "singboxWireguardEndpoint": true,
+    "realityPasswordAlias": true,
+    "wireguardReservedThreeBytes": true,
+    "wireguardUri": true,
+    "wireguardIni": true,
+    "masqueXrayJson": true,
+    "providerLocalPolicyRejected": true,
+    "singboxVmessTrojanShadowsocksGrpc": true,
+    "neutralRawTcpAliases": true
+  },
+  "wireguardCore": {
+    "focusedSeconds": 8.186,
+    "serverDownBlocked": true,
+    "repeatedCount": 3,
+    "serverUpRecovered": true,
+    "repeatedSeconds": 24.4,
+    "udpEcho": true,
+    "wrongKeysBlocked": true,
+    "dns": true,
+    "runtimeGenerations": 3,
+    "idempotentClose": true,
+    "verifiedHttpsIPv4IPv6": true
+  },
+  "masqueCore": {
+    "dnsA_AAAA": true,
+    "quicVerifiedTls": true,
+    "repeatedCount": 3,
+    "newSessionRecovered": true,
+    "repeatedSeconds": 6.4,
+    "udpEcho": true,
+    "runtimeGenerations": 3,
+    "wrongCredentialsSniCaBlocked": true,
+    "serverDownBlocked": true,
+    "passedTestEvents": 78,
+    "insecure": false,
+    "verifiedHttpsIPv4IPv6": true
+  },
+  "snapshot": {
+    "masqueAuthTlsValidationReused": true,
+    "schemaVersion": 3,
+    "tamperingRejected": true,
+    "roundtripPassed": true
+  },
+  "upstreamEngine": "v1.260327.1-exvpn.5",
+  "dependenciesChanged": false,
+  "limitations": [
+    "Loopback protocol tests are not platform TUN or physical acceptance",
+    "Live test subscription returned two dummy invalid profiles; other stored URL timed out",
+    "TUIC/OpenVPN not part of pinned engine or this change",
+    "MASQUE custom WARP/headers/path/H2 not supported"
+  ]
+}

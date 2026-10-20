@@ -184,6 +184,10 @@ func outbound(p Profile) object {
 		stream["xhttpSettings"] = object{"path": p.Transport.Path, "host": p.Transport.Host, "mode": mode}
 	case "hysteria":
 		stream["hysteriaSettings"] = object{"version": 2, "auth": p.Password}
+	case "masque":
+		// Authentication uses the pinned CONNECT-IP transport's Basic header.
+		// Path, remote resolver policy, WARP, headers and socket options are local.
+		stream["masqueSettings"] = object{"user": p.Username, "pass": p.Password}
 	}
 	var settings object
 	if s := p.Transport.TCPSudoku; s != nil {
@@ -210,6 +214,8 @@ func outbound(p Profile) object {
 	case "hysteria2":
 		protocol = "hysteria"
 		settings = object{"version": 2, "address": p.Server, "port": p.Port}
+	case "masque":
+		settings = object{"address": p.Server, "port": p.Port, "remoteDNS": []string{"1.1.1.1", "1.0.0.1"}}
 	case "socks5", "http", "wireguard":
 		protocol, settings = additionalOutbound(p)
 	}

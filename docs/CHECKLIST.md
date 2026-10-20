@@ -4,6 +4,31 @@
 
 `[ ]` — работа не завершена или не подтверждена; `[x]` — критерий проверен. Стабильный ID не переиспользуется. У закрытого пункта указываются дата, проверка и commit/PR. Пока изменения не закоммичены, используется явная пометка «рабочее дерево; commit ожидается»; после публикации её заменяют ссылкой. Ссылка на задачу Linear/GitHub не является доказательством проверки.
 
+## Протоколы и WireGuard — кандидат 0.1.14+36, 2026-10-21
+
+- [ ] **EXVPN-E3-014** — Расширить популярные безопасные форматы импорта:
+  WireGuard URI/INI/current sing-box endpoints, VMess/Trojan/Shadowsocks/gRPC,
+  нейтральные REALITY/TCP aliases. Критерий: import/snapshot/native parity,
+  отрицательные типы/credentials/policy, реальный трафик. Рабочее дерево;
+  commit ожидается. Full12/12 PASS за117,94с, app482/domain225/state92, source
+  unchanged; scoped analyze clean. Platform runtime ещё не завершён.
+- [ ] **EXVPN-E3-015** — Добавить MASQUE закреплённого Xray: QUIC/TLS, обязательные
+  SNI/credentials, фиксированная локальная DNS-политика. Критерий: import/native
+  schema и verified TLS/IPv4/IPv6/DNS, неверная auth/CA/SNI блокирует трафик,
+  отсутствие direct fallback, стабильный Close/recreate. Не считать feature
+  принятой по одному Config OK. Рабочее дерево; commit ожидается.
+- [ ] **EXVPN-E1-013** — Проверить WireGuard через системный TUN Android/Windows:
+  независимый процесс, HTTPS IPv4/IPv6/DNS, отказ сервера с сохранённой защитой,
+  восстановление, несколько циклов и корректный cleanup. Userspace core fixtures
+  отдельно подтверждают IPv4/IPv6 HTTPS, UDP/DNS, неверные ключи и down/up;
+  они не заменяют platform leak/physical acceptance. Рабочее дерево; commit ожидается.
+
+Общий результат: [Full](evidence/fast-validation-v0.1.14.json),
+[протокольные проверки исходников](evidence/protocols36-source.json). В первом
+Full11 наборов прошли, QA runner нашёл устаревший ожидаемый счётчик suites;
+после исправления выполнен один итоговый неизменный Full12/12. Это не ошибка
+соединения и не новая приёмка физического устройства или MASQUE TUN.
+
 ## Публикация 0.1.13+35 — 2026-10-20
 
 - [x] Preview Android/Windows из `f243e92` опубликован без пересборки принятого
