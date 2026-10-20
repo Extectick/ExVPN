@@ -1,5 +1,24 @@
 # ExVPN — архитектура
 
+## Android VPN permission setup, кандидат 0.1.13+35
+
+Read-only optional capability `getVpnPermissionSetup(null)` имеет закрытую schema1
+и публичную проверку `DISALLOW_CONFIG_VPN`. Unknown policy/DTO не даёт grant.
+Явный Connect сохраняет `VpnService.prepare()` и системный intent; служба не
+запускается вместо пользовательского согласия. POST_NOTIFICATIONS следует после
+grant, отказ в нём не блокирует VPN. Recovery UI ждёт resumed и сохраняет только
+presentation intent, привязанный к request/profile/selection revision. Settings
+return/закрытие/смена профиля не запускают VPN. Fixed Settings actions открывают
+только VPN или карточку собственного пакета. Manufacturer hint не читает другой
+Always-on пакет, не отменяет чужие ограничения и не меняет TUN/DNS/kill switch.
+[Подробности и официальные источники](ANDROID_VPN_PERMISSION_SETUP.md).
+
+Первое initialize/resume владельца обновлений всё равно сравнивает full offer,
+если общий Dart owner раньше прочёл staged patch. Последующие prepared/fullReady
+и failed-handoff guards не повторяют сеть или handoff; проверка не отменяет уже
+принятый installer. Регрессии первого resume и отсутствия повторного handoff
+включены в принятый Full кандидата35.
+
 ## Lifecycle обновлений и Android background download, 0.1.12+34
 
 Resume/focus и Windows hidden/minimized→shown передают событие одному

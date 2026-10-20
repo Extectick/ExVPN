@@ -4,6 +4,7 @@ import 'package:exvpn_domain/exvpn_domain.dart';
 import 'package:flutter/foundation.dart';
 
 import 'native_vpn_bridge.dart';
+import 'vpn_permission_setup.dart';
 
 /// Native status is authoritative. Command acknowledgement never means connected.
 final class VpnController extends ChangeNotifier {
@@ -355,6 +356,64 @@ final class VpnController extends ChangeNotifier {
       _dataUpdatePending ||
       _applicationRestartPending;
   String? lastErrorCode;
+  bool get supportsPermissionSetup =>
+      !kIsWeb &&
+      defaultTargetPlatform == TargetPlatform.android &&
+      bridge is VpnPermissionSetupBridge;
+
+  Future<VpnPermissionSetup> getVpnPermissionSetup() async {
+    final capability = bridge;
+    if (!supportsPermissionSetup || capability is! VpnPermissionSetupBridge) {
+      return const VpnPermissionSetup.unavailable();
+    }
+    try {
+      final setup = await (capability as VpnPermissionSetupBridge)
+          .getVpnPermissionSetup();
+      // A confirmed device restriction must never be turned into a retry loop
+      // by an unavailable or stale optional status read.
+      if (lastErrorCode == 'vpn_permission_restricted' &&
+          setup.vpn != VpnPermissionState.granted) {
+        return VpnPermissionSetup(
+          vpn: VpnPermissionState.restricted,
+          notifications: setup.notifications,
+          vendor: setup.vendor,
+        );
+      }
+      return setup;
+    } catch (_) {
+      return VpnPermissionSetup(
+        vpn: lastErrorCode == 'vpn_permission_restricted'
+            ? VpnPermissionState.restricted
+            : VpnPermissionState.unavailable,
+        notifications: NotificationPermissionState.required,
+        vendor: AndroidVendor.android,
+      );
+    }
+  }
+
+  Future<bool> openVpnPermissionSettings() async {
+    try {
+      await bridge.openSystemProtectionSettings();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> openAppPermissionSettings() async {
+    final capability = bridge;
+    if (!supportsPermissionSetup || capability is! VpnPermissionSetupBridge) {
+      return false;
+    }
+    try {
+      await (capability as VpnPermissionSetupBridge)
+          .openAppPermissionSettings();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   String? core;
   ApplicationRoutingPolicy _applicationRouting = ApplicationRoutingPolicy(
     mode: ApplicationRoutingMode.disabled,
@@ -977,9 +1036,11 @@ String vpnErrorText(String? code) => switch (code) {
   'native_storage_unavailable' => 'Не удалось прочитать или сохранить защищённые настройки VPN. Соединение не восстановлено автоматически.',
   'exclusions_unavailable' => 'Не удалось прочитать сохранённые исключения. Перезапустите службу или явно сбросьте список в настройках исключений.',
   'system_testing_required' => 'Эта сборка требует проверки VPN в Windows. Системное подключение ещё не разрешено установщиком.',
-  'permission_denied' => 'Разрешение VPN не предоставлено. Попробуйте ещё раз.',
+  'permission_denied' =>
+    'Для подключения разрешите ExVPN создавать VPN-подключение.',
   'vpn_permission_unavailable' =>
-    'Не удалось открыть запрос VPN. Откройте приложение и попробуйте ещё раз.',
+    'Android не открыл запрос VPN. Проверьте настройки VPN.',
+  'vpn_permission_restricted' => 'VPN запрещён настройками устройства. Проверьте ограничения или обратитесь к администратору.',
   'permission_cancelled' => 'Запрос подключения отменён.',
   'native_core_unavailable' ||
   'native_unavailable' => 'VPN-модуль недоступен в этой сборке.',

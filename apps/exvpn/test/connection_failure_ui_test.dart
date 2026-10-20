@@ -216,7 +216,10 @@ void main() {
       );
       expect(
         vpnErrorText('vpn_permission_unavailable'),
-        contains('Не удалось открыть запрос VPN'),
+        allOf(
+          contains('Android не открыл запрос VPN'),
+          contains('настройки VPN'),
+        ),
       );
     },
   );

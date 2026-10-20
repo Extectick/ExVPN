@@ -132,6 +132,27 @@ void main() {
         expect(full.handoffs, 0);
         expect(patch.downloads, 0);
         expect(updates.phase, AppUpdateStatePhase.restartReady);
+        await updates.onResume();
+        await updates.check();
+        expect(full.checks, 1);
+        expect(full.handoffs, 0);
+      },
+    );
+
+    test(
+      'first resume arbitrates a staged patch against full release once',
+      () async {
+        patch.saved = const DartPatchSnapshot(available: true, next: 2);
+        await dart.initialize();
+        expect(updates.phase, AppUpdateStatePhase.restartReady);
+        await updates.onResume();
+        expect(updates.phase, AppUpdateStatePhase.available);
+        expect(updates.kind, AppUpdateKind.full);
+        expect(full.checks, 1);
+        expect(patch.checks, 0);
+        expect(full.restarts, 0);
+        await updates.onResume();
+        expect(full.checks, 1);
       },
     );
 

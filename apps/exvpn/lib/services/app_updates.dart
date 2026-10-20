@@ -45,6 +45,7 @@ class AppUpdatesController extends ChangeNotifier {
   bool _disposed = false;
   bool _busy = false;
   bool _initialized = false;
+  bool _fullCheckPerformed = false;
   bool _fullReady = false;
   bool _handoffAccepted = false;
   bool _patchAutoRestartPending = false;
@@ -88,8 +89,8 @@ class AppUpdatesController extends ChangeNotifier {
       return;
     }
     _resumePending = false;
-    if (_prepared) return onRestartOpportunity();
     if (!_initialized) return initialize();
+    if (_prepared) return onRestartOpportunity();
     final last = _lastCheck;
     final elapsed = last == null ? null : _now().difference(last);
     if (elapsed != null &&
@@ -125,7 +126,7 @@ class AppUpdatesController extends ChangeNotifier {
         _retry == _Retry.restart) {
       return;
     }
-    if (_prepared) {
+    if (_prepared && (_fullReady || _fullCheckPerformed || !_full.supported)) {
       _showPrepared();
       return;
     }
@@ -135,6 +136,10 @@ class AppUpdatesController extends ChangeNotifier {
     _set(const AppUpdateState(phase: AppUpdateStatePhase.checking));
     String? fullFailure;
     if (_full.supported) {
+      // A shared Dart owner may already have read a staged patch before our
+      // first check. Still arbitrate a newer full release once; subsequent
+      // prepared resumes retain their existing no-network/no-handoff gate.
+      _fullCheckPerformed = true;
       try {
         final full = _full;
         if (full is FullUpdatesResumeBackend) {

@@ -4,9 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.VpnService
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -41,8 +38,9 @@ class MainActivity : FlutterActivity() {
     private var activityResumed = false
     private var notificationPermissionPending = false
     private var automaticSelectionCleared = false
+    private val permissionSetup by lazy { AndroidVpnPermissionSetup(this) }
     private val consent = VpnConsentCoordinator<ConnectRequest, MethodChannel.Result, Intent>(
-        prepare = { VpnService.prepare(this) },
+        prepare = { permissionSetup.prepareVpn() },
         nextToken = {
             permissionTokens.incrementAndGet().also { check(it in (VPN_PERMISSION_BASE + 1)..65535) }
         },
@@ -103,6 +101,23 @@ class MainActivity : FlutterActivity() {
         MethodChannel(messenger, "exvpn/vpn").setMethodCallHandler { call, result ->
             try { when (call.method) {
                 "getStatus" -> result.success(VpnRuntime.status())
+                "getVpnPermissionSetup" -> {
+                    permissionSetup.validateRead(call.arguments)
+                    result.success(permissionSetup.wire())
+                }
+                "openAppPermissionSettings" -> {
+                    permissionSetup.validateRead(call.arguments)
+                    if (!permissionForeground()) {
+                        result.error("vpn_permission_unavailable", "Application settings unavailable", null)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        permissionSetup.openAppSettings()
+                        result.success(null)
+                    } catch (_: Exception) {
+                        result.error("vpn_permission_unavailable", "Application settings unavailable", null)
+                    }
+                }
                 "getConnectionProtection" -> {
                     AndroidConnectionProtection.validateRead(call.arguments)
                     result.success(connectionProtection().wire())
@@ -163,6 +178,15 @@ class MainActivity : FlutterActivity() {
                     }
                     automaticSelectionCleared = false
                     val request = ConnectRequest(raw, primaryId, routing.applications.toSet(), routing.mode, automatic)
+                    val policyRestricted = permissionSetup.policyRestricted()
+                    if (policyRestricted != false) {
+                        val error = if (policyRestricted == true) "vpn_permission_restricted" else "vpn_permission_unavailable"
+                        val failed = VpnConsentFailureState.resolve(request.profileId,
+                            servicePresent = VpnRuntime.service != null, requestPending = VpnRuntime.pending != null)
+                        VpnRuntime.publish(failed.phase, failed.profileId, error = error)
+                        result.error(error, "VPN permission is unavailable", null)
+                        return@setMethodCallHandler
+                    }
                     // Re-check for every user connect/reconnect. Another VPN or
                     // system policy may have revoked this app's earlier grant.
                     consent.connect(request, result)
@@ -260,7 +284,7 @@ class MainActivity : FlutterActivity() {
         // Notifications explain the active connection; denying this optional
         // Android 13+ permission must not cancel or impersonate VPN consent.
         notificationPermissionPending = true
-        schedulePermissionCheck()
+        schedulePermissionAdvance()
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (qrPicker?.onActivityResult(requestCode, resultCode, data) == true) return
@@ -300,6 +324,7 @@ class MainActivity : FlutterActivity() {
     private fun advancePermissionFlow() {
         if (!permissionForeground()) return
         consent.onFocusedForeground()
+        requestNotificationsIfNeeded()
         schedulePermissionCheck()
     }
     private fun schedulePermissionCheck() {
@@ -313,7 +338,7 @@ class MainActivity : FlutterActivity() {
     private fun requestNotificationsIfNeeded() {
         if (!notificationPermissionPending || consent.pending || !activityResumed || !hasWindowFocus()) return
         notificationPermissionPending = false
-        if (Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
+        if (permissionSetup.notificationsGranted()) return
         val preferences = getSharedPreferences("notification_permission", MODE_PRIVATE)
         if (preferences.getBoolean("requested", false)) return
         try {

@@ -2,6 +2,8 @@ import 'package:exvpn_domain/exvpn_domain.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'vpn_permission_setup.dart';
+
 /// Only stable diagnostic codes cross into UI. Platform messages can contain
 /// private endpoint/configuration data and are deliberately discarded.
 final class VpnFailure implements Exception {
@@ -28,6 +30,7 @@ const _codes = {
   'guard_recovered',
   'vpn_permission_revoked',
   'vpn_permission_unavailable',
+  'vpn_permission_restricted',
   'vpn_setup_failed',
   'profile_required',
   'invalid_exclusion',
@@ -106,7 +109,8 @@ final class NativeVpnBridge
         AutomaticSelectionBridge,
         ApplicationRoutingBridge,
         ApplicationIconBridge,
-        ConnectionProtectionBridge {
+        ConnectionProtectionBridge,
+        VpnPermissionSetupBridge {
   NativeVpnBridge({
     MethodChannel? methods,
     EventChannel? stateEvents,
@@ -392,6 +396,20 @@ final class NativeVpnBridge
   @override
   Future<void> openSystemProtectionSettings() async {
     await _invoke('openSystemProtectionSettings');
+  }
+
+  @override
+  Future<VpnPermissionSetup> getVpnPermissionSetup() async {
+    try {
+      return VpnPermissionSetup.decode(await _invoke('getVpnPermissionSetup'));
+    } on FormatException {
+      throw const VpnFailure('invalid_native_response');
+    }
+  }
+
+  @override
+  Future<void> openAppPermissionSettings() async {
+    await _invoke('openAppPermissionSettings');
   }
 
   @override

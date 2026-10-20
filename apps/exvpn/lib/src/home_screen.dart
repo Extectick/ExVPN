@@ -14,6 +14,7 @@ import 'subscription_issues_dialog.dart';
 import 'settings_sheet.dart';
 import 'power_button.dart';
 import '../services/vpn_controller.dart';
+import '../services/vpn_permission_setup.dart';
 import '../services/subscription_persistence.dart';
 import '../services/subscription_refresh.dart';
 import '../services/subscription_loader.dart' show SubscriptionDocument;
@@ -27,8 +28,22 @@ import 'app_update_strip.dart';
 import 'subscription_tree.dart';
 import 'subscription_edit_dialog.dart';
 import 'modal_sheet_scroll_behavior.dart';
+import 'vpn_permission_sheet.dart';
 
 enum _SubscriptionMenuAction { edit, delete }
+
+final class _PermissionRecoveryIntent {
+  const _PermissionRecoveryIntent({
+    required this.profileId,
+    required this.selectionRevision,
+    required this.request,
+    required this.errorCode,
+  });
+  final String profileId;
+  final int selectionRevision;
+  final int request;
+  final String? errorCode;
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -80,6 +95,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final _manualRefreshFailures = <String, int>{};
   bool _refreshing = false;
   bool _serverPickerOpen = false;
+  bool _permissionSheetOpen = false;
+  int _permissionRequest = 0;
+  _PermissionRecoveryIntent? _pendingPermissionRecovery;
   int _selectionRevision = 0;
   final _serversScroll = ScrollController();
   final _pickerScroll = ScrollController();
@@ -128,6 +146,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     )..addListener(_storageChanged);
     unawaited(_refreshes.refreshStale());
     _changes = widget.controller.changes.listen((_) {
+      final pendingPermission = _pendingPermissionRecovery;
+      if (pendingPermission != null &&
+          !_permissionIntentCurrent(pendingPermission)) {
+        _pendingPermissionRecovery = null;
+      }
       final vpn = widget.vpn;
       if (vpn != null && vpn.automaticSelectionEnabled) {
         final group = widget.controller.groups
@@ -201,6 +224,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _vpnChanged() {
     if (!mounted) return;
+    if (widget.vpn?.status.phase == VpnPhase.connected) {
+      _pendingPermissionRecovery = null;
+    }
     _adoptAutomaticGroup();
     final phase = widget.vpn?.status.phase;
     if (phase != _latencyVpnPhase) {
@@ -244,6 +270,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _foreground = state == AppLifecycleState.resumed;
     if (_foreground) {
       _scheduleAutoPing();
+      unawaited(_showPendingPermissionRecovery());
     } else {
       _autoPingDebounce?.cancel();
       _latencies.pause();
@@ -253,6 +280,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _pendingPermissionRecovery = null;
+    ++_permissionRequest;
     _changes.cancel();
     _clock?.cancel();
     _toastTimer?.cancel();
@@ -287,6 +316,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
     final vpn = widget.vpn;
     if (vpn != null && !vpn.canChangeConnection) return;
+    final permissionRequest = ++_permissionRequest;
+    _pendingPermissionRecovery = null;
     if (vpn != null && vpn.canDisconnect) {
       _selectionRevision++;
       await vpn.disconnect();
@@ -308,6 +339,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
     if (vpn != null && !widget.controller.selectedServer!.isDemo) {
+      final selectedProfileId = widget.controller.selectedServer!.profile.id;
+      final selectionRevision = _selectionRevision;
       final automatic = widget.controller.groups
           .where((g) => g.id == widget.controller.selectedAutomaticGroupId)
           .firstOrNull;
@@ -315,9 +348,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         await vpn.startAutomaticSelection([
           for (final server in automatic.servers) server.profile,
         ]);
-        return;
+      } else {
+        await vpn.connect(widget.controller.selectedServer!.profile);
       }
-      await vpn.connect(widget.controller.selectedServer!.profile);
+      _recordPermissionRecovery(
+        vpn,
+        selectedProfileId,
+        selectionRevision,
+        permissionRequest,
+      );
       return;
     }
     showDialog<void>(
@@ -333,6 +372,92 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ],
       ),
     );
+  }
+
+  void _recordPermissionRecovery(
+    VpnController vpn,
+    String profileId,
+    int selectionRevision,
+    int request,
+  ) {
+    final intent = _PermissionRecoveryIntent(
+      profileId: profileId,
+      selectionRevision: selectionRevision,
+      request: request,
+      errorCode: vpn.lastErrorCode,
+    );
+    if (!_permissionIntentCurrent(intent) ||
+        !vpn.supportsPermissionSetup ||
+        !isVpnPermissionSetupError(vpn.lastErrorCode)) {
+      return;
+    }
+    // onActivityResult may complete before Android delivers onResume. Retain
+    // only the presentation intent; this never queues a connection or retry.
+    _pendingPermissionRecovery = intent;
+    unawaited(_showPendingPermissionRecovery());
+  }
+
+  bool _permissionIntentCurrent(_PermissionRecoveryIntent intent) =>
+      mounted &&
+      intent.request == _permissionRequest &&
+      intent.selectionRevision == _selectionRevision &&
+      widget.controller.selectedServer?.profile.id == intent.profileId &&
+      isVpnPermissionSetupError(intent.errorCode) &&
+      (widget.vpn?.lastErrorCode == intent.errorCode ||
+          // A read-only status refresh on resume may legitimately clear the
+          // native command error. It cannot cancel this explicit recovery
+          // choice while the same request remains disconnected and idle.
+          (widget.vpn?.lastErrorCode == null &&
+              widget.vpn?.status.phase == VpnPhase.disconnected &&
+              widget.vpn?.canDisconnect == false));
+
+  Future<void> _showPendingPermissionRecovery() async {
+    final intent = _pendingPermissionRecovery;
+    final vpn = widget.vpn;
+    if (intent == null || vpn == null || _permissionSheetOpen || !_foreground) {
+      return;
+    }
+    if (!_permissionIntentCurrent(intent)) {
+      _pendingPermissionRecovery = null;
+      return;
+    }
+    _permissionSheetOpen = true;
+    try {
+      var setup = await vpn.getVpnPermissionSetup();
+      if (!mounted) return;
+      if (!_permissionIntentCurrent(intent)) {
+        _pendingPermissionRecovery = null;
+        return;
+      }
+      if (!_foreground) return;
+      if (intent.errorCode == 'vpn_permission_restricted' &&
+          setup.vpn != VpnPermissionState.granted) {
+        setup = VpnPermissionSetup(
+          vpn: VpnPermissionState.restricted,
+          notifications: setup.notifications,
+          vendor: setup.vendor,
+        );
+      }
+      _pendingPermissionRecovery = null;
+      final action = await showDialog<VpnPermissionAction>(
+        context: context,
+        builder: (_) => VpnPermissionSheet(
+          setup: setup,
+          onVpnSettings: vpn.openVpnPermissionSettings,
+          onAppSettings: vpn.openAppPermissionSettings,
+        ),
+      );
+      // Closing, cancelling, changing a profile or leaving the foreground never
+      // starts a connection. A retry is only another explicit button press.
+      if (action != VpnPermissionAction.retry ||
+          !_foreground ||
+          !_permissionIntentCurrent(intent)) {
+        return;
+      }
+    } finally {
+      _permissionSheetOpen = false;
+    }
+    await _connect();
   }
 
   bool get _refreshBusy => _refreshing || _refreshes.busy;
@@ -1133,7 +1258,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool get _hasNotice =>
       widget.storageWarning != null ||
       widget.persistence?.error != null ||
-      widget.vpn?.lastErrorCode != null ||
+      (widget.vpn?.lastErrorCode != null &&
+          !(widget.vpn?.supportsPermissionSetup == true &&
+              isVpnPermissionSetupError(widget.vpn?.lastErrorCode))) ||
       widget.vpn?.status.phase == VpnPhase.blocked;
 
   Future<void> _showNotice() {

@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "date": "2026-10-20",
+  "os": "Android16/API36/AOSP-google-apis",
+  "installedVersion": "0.1.12+34",
+  "scope": "Owned disposable emulator; no physical Redmi acceptance",
+  "cleanConsent": {
+    "systemDialogObserved": true,
+    "normalSystemOk": true,
+    "shellPregrant": false,
+    "separateUidHttps200": true,
+    "vpnTransport": true,
+    "exitBodySha256": "7b6e9cd54e1701d76dd9ea4425d71c4010b6eadb4f58c049347149638283043c",
+    "differentDirectExit": true
+  },
+  "otherAlwaysOn": {
+    "configuredBy": "real Android VPN Settings",
+    "fixtureCreatesTun": false,
+    "fixtureInternetPermission": false,
+    "lockdown": false,
+    "systemDialogVisible": false,
+    "oldPermissionNotGrantedMessage": true,
+    "source": "Android16 ConfirmDialog"
+  },
+  "directProbe": {
+    "bodySha256": "ad6a86a4507e238e530f921ba9c96a2205e1375c1f0cb1d4a752fce9d8eed913",
+    "durationMs": 1743,
+    "httpStatus": 200,
+    "publicIpFamily": 4,
+    "responseBytes": 13,
+    "success": true,
+    "uid": 10215,
+    "uidRxBytes": 4194,
+    "uidTxBytes": 1378,
+    "vpnTransport": false
+  }
+}
