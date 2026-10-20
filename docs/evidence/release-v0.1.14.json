@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "version": "0.1.14+36",
+  "uiRevision": 10,
+  "published": true,
+  "publicUrl": "https://github.com/Extectick/ExVPN/releases/tag/v0.1.14",
+  "baseSourceCommit": "e5c9db2d4b2763650c87ab140e744b2f0d8cc197",
+  "implementationCommit": "2d0d4a0",
+  "publicationToolingCommit": "0bac70a",
+  "stableReady": false,
+  "automatedTests": "passed",
+  "automatedEvidence": "fast-validation-v0.1.14.json",
+  "fullSeconds": 113.03,
+  "protocolRuntimeEvidence": [
+    "android-wireguard36.json",
+    "windows-wireguard36.json",
+    "protocols36-source.json"
+  ],
+  "publicationByteBindings": "Exact base receipts, uploaded asset digests, signed feed read-back",
+  "publicRedownloadPerformed": false,
+  "newFullBuilds": {
+    "Android": 1,
+    "Windows": 1
+  },
+  "catalog": {
+    "revision": 11,
+    "sha256": "4a14800cc11868f338cccf70c164ec73396c0f6a7550f34384d0503769253abe",
+    "activePatches": 0,
+    "cloudCalls": false
+  },
+  "feeds": {
+    "Android": "0.1.14+36",
+    "Windows": "0.1.14+36"
+  },
+  "packages": [
+    {
+      "file": "ExVPN-0.1.14-36-android.apk",
+      "sha256": "9a3ae297b4cf412a11f39f7a6c9223231f21c7a054b731158adc42ee92dd51f7",
+      "bytes": 141129771
+    },
+    {
+      "file": "ExVPN-0.1.14-36-windows-x64-development.exe",
+      "sha256": "878cf222c24e07ee3b0c78fa2ddad84d2acf522854eb33dd6b7d6797f0dee659",
+      "bytes": 50602730
+    }
+  ],
+  "nativeBuildSeconds": {
+    "WindowsService": 14.93,
+    "AndroidJni": 45.46
+  },
+  "limitations": [
+    "Preview; complete E1 and Windows Authenticode remain open",
+    "MASQUE tested with core QUIC/TLS fixtures, platform TUN not tested",
+    "Windows guest lacks external IPv6; WireGuard TUN egress accepted for IPv4/DNS only",
+    "Physical Android36, installed Windows SCM IPC and new OTA apply/rollback not tested",
+    "Local synthetic WireGuard gateways share underlay egress; a changed public IP is not claimed",
+    "TUIC/OpenVPN and extra engines not included"
+  ]
+}
