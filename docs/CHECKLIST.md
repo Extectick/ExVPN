@@ -10,18 +10,18 @@
   WireGuard URI/INI/current sing-box endpoints, VMess/Trojan/Shadowsocks/gRPC,
   нейтральные REALITY/TCP aliases. Критерий: import/snapshot/native parity,
   отрицательные типы/credentials/policy, реальный трафик. Реализация `2d0d4a0`;
-  QA-изоляция — рабочее дерево; commit ожидается. Full12/12 PASS за113,03с, app482/domain225/state92, source
-  unchanged; scoped analyze clean. Platform runtime ещё не завершён.
+  QA-изоляция `e5c9db2`. Full12/12 PASS за113,03с, app482/domain225/state92, source
+  unchanged; scoped analyze clean. WireGuard TUN проверен ниже; остальная platform matrix остаётся открытой.
 - [ ] **EXVPN-E3-015** — Добавить MASQUE закреплённого Xray: QUIC/TLS, обязательные
   SNI/credentials, фиксированная локальная DNS-политика. Критерий: import/native
   schema и verified TLS/IPv4/IPv6/DNS, неверная auth/CA/SNI блокирует трафик,
   отсутствие direct fallback, стабильный Close/recreate. Не считать feature
-  принятой по одному Config OK. Рабочее дерево; commit ожидается.
+  принятой по одному Config OK. Реализация `2d0d4a0`, итоговый кандидат `e5c9db2`.
 - [ ] **EXVPN-E1-013** — Проверить WireGuard через системный TUN Android/Windows:
   независимый процесс, HTTPS IPv4/IPv6/DNS, отказ сервера с сохранённой защитой,
   восстановление, несколько циклов и корректный cleanup. Userspace core fixtures
   отдельно подтверждают IPv4/IPv6 HTTPS, UDP/DNS, неверные ключи и down/up;
-  они не заменяют platform leak/physical acceptance. Рабочее дерево; commit ожидается.
+  они не заменяют platform leak/physical acceptance. Реализация `2d0d4a0`, итоговый кандидат `e5c9db2`.
 
 2026-10-21, Windows WireGuard: независимый HTTPS IPv4 и DNS через TUN,
 три down/up цикла без direct fallback, постоянный guard, восстановление HTTPS.
@@ -30,6 +30,14 @@ Gateway отделён в дочерний процесс; профиль сте
 не имеет внешнего IPv6. Это не проверка установленного SCM IPC или физического
 устройства. [Обезличенный отчёт](evidence/windows-wireguard36.json).
 
+- [x] 2026-10-21, WireGuard на точном APK36 (`e5c9db2`): импорт `wg://` через UI,
+  отдельный UID с HTTPS IPv4/IPv6 и DNS A/AAAA, три down/up без direct fallback,
+  сохранённый owned TUN, штатное удаление тестовой группы и восстановление сети.
+  Это эмулятор API36, не физический Redmi.
+  [Android-отчёт](evidence/android-wireguard36.json).
+- [x] Windows focused WireGuard TUN IPv4/DNS и три down/up с постоянным guard;
+  cleanup вернул исходные DNS/маршруты (`e5c9db2`). IPv6 Windows, SCM IPC и общая
+  E1-приёмка остаются открытыми.
 Общий результат: [Full](evidence/fast-validation-v0.1.14.json),
 [протокольные проверки исходников](evidence/protocols36-source.json). В первом
 Full11 наборов прошли, QA runner нашёл устаревший ожидаемый счётчик suites;

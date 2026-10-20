@@ -3,7 +3,7 @@
   "date": "2026-10-21",
   "version": "0.1.14+36",
   "uiRevision": 10,
-  "source": "implementation 2d0d4a0; QA isolation candidate",
+  "source": "e5c9db2d4b2763650c87ab140e744b2f0d8cc197",
   "full": {
     "stateTests": 92,
     "status": "passed",

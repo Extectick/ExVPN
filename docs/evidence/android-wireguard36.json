@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "status": "PASS",
+  "version": "0.1.14+36",
+  "sourceCommit": "e5c9db2d4b2763650c87ab140e744b2f0d8cc197",
+  "apkSha256": "9a3ae297b4cf412a11f39f7a6c9223231f21c7a054b731158adc42ee92dd51f7",
+  "device": "owned Android16/API36 emulator",
+  "physicalPhoneTested": false,
+  "appUid": 10214,
+  "probeUid": 10215,
+  "installUpgrade": true,
+  "wireguardUriImportedThroughOrdinaryUi": true,
+  "uriNamePreserved": true,
+  "permissionAlreadyGranted": true,
+  "connected": {
+    "uriImportedViaUi": true,
+    "uriNamePreserved": true,
+    "network": {
+      "mechanism": "connectivity_api36_v2",
+      "networkCount": 3,
+      "vpnCount": 1,
+      "vpnInterfaces": [
+        "tun0"
+      ],
+      "ownerUidMatched": true,
+      "activeVpnNetworkAbsent": false
+    },
+    "health": {
+      "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "durationMs": 710,
+      "httpStatus": 204,
+      "responseBytes": 0,
+      "success": true,
+      "uid": 10215,
+      "uidRxBytes": 0,
+      "uidTxBytes": 0,
+      "vpnTransport": true
+    },
+    "ip4": {
+      "bodySha256": "34ba3fb516035e467b20d22fd83e8608a0844d46fec62e25ed95a37aa4f28fc8",
+      "durationMs": 829,
+      "httpStatus": 200,
+      "publicIpFamily": 4,
+      "responseBytes": 13,
+      "success": true,
+      "uid": 10215,
+      "uidRxBytes": 0,
+      "uidTxBytes": 0,
+      "vpnTransport": true
+    },
+    "ip6": {
+      "bodySha256": "88b2c20e6863c5604ea556b071075da1801c51579355d14937705148866cb1a1",
+      "durationMs": 1204,
+      "httpStatus": 200,
+      "publicIpFamily": 6,
+      "responseBytes": 17,
+      "success": true,
+      "uid": 10215,
+      "uidRxBytes": 6059,
+      "uidTxBytes": 1793,
+      "vpnTransport": true
+    },
+    "dns": {
+      "durationMs": 123,
+      "ipv4Answers": 2,
+      "ipv6Answers": 2,
+      "success": true,
+      "uid": 10215,
+      "uidRxBytes": 0,
+      "uidTxBytes": 0,
+      "vpnTransport": true
+    }
+  },
+  "numericControl": {
+    "bodySha256": "43267881e724f040f10efd24a0bbd7a07b0532c71954f05d10451439ac066c7e",
+    "durationMs": 584,
+    "httpStatus": 200,
+    "responseBytes": 259,
+    "success": true,
+    "uid": 10215,
+    "uidRxBytes": 0,
+    "uidTxBytes": 0,
+    "vpnTransport": true
+  },
+  "cycles": [
+    {
+      "cycle": 1,
+      "gatewayDown": true,
+      "offlineNumericHttps": {
+        "durationMs": 8032,
+        "error": "network",
+        "uid": 10215,
+        "uidRxBytes": 164,
+        "uidTxBytes": 468,
+        "vpnTransport": true,
+        "success": false
+      },
+      "offlineNetwork": {
+        "mechanism": "connectivity_api36_v2",
+        "networkCount": 3,
+        "vpnCount": 1,
+        "vpnInterfaces": [
+          "tun0"
+        ],
+        "ownerUidMatched": true,
+        "activeVpnNetworkAbsent": false
+      },
+      "noDirectFallback": true,
+      "gatewayUp": true,
+      "recoveryAttempts": 1,
+      "recoveryHealth": {
+        "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "durationMs": 7609,
+        "httpStatus": 204,
+        "responseBytes": 0,
+        "success": true,
+        "uid": 10215,
+        "uidRxBytes": 4015,
+        "uidTxBytes": 1290,
+        "vpnTransport": true
+      },
+      "recoveryNetwork": {
+        "mechanism": "connectivity_api36_v2",
+        "networkCount": 3,
+        "vpnCount": 1,
+        "vpnInterfaces": [
+          "tun0"
+        ],
+        "ownerUidMatched": true,
+        "activeVpnNetworkAbsent": false
+      },
+      "recovered": true,
+      "passed": true
+    },
+    {
+      "cycle": 2,
+      "gatewayDown": true,
+      "offlineNumericHttps": {
+        "durationMs": 8031,
+        "error": "network",
+        "uid": 10215,
+        "uidRxBytes": 164,
+        "uidTxBytes": 468,
+        "vpnTransport": true,
+        "success": false
+      },
+      "offlineNetwork": {
+        "mechanism": "connectivity_api36_v2",
+        "networkCount": 3,
+        "vpnCount": 1,
+        "vpnInterfaces": [
+          "tun0"
+        ],
+        "ownerUidMatched": true,
+        "activeVpnNetworkAbsent": false
+      },
+      "noDirectFallback": true,
+      "gatewayUp": true,
+      "recoveryAttempts": 1,
+      "recoveryHealth": {
+        "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "durationMs": 7582,
+        "httpStatus": 204,
+        "responseBytes": 0,
+        "success": true,
+        "uid": 10215,
+        "uidRxBytes": 4014,
+        "uidTxBytes": 1290,
+        "vpnTransport": true
+      },
+      "recoveryNetwork": {
+        "mechanism": "connectivity_api36_v2",
+        "networkCount": 3,
+        "vpnCount": 1,
+        "vpnInterfaces": [
+          "tun0"
+        ],
+        "ownerUidMatched": true,
+        "activeVpnNetworkAbsent": false
+      },
+      "recovered": true,
+      "passed": true
+    },
+    {
+      "cycle": 3,
+      "gatewayDown": true,
+      "offlineNumericHttps": {
+        "durationMs": 8028,
+        "error": "network",
+        "uid": 10215,
+        "uidRxBytes": 164,
+        "uidTxBytes": 468,
+        "vpnTransport": true,
+        "success": false
+      },
+      "offlineNetwork": {
+        "mechanism": "connectivity_api36_v2",
+        "networkCount": 3,
+        "vpnCount": 1,
+        "vpnInterfaces": [
+          "tun0"
+        ],
+        "ownerUidMatched": true,
+        "activeVpnNetworkAbsent": false
+      },
+      "noDirectFallback": true,
+      "gatewayUp": true,
+      "recoveryAttempts": 1,
+      "recoveryHealth": {
+        "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "durationMs": 7553,
+        "httpStatus": 204,
+        "responseBytes": 0,
+        "success": true,
+        "uid": 10215,
+        "uidRxBytes": 4067,
+        "uidTxBytes": 1290,
+        "vpnTransport": true
+      },
+      "recoveryNetwork": {
+        "mechanism": "connectivity_api36_v2",
+        "networkCount": 3,
+        "vpnCount": 1,
+        "vpnInterfaces": [
+          "tun0"
+        ],
+        "ownerUidMatched": true,
+        "activeVpnNetworkAbsent": false
+      },
+      "recovered": true,
+      "passed": true
+    }
+  ],
+  "cleanup": {
+    "explicitUiDisconnect": true,
+    "syntheticGroupDeletedViaConfirmedUi": true,
+    "serviceAbsent": true,
+    "activeVpnNetworkAbsent": true,
+    "gatewayStopped": true,
+    "directHttpsRestored": {
+      "bodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "durationMs": 723,
+      "httpStatus": 204,
+      "responseBytes": 0,
+      "success": true,
+      "uid": 10215,
+      "uidRxBytes": 0,
+      "uidTxBytes": 0,
+      "vpnTransport": false
+    }
+  },
+  "probeUsesDefaultNetwork": true,
+  "probeUsesVpnNetworkBinding": false,
+  "externalIpHashDifferentFromDirect": false,
+  "packetDnsLeakCapturePerformed": false,
+  "limitations": [
+    "Synthetic loopback WireGuard gateway shares host egress; changed public IP is not claimed",
+    "DNS A/AAAA resolution and real IPv4/IPv6 HTTPS were tested; packet-level DNS leak capture was not performed",
+    "Physical Android, process crash/lockdown matrix and full E1 acceptance remain separate"
+  ]
+}
