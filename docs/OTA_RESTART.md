@@ -1,7 +1,9 @@
 # Автоматический холодный перезапуск OTA
 
-Целевой выпуск: **0.1.11+33 Preview**. Реализация в рабочем дереве;
-коммит, пакетный runtime и публикация ожидаются. Подписанный каталог и native
+Выпуск: **0.1.11+33 Preview**. Исходники `c566866`; настоящий автоматический
+цикл применения и отзыва принят на Windows Sandbox и Android API30 emulator:
+[SDK-состояния](evidence/independent33-runtime.json),
+[смена процессов и сохранение данных](evidence/independent33-auto-restart.json). Подписанный каталог и native
 updater по-прежнему выбирают допустимый AOT: приложение не правит их указатели.
 
 ## Общий барьер
@@ -51,3 +53,12 @@ Unit/widget: signed prepared/rollback, инициализация и отлож�
 Отдельный runtime gate обязан подтвердить смену процесса, реально загруженный
 номер AOT, применение и отзыв, сохранение данных без ручного cold restart.
 Полная неизменённая VPN-матрица не повторяется и не объявляется закрытой.
+
+
+Windows-отказ `handoff_failed` на прежнем стенде32 оказался дефектом тестового
+restricted token: административный TokenDefaultDACL давал ERROR5 в CreatePipe
+ещё до запуска worker. Исправлены только owner/default DACL тестового launcher;
+продуктовые helper/ACL/owner checks не менялись. Тот же помощник подтвердил
+оба автоматических перехода33. [Диагноз](evidence/windows-ota-token-diagnosis32.json).
+Подробные proofs: [Android](evidence/android33-automatic-ota.json),
+[Windows](evidence/windows33-automatic-ota.json). Физический Android не проверен.

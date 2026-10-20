@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "target": "Android",
+  "version": "0.1.11+33",
+  "baseSourceCommit": "c5668668da0dd48628cd060b0abd5795e44ddde4",
+  "patchSourceCommit": "af0baf7bf1aed5e60d1659c7c15bdc3863620dbc",
+  "scope": "Android API30 owned emulator; actual foreground native automatic cold restart after signed apply and catalog withdrawal; no active VPN termination",
+  "automaticApplyVerified": true,
+  "automaticRollbackVerified": true,
+  "apply": {
+    "oldPid": 25898,
+    "newPid": 26340,
+    "distinctProcess": true,
+    "oldPackagePidAbsent": true,
+    "brokerExited": true,
+    "method": "native_automatic_handoff_observed_only",
+    "durationMs": 6412
+  },
+  "applyNativeTrace": {
+    "brokerActivityStartObserved": true,
+    "oldProcessDeathObserved": true,
+    "newProcessStartObserved": true,
+    "brokerProcessStartedObserved": true,
+    "applicationCrashObserved": false
+  },
+  "rollback": {
+    "oldPid": 26340,
+    "newPid": 26725,
+    "distinctProcess": true,
+    "oldPackagePidAbsent": true,
+    "brokerExited": true,
+    "method": "native_automatic_handoff_observed_only",
+    "durationMs": 183
+  },
+  "rollbackNativeTrace": {
+    "brokerActivityStartObserved": true,
+    "oldProcessDeathObserved": true,
+    "newProcessStartObserved": true,
+    "brokerProcessStartedObserved": true,
+    "applicationCrashObserved": false
+  },
+  "timingScope": "Process observation wait only; rollback observation started after automatic handoff and is not total restart latency",
+  "baseUiRevision": 4,
+  "appliedUiRevision": 5,
+  "rollbackUiRevision": 4,
+  "nativeCurrentPatchSequence": [
+    0,
+    1,
+    0
+  ],
+  "apkUnchangedDuringRoundtrip": true,
+  "uidPreservedThroughSignedUpgradeAndRoundtrip": true,
+  "opaqueDataFiles": 3,
+  "opaqueDataUnchanged": true,
+  "vpnDisconnectedForBothHandoffs": true,
+  "vpnServiceAbsentForBothHandoffs": true,
+  "noManualColdRestart": true,
+  "noSdkCacheOrPointerWrites": true,
+  "hostNetworkChanged": false,
+  "physicalAndroidVerified": false
+}

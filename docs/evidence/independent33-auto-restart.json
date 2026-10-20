@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.11+33",
+  "baseSourceCommit": "c5668668da0dd48628cd060b0abd5795e44ddde4",
+  "patchSourceCommit": "af0baf7bf1aed5e60d1659c7c15bdc3863620dbc",
+  "status": "passed",
+  "scope": "Actual signed automatic AOT apply and signed withdrawal with new processes; Windows Sandbox and Android API30 x86_64 emulator",
+  "automaticApplyBoth": true,
+  "automaticRollbackBoth": true,
+  "noManualRestart": true,
+  "noSdkCachePointerMutation": true,
+  "runtimeProof": "independent33-runtime.json",
+  "automaticProofs": [
+    "android33-automatic-ota.json",
+    "windows33-automatic-ota.json"
+  ],
+  "catalogs": [
+    7,
+    8
+  ],
+  "testPatchRevoked": true,
+  "nextPatchNumber": 2,
+  "fullBaseBuilds": {
+    "Windows": 1,
+    "Android": 1
+  },
+  "aotPatchNativeBuild": false,
+  "cloudCalls": false,
+  "androidJvmTests": 66,
+  "appTests": 456,
+  "behavioralValidation": "One Full (11 unchanged lanes passed) plus repaired app lane analyze and 456 tests passed",
+  "fullVpnMatrixRepeated": false,
+  "androidActiveTunnelRestart": "Deferred until native idle; no automatic disconnect",
+  "windowsServicePreserved": true,
+  "physicalAndroidVerified": false,
+  "stableReady": false
+}

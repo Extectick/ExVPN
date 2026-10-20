@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "delivery": "independent",
+  "version": "0.1.11+33",
+  "baseSourceCommit": "c5668668da0dd48628cd060b0abd5795e44ddde4",
+  "compiledSourceCommit": "c5668668da0dd48628cd060b0abd5795e44ddde4",
+  "baseReceipts": {
+    "Android": "65acc3fb0d17433da00e1d6105f863eee6bea319ffe566ee7389c0bf367fe3de",
+    "Windows": "b9e7286d87c434b32bb6630c149c5dfc184f53ccee73405a7b8b12a711b0030a"
+  },
+  "platforms": [
+    {
+      "target": "Android",
+      "artifactSha256": "78900fa64189bf25a2c436022397cfd4f63717517d4ed9ebbe364f9d4d1afd78",
+      "patchNumber": 1,
+      "applyVerified": true,
+      "rollbackVerified": true,
+      "appliedCurrentPatch": 1,
+      "rollbackCurrentPatch": 0,
+      "dataPreserved": true,
+      "updaterAvailable": true,
+      "baseUiRevision": 4,
+      "appliedUiRevision": 5,
+      "rollbackUiRevision": 4,
+      "applyCatalogRevision": 7,
+      "rollbackCatalogRevision": 8,
+      "applyCatalogSha256": "ff25774cdf1bb428495cc7fe3f414153390e3515b932fe60ae7ae5b1c663ab39",
+      "rollbackCatalogSha256": "e4fddddaa6d76737b6da2d88a8b47f9cf118046325e25bdff8e679ee25d54f6b",
+      "patchDiffSha256": "295687ff5db6afafabeeefa5022a7baa4a304881152a0faed8c304d3b83c882e",
+      "patchAotSha256": "c49eaa57ca944ca2a07968cacb1df3afbb1c5d9646b8bdb55916a933f44d68e4",
+      "signedCatalogVerified": true,
+      "signatureVerified": true
+    },
+    {
+      "target": "Windows",
+      "artifactSha256": "19744afaf8ddf99f76a011096ea730c542a1a1cae2d7cc7225600df1f04b311f",
+      "patchNumber": 1,
+      "applyVerified": true,
+      "rollbackVerified": true,
+      "appliedCurrentPatch": 1,
+      "rollbackCurrentPatch": 0,
+      "dataPreserved": true,
+      "updaterAvailable": true,
+      "baseUiRevision": 4,
+      "appliedUiRevision": 5,
+      "rollbackUiRevision": 4,
+      "applyCatalogRevision": 7,
+      "rollbackCatalogRevision": 8,
+      "applyCatalogSha256": "ff25774cdf1bb428495cc7fe3f414153390e3515b932fe60ae7ae5b1c663ab39",
+      "rollbackCatalogSha256": "e4fddddaa6d76737b6da2d88a8b47f9cf118046325e25bdff8e679ee25d54f6b",
+      "patchDiffSha256": "a340bff4ecb4b00fbfaa2bc9a43630341716d5477cebf2fa7f3aa0a1da490f52",
+      "patchAotSha256": "113e6fac1fc78b00349841f3c86276b3192844c194464a2eed88c2fdc109c6d7",
+      "signedCatalogVerified": true,
+      "signatureVerified": true
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "delivery": "independent",
+  "version": "0.1.11+33",
+  "baseSourceCommit": "c5668668da0dd48628cd060b0abd5795e44ddde4",
+  "compiledSourceCommit": "c5668668da0dd48628cd060b0abd5795e44ddde4",
+  "compatibilitySha256": "c454b1ad61e9289984f38cb625238d668c14f459cf591f7db0a801a2590482ba",
+  "record": {
+    "target": "Windows",
+    "artifactSha256": "19744afaf8ddf99f76a011096ea730c542a1a1cae2d7cc7225600df1f04b311f",
+    "patchNumber": 1,
+    "applyVerified": true,
+    "rollbackVerified": true,
+    "appliedCurrentPatch": 1,
+    "rollbackCurrentPatch": 0,
+    "dataPreserved": true,
+    "updaterAvailable": true,
+    "baseUiRevision": 4,
+    "appliedUiRevision": 5,
+    "rollbackUiRevision": 4,
+    "applyCatalogRevision": 7,
+    "rollbackCatalogRevision": 8,
+    "applyCatalogSha256": "ff25774cdf1bb428495cc7fe3f414153390e3515b932fe60ae7ae5b1c663ab39",
+    "rollbackCatalogSha256": "e4fddddaa6d76737b6da2d88a8b47f9cf118046325e25bdff8e679ee25d54f6b",
+    "patchDiffSha256": "a340bff4ecb4b00fbfaa2bc9a43630341716d5477cebf2fa7f3aa0a1da490f52",
+    "patchAotSha256": "113e6fac1fc78b00349841f3c86276b3192844c194464a2eed88c2fdc109c6d7",
+    "signedCatalogVerified": true,
+    "signatureVerified": true
+  },
+  "baseSdk": {
+    "version": "0.1.11+33",
+    "uiRevision": 4,
+    "available": true,
+    "current": null,
+    "next": null,
+    "restartRequired": false,
+    "track": "beta",
+    "vpnPhase": "disconnected",
+    "storageAvailable": true,
+    "nativeInitializationProven": false
+  },
+  "appliedSdk": {
+    "version": "0.1.11+33",
+    "uiRevision": 5,
+    "available": true,
+    "current": 1,
+    "next": 1,
+    "restartRequired": false,
+    "track": "beta",
+    "vpnPhase": "disconnected",
+    "storageAvailable": true,
+    "nativeInitializationProven": false
+  },
+  "rolledBackSdk": {
+    "version": "0.1.11+33",
+    "uiRevision": 4,
+    "available": true,
+    "current": null,
+    "next": null,
+    "restartRequired": false,
+    "track": "beta",
+    "vpnPhase": "disconnected",
+    "storageAvailable": true,
+    "nativeInitializationProven": false
+  },
+  "processBindings": {
+    "rollback": {
+      "pid": 7768,
+      "start": 639280785152383869,
+      "sha256": "09a2cb89ae9db0f34cbc168770656f4989b0c332f0ba723a560c0b9c370dd574"
+    },
+    "applied": {
+      "pid": 7752,
+      "start": 639280781713731568,
+      "sha256": "09a2cb89ae9db0f34cbc168770656f4989b0c332f0ba723a560c0b9c370dd574"
+    },
+    "base": {
+      "pid": 7688,
+      "start": 639280779052619865,
+      "sha256": "09a2cb89ae9db0f34cbc168770656f4989b0c332f0ba723a560c0b9c370dd574"
+    }
+  },
+  "automaticApplyRestart": true,
+  "automaticRollbackRestart": true,
+  "applyAction": "Download and install",
+  "rollbackAction": "Versions route initiated one update check",
+  "manualExitRequested": false,
+  "manualColdLaunchAfterStaging": false,
+  "manualRestartButtonClicked": false,
+  "applyRestartElapsedSeconds": 7.55,
+  "applyMeasurementScope": "after accessibility download action returned until new process observed",
+  "rollbackRestartElapsedSeconds": 13.15,
+  "rollbackMeasurementScope": "versions navigation and automatic check until new process observed",
+  "nativeApplyReceipt": {
+    "version": null,
+    "utc": "2026-10-20T07:29:31.4520553Z",
+    "readOnly": true,
+    "schema": 1,
+    "freshWrite": true,
+    "observed": true,
+    "status": "restarted"
+  },
+  "nativeRollbackReceipt": {
+    "version": null,
+    "utc": "2026-10-20T07:35:15.3529591Z",
+    "readOnly": true,
+    "schema": 1,
+    "freshWrite": true,
+    "observed": true,
+    "status": "restarted"
+  },
+  "serviceBaseline": {
+    "systemAccount": true,
+    "processStart": 639280774821778656,
+    "pid": 5684,
+    "imageSha256": "89eb6f0de717d8ddbe6ee9a1d87cb86f6665662d5289c3578e7c518394fb5fdc",
+    "state": "Running"
+  },
+  "serviceAfterRollback": {
+    "imageSha256": "89eb6f0de717d8ddbe6ee9a1d87cb86f6665662d5289c3578e7c518394fb5fdc",
+    "processStart": 639280774821778656,
+    "pid": 5684,
+    "state": "Running"
+  },
+  "serviceUnchanged": true,
+  "opaqueUserDataPreserved": true,
+  "installedBaseUnchanged": true,
+  "intermediateStagedSnapshotCaptured": false,
+  "computerUse": false,
+  "manualSdkCacheMutation": false,
+  "hostNetworkChanged": false,
+  "fullVpnMatrixRepeated": false,
+  "nativeHelperChangedForQaFix": false,
+  "qaTokenDefaultOwner": "same user",
+  "qaTokenDefaultDacl": [
+    "same user full access",
+    "SYSTEM full access"
+  ],
+  "limitations": [
+    "Windows package remains unsigned Authenticode Preview",
+    "Update-only run does not repeat active TUN/DNS/WFP fault acceptance"
+  ]
+}
