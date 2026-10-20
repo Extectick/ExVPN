@@ -276,54 +276,6 @@ final class AppController {
     return true;
   }
 
-  /// Metadata edits preserve the accepted profiles and selection. Advancing the
-  /// revision fences pending downloads/confirmations from the previous source.
-  bool editSubscription({
-    required String groupId,
-    required String name,
-    String? sourceUrl,
-  }) {
-    _ensureAlive();
-    _validateSourceUrl(sourceUrl);
-    final index = _groups.indexWhere((group) => group.id == groupId);
-    if (index == -1) return false;
-    final group = _groups[index];
-    final explicitName = safeSubscriptionName(name, sourceUrl: sourceUrl);
-    if (name.trim().isNotEmpty && explicitName == null) {
-      throw const FormatException('Invalid subscription name.');
-    }
-    final automatic =
-        name.trim().isEmpty ||
-        (explicitName == group.name && group.nameIsAutomatic);
-    final displayName = explicitName ?? group.providerName ?? group.name;
-    final sourceChanged = sourceUrl != group.sourceUrl;
-    if (!sourceChanged &&
-        displayName == group.name &&
-        automatic == group.nameIsAutomatic) {
-      return true;
-    }
-    _pendingUpdates.remove(groupId);
-    _groups = [
-      for (var i = 0; i < _groups.length; i++)
-        if (i == index)
-          group.copyWith(
-            name: displayName,
-            nameIsAutomatic: automatic,
-            sourceUrl: sourceUrl,
-            clearSourceUrl: sourceUrl == null,
-            issues: sourceChanged ? const [] : null,
-            updatedAt: sourceChanged
-                ? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true)
-                : null,
-            contentRevision: group.contentRevision + 1,
-          )
-        else
-          _groups[i],
-    ];
-    _notify();
-    return true;
-  }
-
   void _restoreSelection({String? preferredGroupId}) {
     if (!_groups.any(
       (g) =>

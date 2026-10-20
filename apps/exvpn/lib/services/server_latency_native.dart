@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:exvpn_domain/exvpn_domain.dart';
 
 const _deadline = Duration(seconds: 3);
-const _maxActiveOperations = 2;
+const _maxActiveOperations = 4;
 var _activeOperations = 0;
 
 /// TCP endpoint latency only. No TLS, application payload, or VPN bridge call.

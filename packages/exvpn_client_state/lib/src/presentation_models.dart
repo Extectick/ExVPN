@@ -119,7 +119,6 @@ final class SubscriptionGroup {
 
   SubscriptionGroup copyWith({
     String? name,
-    bool? nameIsAutomatic,
     String? providerName,
     List<ServerEntry>? servers,
     bool? expanded,
@@ -133,7 +132,7 @@ final class SubscriptionGroup {
     id: id,
     name: name ?? this.name,
     providerName: providerName ?? this.providerName,
-    nameIsAutomatic: nameIsAutomatic ?? this.nameIsAutomatic,
+    nameIsAutomatic: nameIsAutomatic,
     servers: servers ?? this.servers,
     expanded: expanded ?? this.expanded,
     issues: issues ?? this.issues,

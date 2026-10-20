@@ -518,10 +518,4 @@ VPN-модуль недоступен в этой сборке.|VPN module unava
 Настраивается в Android|Managed in Android settings|Android баптауларында реттеледі|In Android einstellbar|À configurer dans Android|Se configura en Android|Configurado no Android|Android ayarlarında yönetilir|在 Android 设置中管理|يُضبط في إعدادات Android
 Блокировать интернет при обрыве VPN|Block internet if VPN drops|VPN үзілсе интернетті бұғаттау|Internet bei VPN-Ausfall blockieren|Bloquer Internet si le VPN coupe|Bloquear Internet si se corta la VPN|Bloquear internet se a VPN cair|VPN kesilirse interneti engelle|VPN 断开时阻止联网|حظر الإنترنت عند انقطاع VPN
 Не удалось изменить защиту соединения|Could not change connection protection|Қосылым қорғанысын өзгерту мүмкін болмады|Verbindungsschutz konnte nicht geändert werden|Impossible de modifier la protection|No se pudo cambiar la protección|Não foi possível alterar a proteção|Bağlantı koruması değiştirilemedi|无法更改连接保护|تعذر تغيير حماية الاتصال
-Действия с подпиской|Subscription actions|Жазылым әрекеттері|Abonnementaktionen|Actions de l’abonnement|Acciones de suscripción|Ações da assinatura|Abonelik işlemleri|订阅操作|إجراءات الاشتراك
-Редактировать|Edit|Өңдеу|Bearbeiten|Modifier|Editar|Editar|Düzenle|编辑|تعديل
-Редактировать подписку|Edit subscription|Жазылымды өңдеу|Abonnement bearbeiten|Modifier l’abonnement|Editar suscripción|Editar assinatura|Aboneliği düzenle|编辑订阅|تعديل الاشتراك
-Не удалось сохранить подписку|Could not save subscription|Жазылымды сақтау мүмкін болмады|Abonnement konnte nicht gespeichert werden|Impossible d’enregistrer l’abonnement|No se pudo guardar la suscripción|Não foi possível salvar a assinatura|Abonelik kaydedilemedi|无法保存订阅|تعذر حفظ الاشتراك
-Проверьте название подписки|Check the subscription name|Жазылым атауын тексеріңіз|Abonnementnamen prüfen|Vérifiez le nom de l’abonnement|Revisa el nombre de la suscripción|Verifique o nome da assinatura|Abonelik adını kontrol edin|请检查订阅名称|تحقق من اسم الاشتراك
-Укажите ссылку HTTPS|Enter an HTTPS link|HTTPS сілтемесін енгізіңіз|HTTPS-Link eingeben|Saisissez un lien HTTPS|Introduce un enlace HTTPS|Insira um link HTTPS|HTTPS bağlantısı girin|请输入 HTTPS 链接|أدخل رابط HTTPS
 ''';
