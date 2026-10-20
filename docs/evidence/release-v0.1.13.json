@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-20",
+  "version": "0.1.13+35",
+  "published": true,
+  "publicUrl": "https://github.com/Extectick/ExVPN/releases/tag/v0.1.13",
+  "baseSourceCommit": "f243e92c9f7bba2ad22d2d79690f6a80a3487d39",
+  "notesSourceCommit": "f604e8db0f584d08c05b53e4edd2cdad93b00cc5",
+  "uiRevision": 9,
+  "stableReady": false,
+  "runtimeVerification": "remaining_acceptance_deferred_to_user",
+  "automatedTests": "passed",
+  "automatedEvidence": "fast-validation-android-guidance35-ui9.json",
+  "androidRuntimeEvidence": "android-guidance35-api36-runtime.json",
+  "publicationByteBindings": "publisher package receipts, uploaded asset digests, signed feed read-back",
+  "publicRedownloadPerformed": false,
+  "newRuntimeTestsBeforePublication": false,
+  "reusedExactAndroidCandidate": true,
+  "newFullBuilds": {
+    "Android": 0,
+    "Windows": 1
+  },
+  "catalog": {
+    "revision": 10,
+    "sha256": "3c7663a83c6d66a93ed00d074d488e15db5ceb9711a07413a94a5b55d5dfd631",
+    "activePatches": 0,
+    "cloudCalls": false
+  },
+  "feeds": {
+    "Android": "0.1.13+35",
+    "Windows": "0.1.13+35"
+  },
+  "packages": [
+    {
+      "file": "ExVPN-0.1.13-35-android.apk",
+      "bytes": 140998703,
+      "sha256": "ab7aee19632e1b408105c4f8edffe5213125a9f30c619df6a3f8b2c4870b978a"
+    },
+    {
+      "file": "ExVPN-0.1.13-35-windows-x64-development.exe",
+      "bytes": 50588385,
+      "sha256": "55dad62ad64b4a4c60a811f82d11955dca9b2f944e23bac3cb9e3d66f483a115"
+    }
+  ],
+  "windowsBuildTiming": {
+    "startedAt": "2026-10-20T17:55:24.5253691+07:00",
+    "completedAt": "2026-10-20T17:58:41.8789988+07:00",
+    "exitCode": 0,
+    "sourceCommit": "f243e92c9f7bba2ad22d2d79690f6a80a3487d39"
+  },
+  "limitations": [
+    "Physical phone remains installed34; final35 not installed",
+    "Windows35 runtime not performed",
+    "No new35 OTA apply/rollback roundtrip",
+    "HyperOS Clear all not tested",
+    "Windows Authenticode and stable E1 acceptance remain open"
+  ]
+}
