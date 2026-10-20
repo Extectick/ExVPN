@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-20",
+  "sourceCommit": "1798355df3c38f50cd701a752d5975f4ba38f9e0",
+  "status": "SOURCE_TARGETED_PASS_WEB_PENDING",
+  "behavior": {
+    "unsupportedVisible": true,
+    "overlay": "Не поддерживается",
+    "selectable": false,
+    "includedInPing": false,
+    "includedInAutomaticPool": false,
+    "unsupportedWarningIcon": false,
+    "normalizedExecutableProfileCreated": false,
+    "rawRejectedRecordPersisted": false,
+    "displayMetadataBounded": true,
+    "snapshotVersion": 3,
+    "newAssets": false,
+    "newDependencies": false
+  },
+  "checks": {
+    "domainTests": 210,
+    "stateTests": 90,
+    "domainStateAnalyzeClean": true,
+    "targetedUnsupportedWidgetTests": 3,
+    "targetedWidgetsPassed": true,
+    "fullAccepted": false,
+    "fullAttemptStatus": "source-changed-during-run",
+    "fullAttemptReport": "artifacts/qa/fast-20261020-082846-f997ff07/summary.json",
+    "fullAppFailure": "Parallel lifecycle edit had undefined FullUpdatesBackend.resume during analyzer. Owner subsequently fixed the intermediate source. Full not repeated for unrelated changes."
+  },
+  "limitations": [
+    "Display metadata of unsupported records is session-only to retain snapshot v3 rollback compatibility; restored records use Connection N until subscription refresh.",
+    "Browser preview uses synthetic subscriptions and latency. Native/device/VPN acceptance is not part of this UI change.",
+    "Shared source changed during Full; that run is not acceptance for the other task native/lifecycle work."
+  ],
+  "nativeBuilds": 0,
+  "nativeInstallations": 0,
+  "published": false,
+  "screenshots": []
+}
