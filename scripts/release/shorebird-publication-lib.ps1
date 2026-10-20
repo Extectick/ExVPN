@@ -3,6 +3,32 @@
 # Read-only policy helpers. Dot-sourcing never executes SDK, cloud or app code.
 Set-StrictMode -Version Latest
 
+function Get-IndependentPreviewAutomatedChecks($Evidence,[string]$Repository,[string]$BaseCommit) {
+    # Deferred device acceptance is independent of already completed source tests.
+    # Never relabel a passing suite as unperformed to use the Preview path.
+    if ($Evidence.automatedTests -ceq 'not_run_by_user_request') {
+        if ($Evidence.ContainsKey('automatedEvidence')) { throw 'manual_preview_ambiguous_test_evidence' }
+        return [ordered]@{status='not_run_by_user_request';evidence=$null}
+    }
+    if ($Evidence.automatedTests -cne 'passed' -or !$Evidence.ContainsKey('automatedEvidence')) { throw 'manual_preview_test_status_invalid' }
+    $record=$Evidence.automatedEvidence
+    if ($record.sourceCommit -cne $BaseCommit -or $record.path -cnotmatch '^docs/evidence/[a-zA-Z0-9_-]+\.json$' -or
+        $record.sha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'manual_preview_test_binding_invalid' }
+    $path=Join-Path $Repository $record.path
+    Assert-AuditNoLinks $path
+    if ((Get-Item -LiteralPath $path).Length -gt 1MB -or (Get-AuditSha256 $path) -cne $record.sha256) { throw 'manual_preview_test_report_changed' }
+    $expected=Invoke-ShorebirdGit $Repository @('rev-parse',"${BaseCommit}:$($record.path)")
+    $actual=Invoke-ShorebirdGit $Repository @('hash-object',"--path=$($record.path)",$path)
+    if ($actual -cne $expected) { throw 'manual_preview_test_report_not_in_base_source' }
+    $report=Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -AsHashtable
+    if ($report.schemaVersion -ne 1 -or $report.mode -cne 'Full' -or $report.status -cne 'passed' -or
+        $report.sourceUnchanged -ne $true -or $report.sourceFingerprintBefore -cnotmatch '^[a-f0-9]{64}$' -or
+        $report.sourceFingerprintBefore -cne $report.sourceFingerprintAfter -or @($report.lanes).Count -ne 12 -or
+        @($report.lanes | Where-Object { $_.status -cne 'passed' -or $_.exitCode -ne 0 }).Count -ne 0 -or
+        @($report.lanes.lane | Sort-Object -Unique).Count -ne 12) { throw 'manual_preview_full_suite_not_passed' }
+    [ordered]@{status='passed';evidence=[ordered]@{sourceCommit=$BaseCommit;path=$record.path;sha256=$record.sha256}}
+}
+
 function Assert-ShorebirdRuntimeGate($Evidence,[string]$Version,[string]$BaseCommit,$Receipts,$Artifacts) {
     if ($Evidence.schemaVersion -ne 1 -or $Evidence.version -cne $Version -or $Evidence.baseSourceCommit -cne $BaseCommit -or
         @($Evidence.platforms).Count -ne 2) { throw 'shorebird_runtime_gate_identity_failed' }

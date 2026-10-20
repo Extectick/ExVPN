@@ -66,4 +66,5 @@ $map['inventory.json'].sha256='b'*64
 Assert-Refuses { Assert-ShorebirdNoticeMap $map $audit } 'notice_bytes_changed_refused'
 Write-Host "Shorebird public promotion: $script:checks checks PASS; no SDK or cloud operations."
 # Report successful assertions, not a native exit code inherited by the caller.
+& (Join-Path $PSScriptRoot 'test-preview-test-evidence.ps1')
 $global:LASTEXITCODE=0

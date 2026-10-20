@@ -51,8 +51,9 @@ $safeProof=if ($DeferRuntimeVerification) {
     # Bind the real package bytes and record the unperformed checks honestly.
     if ($proof.schemaVersion -ne 1 -or $proof.delivery -cne 'independent' -or
         $proof.version -cne $ReleaseVersion -or $proof.baseSourceCommit -cne $BaseSourceCommit -or
-        $proof.runtimeVerification -cne 'deferred_to_user' -or $proof.automatedTests -cne 'not_run_by_user_request' -or
+        $proof.runtimeVerification -cne 'deferred_to_user' -or
         $proof.stableReady -ne $false -or @($proof.platforms).Count -ne 2) { throw 'manual_preview_identity_failed' }
+    $automated=Get-IndependentPreviewAutomatedChecks $proof $repository $BaseSourceCommit
     $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
     $manualPlatforms=@()
     foreach ($record in $proof.platforms) {
@@ -63,7 +64,9 @@ $safeProof=if ($DeferRuntimeVerification) {
             $record.runtimeVerified -ne $false) { throw 'manual_preview_package_binding_failed' }
         $manualPlatforms += [ordered]@{target=$target;artifactSha256=$artifactHashes[$target];runtimeVerified=$false}
     }
-    [ordered]@{schemaVersion=1;delivery='independent';version=$ReleaseVersion;baseSourceCommit=$BaseSourceCommit;runtimeVerification='deferred_to_user';automatedTests='not_run_by_user_request';stableReady=$false;baseReceipts=$receiptHashes;platforms=$manualPlatforms}
+    $safe=[ordered]@{schemaVersion=1;delivery='independent';version=$ReleaseVersion;baseSourceCommit=$BaseSourceCommit;runtimeVerification='deferred_to_user';automatedTests=$automated.status;stableReady=$false;baseReceipts=$receiptHashes;platforms=$manualPlatforms}
+    if ($automated.evidence) { $safe['automatedEvidence']=$automated.evidence }
+    $safe
 } elseif ($Independent) { Assert-IndependentRuntimeGate $proof $ReleaseVersion $BaseSourceCommit $receiptHashes $artifactHashes } else { Assert-ShorebirdRuntimeGate $proof $ReleaseVersion $BaseSourceCommit $receiptHashes $artifactHashes }
 $privateRun=New-ShorebirdPrivateDirectory $repository 'public-preview'
 $stage=Join-Path $privateRun 'public'
@@ -143,7 +146,7 @@ try {
             signature=$(if ($target -ceq 'Android') {$signature} else {$null})
         }
         if ($Independent) { $build['otaProvider']='exvpn';$build['otaInputsCapsule']=$capsule.asset }
-        if ($DeferRuntimeVerification) { $build['runtimeVerification']='deferred_to_user';$build['automatedTests']='not_run_by_user_request' }
+        if ($DeferRuntimeVerification) { $build['runtimeVerification']='deferred_to_user';$build['automatedTests']=$safeProof.automatedTests }
         $build | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath (Join-Path $folder "$stem-build.json") -Encoding utf8NoBOM
         Assert-ShorebirdPublicBuild $build $ReleaseVersion $BaseSourceCommit $base.binary.asset.file $base.binary.asset.sha256 $base.binary.asset.bytes
     }
@@ -185,7 +188,7 @@ $notes=Invoke-ShorebirdGit $repository @('show',"${notesSourceCommit}:docs/relea
 $assets=@(Get-ChildItem -LiteralPath $delivery -File | ForEach-Object { Get-DemoAssetRecord $_.FullName })
 $manifest=[ordered]@{schema=1;version=$parts[0];build=[int]$parts[1];channel='beta';tag=$tag;sourceCommit=$BaseSourceCommit;prerelease=$true;stableReady=$false;runtime='shorebird';dartOtaAvailable=$true;runtimeQaSha256=$qaHash;assets=$assets}
 if ($Independent) { $manifest['otaProvider']='exvpn';$manifest['notesSourceCommit']=$notesSourceCommit }
-if ($DeferRuntimeVerification) { $manifest['runtimeVerification']='deferred_to_user';$manifest['automatedTests']='not_run_by_user_request' }
+if ($DeferRuntimeVerification) { $manifest['runtimeVerification']='deferred_to_user';$manifest['automatedTests']=$safeProof.automatedTests }
 $manifest | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $delivery 'release-manifest.json') -Encoding utf8NoBOM
 $assets+=Get-DemoAssetRecord (Join-Path $delivery 'release-manifest.json')
 $assets | Sort-Object file | ForEach-Object { "$($_.sha256)  $($_.file)" } | Set-Content -LiteralPath (Join-Path $delivery 'SHA256SUMS.txt') -Encoding ascii
