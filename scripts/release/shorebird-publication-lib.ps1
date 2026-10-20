@@ -12,7 +12,7 @@ function Get-IndependentPreviewAutomatedChecks($Evidence,[string]$Repository,[st
     }
     if ($Evidence.automatedTests -cne 'passed' -or !$Evidence.ContainsKey('automatedEvidence')) { throw 'manual_preview_test_status_invalid' }
     $record=$Evidence.automatedEvidence
-    if ($record.sourceCommit -cne $BaseCommit -or $record.path -cnotmatch '^docs/evidence/[a-zA-Z0-9_-]+\.json$' -or
+    if ($record.sourceCommit -cne $BaseCommit -or $record.path -cnotmatch '^docs/evidence/[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*\.json$' -or
         $record.sha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'manual_preview_test_binding_invalid' }
     $path=Join-Path $Repository $record.path
     Assert-AuditNoLinks $path
