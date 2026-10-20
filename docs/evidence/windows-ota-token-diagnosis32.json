@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "version": "0.1.10+32",
+  "scope": "QA restricted token launch defaults; not automatic OTA apply/rollback",
+  "nativeProductChanged": false,
+  "flutterBuilt": false,
+  "installedHelperSha256": "5a768267f881a134bf55ea0815531647f3efdaef066f2977bc0d09e009bbf095",
+  "installedUiSha256": "205995dccb5004c184c324983cf1bdc6dc0b44690216f5d3ebf210961da58674",
+  "boundUiPid": 1724,
+  "before": {
+    "sameSid": true,
+    "nativeUiCreationMatched": true,
+    "uiQueryLimitedAndSynchronize": true,
+    "medium": true,
+    "osPipeError": 5,
+    "userAceInTokenDefaultDacl": false,
+    "noPackage": true,
+    "workerStarted": false,
+    "adminsAceInTokenDefaultDacl": true,
+    "virtualizationEnabled": false,
+    "systemAceInTokenDefaultDacl": true
+  },
+  "cause": "Artificial restricted medium token retained administrative default owner/DACL; Go CreatePipe with null security descriptor failed with access denied",
+  "harnessFix": {
+    "mediumIntegrityRetained": true,
+    "nativeGuardsUnchanged": true,
+    "noPrivilegeElevation": true,
+    "tokenDefaultDacl": [
+      "same user full access",
+      "SYSTEM full access"
+    ],
+    "tokenDefaultOwner": "same user",
+    "primaryTokenSameUserRetained": true
+  },
+  "after": {
+    "workerStatus": "prepared",
+    "uiStillRunning": true,
+    "stdinClosedWithoutCommit": true,
+    "uiExitRequested": false,
+    "workerExited": true,
+    "exactInstalledAndStagedBytesBound": true,
+    "nativeUiCreationUsed": true
+  },
+  "automaticOtaAccepted": false,
+  "manualSdkCacheMutation": false,
+  "hostNetworkChanged": false,
+  "computerUse": false,
+  "correctedUiLauncher": ".private/windows32/input/LaunchMedium32Fixed.ps1",
+  "correctedProbeLauncher": ".private/windows32/input/LaunchGoProbe32Fixed.ps1",
+  "runtimeEvidence": [
+    ".private/windows32/output/token-default-dacl.json",
+    ".private/windows32/output/native-noncommit-worker-probe-errno.json",
+    ".private/windows32/output/native-noncommit-worker-probe-fixed.json"
+  ]
+}

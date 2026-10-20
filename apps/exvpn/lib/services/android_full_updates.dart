@@ -635,7 +635,10 @@ class AndroidFullUpdatesBackend implements FullUpdatesBackend {
         return FullUpdateHandoff.installerOpened;
       });
   @override
-  Future<void> restartUi() async => _fail('unsupported_platform');
+  Future<void> restartUi() => _exclusive(() async {
+    final result = await _native('restartUi');
+    if (result != 'accepted') _fail('invalid_response');
+  });
   @override
   Future<void> cancel() async {
     _cancelled = true;

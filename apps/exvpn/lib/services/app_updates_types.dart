@@ -13,7 +13,8 @@ enum AppUpdateStatePhase {
 enum AppUpdateKind { full, patch }
 
 /// Opening Android's installer is not proof of installation and must not cause
-/// this UI to exit. Windows' accepted handoff owns an explicit UI replacement.
+/// this UI to exit. Windows' helper and Android's patch broker own cold UI
+/// replacement; neither accepts an arbitrary executable or launch target.
 enum FullUpdateHandoff { exitUi, installerOpened }
 
 class AppUpdateState {

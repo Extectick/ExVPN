@@ -432,8 +432,9 @@ final class VpnController extends ChangeNotifier {
   }
 
   /// Reserves VPN commands while storage is flushed and a native updater takes
-  /// ownership of a UI restart. A Dart-only restart leaves the service and its
-  /// proxy lease untouched. An installer additionally requires native idle state.
+  /// ownership of a UI restart. Windows Dart-only restart leaves its separate
+  /// service/proxy lease untouched. Installers and Android's shared-process
+  /// restart additionally require native idle state.
   Future<T> runForApplicationRestart<T>(
     Future<T> Function(bool Function() stillSafe) action, {
     bool requireDisconnected = false,

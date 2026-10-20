@@ -47,6 +47,7 @@ class AppUpdatesController extends ChangeNotifier {
   bool _initialized = false;
   bool _fullReady = false;
   bool _handoffAccepted = false;
+  bool _patchAutoRestartPending = false;
   bool _cancelRequested = false;
   FullUpdateOffer? _offer;
   DateTime? _lastCheck;
@@ -76,14 +77,35 @@ class AppUpdatesController extends ChangeNotifier {
 
   /// Resume does not poll, replace an offered restart, or overlap another call.
   Future<void> onResume() async {
-    if (_disposed || busy || _prepared) return;
+    if (_disposed || busy) return;
+    if (_prepared) return onRestartOpportunity();
     if (!_initialized) return initialize();
     final last = _lastCheck;
     if (last != null && _now().difference(last) < resumeCheckInterval) return;
     await check(userInitiated: false);
   }
 
+  /// A real lifecycle/safety transition may retry a deferred patch once. This
+  /// never polls, downloads again, reopens an APK installer, or retries a failed
+  /// native handoff. The caller must not generate an edge from our reservation.
+  Future<void> onRestartOpportunity() async {
+    if (!_patchAutoRestartPending || !canRestart) return;
+    await restart();
+  }
+
+  Future<void> _preparePatch() async {
+    _showPrepared();
+    _patchAutoRestartPending =
+        autoRestartAfterDownload && beforeRestart != null;
+    if (_patchAutoRestartPending) await _restartPrepared();
+  }
+
   Future<void> check({bool userInitiated = true}) => _exclusive(() async {
+    if (_prepared &&
+        phase == AppUpdateStatePhase.failed &&
+        _retry == _Retry.restart) {
+      return;
+    }
     if (_fullReady) {
       _showPrepared();
       return;
@@ -121,14 +143,14 @@ class AppUpdatesController extends ChangeNotifier {
     await _dart.initialize();
     if (_disposed || _cancelRequested) return;
     if (_dart.restartRequired) {
-      _showPrepared();
+      await _preparePatch();
       return;
     }
     if (_dart.available) {
       await _dart.check();
       if (_disposed || _cancelRequested) return;
       if (_dart.restartRequired) {
-        _showPrepared();
+        await _preparePatch();
         return;
       }
       if (_dart.error != null) {
@@ -205,6 +227,10 @@ class AppUpdatesController extends ChangeNotifier {
           throw AppUpdatesFailure('update_not_ready');
         }
         _showPrepared();
+        _patchAutoRestartPending =
+            selectedKind == AppUpdateKind.patch &&
+            autoRestartAfterDownload &&
+            beforeRestart != null;
         if (autoRestartAfterDownload && beforeRestart != null) {
           await _restartPrepared();
         }
@@ -244,6 +270,8 @@ class AppUpdatesController extends ChangeNotifier {
           throw AppUpdatesFailure('restart_blocked');
         }
         handoffStarted = true;
+        // Once native work starts, only an explicit retry may replay it.
+        _patchAutoRestartPending = false;
         if (selectedKind == AppUpdateKind.full) {
           outcome = await _full.handoff(_offer!);
         } else {
@@ -269,6 +297,12 @@ class AppUpdatesController extends ChangeNotifier {
       if (handedOff && outcome == FullUpdateHandoff.installerOpened) {
         _showPrepared();
       } else if (failure is AppUpdatesFailure && handoffStarted && !handedOff) {
+        if (failure.code == 'restart_blocked') {
+          _patchAutoRestartPending =
+              selectedKind == AppUpdateKind.patch && autoRestartAfterDownload;
+          _blocked(selectedKind);
+          return;
+        }
         if (selectedKind == AppUpdateKind.full &&
             failure.retryDownload &&
             _offer != null) {

@@ -131,6 +131,31 @@ void main() {
     expect(config['publicKey'], androidUpdatePublicKey);
   });
   test(
+    'cold restart uses only a parameterless native acknowledgement',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(methods, (call) async {
+            calls.add(call);
+            return 'accepted';
+          });
+      await backend.restartUi();
+      expect(calls.single.method, 'restartUi');
+      expect(calls.single.arguments, isNull);
+      expect(transport.calls, 0);
+    },
+  );
+  test(
+    'cold restart rejects missing acknowledgement and propagates native guard',
+    () async {
+      await expectLater(backend.restartUi(), fails('invalid_response'));
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(methods, (_) async {
+            throw PlatformException(code: 'restart_blocked');
+          });
+      await expectLater(backend.restartUi(), fails('restart_blocked'));
+    },
+  );
+  test(
     'valid signed offer requires newer build and never semantic downgrade',
     () async {
       final manifest = await verify(await envelope(body()));

@@ -90,7 +90,11 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
   SubscriptionPersistence? _persistence;
   DesktopTrayController? _tray;
   final _navigator = GlobalKey<NavigatorState>();
-  final _updateNavigation = UpdatesNavigationObserver();
+  late final _updateNavigation = UpdatesNavigationObserver(
+    onChanged: _onRestartEnvironmentChanged,
+  );
+  bool _restartEnvironmentReady = false;
+  bool _restartOpportunityScheduled = false;
   final _messenger = GlobalKey<ScaffoldMessengerState>();
   late final DataUpdatesController _updates;
   late final DartUpdatesController _dartUpdates;
@@ -123,6 +127,7 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
       dartUpdates: _dartUpdates,
       persistence: _persistence,
     );
+    widget.vpn?.addListener(_onRestartEnvironmentChanged);
     unawaited(_appUpdates.initialize());
     if (!kIsWeb &&
         defaultTargetPlatform == TargetPlatform.windows &&
@@ -154,43 +159,90 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
       unawaited(_appUpdates.onResume());
       unawaited(widget.vpn?.refreshConnectionProtection());
     }
+    _onRestartEnvironmentChanged();
+  }
+
+  bool get _restartEnvironmentSafe {
+    final vpn = widget.vpn;
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    return mounted &&
+        (lifecycle == null || lifecycle == AppLifecycleState.resumed) &&
+        vpn != null &&
+        vpn.initialized &&
+        !vpn.commandPending &&
+        (defaultTargetPlatform != TargetPlatform.android ||
+            vpn.canApplyDataUpdate) &&
+        !(_navigator.currentState?.canPop() == true &&
+            !_updateNavigation.showingUpdates);
+  }
+
+  void _onRestartEnvironmentChanged() {
+    // The restart's own reservation/flush notifications are not a new chance.
+    if (!mounted || widget.vpn?.applicationRestartPending == true) return;
+    final ready = _restartEnvironmentSafe;
+    final wasReady = _restartEnvironmentReady;
+    _restartEnvironmentReady = ready;
+    if (!ready || wasReady || _restartOpportunityScheduled) return;
+    _restartOpportunityScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _restartOpportunityScheduled = false;
+      if (mounted && _restartEnvironmentSafe) {
+        unawaited(_appUpdates.onRestartOpportunity());
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   Future<bool> _beforeRestart(
     AppUpdateKind kind,
     Future<void> Function() handoff,
   ) async {
-    // Android opens the system APK installer without forcing this UI to exit.
-    // Dart patches there still wait for a normal launch. Windows owns a complete
-    // native handoff and explicit UI replacement after persistence is flushed.
+    // Android's native broker replaces its VM only while its same-process VPN
+    // is idle. Windows replaces just the UI; its separate service stays alive.
     final vpn = widget.vpn;
     final androidFull =
         defaultTargetPlatform == TargetPlatform.android &&
         kind == AppUpdateKind.full;
     if (!mounted ||
         kIsWeb ||
-        (defaultTargetPlatform != TargetPlatform.windows && !androidFull) ||
+        (defaultTargetPlatform != TargetPlatform.windows &&
+            defaultTargetPlatform != TargetPlatform.android) ||
         vpn == null ||
+        (WidgetsBinding.instance.lifecycleState != null &&
+            WidgetsBinding.instance.lifecycleState !=
+                AppLifecycleState.resumed) ||
         (_navigator.currentState?.canPop() == true &&
             !_updateNavigation.showingUpdates)) {
       return false;
     }
-    return vpn.runForApplicationRestart((stillSafe) async {
-      await _persistence?.flush().timeout(const Duration(seconds: 10));
-      await _appearance.flush().timeout(const Duration(seconds: 3));
-      if (!mounted ||
-          !stillSafe() ||
-          _persistence?.pending == true ||
-          _persistence?.error != null ||
-          _appearance.storageErrorCode != null) {
-        return false;
-      }
-      await handoff();
-      if (androidFull) return true;
-      vpn.commitApplicationRestart();
-      await WindowsDesktopTray().exitApplication();
-      return true;
-    }, requireDisconnected: kind == AppUpdateKind.full);
+    return vpn.runForApplicationRestart(
+      (stillSafe) async {
+        await _persistence?.flush().timeout(const Duration(seconds: 10));
+        await _appearance.flush().timeout(const Duration(seconds: 3));
+        if (!mounted ||
+            (WidgetsBinding.instance.lifecycleState != null &&
+                WidgetsBinding.instance.lifecycleState !=
+                    AppLifecycleState.resumed) ||
+            !stillSafe() ||
+            (_navigator.currentState?.canPop() == true &&
+                !_updateNavigation.showingUpdates) ||
+            _persistence?.pending == true ||
+            _persistence?.error != null ||
+            _appearance.storageErrorCode != null) {
+          return false;
+        }
+        await handoff();
+        if (androidFull) return true;
+        vpn.commitApplicationRestart();
+        if (defaultTargetPlatform == TargetPlatform.windows) {
+          await WindowsDesktopTray().exitApplication();
+        }
+        return true;
+      },
+      requireDisconnected:
+          kind == AppUpdateKind.full ||
+          defaultTargetPlatform == TargetPlatform.android,
+    );
   }
 
   AppUpdatePresentation? get _updatePresentation => switch (_appUpdates.phase) {
@@ -232,11 +284,8 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
   };
 
   String get _updateBlockedLabel {
-    if (defaultTargetPlatform == TargetPlatform.android &&
-        _appUpdates.kind == AppUpdateKind.patch) {
-      return 'Обновление применится при следующем запуске';
-    }
-    if (_appUpdates.kind == AppUpdateKind.full &&
+    if ((_appUpdates.kind == AppUpdateKind.full ||
+            defaultTargetPlatform == TargetPlatform.android) &&
         widget.vpn?.canDisconnect == true) {
       return 'Для установки отключите VPN';
     }
@@ -341,6 +390,7 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    widget.vpn?.removeListener(_onRestartEnvironmentChanged);
     _logs.dispose();
     _appUpdates.dispose();
     _tray?.dispose();

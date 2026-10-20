@@ -13,7 +13,7 @@ class FakeFullUpdates implements FullUpdatesBackend {
   @override
   bool supported = true;
   FullUpdateOffer? available = offer;
-  Object? checkError, downloadError, handoffError;
+  Object? checkError, downloadError, handoffError, restartError;
   Completer<FullUpdateOffer?>? pendingCheck;
   Completer<FullUpdateOffer>? pendingDownload;
   FullUpdateProgressCallback? progress;
@@ -49,7 +49,11 @@ class FakeFullUpdates implements FullUpdatesBackend {
   }
 
   @override
-  Future<void> restartUi() async => restarts++;
+  Future<void> restartUi() async {
+    restarts++;
+    if (restartError != null) throw restartError!;
+  }
+
   @override
   Future<void> cancel() async {
     cancels++;
@@ -74,6 +78,7 @@ class FakePatchUpdates implements DartUpdatesBackend {
   DartUpdateStatus status = DartUpdateStatus.outdated;
   Completer<DartPatchSnapshot>? pendingDownload;
   int reads = 0, checks = 0, downloads = 0;
+  DartPatchSnapshot? checked;
   @override
   Future<DartPatchSnapshot> read() async {
     reads++;
@@ -83,6 +88,7 @@ class FakePatchUpdates implements DartUpdatesBackend {
   @override
   Future<DartUpdateCheck> check() async {
     checks++;
+    saved = checked ?? saved;
     return DartUpdateCheck(status, saved);
   }
 
@@ -481,6 +487,112 @@ void main() {
       expect(updates.phase, AppUpdateStatePhase.restartReady);
       expect(full.restarts, 0);
     });
+
+    for (final fromCheck in [false, true]) {
+      test(
+        'signed rollback auto restarts once ${fromCheck ? 'after check' : 'on startup'} without a download',
+        () async {
+          updates.dispose();
+          full.available = null;
+          patch.saved = DartPatchSnapshot(
+            available: true,
+            current: 1,
+            next: fromCheck ? 1 : null,
+          );
+          if (fromCheck) {
+            patch.checked = const DartPatchSnapshot(
+              available: true,
+              current: 1,
+            );
+          }
+          updates = AppUpdatesController(
+            fullBackend: full,
+            dartUpdates: dart,
+            beforeRestart: (_, handoff) async {
+              await handoff();
+              return true;
+            },
+          );
+          await updates.initialize();
+          expect(full.restarts, 1);
+          expect(patch.downloads, 0);
+          await updates.onResume();
+          await updates.onRestartOpportunity();
+          expect(full.restarts, 1);
+        },
+      );
+    }
+
+    test('deferred patch retries only at safety opportunity and never re-downloads', () async {
+      updates.dispose();
+      full.available = null;
+      patch.saved = const DartPatchSnapshot(available: true, next: 1);
+      var safe = false;
+      updates = AppUpdatesController(
+        fullBackend: full,
+        dartUpdates: dart,
+        beforeRestart: (_, handoff) async {
+          if (!safe) return false;
+          await handoff();
+          return true;
+        },
+      );
+      await updates.initialize();
+      expect(full.restarts, 0);
+      expect(updates.phase, AppUpdateStatePhase.blocked);
+      safe = true;
+      await updates.onRestartOpportunity();
+      await updates.onRestartOpportunity();
+      expect(full.restarts, 1);
+      expect(patch.downloads, 0);
+    });
+
+    test('deferred full installer is never reopened by resume or safety notifications', () async {
+      updates.dispose();
+      full.handoffResult = FullUpdateHandoff.installerOpened;
+      updates = AppUpdatesController(
+        fullBackend: full,
+        dartUpdates: dart,
+        beforeRestart: (_, handoff) async {
+          await handoff();
+          return true;
+        },
+      );
+      await updates.initialize();
+      await updates.download();
+      await updates.onResume();
+      await updates.onRestartOpportunity();
+      expect(full.handoffs, 1);
+    });
+
+    test(
+      'failed patch handoff is not replayed by check or lifecycle events',
+      () async {
+        updates.dispose();
+        full.available = null;
+        full.restartError = AppUpdatesFailure('handoff_failed');
+        patch.saved = const DartPatchSnapshot(available: true, next: 1);
+        updates = AppUpdatesController(
+          fullBackend: full,
+          dartUpdates: dart,
+          beforeRestart: (_, handoff) async {
+            await handoff();
+            return true;
+          },
+        );
+        await updates.initialize();
+        expect(full.restarts, 1);
+        expect(updates.phase, AppUpdateStatePhase.failed);
+        await updates.check();
+        await updates.onResume();
+        await updates.onRestartOpportunity();
+        expect(full.restarts, 1);
+        full.restartError = null;
+        await updates.retry();
+        expect(full.restarts, 2);
+        expect(patch.downloads, 0);
+      },
+    );
 
     test('legacy patch state never replaces offered full release', () async {
       await updates.initialize();

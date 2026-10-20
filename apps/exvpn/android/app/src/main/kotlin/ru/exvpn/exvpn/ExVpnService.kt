@@ -67,6 +67,7 @@ class ExVpnService : VpnService() {
 
     override fun onCreate() {
         super.onCreate()
+        AndroidOtaRestart.beforeVpnStart()
         connectivity = getSystemService(ConnectivityManager::class.java)
         VpnRuntime.service = this
         getSystemService(NotificationManager::class.java).createNotificationChannel(

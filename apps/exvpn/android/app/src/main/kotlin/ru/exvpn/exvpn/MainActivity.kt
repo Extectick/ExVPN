@@ -124,6 +124,7 @@ class MainActivity : FlutterActivity() {
                 }
                 "coreVersion" -> result.success("26.10.10-exvpn.5")
                 "connect", "reconnect" -> {
+                    if (AndroidOtaRestart.pending) { result.error("operation_in_progress", "Application restart pending", null); return@setMethodCallHandler }
                     if (consent.pending) { result.error("operation_in_progress", "VPN permission request pending", null); return@setMethodCallHandler }
                     if (!NativeCore.available) { result.error("native_core_unavailable", "Native core is not installed", null); return@setMethodCallHandler }
                     val requestedMode = call.argument<String>("mode")

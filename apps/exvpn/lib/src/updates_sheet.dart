@@ -43,7 +43,9 @@ class _UpdatesSheetState extends State<UpdatesSheet> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted &&
           identical(controller, _controller) &&
-          (controller?.canCheck == true || controller?.canRestart == true)) {
+          (controller?.canCheck == true ||
+              (controller?.canRestart == true &&
+                  controller?.phase == AppUpdateStatePhase.hidden))) {
         unawaited(controller!.check());
       }
     });
@@ -242,10 +244,13 @@ class _UpdatesSheetState extends State<UpdatesSheet> {
 
 /// Only the read-only updater page may bypass the open-dialog restart guard.
 class UpdatesNavigationObserver extends NavigatorObserver {
+  UpdatesNavigationObserver({this.onChanged});
+  final VoidCallback? onChanged;
   Route<dynamic>? _top;
   bool get showingUpdates => _top?.settings.name == UpdatesSheet.routeName;
   @override
   void didChangeTop(Route<dynamic> topRoute, Route<dynamic>? previousTopRoute) {
     _top = topRoute;
+    onChanged?.call();
   }
 }

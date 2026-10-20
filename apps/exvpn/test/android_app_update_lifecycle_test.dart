@@ -29,6 +29,13 @@ class _FullBackend extends FakeFullUpdates {
   bool flushedAtHandoff = false;
 
   @override
+  Future<void> restartUi() async {
+    reservedAtHandoff = vpn!.applicationRestartPending;
+    flushedAtHandoff = appearance!.flushes > 0;
+    await super.restartUi();
+  }
+
+  @override
   Future<FullUpdateHandoff> handoff(FullUpdateOffer selected) {
     reservedAtHandoff = vpn!.applicationRestartPending;
     flushedAtHandoff = appearance!.flushes > 0;
@@ -41,6 +48,8 @@ Future<({VpnController vpn, _FullBackend backend, FakeBridge bridge})> _open(
   bool connected = false,
   Object? handoffError,
   Completer<FullUpdateHandoff>? handoff,
+  FakePatchUpdates? patch,
+  Object? restartError,
 }) async {
   tester.platformDispatcher.localesTestValue = const [Locale('ru')];
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
@@ -55,11 +64,13 @@ Future<({VpnController vpn, _FullBackend backend, FakeBridge bridge})> _open(
     ..handoffResult = FullUpdateHandoff.installerOpened
     ..handoffError = handoffError
     ..pendingHandoff = handoff
+    ..restartError = restartError
     ..vpn = vpn
     ..appearance = appearance;
   final dart = DartUpdatesController(
-    backend: const DisabledDartUpdatesBackend(),
+    backend: patch ?? const DisabledDartUpdatesBackend(),
   );
+  if (patch != null) backend.available = null;
   await tester.pumpWidget(
     ExVpnApp(
       controller: AppController(),
@@ -73,7 +84,15 @@ Future<({VpnController vpn, _FullBackend backend, FakeBridge bridge})> _open(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  // An accepted native replacement keeps its progress animation until this
+  // process exits; the fake deliberately does not terminate the test runner.
+  if (patch != null && !connected && restartError == null) {
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+  } else {
+    await tester.pumpAndSettle();
+  }
   addTearDown(() async {
     await tester.pumpWidget(const SizedBox.shrink());
     await bridge.close();
@@ -202,41 +221,59 @@ void main() {
   }
 
   _androidWidgets(
-    'Android Dart patch activation remains deferred to a normal launch',
+    'Android staged patch automatically cold restarts after flush without tray exit',
     (tester) async {
-      final state = await _open(tester);
-      await tester.pumpWidget(const SizedBox.shrink());
       final patch = FakePatchUpdates()
         ..saved = const DartPatchSnapshot(available: true, next: 2);
-      final dart = DartUpdatesController(backend: patch);
-      final backend = _FullBackend()..available = null;
-      final bridge = FakeBridge();
-      await tester.pumpWidget(
-        ExVpnApp(
-          controller: AppController(),
-          vpn: VpnController(bridge),
-          fullUpdatesBackend: backend,
-          appearanceController: _Appearance(),
-          dartUpdates: dart,
-          updates: DataUpdatesController(
-            vpn: null,
-            backend: DisabledDataUpdatesBackend(),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await _updates(tester).restart();
-      await tester.pump();
-      expect(_updates(tester).phase, AppUpdateStatePhase.blocked);
-      expect(backend.handoffs, 0);
-      expect(backend.restarts, 0);
-      expect(
-        find.text('Обновление применится при следующем запуске'),
-        findsOneWidget,
-      );
+      final state = await _open(tester, patch: patch);
+      expect(state.backend.restarts, 1);
+      expect(state.backend.reservedAtHandoff, isTrue);
+      expect(state.backend.flushedAtHandoff, isTrue);
+      expect(state.vpn.applicationRestartPending, isTrue);
       expect(state.bridge.disconnects, 0);
-      await tester.pumpWidget(const SizedBox.shrink());
-      await bridge.close();
+      expect(patch.downloads, 0);
+      await _updates(tester).onResume();
+      expect(state.backend.restarts, 1);
+    },
+  );
+
+  _androidWidgets(
+    'Android active VPN defers patch then automatically restarts after normal disconnect',
+    (tester) async {
+      final patch = FakePatchUpdates()
+        ..saved = const DartPatchSnapshot(available: true, next: 2);
+      final state = await _open(tester, patch: patch, connected: true);
+      expect(state.backend.restarts, 0);
+      expect(state.bridge.disconnects, 0);
+      expect(state.vpn.applicationRestartPending, isFalse);
+      state.bridge.emit(off);
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(state.backend.restarts, 1);
+      expect(state.bridge.disconnects, 0);
+      expect(patch.downloads, 0);
+    },
+  );
+
+  _androidWidgets(
+    'native restart failure releases commands without reservation notification retry loop',
+    (tester) async {
+      final patch = FakePatchUpdates()
+        ..saved = const DartPatchSnapshot(available: true, next: 2);
+      final state = await _open(
+        tester,
+        patch: patch,
+        restartError: AppUpdatesFailure('handoff_failed'),
+      );
+      expect(state.backend.restarts, 1);
+      expect(state.vpn.applicationRestartPending, isFalse);
+      for (var i = 0; i < 3; i++) {
+        state.bridge.emit(off);
+        await tester.pumpAndSettle();
+      }
+      await _updates(tester).onResume();
+      expect(state.backend.restarts, 1);
     },
   );
 }

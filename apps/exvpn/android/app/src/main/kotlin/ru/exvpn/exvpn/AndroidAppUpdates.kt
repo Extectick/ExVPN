@@ -47,6 +47,10 @@ internal class AndroidAppUpdates(private val activity: Activity) {
                     "sdk" to Build.VERSION.SDK_INT, "cacheDirectory" to cache().path))
             } catch (failure: Exception) { reject(reply, (failure as? AndroidUpdateFailure)?.code ?: "cache_unavailable") }
             "install" -> install(arguments, reply)
+            "restartUi" -> {
+                if (pending != null) reject(reply, "operation_busy")
+                else AndroidOtaRestart.begin(activity, arguments, reply)
+            }
             else -> reply.notImplemented()
         }
     }
@@ -55,7 +59,7 @@ internal class AndroidAppUpdates(private val activity: Activity) {
     private fun foreground() = !activity.isFinishing && !activity.isDestroyed && activity.hasWindowFocus()
 
     private fun install(arguments: Any?, reply: MethodChannel.Result) {
-        if (pending != null) { reject(reply, "operation_busy"); return }
+        if (pending != null || AndroidOtaRestart.pending) { reject(reply, "operation_busy"); return }
         val request = try { AndroidInstallRequest.parse(arguments) } catch (_: Exception) { reject(reply, "invalid_request"); return }
         if (!idle() || !foreground()) { reject(reply, "restart_blocked"); return }
         pending = reply
@@ -125,6 +129,7 @@ internal class AndroidAppUpdates(private val activity: Activity) {
     fun onActivityResult(requestCode: Int): Boolean = requestCode == INSTALL_REQUEST
     fun dispose() {
         disposed = true
+        AndroidOtaRestart.dispose(activity)
         pending?.let { reject(it, "cancelled") }; pending = null
         worker.shutdownNow()
     }

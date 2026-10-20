@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "target": "Android",
+  "checks": 5,
+  "status": "PASS",
+  "suite": "AndroidOtaRestartPolicyTest",
+  "scope": "pure JVM policy tests and separate pinned Kotlin 2.4 compilation of the three new native classes; excludes actual process handoff and OTA runtime",
+  "tests": [
+    "argument-free foreground idle gate",
+    "malformed nonce and concurrent request refusal",
+    "commit refused after VPN start or stale session",
+    "cancellation and late broker isolation",
+    "single-use commit"
+  ],
+  "source": "working tree; commit pending",
+  "sharedBuildExecuted": false,
+  "emulatorActionsExecuted": false
+}

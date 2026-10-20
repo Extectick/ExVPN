@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "scope": "One Full frozen source run plus app-only repair; not real VPN or runtime OTA acceptance",
+  "status": "passed",
+  "fullReport": "fast-validation-v0.1.11-full-initial.json",
+  "fullSourceUnchanged": true,
+  "fullPassedLanes": 11,
+  "fullFailedLane": "app",
+  "repairFile": "apps/exvpn/lib/src/updates_sheet.dart",
+  "repair": "Sync already-prepared rollback only when the updates sheet starts hidden; do not replay failed handoff",
+  "repairedLane": "app",
+  "appAnalyze": "PASS",
+  "appTests": 456,
+  "appRepairLogSha256": "7fd75d90545cc5655f8885f71d6210acb72814b2c4a148b823163934d4ddd815",
+  "finalSourceFingerprint": "f5d077e473272bf66ef42f841255a99f71e75a09ac43f797f9c940ec350df42a",
+  "nativeLanesRepeated": false,
+  "buildsExecuted": false
+}
