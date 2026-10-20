@@ -80,6 +80,10 @@ Kotlin файлов API36 выполнен с `R.drawable` stub; это не APK
 не единый Full12/12; [отчёт](evidence/site-routing-validation.json) сохраняет и
 исходный отказ. Светлый/тёмный минимальный и Arabic RTL preview проверены без
 overflow/ошибок console. Настоящая VPN-сеть в этом цикле не менялась.
+После этого исправлена только навигация прямого URL design preview: под формой
+сохраняется домашний экран, «Сохранить»/«Назад» возвращают на него. Этот отдельный
+preview-only шаг проверен analyzer и живым браузером, без повторения продуктовых
+тестов и native-сборок; production UI/native не менялись. Изображения обновлены.
 
 Перед выпуском нужны Windows C++/native package и Android JNI/APK, реальное
 encrypted persistence/restore и TUN-матрица домен/IP/CIDR/IPv4/IPv6/DNS, ECH/unknown

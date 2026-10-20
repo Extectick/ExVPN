@@ -47,5 +47,15 @@
     "isolated site routing TUN IPv4/IPv6/DNS/ECH/owner/UDP matrix",
     "physical Android",
     "new Shorebird base and public release"
-  ]
+  ],
+  "previewNavigationFollowup": {
+    "webPreviewRebuilt": true,
+    "directSitesUrlHasHomeUnderneath": true,
+    "analysisPassed": true,
+    "scope": "design_preview.dart only; production UI/native unchanged",
+    "allFullSuitesRepeated": false,
+    "nativePackagesRebuilt": false,
+    "saveReturnsToHome": true,
+    "browserConsoleErrors": 0
+  }
 }

@@ -56,6 +56,7 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
   late AppUpdatesController _previewUpdates = _createPreviewUpdates();
   late final ClientLogs _logs = ClientLogs(controller: _app, vpn: _vpn);
   final _appearance = AppearanceController(preview: true);
+  bool _showSitesPreview = Uri.base.queryParameters['page'] == 'sites';
   DesktopLayout _layout = DesktopLayout.values.firstWhere(
     (mode) => mode.name == Uri.base.queryParameters['layout'],
     orElse: () => DesktopLayout.medium,
@@ -394,12 +395,20 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
                               appUpdates: _previewUpdates,
                               previewVersion: _previewVersion,
                             )
-                          : Uri.base.queryParameters['page'] == 'sites'
-                          ? SiteRoutingSheet(vpn: _vpn)
                           : child,
                     ),
+                    if (_showSitesPreview)
+                      MaterialPage<void>(
+                        key: const ValueKey('site-routing-preview'),
+                        child: SiteRoutingSheet(vpn: _vpn),
+                      ),
                   ],
-                  onDidRemovePage: (_) {},
+                  onDidRemovePage: (page) {
+                    if (page.key == const ValueKey('site-routing-preview') &&
+                        mounted) {
+                      setState(() => _showSitesPreview = false);
+                    }
+                  },
                 ),
               ),
             ),
