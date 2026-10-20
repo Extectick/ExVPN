@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "version": "0.1.14+36",
+  "productSourceCommit": "2d0d4a0",
+  "controllerHarness": true,
+  "installedServiceIpcTested": false,
+  "hostNetworkChanged": false,
+  "computerUse": false,
+  "protocol": "wireguard",
+  "syntheticGateway": true,
+  "gatewayIsolatedChild": true,
+  "httpsIPv4": true,
+  "dnsViaTun": true,
+  "ipv6EgressTested": false,
+  "ipv6FailureBlocked": true,
+  "physicalIpv6Unavailable": true,
+  "cycles": [
+    {
+      "cycle": 1,
+      "outageBlocked": true,
+      "recovered": true,
+      "guardContinuous": true
+    },
+    {
+      "cycle": 2,
+      "outageBlocked": true,
+      "recovered": true,
+      "guardContinuous": true
+    },
+    {
+      "cycle": 3,
+      "outageBlocked": true,
+      "recovered": true,
+      "guardContinuous": true
+    }
+  ],
+  "cleanup": {
+    "routesRestored": true,
+    "guardRemoved": true,
+    "dnsRestored": true,
+    "directHttpsRestored": true,
+    "qaProcessAbsent": true,
+    "tunnelAbsent": true
+  },
+  "limitations": [
+    "Local QA gateway does not prove a distinct remote egress IP",
+    "Windows guest has no external IPv6 underlay; client fixture advertises IPv4 only",
+    "Physical DNS leak capture and installed service IPC not tested in this run"
+  ]
+}

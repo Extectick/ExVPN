@@ -9,8 +9,8 @@
 - [ ] **EXVPN-E3-014** — Расширить популярные безопасные форматы импорта:
   WireGuard URI/INI/current sing-box endpoints, VMess/Trojan/Shadowsocks/gRPC,
   нейтральные REALITY/TCP aliases. Критерий: import/snapshot/native parity,
-  отрицательные типы/credentials/policy, реальный трафик. Рабочее дерево;
-  commit ожидается. Full12/12 PASS за117,94с, app482/domain225/state92, source
+  отрицательные типы/credentials/policy, реальный трафик. Реализация `2d0d4a0`;
+  QA-изоляция — рабочее дерево; commit ожидается. Full12/12 PASS за113,03с, app482/domain225/state92, source
   unchanged; scoped analyze clean. Platform runtime ещё не завершён.
 - [ ] **EXVPN-E3-015** — Добавить MASQUE закреплённого Xray: QUIC/TLS, обязательные
   SNI/credentials, фиксированная локальная DNS-политика. Критерий: import/native
@@ -22,6 +22,13 @@
   восстановление, несколько циклов и корректный cleanup. Userspace core fixtures
   отдельно подтверждают IPv4/IPv6 HTTPS, UDP/DNS, неверные ключи и down/up;
   они не заменяют platform leak/physical acceptance. Рабочее дерево; commit ожидается.
+
+2026-10-21, Windows WireGuard: независимый HTTPS IPv4 и DNS через TUN,
+три down/up цикла без direct fallback, постоянный guard, восстановление HTTPS.
+После disconnect процессы и TUN отсутствуют, маршруты/DNS совпали с baseline.
+Gateway отделён в дочерний процесс; профиль стенда IPv4-only, поскольку Sandbox
+не имеет внешнего IPv6. Это не проверка установленного SCM IPC или физического
+устройства. [Обезличенный отчёт](evidence/windows-wireguard36.json).
 
 Общий результат: [Full](evidence/fast-validation-v0.1.14.json),
 [протокольные проверки исходников](evidence/protocols36-source.json). В первом

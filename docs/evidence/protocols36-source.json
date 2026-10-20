@@ -3,11 +3,11 @@
   "date": "2026-10-21",
   "version": "0.1.14+36",
   "uiRevision": 10,
-  "source": "working tree; commit pending",
+  "source": "implementation 2d0d4a0; QA isolation candidate",
   "full": {
     "stateTests": 92,
     "status": "passed",
-    "durationSeconds": 117.94,
+    "durationSeconds": 113.03,
     "domainTests": 225,
     "lanes": 12,
     "report": "fast-validation-v0.1.14.json",

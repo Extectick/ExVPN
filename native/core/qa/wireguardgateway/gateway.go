@@ -13,6 +13,7 @@ import (
 
 	exvpn "github.com/Extectick/ExVPN/native/core"
 	"github.com/xtls/xray-core/core"
+	"github.com/xtls/xray-core/features/stats"
 	_ "github.com/xtls/xray-core/proxy/freedom"
 )
 
@@ -27,6 +28,13 @@ type Gateway struct {
 	config   []byte
 	profile  exvpn.Profile
 	closed   bool
+	uplink   int64
+	downlink int64
+}
+
+type Traffic struct {
+	Upload   int64
+	Download int64
 }
 
 // Start binds only loopback, generates one fresh peer with a preshared key and
@@ -69,7 +77,9 @@ func Start(options Options) (*Gateway, error) {
 		outbound["streamSettings"] = map[string]any{"sockopt": map[string]any{"interface": options.PhysicalInterface}}
 	}
 	config := map[string]any{
-		"log": map[string]any{"loglevel": "none", "access": "none", "error": "none", "dnsLog": false},
+		"log":    map[string]any{"loglevel": "none", "access": "none", "error": "none", "dnsLog": false},
+		"stats":  map[string]any{},
+		"policy": map[string]any{"system": map[string]any{"statsInboundUplink": true, "statsInboundDownlink": true}},
 		"inbounds": []any{map[string]any{
 			"listen": "127.0.0.1", "port": options.Port, "protocol": "wireguard", "tag": "synthetic-wireguard",
 			"settings": map[string]any{
@@ -111,6 +121,30 @@ func (g *Gateway) Online() bool {
 	return g.instance != nil
 }
 
+func (g *Gateway) currentTraffic() Traffic {
+	if g.instance == nil {
+		return Traffic{}
+	}
+	manager, ok := g.instance.GetFeature(stats.ManagerType()).(stats.Manager)
+	if !ok {
+		return Traffic{}
+	}
+	read := func(name string) int64 {
+		if counter := manager.GetCounter(name); counter != nil {
+			return counter.Value()
+		}
+		return 0
+	}
+	return Traffic{Upload: read("inbound>>>synthetic-wireguard>>>traffic>>>uplink"), Download: read("inbound>>>synthetic-wireguard>>>traffic>>>downlink")}
+}
+
+func (g *Gateway) Traffic() Traffic {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	current := g.currentTraffic()
+	return Traffic{Upload: g.uplink + current.Upload, Download: g.downlink + current.Download}
+}
+
 // SetOnline closes/recreates only the owned instance with its original keys and
 // port. It never edits routes, DNS, firewall or another WireGuard process.
 func (g *Gateway) SetOnline(online bool) error {
@@ -120,6 +154,9 @@ func (g *Gateway) SetOnline(online bool) error {
 		return exvpn.CodeError("qa_wireguard_closed")
 	}
 	if !online && g.instance != nil {
+		traffic := g.currentTraffic()
+		g.uplink += traffic.Upload
+		g.downlink += traffic.Download
 		_ = g.instance.Close()
 		g.instance = nil
 	} else if online && g.instance == nil {

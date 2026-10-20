@@ -71,13 +71,16 @@ func readFixtureMessageMode(line []byte, remote bool) (fixtureMessage, error) {
 }
 
 type isolatedFixture struct {
-	command  *exec.Cmd
-	input    io.WriteCloser
-	counters atomic.Pointer[fixtureCounters]
-	done     chan error
-	once     sync.Once
-	closeErr error
-	job      windows.Handle
+	command       *exec.Cmd
+	input         io.WriteCloser
+	counters      atomic.Pointer[fixtureCounters]
+	done          chan error
+	once          sync.Once
+	closeErr      error
+	job           windows.Handle
+	wireguard     bool
+	gatewayOnline atomic.Bool
+	exited        chan struct{}
 }
 
 func (f *isolatedFixture) snapshot() fixtureCounters {
@@ -108,6 +111,13 @@ func startIsolatedFixture(interfaceIndex int) (*isolatedFixture, exvpn.Profile, 
 }
 
 func startIsolatedFixtureMode(interfaceIndex int, remote bool) (*isolatedFixture, exvpn.Profile, error) {
+	return startIsolatedFixtureKind(interfaceIndex, remote, false)
+}
+
+func startIsolatedFixtureKind(interfaceIndex int, remote, wireguard bool) (*isolatedFixture, exvpn.Profile, error) {
+	if remote && wireguard {
+		return nil, exvpn.Profile{}, errors.New("fixture_mode_invalid")
+	}
 	executable, err := os.Executable()
 	if err != nil {
 		return nil, exvpn.Profile{}, err
@@ -115,6 +125,9 @@ func startIsolatedFixtureMode(interfaceIndex int, remote bool) (*isolatedFixture
 	command := exec.Command(executable, "-confirm-disposable-guest", "-fixture-process", "-interface-index", strconv.Itoa(interfaceIndex))
 	if remote {
 		command.Args = append(command.Args, "-remote-relay")
+	}
+	if wireguard {
+		command.Args = append(command.Args, "-wireguard-fixture")
 	}
 	command.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	command.Stderr = io.Discard
@@ -138,7 +151,7 @@ func startIsolatedFixtureMode(interfaceIndex int, remote bool) (*isolatedFixture
 		_ = command.Wait()
 		return nil, exvpn.Profile{}, errors.New("fixture_lifetime_failed")
 	}
-	fixture := &isolatedFixture{command: command, input: input, done: make(chan error, 1), job: job}
+	fixture := &isolatedFixture{command: command, input: input, done: make(chan error, 1), job: job, wireguard: wireguard, exited: make(chan struct{})}
 	ready := make(chan exvpn.Profile, 1)
 	go func() {
 		scanner := bufio.NewScanner(output)
@@ -152,7 +165,18 @@ func startIsolatedFixtureMode(interfaceIndex int, remote bool) (*isolatedFixture
 				preamble++
 				continue
 			}
-			message, err := readFixtureMessageMode(line, remote)
+			var message fixtureMessage
+			var err error
+			if wireguard {
+				var wg wireguardFixtureMessage
+				wg, err = readWireguardFixtureMessage(line)
+				message = fixtureMessage{Kind: wg.Kind, Profile: wg.Profile, Counters: wg.Counters}
+				if err == nil {
+					fixture.gatewayOnline.Store(*wg.WireGuardOnline)
+				}
+			} else {
+				message, err = readFixtureMessageMode(line, remote)
+			}
 			if err != nil || (!started && message.Kind != "ready") || (started && message.Kind != "stats") {
 				_ = input.Close()
 				break
@@ -168,10 +192,14 @@ func startIsolatedFixtureMode(interfaceIndex int, remote bool) (*isolatedFixture
 			_ = input.Close()
 		}
 		fixture.done <- command.Wait()
+		close(fixture.exited)
 	}()
 	select {
 	case profile := <-ready:
 		return fixture, profile, nil
+	case <-fixture.exited:
+		_ = fixture.Close()
+		return nil, exvpn.Profile{}, errors.New("fixture_start_failed")
 	case <-time.After(15 * time.Second):
 		_ = fixture.Close()
 		return nil, exvpn.Profile{}, errors.New("fixture_start_failed")

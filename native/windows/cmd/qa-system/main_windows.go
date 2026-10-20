@@ -63,8 +63,13 @@ func main() {
 	remoteRelay := flag.Bool("remote-relay", false, "Use private fixed remote profile through isolated TCP relays")
 	protocolProfile := flag.Bool("protocol-profile", false, "Exercise one validated profile from the fixed private guest input")
 	wireguardGateway := flag.Bool("wireguard-gateway", false, "Owned loopback WireGuard gateway for the disposable protocol test")
+	wireguardFixture := flag.Bool("wireguard-fixture", false, "Internal isolated WireGuard fixture child")
 	flag.Parse()
 	if !*confirm || flag.NArg() != 0 || !validRoutingMode(*routingMode) || validateGuest() != nil {
+		fmt.Println("disposable_system_guest_required")
+		os.Exit(2)
+	}
+	if *wireguardFixture && (!*fixtureProcess || *remoteRelay || *protocolProfile || *wireguardGateway || *automaticFailover || *inspect) {
 		fmt.Println("disposable_system_guest_required")
 		os.Exit(2)
 	}
@@ -75,6 +80,12 @@ func main() {
 		return
 	}
 	if *fixtureProcess {
+		if *wireguardFixture {
+			if runWireguardFixtureProcess(*interfaceIndex) != nil {
+				os.Exit(1)
+			}
+			return
+		}
 		if *remoteRelay {
 			if runRemoteRelayProcess(*interfaceIndex) != nil {
 				os.Exit(1)

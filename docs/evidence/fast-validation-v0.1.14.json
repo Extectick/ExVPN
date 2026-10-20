@@ -2,17 +2,17 @@
   "schemaVersion": 1,
   "mode": "Full",
   "scope": "behavioral checks only; excludes builds and real VPN/security/release acceptance",
-  "startedAt": "2026-10-20T20:48:29.1378900+00:00",
-  "endedAt": "2026-10-20T20:50:27.0794458+00:00",
-  "durationSeconds": 117.94,
+  "startedAt": "2026-10-20T21:06:02.9834840+00:00",
+  "endedAt": "2026-10-20T21:07:56.0131358+00:00",
+  "durationSeconds": 113.03,
   "status": "passed",
-  "sourceFingerprintBefore": "d32c8e2ea63d60d6cafb11e9d760b6fdca4b9a54e9f041dbcba51ee61519d24c",
-  "sourceFingerprintAfter": "d32c8e2ea63d60d6cafb11e9d760b6fdca4b9a54e9f041dbcba51ee61519d24c",
+  "sourceFingerprintBefore": "b0ecd42b7e7b8e8b1fb1b1776cb7a441f58bd0529ae1f7bab08fc8fba42eb832",
+  "sourceFingerprintAfter": "b0ecd42b7e7b8e8b1fb1b1776cb7a441f58bd0529ae1f7bab08fc8fba42eb832",
   "sourceUnchanged": true,
   "toolchain": {
-    "dart": "3.13.5",
     "flutter": "abaf9c523780a608bd46686fd5e53740a07077f8",
-    "go": "1.27.2"
+    "go": "1.27.2",
+    "dart": "3.13.5"
   },
   "changedFileCount": 0,
   "selectedLanes": [
@@ -54,7 +54,7 @@
       "lane": "android",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 8.89,
+      "durationSeconds": 7.84,
       "cachedGoPackages": 0,
       "log": "android.log"
     },
@@ -62,7 +62,7 @@
       "lane": "app",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 55.07,
+      "durationSeconds": 52.64,
       "cachedGoPackages": 0,
       "log": "app.log"
     },
@@ -70,7 +70,7 @@
       "lane": "appupdater",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 6.57,
+      "durationSeconds": 6.38,
       "cachedGoPackages": 0,
       "log": "appupdater.log"
     },
@@ -78,7 +78,7 @@
       "lane": "ci",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 47.27,
+      "durationSeconds": 48.25,
       "cachedGoPackages": 0,
       "log": "ci.log"
     },
@@ -86,7 +86,7 @@
       "lane": "core",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 36.25,
+      "durationSeconds": 36.12,
       "cachedGoPackages": 0,
       "log": "core.log"
     },
@@ -94,7 +94,7 @@
       "lane": "domain",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 7.81,
+      "durationSeconds": 7.21,
       "cachedGoPackages": 0,
       "log": "domain.log"
     },
@@ -102,7 +102,7 @@
       "lane": "installer",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 8.49,
+      "durationSeconds": 7.51,
       "cachedGoPackages": 0,
       "log": "installer.log"
     },
@@ -110,7 +110,7 @@
       "lane": "scripts",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 111.01,
+      "durationSeconds": 100.93,
       "cachedGoPackages": 0,
       "log": "scripts.log"
     },
@@ -118,7 +118,7 @@
       "lane": "state",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 7.14,
+      "durationSeconds": 7.15,
       "cachedGoPackages": 0,
       "log": "state.log"
     },
@@ -126,7 +126,7 @@
       "lane": "updates",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 9.81,
+      "durationSeconds": 11.24,
       "cachedGoPackages": 0,
       "log": "updates.log"
     },
@@ -134,7 +134,7 @@
       "lane": "windows",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 13.56,
+      "durationSeconds": 11.83,
       "cachedGoPackages": 0,
       "log": "windows.log"
     },
@@ -142,7 +142,7 @@
       "lane": "xray",
       "status": "passed",
       "exitCode": 0,
-      "durationSeconds": 11.27,
+      "durationSeconds": 11.83,
       "cachedGoPackages": 0,
       "log": "xray.log"
     }

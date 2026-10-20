@@ -12,7 +12,6 @@ import (
 	"time"
 
 	exvpn "github.com/Extectick/ExVPN/native/core"
-	"github.com/Extectick/ExVPN/native/core/qa/wireguardgateway"
 	service "github.com/Extectick/ExVPN/native/windows"
 )
 
@@ -31,14 +30,13 @@ func runProtocolProfile(interfaceIndex int, mode string, useGateway bool) error 
 		return errors.New("clean_adapter_required")
 	}
 	var profile exvpn.Profile
-	var gateway *wireguardgateway.Gateway
+	var gateway *isolatedFixture
 	if useGateway {
-		gateway, err = wireguardgateway.Start(wireguardgateway.Options{PhysicalInterface: iface.Name})
+		gateway, profile, err = startIsolatedFixtureKind(interfaceIndex, false, true)
 		if err != nil {
 			return errors.New("test_gateway_start_failed")
 		}
 		defer gateway.Close()
-		profile = gateway.Profile()
 	} else {
 		profilePath := filepath.Join(installedRoot, "protocol-profile.json")
 		if protectedTestPath(profilePath) != nil {
@@ -81,7 +79,9 @@ func runProtocolProfile(interfaceIndex int, mode string, useGateway bool) error 
 		_, adapterErr := net.InterfaceByName(service.TunnelName)
 		report := object{"phase": "running", "protocol": profile.Protocol, "status": controller.Status(), "guardArmed": armed, "guardReadFailed": guardErr != nil, "adapterPresent": adapterErr == nil}
 		if gateway != nil {
-			report["gatewayOnline"] = gateway.Online()
+			report["gatewayOnline"] = gateway.gatewayOnline.Load()
+			report["gatewayTraffic"] = gateway.snapshot()
+			report["ipv6EgressTested"] = false
 		}
 		if traffic, err := controller.Statistics(); err == nil {
 			report["tunTraffic"] = traffic
@@ -94,7 +94,7 @@ func runProtocolProfile(interfaceIndex int, mode string, useGateway bool) error 
 		switch strings.TrimSpace(string(command)) {
 		case "":
 		case "stop-fixture", "start-fixture":
-			if gateway == nil || gateway.SetOnline(strings.TrimSpace(string(command)) == "start-fixture") != nil {
+			if gateway == nil || gateway.setWireguardOnline(strings.TrimSpace(string(command)) == "start-fixture") != nil {
 				return errors.New("test_gateway_transition_failed")
 			}
 		case "disconnect":
@@ -103,7 +103,11 @@ func runProtocolProfile(interfaceIndex int, mode string, useGateway bool) error 
 			}
 			armed, guardErr := guard.Armed()
 			_, adapterErr := net.InterfaceByName(service.TunnelName)
-			writeReport(object{"phase": "disconnected", "protocol": profile.Protocol, "guardArmed": armed, "guardReadFailed": guardErr != nil, "adapterPresent": adapterErr == nil})
+			final := object{"phase": "disconnected", "protocol": profile.Protocol, "guardArmed": armed, "guardReadFailed": guardErr != nil, "adapterPresent": adapterErr == nil}
+			if gateway != nil {
+				final["ipv6EgressTested"] = false
+			}
+			writeReport(final)
 			return nil
 		default:
 			return errors.New("test_command_rejected")
