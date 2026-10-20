@@ -1,4 +1,5 @@
 import 'package:exvpn/src/home_screen.dart';
+import 'package:exvpn/services/vpn_controller.dart';
 import 'package:exvpn/src/subscription_edit_dialog.dart';
 import 'package:exvpn/src/theme.dart';
 import 'package:exvpn_domain/exvpn_domain.dart';
@@ -6,6 +7,8 @@ import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'vpn_controller_test.dart' show FakeBridge;
 
 Widget screen(AppController app) => MaterialApp(
   locale: const Locale('ru'),
@@ -27,6 +30,44 @@ Future<void> tap(WidgetTester tester, Finder target) async {
 }
 
 void main() {
+  testWidgets(
+    'demo profiles never start real endpoint probes without an injected simulator',
+    (tester) async {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      tester.view.physicalSize = const Size(426, 922);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final bridge = FakeBridge();
+      final vpn = VpnController(bridge);
+      final app = AppController.demo();
+      await vpn.initialize();
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('ru'),
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          supportedLocales: const [Locale('ru')],
+          home: HomeScreen(
+            controller: app,
+            vpn: vpn,
+            themeMode: ThemeMode.light,
+            onThemeChanged: (_) {},
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+      expect(find.text('42 мс'), findsOneWidget);
+      expect(find.text('58 мс'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      app.dispose();
+      vpn.dispose();
+      await bridge.close();
+    },
+  );
+
   testWidgets(
     'group menu replaces count, edits only its own name and does not collapse',
     (tester) async {

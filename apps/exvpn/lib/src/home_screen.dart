@@ -122,6 +122,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       canProbe: () =>
           mounted &&
           _foreground &&
+          (widget.vpn != null || widget.latencyProbe != null) &&
           ModalRoute.of(context)?.isCurrent != false &&
           widget.vpn?.connecting != true,
     )..addListener(_storageChanged);
@@ -1868,8 +1869,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }) {
     final rows = onSelected == null ? _latencyRows : _pickerLatencyRows;
     final rowId = '${group.id}/${server.id}';
-    final rowKey = rows[rowId]?.key ?? GlobalKey();
-    rows[rowId] = (key: rowKey, profile: server.profile);
+    GlobalKey? rowKey;
+    if (!server.isDemo || widget.latencyProbe != null) {
+      rowKey = rows[rowId]?.key ?? GlobalKey();
+      rows[rowId] = (key: rowKey, profile: server.profile);
+    } else {
+      rows.remove(rowId);
+    }
     final desired = widget.vpn?.desiredProfileId;
     final selected = desired != null
         ? desired == server.profile.id
