@@ -1,5 +1,26 @@
 # ExVPN — архитектура
 
+## Event-driven автопинг и локальная правка подписки
+
+Правка имени/HTTPS-ссылки сохраняет принятые профили и выбор. `contentRevision`
+инвалидирует прежний HTTP-response/partial candidate; manual name сохраняется
+через protected snapshot. Смена источника не меняет текущий native VPN.
+Меню и подтверждение удаления применяются к одному group ID. Новых assets/fonts/
+plugins/dependencies нет: используются стандартный PopupMenuButton и существующие
+глифы, три точки собраны из обычных DecoratedBox.
+
+Autoping получает только строки, пересекающие viewport с учётом FittedBox transform.
+Триггеры — первый показ, конец прокрутки (debounce180мс), раскрытие/изменение группы,
+смена формата/picker и возврат в foreground после native transition. Периодического
+таймера нет. В фоне/connecting очередь сбрасывается, новые probes не начинаются;
+уже запущенные сохраняют deadline3с и native DNS slots (не более2).
+Кэш host/port объединяет разные профили одного endpoint: success5мин, failure30с,
+256endpoint/512display результатов. После TTL обновление ожидает события, не
+поддерживает непрерывную фоновую телеметрию. Ручная кнопка обходит кэш.
+Это TCP handshake с разрешением имени, не проверка туннеля. UDP-only Hysteria2 и
+WireGuard получают нейтральное тире. Настройки сети ОС/direct fallback не меняются.
+[Проверки и границы](evidence/subscription-menu-autoping.json).
+
 ## Независимый Dart OTA, 2026-10-20
 
 Базы начиная с 0.1.10+32 компилируются с `EXVPN_OTA_PROVIDER=exvpn` и fingerprint защищённых

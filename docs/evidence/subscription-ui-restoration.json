@@ -1,0 +1,55 @@
+{
+  "restoredCommit": "a139643c1ae372f1291704061f9cc36330557830",
+  "records": [
+    {
+      "path": "apps/exvpn/lib/services/server_latency.dart",
+      "sameNormalizedBytes": true,
+      "sha256": "54d8cb5b80af25c7467d79e4b5d6b7a2f046d902c8619c59d788e48b056e92d2"
+    },
+    {
+      "path": "apps/exvpn/lib/services/server_latency_native.dart",
+      "sameNormalizedBytes": true,
+      "sha256": "3a5983ca6aa58d1ef5afcd90b72297e1202073f2afd3f9190fbe72e596bbc5e8"
+    },
+    {
+      "path": "apps/exvpn/lib/src/app_strings.dart",
+      "sameNormalizedBytes": true,
+      "sha256": "bf296bf485e878bd6d3acaf2dba9183e8595bce9ad574b3bc1f325cdf9bea774"
+    },
+    {
+      "path": "apps/exvpn/lib/src/home_screen.dart",
+      "sameNormalizedBytes": true,
+      "sha256": "3b8cfc083668c9ed3224ad21245ecae0f54cb31525c3f9f269c04ca6fdc59f9f"
+    },
+    {
+      "path": "apps/exvpn/lib/src/subscription_edit_dialog.dart",
+      "sameNormalizedBytes": true,
+      "sha256": "be9188fc22031c74c663705721ea8597ee90c889f665bd76a45cdbbb600eaffb"
+    },
+    {
+      "path": "apps/exvpn/test/server_latency_test.dart",
+      "sameNormalizedBytes": true,
+      "sha256": "2df23e60f70fb165b003d535fdfa42050af633e69c1ef1a77716fe12e53c9b71"
+    },
+    {
+      "path": "apps/exvpn/test/subscription_menu_test.dart",
+      "sameNormalizedBytes": true,
+      "sha256": "8f26176f1924b4ef98102459779ecdfe80164968a68b1bc0eb54c6da17de4c37"
+    },
+    {
+      "path": "packages/exvpn_client_state/lib/src/app_controller.dart",
+      "sameNormalizedBytes": true,
+      "sha256": "59c16e2d1f88b1b1079eda80429e376287dad9190f3a5168ed3c75fa8680b286"
+    },
+    {
+      "path": "packages/exvpn_client_state/lib/src/presentation_models.dart",
+      "sameNormalizedBytes": true,
+      "sha256": "7b432933b2b7ccabeedcd72170f6f6271b3c0f23eb308250e721a4fb8e1f46ae"
+    },
+    {
+      "path": "packages/exvpn_client_state/test/subscription_edit_test.dart",
+      "sameNormalizedBytes": true,
+      "sha256": "eb0e3ab41db63ae8bb67f885c144837287e3fc3f1b947dec8571ad896758de91"
+    }
+  ]
+}

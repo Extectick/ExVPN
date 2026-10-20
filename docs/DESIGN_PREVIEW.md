@@ -1,5 +1,24 @@
 # Живой просмотр дизайна Windows
 
+## Меню подписок и автопинг — 2026-10-20
+
+[Главный экран](http://localhost:8127/?desktop=1&layout=medium&lang=ru&theme=dark&update=none).
+Вместо количества — три точки: «Редактировать» открывает имя/ссылку этой группы;
+«Удалить» требует подтверждения. Рабочие профили сохраняются при изменении ссылки.
+Автопинг видимых строк срабатывает без кнопки: в макете 42/168/342мс и нейтральное
+тире для UDP. Кэш5мин, два запроса, без polling и запуска в inactive/connecting.
+Пинг в браузере синтетический; native connection quality этим макетом не доказана.
+12 targeted tests/analyze8 clean; браузер dark/light, edit-save и delete-cancel,
+нулевые console errors. [Квитанция](evidence/subscription-menu-autoping.json).
+Общий прогон после восстановления: 12/12 групп PASS за 123,75 с, 465 app tests;
+[отчёт](evidence/subscription-menu-autoping-full.json). Демо-адреса без симулятора
+не проверяются реальной сетью (`c033c29`).
+
+Preview8127 обслуживает сохранённый `artifacts/ui-next-preview`: сборка native-базы
+его не перезаписывает. Код точно восстановлен в `a139643`, исходный `67a19c8`.
+В установленную базу33 он не входил; подготовлен для отдельного AOT-патча2/UI6.
+Полные APK/EXE в этом UI-цикле не собирались и не устанавливались.
+
 ## Логи, защита и прогресс на всю кнопку, 2026-10-20
 
 [Открыть обновлённый экран](http://localhost:8127/?desktop=1&layout=medium&lang=ru&theme=dark&update=none&page=updates&ui=protection-logs).

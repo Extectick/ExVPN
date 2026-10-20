@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-20",
+  "status": "PASS_FULL_SOURCE_AND_WEB_PREVIEW",
+  "featureSourceCommit": "67a19c81f80067d998847ce2fb408bb8d52eb516",
+  "safetyBranch": "safety/ui-next-patch-67a19c8",
+  "delivery": "Separate next UI patch after accepted base33; not part of native base33",
+  "ui": {
+    "subscriptionCountRemoved": true,
+    "perGroupDropdown": [
+      "edit",
+      "delete"
+    ],
+    "deleteRequiresConfirmation": true,
+    "prefilledNameAndSource": true,
+    "manualNameAndSelectionPreserved": true,
+    "lateSourceResponsesFenced": true
+  },
+  "autoLatency": {
+    "triggers": [
+      "initial visible list",
+      "scroll end (180ms debounce)",
+      "group changes",
+      "layout/picker changes",
+      "foreground resume",
+      "connection transition completed"
+    ],
+    "visibleOnly": true,
+    "parallelOperations": 2,
+    "endpointAliasDeduplication": true,
+    "successCacheSeconds": 300,
+    "failureCacheSeconds": 30,
+    "endpointCacheLimit": 256,
+    "displayResultLimit": 512,
+    "pollingTimer": false,
+    "noNewProbesWhenInactiveOrConnecting": true,
+    "inflightMayFinishWithinSeconds": 3,
+    "tcpOnlyNotVpnHealth": true,
+    "unsupportedUdpNeutralDash": true,
+    "manualRefreshPreserved": true,
+    "demoHostsNotProbedWithoutSimulator": true
+  },
+  "checks": {
+    "clientStateTests": 3,
+    "latencyServiceTests": 4,
+    "widgetMenuAndViewportTests": 5,
+    "targetedAppAnalyzeFiles": 5,
+    "targetedStateAnalyzeFiles": 3,
+    "analyzerClean": true,
+    "browserDarkAndLight": true,
+    "browserManualButtonNotPressed": true,
+    "browserAutomaticDemoLatencies": [
+      42,
+      168,
+      342
+    ],
+    "browserEditSaveNameVerified": true,
+    "browserDeleteCancelVerified": true,
+    "browserConsoleErrors": 0
+  },
+  "screenshots": [
+    {
+      "path": "design/screenshots/subscription-menu-autoping/delete-confirm-dark.png",
+      "sha256": "d692e5f8393d954e2f4dc0859a7341b1e3bdcd9080e911a03f09dcecaf4f7e84"
+    },
+    {
+      "path": "design/screenshots/subscription-menu-autoping/edit-dark.png",
+      "sha256": "b5061a1b0fde5e732124bc03f822c4b4c66617a7c51eacd5db4abea10d560601"
+    },
+    {
+      "path": "design/screenshots/subscription-menu-autoping/list-dark.png",
+      "sha256": "ce6b4c69c04dc8a1ecd5a02687b2094df4a325167c7133817ce6d48270f3cf39"
+    },
+    {
+      "path": "design/screenshots/subscription-menu-autoping/list-light.png",
+      "sha256": "1a4e81c13f0e31395c00e203fc4a8cfb9ed090ffd9fa8319961602744471e2f3"
+    },
+    {
+      "path": "design/screenshots/subscription-menu-autoping/menu-dark.png",
+      "sha256": "f8c5d1d6ba094817422020eaa18020af21e036c81f0b4d9a26193ce6271c69ac"
+    }
+  ],
+  "webBuilds": 1,
+  "nativeBuilds": 0,
+  "sdkReleased": true,
+  "nativeInstallations": 0,
+  "published": false,
+  "hostNetworkSettingsChanged": false,
+  "fullGate": {
+    "status": "passed",
+    "evidence": "docs/evidence/subscription-menu-autoping-full.json",
+    "sourceCommit": "c033c29b10dac5b87504852730de0e32e7d0eb23",
+    "lanesPassed": 12,
+    "appTestsPassed": 465,
+    "durationSeconds": 123.75,
+    "sourceUnchanged": true,
+    "sourceFingerprint": "0b8c04ce8a19bc710e47c71c726ebb4c4f5478f891de7a089a552c7d62ba40b0",
+    "nativeBuilds": 0,
+    "realVpnAcceptance": false
+  },
+  "previewDirectory": "artifacts/ui-next-preview",
+  "previewPort": 8127,
+  "limitations": [
+    "Browser ping uses a synthetic design probe; real endpoint performance and physical Android not accepted here.",
+    "Hysteria2 and WireGuard have no TCP latency; a neutral dash is intentional.",
+    "Cache does not actively refresh while idle: new measurements wait for a visible-list/user/lifecycle event.",
+    "Changes are restored in main but not yet published as a signed UI patch; base33 APK/EXE do not include them."
+  ],
+  "restoredSourceCommit": "a139643c1ae372f1291704061f9cc36330557830",
+  "acceptedBaseSourceCommit": "c5668668da0dd48628cd060b0abd5795e44ddde4",
+  "acceptedVersion": "0.1.11+33",
+  "reservedPatchNumber": 2,
+  "uiRevision": 6,
+  "sourceRestoredNormalizedBytesExact": true,
+  "followupSourceCommit": "c033c29b10dac5b87504852730de0e32e7d0eb23"
+}
