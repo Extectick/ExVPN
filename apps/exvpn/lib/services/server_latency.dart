@@ -18,17 +18,23 @@ final class LatencySample {
   final String? errorCode;
 }
 
-/// Measures a snapshot of all profiles with at most four probes in flight.
-///
-/// Measurements include endpoint resolution and the TCP connection handshake.
-/// They do not authenticate a server, exchange user traffic, or start a VPN.
-/// UDP-only Hysteria2 endpoints have no corresponding TCP measurement.
+typedef _Endpoint = (String, int, bool);
+
+/// Event-driven endpoint checks: no polling timer, bounded parallelism/cache.
+/// Automatic work replaces its queue with the currently visible profiles.
 final class ServerLatencyController extends ChangeNotifier {
-  ServerLatencyController({LatencyProbe? probe})
-    : _probe = probe ?? platform.probeServerLatency;
+  ServerLatencyController({
+    LatencyProbe? probe,
+    DateTime Function()? now,
+    this.canProbe,
+  }) : _probe = probe ?? platform.probeServerLatency,
+       _now = now ?? DateTime.now;
 
   static const _timeout = Duration(seconds: 3);
-  static const _concurrency = 4;
+  static const _concurrency = 2;
+  static const cacheTtl = Duration(minutes: 5);
+  static const failureTtl = Duration(seconds: 30);
+  static const maxCachedEndpoints = 256;
   static const _tcpTransports = {'tcp', 'raw', 'ws', 'grpc', 'xhttp'};
   static const _safeCodes = {
     'latency_transport_unsupported',
@@ -40,69 +46,133 @@ final class ServerLatencyController extends ChangeNotifier {
   };
 
   final LatencyProbe _probe;
+  final DateTime Function() _now;
+  final bool Function()? canProbe;
   final Map<String, LatencySample> _results = {};
   final Set<String> _checking = {};
+  final _cache = <_Endpoint, ({LatencySample sample, DateTime at})>{};
+  final _queue = <_Endpoint, ConnectionProfile>{};
+  final _inflight = <_Endpoint>{};
+  final _cancellations = <void Function()>{};
+  Map<String, ConnectionProfile> _targets = {};
+  final _aliases = <_Endpoint, List<ConnectionProfile>>{};
   late final Map<String, LatencySample> _resultsView = UnmodifiableMapView(
     _results,
   );
   late final Set<String> _checkingView = UnmodifiableSetView(_checking);
+  Future<void>? _running;
   bool _busy = false;
   bool _disposed = false;
 
+  bool get _allowed => !_disposed && (canProbe?.call() ?? true);
   bool get busy => _busy;
   Map<String, LatencySample> get results => _resultsView;
-
-  /// Includes queued and active profiles until each measurement finishes.
   Set<String> get checking => _checkingView;
 
-  Future<void> checkAll(Iterable<ConnectionProfile> profiles) async {
-    if (_disposed || _busy) return;
+  static bool _supportsTcp(ConnectionProfile p) =>
+      p.protocol != ProxyProtocol.hysteria2 &&
+      p.protocol != ProxyProtocol.wireguard &&
+      _tcpTransports.contains(p.transport.type);
+  static _Endpoint _endpoint(ConnectionProfile p) =>
+      (p.server.toLowerCase(), p.port, _supportsTcp(p));
 
-    final unique = <String, ConnectionProfile>{};
-    for (final profile in profiles) {
-      unique.putIfAbsent(profile.id, () => profile);
+  /// Explicit all-server action bypasses the cache; automatic requests do not.
+  Future<void> checkAll(Iterable<ConnectionProfile> profiles) {
+    if (_disposed || _busy) return _running ?? Future.value();
+    return _replaceTargets(profiles, force: true);
+  }
+
+  Future<void> checkVisible(Iterable<ConnectionProfile> profiles) =>
+      _replaceTargets(profiles, force: false);
+
+  Future<void> _replaceTargets(
+    Iterable<ConnectionProfile> profiles, {
+    required bool force,
+  }) {
+    if (_disposed) return Future.value();
+    _targets = {for (final p in profiles) p.id: p};
+    _aliases.clear();
+    for (final profile in _targets.values) {
+      (_aliases[_endpoint(profile)] ??= []).add(profile);
     }
-    final snapshot = unique.values.toList(growable: false);
-    _results
-      ..clear()
-      ..addEntries(
-        unique.keys.map((id) => MapEntry(id, const LatencySample(null, null))),
-      );
-    _checking
-      ..clear()
-      ..addAll(unique.keys);
-    _busy = snapshot.isNotEmpty;
+    _queue.clear();
+    _checking.clear();
+    for (final profile in _targets.values) {
+      final key = _endpoint(profile);
+      final cached = _cache.remove(key);
+      if (cached != null) _cache[key] = cached;
+      final ttl = cached?.sample.milliseconds != null ? cacheTtl : failureTtl;
+      if (!force && cached != null && _now().difference(cached.at) < ttl) {
+        _remember(profile.id, cached.sample);
+      } else {
+        _checking.add(profile.id);
+        if (!_inflight.contains(key)) _queue.putIfAbsent(key, () => profile);
+      }
+    }
+    if (!_allowed) {
+      pause();
+      return _running ?? Future.value();
+    }
+    if (_running != null) {
+      notifyListeners();
+      return _running!;
+    }
+    _busy = _queue.isNotEmpty;
     notifyListeners();
-    if (!_busy || _disposed) return;
+    if (!_busy) return Future.value();
+    return _running = Future<void>.microtask(_run);
+  }
 
-    var next = 0;
+  void _remember(String id, LatencySample sample) {
+    _results.remove(id);
+    _results[id] = sample;
+    while (_results.length > maxCachedEndpoints * 2) {
+      _results.remove(_results.keys.first);
+    }
+  }
+
+  Future<void> _run() async {
     Future<void> work() async {
-      while (!_disposed && next < snapshot.length) {
-        final profile = snapshot[next++];
+      while (_allowed && _queue.isNotEmpty) {
+        final key = _queue.keys.first;
+        final profile = _queue.remove(key)!;
+        _inflight.add(key);
         final sample = await _measure(profile);
+        _inflight.remove(key);
         if (_disposed) return;
-        _results[profile.id] = sample;
-        _checking.remove(profile.id);
+        _cache.remove(key);
+        _cache[key] = (sample: sample, at: _now());
+        while (_cache.length > maxCachedEndpoints) {
+          _cache.remove(_cache.keys.first);
+        }
+        for (final target in _aliases[key] ?? const <ConnectionProfile>[]) {
+          _remember(target.id, sample);
+          _checking.remove(target.id);
+        }
         notifyListeners();
       }
     }
 
     try {
-      await Future.wait([
-        for (
-          var worker = 0;
-          worker < _concurrency && worker < snapshot.length;
-          worker++
-        )
-          work(),
-      ]);
+      await Future.wait([for (var i = 0; i < _concurrency; i++) work()]);
     } finally {
+      _running = null;
       if (!_disposed) {
-        _busy = false;
+        _queue.clear();
         _checking.clear();
+        _busy = false;
         notifyListeners();
       }
     }
+  }
+
+  /// In-flight TCP/DNS work retains its native deadline; no new work is started.
+  void pause() {
+    _queue.clear();
+    _targets = {};
+    _aliases.clear();
+    _checking.clear();
+    if (!_disposed) notifyListeners();
   }
 
   Future<LatencySample> _measure(ConnectionProfile profile) async {
@@ -114,7 +184,24 @@ final class ServerLatencyController extends ChangeNotifier {
       return const LatencySample(null, 'latency_transport_unsupported');
     }
     try {
-      final result = await _probe(profile).timeout(_timeout);
+      final cancel = Completer<ProbeResult>();
+      void abort() {
+        if (!cancel.isCompleted) {
+          cancel.complete(const ProbeResult(reachable: false));
+        }
+      }
+
+      _cancellations.add(abort);
+      final ProbeResult result;
+      try {
+        result = await Future.any([
+          Future<ProbeResult>.sync(() => _probe(profile)),
+          cancel.future,
+        ]).timeout(_timeout);
+      } finally {
+        _cancellations.remove(abort);
+      }
+
       final latency = result.latency;
       if (result.reachable && latency != null && !latency.isNegative) {
         return LatencySample(latency.inMilliseconds, null);
@@ -135,6 +222,15 @@ final class ServerLatencyController extends ChangeNotifier {
     _disposed = true;
     _busy = false;
     _checking.clear();
+    _queue.clear();
+    _targets = {};
+    _aliases.clear();
+    _cache.clear();
+    _results.clear();
+    for (final abort in _cancellations.toList()) {
+      abort();
+    }
+    _cancellations.clear();
     super.dispose();
   }
 }
