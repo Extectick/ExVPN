@@ -19,7 +19,7 @@ class AppUpdatesController extends ChangeNotifier {
     DartUpdatesController? dartUpdates,
     this.beforeRestart,
     this.autoRestartAfterDownload = true,
-    this.resumeCheckInterval = const Duration(minutes: 15),
+    this.resumeCheckInterval = const Duration(seconds: 5),
     DateTime Function()? now,
   }) : _full = fullBackend ?? platform.createFullUpdatesBackend(),
        _dart = dartUpdates ?? DartUpdatesController(),
@@ -49,6 +49,8 @@ class AppUpdatesController extends ChangeNotifier {
   bool _handoffAccepted = false;
   bool _patchAutoRestartPending = false;
   bool _cancelRequested = false;
+  bool _foreground = true;
+  bool _resumePending = false;
   FullUpdateOffer? _offer;
   DateTime? _lastCheck;
   Future<void>? _running;
@@ -75,14 +77,31 @@ class AppUpdatesController extends ChangeNotifier {
     await check(userInitiated: false);
   }
 
-  /// Resume does not poll, replace an offered restart, or overlap another call.
+  /// Coalesce focus/restore/lifecycle signals from the same opening. A genuine
+  /// later opening checks both feeds; there is no long-lived freshness cache or
+  /// periodic poll. An in-flight operation owns its gate until it really ends.
   Future<void> onResume() async {
-    if (_disposed || busy) return;
+    if (_disposed) return;
+    _foreground = true;
+    if (busy) {
+      _resumePending = true;
+      return;
+    }
+    _resumePending = false;
     if (_prepared) return onRestartOpportunity();
     if (!_initialized) return initialize();
     final last = _lastCheck;
-    if (last != null && _now().difference(last) < resumeCheckInterval) return;
+    final elapsed = last == null ? null : _now().difference(last);
+    if (elapsed != null &&
+        !elapsed.isNegative &&
+        elapsed < resumeCheckInterval) {
+      return;
+    }
     await check(userInitiated: false);
+  }
+
+  void onBackground() {
+    _foreground = false;
   }
 
   /// A real lifecycle/safety transition may retry a deferred patch once. This
@@ -106,7 +125,7 @@ class AppUpdatesController extends ChangeNotifier {
         _retry == _Retry.restart) {
       return;
     }
-    if (_fullReady) {
+    if (_prepared) {
       _showPrepared();
       return;
     }
@@ -117,6 +136,27 @@ class AppUpdatesController extends ChangeNotifier {
     String? fullFailure;
     if (_full.supported) {
       try {
+        final full = _full;
+        if (full is FullUpdatesResumeBackend) {
+          final restored = await (full as FullUpdatesResumeBackend).resume();
+          if (_disposed || _cancelRequested) return;
+          if (restored != null) {
+            _offer = restored.offer;
+            if (restored.ready) {
+              _fullReady = true;
+              _showPrepared();
+            } else {
+              // Reattach to this exact native job; download is idempotent for
+              // its signed identity. A resumed job never reopens an installer.
+              await _download(
+                AppUpdateKind.full,
+                initialProgress: restored.progress?.fraction,
+                allowAutomaticHandoff: false,
+              );
+            }
+            return;
+          }
+        }
         final offer = await _full.check();
         if (_disposed || _cancelRequested) return;
         if (offer != null) {
@@ -179,65 +219,73 @@ class AppUpdatesController extends ChangeNotifier {
 
   Future<void> download() {
     if (!canDownload) return Future.value();
-    return _exclusive(() async {
-      final selectedKind = kind;
-      _retry = _Retry.download;
-      _set(
-        AppUpdateState(
-          phase: AppUpdateStatePhase.downloading,
-          kind: selectedKind,
-          availableVersion: _offer?.version,
-        ),
-      );
-      try {
-        if (selectedKind == AppUpdateKind.full) {
-          final offer = _offer;
-          if (offer == null) throw AppUpdatesFailure('update_not_ready');
-          var received = 0;
-          _offer = await _full.download(
-            offer,
-            onProgress: (value) {
-              if (_disposed || _cancelRequested || value.received < received) {
-                return;
-              }
-              received = value.received;
-              _set(
-                AppUpdateState(
-                  phase: AppUpdateStatePhase.downloading,
-                  kind: selectedKind,
-                  progress: value.fraction,
-                  availableVersion: offer.version,
-                ),
-              );
-            },
-          );
-          if (_disposed || _cancelRequested) return;
-          _fullReady = true;
-        } else if (selectedKind == AppUpdateKind.patch) {
-          await _dart.download();
-          if (_disposed || _cancelRequested) return;
-          if (!_dart.restartRequired) {
-            throw AppUpdatesFailure(
-              _dart.error == null
-                  ? 'patch_install_unconfirmed'
-                  : _patchCode(_dart.error!),
+    return _exclusive(() => _download(kind));
+  }
+
+  Future<void> _download(
+    AppUpdateKind? selectedKind, {
+    double? initialProgress,
+    bool allowAutomaticHandoff = true,
+  }) async {
+    _retry = _Retry.download;
+    _set(
+      AppUpdateState(
+        phase: AppUpdateStatePhase.downloading,
+        kind: selectedKind,
+        progress: initialProgress,
+        availableVersion: _offer?.version,
+      ),
+    );
+    try {
+      if (selectedKind == AppUpdateKind.full) {
+        final offer = _offer;
+        if (offer == null) throw AppUpdatesFailure('update_not_ready');
+        var received = 0;
+        _offer = await _full.download(
+          offer,
+          onProgress: (value) {
+            if (_disposed || _cancelRequested || value.received < received) {
+              return;
+            }
+            received = value.received;
+            _set(
+              AppUpdateState(
+                phase: AppUpdateStatePhase.downloading,
+                kind: selectedKind,
+                progress: value.fraction,
+                availableVersion: offer.version,
+              ),
             );
-          }
-        } else {
-          throw AppUpdatesFailure('update_not_ready');
+          },
+        );
+        if (_disposed || _cancelRequested) return;
+        _fullReady = true;
+      } else if (selectedKind == AppUpdateKind.patch) {
+        await _dart.download();
+        if (_disposed || _cancelRequested) return;
+        if (!_dart.restartRequired) {
+          throw AppUpdatesFailure(
+            _dart.error == null
+                ? 'patch_install_unconfirmed'
+                : _patchCode(_dart.error!),
+          );
         }
-        _showPrepared();
-        _patchAutoRestartPending =
-            selectedKind == AppUpdateKind.patch &&
-            autoRestartAfterDownload &&
-            beforeRestart != null;
-        if (autoRestartAfterDownload && beforeRestart != null) {
-          await _restartPrepared();
-        }
-      } catch (failure) {
-        if (!_disposed && !_cancelRequested) _failed(_code(failure));
+      } else {
+        throw AppUpdatesFailure('update_not_ready');
       }
-    });
+      _showPrepared();
+      _patchAutoRestartPending =
+          selectedKind == AppUpdateKind.patch &&
+          autoRestartAfterDownload &&
+          beforeRestart != null;
+      if (allowAutomaticHandoff &&
+          autoRestartAfterDownload &&
+          beforeRestart != null) {
+        await _restartPrepared();
+      }
+    } catch (failure) {
+      if (!_disposed && !_cancelRequested) _failed(_code(failure));
+    }
   }
 
   Future<void> restart() {
@@ -348,6 +396,7 @@ class AppUpdatesController extends ChangeNotifier {
       } finally {
         _busy = false;
         if (!_disposed) notifyListeners();
+        _schedulePendingResume();
       }
     }();
     _running = running;
@@ -370,6 +419,7 @@ class AppUpdatesController extends ChangeNotifier {
 
   void _onDartChanged() {
     if (_disposed) return;
+    if (!busy) _schedulePendingResume();
     if (_busy ||
         _offer != null ||
         _fullReady ||
@@ -405,6 +455,17 @@ class AppUpdatesController extends ChangeNotifier {
     } else {
       notifyListeners();
     }
+  }
+
+  void _schedulePendingResume() {
+    if (_disposed || !_foreground || !_resumePending || busy) return;
+    // Do not run inside the finishing operation or its listeners. This edge
+    // reuses the same throttle and never retries a failed native handoff.
+    scheduleMicrotask(() {
+      if (!_disposed && _foreground && _resumePending && !busy) {
+        unawaited(onResume());
+      }
+    });
   }
 
   void _blocked(AppUpdateKind selectedKind) => _set(

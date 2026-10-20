@@ -319,6 +319,22 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               LPARAM const lparam) noexcept {
   // Own sizing before plugins: it is a host concern and cannot affect VPN IPC.
   switch (message) {
+    case WM_SHOWWINDOW: {
+      const bool was_hidden = update_window_hidden_;
+      update_window_hidden_ = wparam == FALSE;
+      if (was_hidden && !update_window_hidden_ && window_channel_) {
+        window_channel_->InvokeMethod("shown", nullptr);
+      }
+      break;
+    }
+    case WM_SIZE: {
+      const bool was_minimized = update_window_minimized_;
+      update_window_minimized_ = wparam == SIZE_MINIMIZED;
+      if (was_minimized && !update_window_minimized_ && window_channel_) {
+        window_channel_->InvokeMethod("shown", nullptr);
+      }
+      break;
+    }
     case WM_NCCALCSIZE:
       return 0;
     case WM_NCHITTEST: {

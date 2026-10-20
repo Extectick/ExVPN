@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:ui' show ViewFocusEvent, ViewFocusState;
 
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter/services.dart';
 
 import 'src/home_screen.dart';
 import 'src/appearance.dart';
@@ -100,6 +102,9 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
   late final DartUpdatesController _dartUpdates;
   late final AppUpdatesController _appUpdates;
   late final ClientLogs _logs;
+  static const _windowEvents = MethodChannel('exvpn/window');
+  bool get _windows =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
   @override
   void initState() {
     super.initState();
@@ -127,6 +132,14 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
       dartUpdates: _dartUpdates,
       persistence: _persistence,
     );
+    if (_windows) {
+      _windowEvents.setMethodCallHandler((call) async {
+        if (call.method != 'shown' || call.arguments != null) {
+          throw MissingPluginException();
+        }
+        _onApplicationVisible();
+      });
+    }
     widget.vpn?.addListener(_onRestartEnvironmentChanged);
     unawaited(_appUpdates.initialize());
     if (!kIsWeb &&
@@ -156,9 +169,24 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(_appUpdates.onResume());
+      _onApplicationVisible();
       unawaited(widget.vpn?.refreshConnectionProtection());
+    } else {
+      _appUpdates.onBackground();
     }
+    _onRestartEnvironmentChanged();
+  }
+
+  @override
+  void didChangeViewFocus(ViewFocusEvent event) {
+    if (_windows && event.state == ViewFocusState.focused) {
+      _onApplicationVisible();
+    }
+  }
+
+  void _onApplicationVisible() {
+    if (!mounted) return;
+    unawaited(_appUpdates.onResume());
     _onRestartEnvironmentChanged();
   }
 
@@ -389,6 +417,7 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
   );
   @override
   void dispose() {
+    if (_windows) _windowEvents.setMethodCallHandler(null);
     WidgetsBinding.instance.removeObserver(this);
     widget.vpn?.removeListener(_onRestartEnvironmentChanged);
     _logs.dispose();

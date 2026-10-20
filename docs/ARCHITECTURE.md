@@ -1,5 +1,31 @@
 # ExVPN — архитектура
 
+## Lifecycle обновлений и Android background download, 0.1.12+34
+
+Resume/focus и Windows hidden/minimized→shown передают событие одному
+`AppUpdatesController`: coalescing5с, без периодического polling feeds.
+Busy-событие сохраняется до окончания операции; готовый пакет/патч не заменяется
+новой проверкой. Восстановление native загрузки не открывает installer повторно.
+
+Android получает только version/build/SHA/size принятого подписанного offer;
+native сам выводит фиксированный immutable GitHub URL. Private JobService с
+`BIND_JOB_SERVICE` выполняет сохранённое JobScheduler-задание и Range-докачку,
+переживающую закрытие UI/смену процесса. `RECEIVE_BOOT_COMPLETED` позволяет ОС
+восстанавливать persisted job. Каждый HTTPS redirect ограничен allowlist,
+размер/полный SHA проверяются до атомарной готовности. Установка дополнительно
+сверяет identity и закреплённый APK signer прежним native guard. UI читает
+progress только в foreground, исходный Ed25519 offer повторно проверяется при
+восстановлении. Явная отмена удаляет задание; dispose UI его не отменяет.
+Ограничения JobScheduler, батареи и force-stop остаются полномочиями Android.
+
+VPN consent запускается только из resumed/focused Activity. `onActivityResult`
+проверяет настоящий grant; возврат фокуса не доказывает отказ. Отсутствующий
+callback ограничивается 10с непрерывного foreground и даёт unavailable, не
+выдуманный отказ пользователя. Реальная отмена не повторяется автоматически.
+Маршруты, DNS, исключения и direct fallback не меняются.
+Тесты и device runtime этой базы не выполняются по запросу пользователя;
+критерии подтверждения остаются открытыми.
+
 ## Отображение неподдерживаемых записей
 
 `ImportIssue` для unsupportedProtocol/unsupportedFeature с индексом >0 может

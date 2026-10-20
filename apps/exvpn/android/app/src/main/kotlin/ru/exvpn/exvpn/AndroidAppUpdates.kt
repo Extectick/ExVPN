@@ -16,7 +16,7 @@ import java.io.FileInputStream
 import java.security.MessageDigest
 import java.util.concurrent.Executors
 
-/** Only APK installation is native. URLs/keys are never accepted on this channel.
+/** APK download jobs and installation are native. URLs/keys are never accepted on this channel.
  * The final package is rehashed and checked against both the installed and pinned
  * signing identity immediately before a user-controlled system installer opens. */
 internal class AndroidAppUpdates(private val activity: Activity) {
@@ -47,6 +47,23 @@ internal class AndroidAppUpdates(private val activity: Activity) {
                     "sdk" to Build.VERSION.SDK_INT, "cacheDirectory" to cache().path))
             } catch (failure: Exception) { reject(reply, (failure as? AndroidUpdateFailure)?.code ?: "cache_unavailable") }
             "install" -> install(arguments, reply)
+            "startDownload", "downloadStatus" -> try {
+                val request = AndroidUpdateDownload.parse(arguments)
+                // The only possible address is our immutable release APK. A
+                // signed offer is checked in Dart; native separately pins the
+                // installed/replacement signing identity before installation.
+                val current = identity(installed())
+                AndroidUpdatePolicy.validate(request.install, current,
+                    AndroidPackageIdentity(AndroidUpdatePolicy.PACKAGE, request.version, request.build,
+                        30, setOf(AndroidUpdatePolicy.SIGNER)), Build.VERSION.SDK_INT)
+                reply.success(if (method == "startDownload") AndroidUpdateDownload.start(activity, request)
+                    else AndroidUpdateDownload.status(activity, request))
+            } catch (failure: Exception) { reject(reply, (failure as? AndroidUpdateFailure)?.code ?: "download_failed") }
+            "cancelDownload" -> try {
+                if (arguments != null) throw AndroidUpdateFailure("invalid_request")
+                AndroidUpdateDownload.cancel(activity)
+                reply.success(null)
+            } catch (failure: Exception) { reject(reply, (failure as? AndroidUpdateFailure)?.code ?: "download_failed") }
             "restartUi" -> {
                 if (pending != null) reject(reply, "operation_busy")
                 else AndroidOtaRestart.begin(activity, arguments, reply)

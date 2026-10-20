@@ -36,6 +36,8 @@ class FlutterWindow : public Win32Window {
   int canvas_height_ = 760;
   RECT sizing_origin_{};
   bool sizing_active_ = false;
+  bool update_window_hidden_ = false;
+  bool update_window_minimized_ = false;
   // Choose a corner's driving axis once per drag, rather than per frame.
   int sizing_axis_ = 0;
 

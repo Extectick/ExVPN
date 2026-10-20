@@ -102,12 +102,15 @@ class VpnConsentCoordinatorTest {
         assertFalse(fixture.coordinator.pending)
     }
 
-    @Test fun returnedDialogWithoutGrantSettlesDenial() {
+    @Test fun returnedDialogWithoutCallbackDoesNotInventDenial() {
         val fixture = Fixture()
         fixture.connect()
         fixture.coordinator.onActivityPaused()
         fixture.coordinator.onFocusedForeground()
-        assertEquals("permission_denied", fixture.error())
+        assertTrue(fixture.failures.isEmpty())
+        assertTrue(fixture.coordinator.pending)
+        fixture.coordinator.onForegroundTimeout()
+        assertEquals("vpn_permission_unavailable", fixture.error())
         assertFalse(fixture.coordinator.pending)
     }
 
@@ -115,6 +118,9 @@ class VpnConsentCoordinatorTest {
         val fixture = Fixture()
         fixture.connect()
         fixture.coordinator.onFocusedForeground()
+        assertTrue(fixture.failures.isEmpty())
+        assertTrue(fixture.coordinator.pending)
+        fixture.coordinator.onForegroundTimeout()
         assertEquals("vpn_permission_unavailable", fixture.error())
         assertFalse(fixture.coordinator.pending)
         assertTrue(fixture.started.isEmpty())

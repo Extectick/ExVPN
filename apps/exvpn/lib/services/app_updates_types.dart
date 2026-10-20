@@ -107,6 +107,23 @@ class FullUpdateProgress {
 
 typedef FullUpdateProgressCallback = void Function(FullUpdateProgress progress);
 
+/// A platform-owned download can survive the UI or a temporary loss of network.
+/// Its receipt is reconciled without opening an installer or creating a new job.
+class FullUpdateResumeState {
+  const FullUpdateResumeState({
+    required this.offer,
+    this.progress,
+    this.ready = false,
+  });
+  final FullUpdateOffer offer;
+  final FullUpdateProgress? progress;
+  final bool ready;
+}
+
+abstract interface class FullUpdatesResumeBackend {
+  Future<FullUpdateResumeState?> resume();
+}
+
 /// The caller freezes commands, flushes persistence, checks authoritative VPN
 /// state, then invokes handoff. Only a platform requiring replacement exits the
 /// UI; Android installer handoff releases the reservation. Never disconnects VPN.

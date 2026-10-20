@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart' as hashes;
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 import 'app_updates_types.dart';
 
@@ -363,13 +364,19 @@ class AndroidHttpsUpdateTransport implements AndroidUpdateTransport {
 
 /// Native supplies the private cache and independently validates the final APK.
 /// Callers cannot replace the production feed, trust key, URL or package path.
-class AndroidFullUpdatesBackend implements FullUpdatesBackend {
+class AndroidFullUpdatesBackend
+    with WidgetsBindingObserver
+    implements FullUpdatesBackend, FullUpdatesResumeBackend {
   AndroidFullUpdatesBackend({MethodChannel? methods})
     : _methods = methods ?? const MethodChannel('exvpn/app_updates'),
       _transport = AndroidHttpsUpdateTransport(),
       _now = DateTime.now,
       _publicKey = null,
-      _testContext = null;
+      _testContext = null {
+    _foreground = WidgetsBinding.instance.lifecycleState == null ||
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    WidgetsBinding.instance.addObserver(this);
+  }
   factory AndroidFullUpdatesBackend.forTesting({
     required MethodChannel methods,
     required AndroidUpdateTransport transport,
@@ -397,9 +404,31 @@ class AndroidFullUpdatesBackend implements FullUpdatesBackend {
   final Future<AndroidUpdateContext> Function()? _testContext;
   AndroidUpdateManifest? _selected;
   bool _disposed = false, _cancelled = false, _busy = false;
+  bool _foreground = true, _nativeDownloadAttached = false;
+  Completer<void>? _foregroundWaiter;
   Future<void>? _stopped;
   @override
   bool get supported => true;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    if (_foreground) _wakeProgress();
+  }
+
+  void _wakeProgress() {
+    final waiter = _foregroundWaiter;
+    _foregroundWaiter = null;
+    if (waiter != null && !waiter.isCompleted) waiter.complete();
+  }
+
+  Future<void> _visibleProgress() async {
+    while (!_foreground && !_disposed && !_cancelled) {
+      final waiter = _foregroundWaiter ??= Completer<void>();
+      await waiter.future;
+    }
+    _active();
+  }
   Future<Object?> _native(
     String method, [
     Map<String, Object?>? arguments,
@@ -532,6 +561,77 @@ class AndroidFullUpdatesBackend implements FullUpdatesBackend {
     return true;
   }
 
+  Map<String, Object?> _downloadIdentity(AndroidUpdateManifest manifest) => {
+    'version': manifest.version,
+    'build': manifest.build,
+    'sha256': manifest.sha256,
+    'sizeBytes': manifest.sizeBytes,
+  };
+
+  _AndroidDownloadStatus? _downloadStatus(
+    Object? raw,
+    AndroidUpdateManifest manifest,
+  ) {
+    if (raw == null) return null;
+    if (raw is! Map ||
+        raw.length != 4 ||
+        !raw.keys.toSet().containsAll({'state', 'received', 'total', 'error'})) {
+      _fail('invalid_response');
+    }
+    final state = raw['state'], received = raw['received'], total = raw['total'];
+    final error = raw['error'];
+    if (!{'queued', 'downloading', 'waiting', 'ready', 'failed'}.contains(state) ||
+        received is! int ||
+        received < 0 ||
+        received > manifest.sizeBytes ||
+        total != manifest.sizeBytes ||
+        (error != null && error is! String) ||
+        (state == 'ready' && received != manifest.sizeBytes)) {
+      _fail('invalid_response');
+    }
+    return _AndroidDownloadStatus(
+      state: state as String,
+      received: received,
+      error: error as String?,
+    );
+  }
+
+  /// Reattach to a persisted OS job on a fresh UI process. The signature and
+  /// expiry are checked again; old bytes never make an expired offer installable.
+  @override
+  Future<FullUpdateResumeState?> resume() => _exclusive(() async {
+    if (_testContext != null) return null;
+    final context = await _context();
+    final receipt = File('${context.cacheDirectory.path}/offer.json');
+    if (await FileSystemEntity.type(receipt.path, followLinks: false) !=
+            FileSystemEntityType.file ||
+        await receipt.length() > 32 * 1024) {
+      return null;
+    }
+    AndroidUpdateManifest manifest;
+    try {
+      manifest = await _verify(await receipt.readAsBytes());
+    } on AppUpdatesFailure catch (failure) {
+      if (failure.code == 'update_expired') return null;
+      rethrow;
+    }
+    if (!manifest.newerThan(context) || manifest.minSdk > context.sdk) return null;
+    final status = _downloadStatus(
+      await _native('downloadStatus', _downloadIdentity(manifest)),
+      manifest,
+    );
+    if (status == null || status.state == 'failed') return null;
+    _selected = manifest;
+    return FullUpdateResumeState(
+      offer: manifest.offer,
+      progress: FullUpdateProgress(
+        received: status.received,
+        total: manifest.sizeBytes,
+      ),
+      ready: status.state == 'ready',
+    );
+  });
+
   AndroidUpdateManifest _offer(FullUpdateOffer offer) {
     final manifest = _selected;
     if (manifest == null ||
@@ -570,6 +670,38 @@ class AndroidFullUpdatesBackend implements FullUpdatesBackend {
         rethrow;
       }
       await file.delete();
+    }
+    if (_testContext == null) {
+      _nativeDownloadAttached = true;
+      try {
+        var status = _downloadStatus(
+          await _native('startDownload', _downloadIdentity(manifest)),
+          manifest,
+        );
+        while (true) {
+          _active();
+          if (status == null) _fail('download_failed');
+          if (status.state == 'failed') _fail(status.error ?? 'download_failed');
+          onProgress(FullUpdateProgress(
+            received: status.received,
+            total: manifest.sizeBytes,
+          ));
+          if (status.state == 'ready') {
+            if (!await _validFile(file, manifest)) _fail('integrity_failed');
+            return manifest.offer;
+          }
+          // Native JobScheduler continues without this UI. Poll only while the
+          // app is visible; a real resume edge wakes one status reconciliation.
+          await Future<void>.delayed(const Duration(milliseconds: 800));
+          await _visibleProgress();
+          status = _downloadStatus(
+            await _native('downloadStatus', _downloadIdentity(manifest)),
+            manifest,
+          );
+        }
+      } finally {
+        _nativeDownloadAttached = false;
+      }
     }
     final partial = File('${file.path}.${_nonce()}.part');
     RandomAccessFile? handle;
@@ -642,7 +774,16 @@ class AndroidFullUpdatesBackend implements FullUpdatesBackend {
   @override
   Future<void> cancel() async {
     _cancelled = true;
+    _wakeProgress();
     _transport.cancel();
+    if (_nativeDownloadAttached) {
+      try {
+        await _native('cancelDownload');
+      } on AppUpdatesFailure {
+        // Cancelling the UI waiter must still complete if Android already
+        // stopped/replaced the process-owned channel. The OS job is bounded.
+      }
+    }
     await _stopped;
     if (!_disposed) _cancelled = false;
   }
@@ -650,6 +791,20 @@ class AndroidFullUpdatesBackend implements FullUpdatesBackend {
   @override
   void dispose() {
     _disposed = true;
+    _wakeProgress();
+    if (_testContext == null) WidgetsBinding.instance.removeObserver(this);
     _transport.cancel();
+    // UI disposal/process death deliberately does not cancel the persisted job.
   }
+}
+
+class _AndroidDownloadStatus {
+  const _AndroidDownloadStatus({
+    required this.state,
+    required this.received,
+    this.error,
+  });
+  final String state;
+  final int received;
+  final String? error;
 }

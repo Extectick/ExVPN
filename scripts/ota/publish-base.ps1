@@ -9,10 +9,12 @@ param(
     [Parameter(Mandatory)][string]$WindowsBaseReceipt,
     [Parameter(Mandatory)][string]$RuntimeEvidence,
     [string]$AndroidSdkPath='',
-    [switch]$Publish
+    [switch]$Publish,
+    [switch]$DeferRuntimeVerification
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $arguments=@{ReleaseVersion=$ReleaseVersion;BaseSourceCommit=$BaseSourceCommit;AndroidBaseReceipt=$AndroidBaseReceipt;WindowsBaseReceipt=$WindowsBaseReceipt;RuntimeEvidence=$RuntimeEvidence;Independent=$true;PublishCloud=[bool]$Publish}
+if ($DeferRuntimeVerification) { $arguments.DeferRuntimeVerification = $true }
 if ($AndroidSdkPath) { $arguments.AndroidSdkPath=$AndroidSdkPath }
 & (Join-Path $PSScriptRoot '../release/publish-shorebird-preview.ps1') @arguments

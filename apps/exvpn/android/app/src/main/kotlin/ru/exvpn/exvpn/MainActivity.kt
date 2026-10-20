@@ -47,6 +47,7 @@ class MainActivity : FlutterActivity() {
             permissionTokens.incrementAndGet().also { check(it in (VPN_PERMISSION_BASE + 1)..65535) }
         },
         launch = { intent, token ->
+            check(permissionForeground())
             startActivityForResult(intent, token)
             schedulePermissionCheck()
         },
@@ -63,10 +64,12 @@ class MainActivity : FlutterActivity() {
             }
             reply.error(code, "VPN connection could not be started", null)
         },
+        isForeground = { permissionForeground() },
     )
+    private val permissionAdvance = Runnable { advancePermissionFlow() }
     private val permissionCheck = Runnable {
-        if (activityResumed && hasWindowFocus()) {
-            consent.onFocusedForeground()
+        if (permissionForeground()) {
+            consent.onForegroundTimeout()
             requestNotificationsIfNeeded()
         }
     }
@@ -270,23 +273,42 @@ class MainActivity : FlutterActivity() {
     override fun onResume() {
         super.onResume()
         activityResumed = true
-        schedulePermissionCheck()
+        schedulePermissionAdvance()
     }
     override fun onPause() {
         activityResumed = false
         consent.onActivityPaused()
+        activityHandler.removeCallbacks(permissionAdvance)
         activityHandler.removeCallbacks(permissionCheck)
         super.onPause()
     }
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) schedulePermissionCheck()
+        if (hasFocus) schedulePermissionAdvance()
+        else {
+            activityHandler.removeCallbacks(permissionAdvance)
+            activityHandler.removeCallbacks(permissionCheck)
+        }
+    }
+    private fun permissionForeground() = activityResumed && hasWindowFocus() &&
+        !isFinishing && !isDestroyed
+
+    private fun schedulePermissionAdvance() {
+        activityHandler.removeCallbacks(permissionAdvance)
+        if (permissionForeground()) activityHandler.post(permissionAdvance)
+    }
+    private fun advancePermissionFlow() {
+        if (!permissionForeground()) return
+        consent.onFocusedForeground()
+        schedulePermissionCheck()
     }
     private fun schedulePermissionCheck() {
         activityHandler.removeCallbacks(permissionCheck)
-        // Give Android time to display the external consent activity. While it
-        // is visible this activity is paused/unfocused, so it cannot time out.
-        activityHandler.postDelayed(permissionCheck, 1200)
+        // A short resume/focus timer used to report denial before the system
+        // request could appear. Only a continuously focused 10 s grace period
+        // can now settle a missing/no-op result, and only as unavailability.
+        // A visible system dialog removes this guard through pause/focus loss.
+        if (permissionForeground()) activityHandler.postDelayed(permissionCheck, 10_000)
     }
     private fun requestNotificationsIfNeeded() {
         if (!notificationPermissionPending || consent.pending || !activityResumed || !hasWindowFocus()) return
@@ -302,6 +324,7 @@ class MainActivity : FlutterActivity() {
         }
     }
     override fun onDestroy() {
+        activityHandler.removeCallbacks(permissionAdvance)
         activityHandler.removeCallbacks(permissionCheck)
         consent.dispose()
         appUpdates?.dispose()

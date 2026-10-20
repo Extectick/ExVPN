@@ -15,11 +15,13 @@ param(
     [switch]$PublishCloud,
     [switch]$RecoverWindowsBase,
     [switch]$Independent,
+    [switch]$SkipJvmTests,
     [string]$IndependentBaseFingerprint = ''
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 if ($Independent -and ($PublishCloud -or $RecoverWindowsBase)) { throw 'independent_base_cloud_operation_forbidden' }
+if ($SkipJvmTests -and !$Independent) { throw 'skip_jvm_tests_requires_independent_preview' }
 if ($Independent -and $IndependentBaseFingerprint -cnotmatch '^[a-f0-9]{64}$') { throw 'independent_base_fingerprint_missing' }
 if (!$Independent -and $IndependentBaseFingerprint) { throw 'independent_base_switch_required' }
 $repository = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
@@ -357,13 +359,17 @@ try {
                 }
             }
         $subphase='android_jvm'
-        $jvmStarted = [datetime]::UtcNow
-        Push-Location (Join-Path $app 'android')
-        try {
-            & './gradlew.bat' @(Get-DemoAndroidJvmArguments) *> (Join-Path $privateRun 'jvm.log')
-            if ($LASTEXITCODE -ne 0) { throw 'shorebird_android_jvm_failed' }
-        } finally { Pop-Location }
-        $jvm = Get-DemoAndroidJvmSummary (Join-Path $app 'build/app/test-results/testReleaseUnitTest') $jvmStarted
+        if ($SkipJvmTests) {
+            $jvm = [ordered]@{executed=$false;reason='user_requested_no_tests'}
+        } else {
+            $jvmStarted = [datetime]::UtcNow
+            Push-Location (Join-Path $app 'android')
+            try {
+                & './gradlew.bat' @(Get-DemoAndroidJvmArguments) *> (Join-Path $privateRun 'jvm.log')
+                if ($LASTEXITCODE -ne 0) { throw 'shorebird_android_jvm_failed' }
+            } finally { Pop-Location }
+            $jvm = Get-DemoAndroidJvmSummary (Join-Path $app 'build/app/test-results/testReleaseUnitTest') $jvmStarted
+        }
         $subphase='android_identity'
         $signatureText = Invoke-AuditTool (Join-Path $env:JAVA_HOME 'bin/java.exe') @('-jar',(Join-Path $AndroidSdkPath 'build-tools/36.0.0/lib/apksigner.jar'),'verify','--verbose','--print-certs',$apk)
         $signature = ConvertFrom-DemoAndroidSignature $signatureText $expectedSigner

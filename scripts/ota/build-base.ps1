@@ -4,7 +4,8 @@
 param(
     [Parameter(Mandatory)][ValidateSet('Android','Windows')][string]$Target,
     [Parameter(Mandatory)][ValidatePattern('^\d+\.\d+\.\d+\+[1-9]\d*$')][string]$ReleaseVersion,
-    [string]$AndroidSdkPath = ''
+    [string]$AndroidSdkPath = '',
+    [switch]$SkipJvmTests
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -37,6 +38,7 @@ $plan = @(Get-ExvpnOtaAotPlan $Target)
 foreach ($item in $plan) { $tools.genSnapshot[$item.key] = BaseTool $sdk $item.genSnapshot }
 $publicKey = BaseTool $repository 'config/signing/shorebird-beta-public.pem'
 $buildArguments = @{Target=$Target;ReleaseVersion=$ReleaseVersion;Independent=$true;IndependentBaseFingerprint=$fingerprint}
+if ($SkipJvmTests) { $buildArguments.SkipJvmTests = $true }
 if ($AndroidSdkPath) { $buildArguments.AndroidSdkPath = $AndroidSdkPath }
 # Reuse the existing audited native/signing/notices/SBOM/package pipeline.
 # Independent selects direct pinned Flutter builds, never a cloud CLI action.
