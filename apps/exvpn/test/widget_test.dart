@@ -197,7 +197,7 @@ void main() {
   );
 
   testWidgets(
-    'unsupported-only import keeps its empty group without a warning icon',
+    'unsupported-only import shows disabled rows without a warning icon',
     (tester) async {
       final controller = AppController();
       await _open(tester, controller);
@@ -212,8 +212,10 @@ void main() {
       expect(find.text('Broken subscription'), findsOneWidget);
       expect(
         find.text('В подписке пока нет доступных подключений'),
-        findsOneWidget,
+        findsNothing,
       );
+      expect(find.text('Подключение 1'), findsOneWidget);
+      expect(find.text('Не поддерживается'), findsOneWidget);
       final issues = find.byKey(
         ValueKey('subscription-issues-${controller.groups.single.id}'),
       );

@@ -70,6 +70,28 @@ class AppStrings {
 const _languages = ['en', 'kk', 'de', 'fr', 'es', 'pt', 'tr', 'zh', 'ar'];
 
 final Map<String, List<String>> _catalog = {
+  'Не поддерживается': [
+    'Not supported',
+    'Қолдау көрсетілмейді',
+    'Nicht unterstützt',
+    'Non pris en charge',
+    'No compatible',
+    'Não suportado',
+    'Desteklenmiyor',
+    '不支持',
+    'غير مدعوم',
+  ],
+  'Подключение {number}': [
+    'Connection {number}',
+    'Қосылым {number}',
+    'Verbindung {number}',
+    'Connexion {number}',
+    'Conexión {number}',
+    'Conexão {number}',
+    'Bağlantı {number}',
+    '连接 {number}',
+    'الاتصال {number}',
+  ],
   for (final row in _rows.trim().split('\n'))
     row.split('|').first: row.split('|').skip(1).toList(growable: false),
 };

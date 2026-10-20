@@ -30,6 +30,65 @@ Future<void> tap(WidgetTester tester, Finder target) async {
 }
 
 void main() {
+  testWidgets('unsupported rows show an overlay and cannot select or probe', (
+    tester,
+  ) async {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    tester.view.physicalSize = const Size(426, 922);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final app = AppController();
+    app.addSubscription(
+      raw:
+          'vless://00000000-0000-4000-8000-000000000001@sample.invalid:443?security=tls#Working\n'
+          'tuic://synthetic-secret@private.invalid:443#🇯🇵%20Tokyo',
+    );
+    final probed = <String>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('ru'),
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        supportedLocales: const [Locale('ru')],
+        theme: exVpnTheme(Brightness.light),
+        home: HomeScreen(
+          controller: app,
+          themeMode: ThemeMode.light,
+          onThemeChanged: (_) {},
+          latencyProbe: (profile) async {
+            probed.add(profile.server);
+            return const ProbeResult(
+              reachable: true,
+              latency: Duration(milliseconds: 30),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pumpAndSettle();
+    expect(find.text('Не поддерживается'), findsOneWidget);
+    expect(find.text('Tokyo'), findsOneWidget);
+    expect(find.text('TUIC'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('subscription-issues-subscription-1')),
+      findsNothing,
+    );
+    final selected = app.selectedServerId;
+    await tester.tap(
+      find.byKey(const ValueKey('unsupported-subscription-1-2')),
+      warnIfMissed: false,
+    );
+    await tester.pumpAndSettle();
+    expect(app.selectedServerId, selected);
+    await tap(tester, find.byKey(const Key('ping-all-button')));
+    expect(probed, isNotEmpty);
+    expect(probed.toSet(), {'sample.invalid'});
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    app.dispose();
+  });
+
   testWidgets(
     'demo profiles never start real endpoint probes without an injected simulator',
     (tester) async {

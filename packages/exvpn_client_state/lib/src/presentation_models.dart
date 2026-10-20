@@ -107,6 +107,8 @@ final class SubscriptionGroup {
   final List<ServerEntry> servers;
   final bool expanded;
   final List<ImportIssue> issues;
+  Iterable<ImportIssue> get unsupportedConnections =>
+      issues.where((issue) => issue.isUnsupportedConnection);
   final bool isDemo;
 
   /// Secret-bearing provider URL. Persist only through the secure store.

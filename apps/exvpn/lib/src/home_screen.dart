@@ -1728,7 +1728,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
       ),
       if (group.expanded) ...[
-        if (group.servers.isEmpty)
+        if (group.servers.isEmpty && group.unsupportedConnections.isEmpty)
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
@@ -1744,6 +1744,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               _automaticServer(group, onSelected: onSelected),
             for (final server in group.servers)
               _server(group, server, onSelected: onSelected),
+            for (final issue in group.unsupportedConnections)
+              _unsupportedServer(group, issue),
           ],
         ),
       ],
@@ -1753,6 +1755,121 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _flag(ServerEntry server, {required bool selected}) =>
       CountryFlag(countryCode: server.countryCode, size: 24);
+
+  Widget _unsupportedServer(SubscriptionGroup group, ImportIssue issue) {
+    final scheme = Theme.of(context).colorScheme;
+    final name =
+        issue.displayName ??
+        context.tr('Подключение {number}', values: {'number': issue.index});
+    final flag = RegExp(
+      '[\u{1f1e6}-\u{1f1ff}]{2}',
+      unicode: true,
+    ).firstMatch(name);
+    final country = flag == null
+        ? null
+        : String.fromCharCodes(
+            flag.group(0)!.runes.map((rune) => rune - 0x1f1e6 + 65),
+          );
+    final title = flag == null
+        ? name
+        : name.replaceRange(flag.start, flag.end, '').trim();
+    final status = context.tr('Не поддерживается');
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Semantics(
+        key: ValueKey('unsupported-${group.id}-${issue.index}'),
+        enabled: false,
+        label: '$name, ${issue.protocolLabel ?? ''}, $status',
+        child: ExcludeSemantics(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(11),
+            child: ColoredBox(
+              color: scheme.onSurface.withValues(alpha: .025),
+              child: Stack(
+                alignment: AlignmentDirectional.centerEnd,
+                children: [
+                  Opacity(
+                    opacity: .32,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 5,
+                        ),
+                        child: Row(
+                          children: [
+                            CountryFlag(countryCode: country, size: 24),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title.isEmpty ? name : title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      height: 1.2,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: -.45,
+                                    ),
+                                  ),
+                                  if (issue.protocolLabel != null) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      issue.protocolLabel!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 10),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: scheme.surface.withValues(alpha: .94),
+                        borderRadius: BorderRadius.circular(7),
+                        border: Border.all(
+                          color: scheme.outlineVariant.withValues(alpha: .45),
+                          width: .6,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        child: Text(
+                          status,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _automaticServer(SubscriptionGroup group, {VoidCallback? onSelected}) {
     final selected = widget.controller.selectedAutomaticGroupId == group.id;

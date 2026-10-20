@@ -39,7 +39,7 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
   late final AppController _app = AppController.demo()
     ..updateSubscription(
       groupId: 'demo-main',
-      raw: 'unsupported://example.invalid',
+      raw: 'tuic://demo@example.invalid:443#🇯🇵 Токио',
     );
   late final _DesignOnlyBridge _bridge = _DesignOnlyBridge(
     () => _app.selectedServer?.id,

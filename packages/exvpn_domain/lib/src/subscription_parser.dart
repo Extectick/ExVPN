@@ -17,11 +17,25 @@ enum ImportIssueCode {
 }
 
 final class ImportIssue {
-  const ImportIssue(this.index, this.code);
+  const ImportIssue(
+    this.index,
+    this.code, {
+    this.displayName,
+    this.protocolLabel,
+  });
 
   /// One-based line/outbound index; zero denotes the entire document.
   final int index;
   final ImportIssueCode code;
+
+  /// Optional, bounded display metadata. Never an endpoint or an executable
+  /// profile; raw records/credentials are discarded even for unsupported nodes.
+  final String? displayName;
+  final String? protocolLabel;
+  bool get isUnsupportedConnection =>
+      index > 0 &&
+      (code == ImportIssueCode.unsupportedProtocol ||
+          code == ImportIssueCode.unsupportedFeature);
   @override
   String toString() => 'ImportIssue($index, $code)';
 }
@@ -87,7 +101,7 @@ final class SubscriptionParser {
           final profile = _link(line);
           if (ids.add(profile.id)) nodes.add(profile);
         } on _Rejected catch (error) {
-          issues.add(ImportIssue(i + 1, error.code));
+          issues.add(_displayIssue(i + 1, error.code, link: line));
         } on FormatException {
           issues.add(ImportIssue(i + 1, ImportIssueCode.invalidProfile));
         } on ArgumentError {
@@ -109,6 +123,104 @@ final class SubscriptionParser {
         const ImportIssue(0, ImportIssueCode.unsupportedFormat),
       ]);
     }
+  }
+
+  ImportIssue _displayIssue(
+    int index,
+    ImportIssueCode code, {
+    String? link,
+    Object? outbound,
+  }) {
+    if (code != ImportIssueCode.unsupportedProtocol &&
+        code != ImportIssueCode.unsupportedFeature) {
+      return ImportIssue(index, code);
+    }
+    String? name;
+    Object? protocol;
+    Object? transport;
+    try {
+      if (link != null) {
+        final uri = Uri.parse(link);
+        protocol = uri.scheme.toLowerCase();
+        name = Uri.decodeComponent(uri.fragment);
+        transport = uri.queryParameters['type'];
+        if (protocol == 'vmess') {
+          final node = _map(_decodeJson(_decode64(link.substring(8))));
+          name = node['ps'] is String ? node['ps'] as String : null;
+          transport = node['net'];
+        }
+      } else if (outbound is Map<String, dynamic>) {
+        name = outbound['tag'] is String ? outbound['tag'] as String : null;
+        protocol = outbound['protocol'] ?? outbound['type'];
+        final stream = outbound['streamSettings'] ?? outbound['transport'];
+        if (stream is Map) transport = stream['network'] ?? stream['type'];
+      }
+    } catch (_) {
+      // Cosmetic metadata cannot change whether a record is accepted.
+    }
+    const labels = {
+      'vless': 'VLESS',
+      'vmess': 'VMess',
+      'trojan': 'Trojan',
+      'ss': 'Shadowsocks',
+      'shadowsocks': 'Shadowsocks',
+      'ssr': 'ShadowsocksR',
+      'hysteria': 'Hysteria',
+      'hysteria2': 'Hysteria2',
+      'hy2': 'Hysteria2',
+      'tuic': 'TUIC',
+      'wireguard': 'WireGuard',
+      'socks': 'SOCKS',
+      'socks5': 'SOCKS5',
+      'http': 'HTTP',
+      'https': 'HTTPS',
+    };
+    final label = protocol is String ? labels[protocol.toLowerCase()] : null;
+    const transports = {
+      'tcp',
+      'ws',
+      'grpc',
+      'xhttp',
+      'h2',
+      'http',
+      'quic',
+      'kcp',
+      'httpupgrade',
+    };
+    final network =
+        transport is String && transports.contains(transport.toLowerCase())
+        ? transport.toUpperCase()
+        : null;
+    return ImportIssue(
+      index,
+      code,
+      displayName: _displayName(name),
+      protocolLabel: label == null ? null : [label, ?network].join(' · '),
+    );
+  }
+
+  static String? _displayName(String? value) {
+    if (value == null || value.length > 4096) return null;
+    final name = value
+        .replaceAll(
+          RegExp(
+            r'[\x00-\x1f\x7f-\x9f\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]',
+          ),
+          '',
+        )
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (name.isEmpty ||
+        name.contains(RegExp(r'[<>\\/@]')) ||
+        name.contains(
+          RegExp(
+            r'\b[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\b|\b[a-z0-9_-]{48,}\b',
+            caseSensitive: false,
+          ),
+        )) {
+      return null;
+    }
+    return String.fromCharCodes(name.runes.take(80));
   }
 
   ConnectionProfile _link(String text) {
@@ -334,7 +446,7 @@ final class SubscriptionParser {
         final node = _outbound(raw.containsKey('type') ? _singBox(raw) : raw);
         if (ids.add(node.id)) profiles.add(node);
       } on _Rejected catch (error) {
-        issues.add(ImportIssue(i + 1, error.code));
+        issues.add(_displayIssue(i + 1, error.code, outbound: outbounds[i]));
       } on FormatException {
         issues.add(ImportIssue(i + 1, ImportIssueCode.invalidProfile));
       } on ArgumentError {
