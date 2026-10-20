@@ -98,6 +98,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _permissionSheetOpen = false;
   int _permissionRequest = 0;
   _PermissionRecoveryIntent? _pendingPermissionRecovery;
+  bool _notificationHintShown = false;
+  bool _notificationStatusChecked = false;
+  bool _notificationReadPending = false;
   int _selectionRevision = 0;
   final _serversScroll = ScrollController();
   final _pickerScroll = ScrollController();
@@ -184,6 +187,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _scheduleAutoPing();
+    _scheduleNotificationHint();
   }
 
   void _pingVisible() {
@@ -246,6 +250,79 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _clock = null;
     }
     setState(() {});
+    _scheduleNotificationHint();
+  }
+
+  bool get _notificationHintReady =>
+      mounted &&
+      _foreground &&
+      !_permissionSheetOpen &&
+      !_serverPickerOpen &&
+      widget.vpn?.supportsNotificationSettings == true &&
+      widget.vpn?.initialized == true &&
+      widget.vpn?.status.phase == VpnPhase.connected &&
+      widget.vpn?.commandPending == false &&
+      ModalRoute.of(context)?.isCurrent != false;
+
+  void _scheduleNotificationHint() {
+    if (_notificationHintShown ||
+        _notificationStatusChecked ||
+        _notificationReadPending ||
+        widget.vpn?.supportsNotificationSettings != true) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_showNotificationHint());
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  Future<void> _showNotificationHint() async {
+    final vpn = widget.vpn;
+    if (vpn == null ||
+        _notificationHintShown ||
+        _notificationStatusChecked ||
+        _notificationReadPending ||
+        !_notificationHintReady) {
+      return;
+    }
+    _notificationReadPending = true;
+    final notification = await vpn.getNotificationPermission();
+    _notificationReadPending = false;
+    if (!mounted) return;
+    // An OS prompt can take focus while the snapshot is being read. Leave the
+    // presentation pending until a genuine foreground/idle opportunity.
+    if (!_notificationHintReady) return;
+    _notificationStatusChecked = true;
+    if (notification != NotificationPermissionState.required) return;
+    _notificationHintShown = true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        key: const Key('vpn-notification-hint'),
+        content: Text(
+          context.tr('Чтобы видеть состояние VPN, включите уведомления ExVPN.'),
+        ),
+        showCloseIcon: true,
+        duration: const Duration(seconds: 10),
+        action: SnackBarAction(
+          label: context.tr('Включить'),
+          onPressed: () => unawaited(_openNotificationSettings()),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openNotificationSettings() async {
+    final opened = await widget.vpn?.openNotificationSettings();
+    if (!mounted || opened == true) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          context.tr('Откройте уведомления ExVPN в настройках телефона.'),
+        ),
+        showCloseIcon: true,
+      ),
+    );
   }
 
   void _adoptAutomaticGroup() {
@@ -269,8 +346,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foreground = state == AppLifecycleState.resumed;
     if (_foreground) {
+      if (!_notificationHintShown) _notificationStatusChecked = false;
       _scheduleAutoPing();
       unawaited(_showPendingPermissionRecovery());
+      _scheduleNotificationHint();
     } else {
       _autoPingDebounce?.cancel();
       _latencies.pause();

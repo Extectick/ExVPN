@@ -105,6 +105,10 @@ class MainActivity : FlutterActivity() {
                     permissionSetup.validateRead(call.arguments)
                     result.success(permissionSetup.wire())
                 }
+                "getNotificationPermission" -> {
+                    permissionSetup.validateRead(call.arguments)
+                    result.success(if (permissionSetup.notificationsVisible()) "granted" else "required")
+                }
                 "openAppPermissionSettings" -> {
                     permissionSetup.validateRead(call.arguments)
                     if (!permissionForeground()) {
@@ -116,6 +120,19 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     } catch (_: Exception) {
                         result.error("vpn_permission_unavailable", "Application settings unavailable", null)
+                    }
+                }
+                "openNotificationSettings" -> {
+                    permissionSetup.validateRead(call.arguments)
+                    if (!permissionForeground()) {
+                        result.error("vpn_permission_unavailable", "Notification settings unavailable", null)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        permissionSetup.openNotificationSettings()
+                        result.success(null)
+                    } catch (_: Exception) {
+                        result.error("vpn_permission_unavailable", "Notification settings unavailable", null)
                     }
                 }
                 "getConnectionProtection" -> {
@@ -338,7 +355,9 @@ class MainActivity : FlutterActivity() {
     private fun requestNotificationsIfNeeded() {
         if (!notificationPermissionPending || consent.pending || !activityResumed || !hasWindowFocus()) return
         notificationPermissionPending = false
-        if (permissionSetup.notificationsGranted()) return
+        // Only the runtime permission belongs in a permission prompt. Disabled
+        // app/channel notifications are recovered through their settings page.
+        if (permissionSetup.notificationRuntimePermissionGranted()) return
         val preferences = getSharedPreferences("notification_permission", MODE_PRIVATE)
         if (preferences.getBoolean("requested", false)) return
         try {

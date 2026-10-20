@@ -71,7 +71,7 @@ class ExVpnService : VpnService() {
         connectivity = getSystemService(ConnectivityManager::class.java)
         VpnRuntime.service = this
         getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL, "VPN-соединение", NotificationManager.IMPORTANCE_LOW)
+            NotificationChannel(NOTIFICATION_CHANNEL, "VPN-соединение", NotificationManager.IMPORTANCE_LOW)
         )
     }
 
@@ -362,8 +362,10 @@ class ExVpnService : VpnService() {
     private fun notification(message: String): Notification {
         val open = PendingIntent.getActivity(this, 1, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val stop = PendingIntent.getService(this, 2, Intent(this, ExVpnService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        return Notification.Builder(this, CHANNEL).setSmallIcon(R.drawable.ic_stat_vpn)
+        return Notification.Builder(this, NOTIFICATION_CHANNEL).setSmallIcon(R.drawable.ic_stat_vpn)
             .setContentTitle("ExVPN").setContentText(message).setContentIntent(open).setOngoing(true)
+            .setCategory(Notification.CATEGORY_SERVICE).setOnlyAlertOnce(true).setShowWhen(false)
+            .apply { if (Build.VERSION.SDK_INT >= 31) setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE) }
             .addAction(Notification.Action.Builder(null, "Отключить", stop).build()).build()
     }
     private fun notifyStatus(message: String) { getSystemService(NotificationManager::class.java).notify(NOTIFICATION, notification(message)) }
@@ -417,7 +419,7 @@ class ExVpnService : VpnService() {
     companion object {
         const val ACTION_CONNECT = "ru.exvpn.exvpn.CONNECT"
         const val ACTION_STOP = "ru.exvpn.exvpn.STOP"
-        private const val CHANNEL = "exvpn_connection"
+        internal const val NOTIFICATION_CHANNEL = "exvpn_connection"
         private const val NOTIFICATION = 7001
     }
 }

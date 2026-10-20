@@ -15,12 +15,17 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'vpn_controller_test.dart' show FakeBridge;
 
-class PermissionBridge extends FakeBridge implements VpnPermissionSetupBridge {
+class PermissionBridge extends FakeBridge
+    implements VpnPermissionSetupBridge, VpnNotificationSettingsBridge {
   String? failure = 'permission_denied';
   Completer<void>? connectWait;
   int reads = 0;
   int vpnSettings = 0;
   int appSettings = 0;
+  int notificationSettings = 0;
+  int notificationReads = 0;
+  Completer<NotificationPermissionState>? notificationWait;
+  Object? notificationError;
   VpnPermissionSetup setup = const VpnPermissionSetup(
     vpn: VpnPermissionState.required,
     notifications: NotificationPermissionState.required,
@@ -48,6 +53,20 @@ class PermissionBridge extends FakeBridge implements VpnPermissionSetupBridge {
   @override
   Future<void> openAppPermissionSettings() async {
     appSettings++;
+  }
+
+  @override
+  Future<NotificationPermissionState> getNotificationPermission() async {
+    notificationReads++;
+    if (notificationError case final error?) throw error;
+    return notificationWait == null
+        ? setup.notifications
+        : await notificationWait!.future;
+  }
+
+  @override
+  Future<void> openNotificationSettings() async {
+    notificationSettings++;
   }
 }
 
@@ -160,9 +179,11 @@ void main() {
         VpnPermissionState.restricted,
       );
       await bridge.openAppPermissionSettings();
+      await bridge.openNotificationSettings();
       expect(calls.map((call) => call.method), [
         'getVpnPermissionSetup',
         'openAppPermissionSettings',
+        'openNotificationSettings',
       ]);
       expect(calls.every((call) => call.arguments == null), isTrue);
       messenger.setMockMethodCallHandler(
@@ -181,6 +202,65 @@ void main() {
       );
     },
   );
+
+  test('notification-only native read is strict and never requests VPN preparation', () async {
+    const channel = MethodChannel('test/notification-only');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final calls = <MethodCall>[];
+    Object? reply = 'granted';
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      if (call.method == 'getNotificationPermission') return reply;
+      if (call.method == 'openNotificationSettings') return null;
+      throw StateError('VPN preparation must not be requested');
+    });
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    final bridge = NativeVpnBridge(methods: channel);
+    final vpn = VpnController(bridge);
+    try {
+      expect(
+        await vpn.getNotificationPermission(),
+        NotificationPermissionState.granted,
+      );
+      reply = 'required';
+      expect(
+        await vpn.getNotificationPermission(),
+        NotificationPermissionState.required,
+      );
+      for (final invalid in <Object?>[
+        null,
+        true,
+        1,
+        'GRANTED',
+        'unknown',
+        {'notifications': 'required'},
+      ]) {
+        reply = invalid;
+        await expectLater(
+          bridge.getNotificationPermission(),
+          throwsA(
+            isA<VpnFailure>().having(
+              (error) => error.code,
+              'safe code',
+              'invalid_native_response',
+            ),
+          ),
+        );
+        expect(await vpn.getNotificationPermission(), isNull);
+      }
+      expect(await vpn.openNotificationSettings(), isTrue);
+      expect(calls.every((call) => call.arguments == null), isTrue);
+      expect(
+        calls.any((call) => call.method == 'getVpnPermissionSetup'),
+        isFalse,
+      );
+    } finally {
+      vpn.dispose();
+      debugDefaultTargetPlatformOverride = null;
+      messenger.setMockMethodCallHandler(channel, null);
+    }
+  });
 
   androidTestWidgets(
     'permission failure while paused presents once on resume without retry',
@@ -228,9 +308,25 @@ void main() {
       await tester.pumpAndSettle();
       expect(bridge.connects, 1);
       expect(find.byKey(const Key('vpn-permission-retry')), findsOneWidget);
+      expect(find.byKey(const Key('vpn-permission-settings')), findsNothing);
+      await tester.tap(find.byKey(const Key('vpn-permission-help')));
+      await tester.pumpAndSettle();
+      expect(find.text('Откройте настройки VPN.'), findsOneWidget);
+      expect(
+        find.text('Вернитесь в ExVPN и нажмите «Повторить запрос».'),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget(find.byKey(const Key('vpn-permission-settings'))),
+        isA<FilledButton>(),
+      );
       await tester.tap(find.byKey(const Key('vpn-permission-settings')));
       await tester.pumpAndSettle();
       expect(bridge.vpnSettings, 1);
+      expect(
+        tester.widget(find.byKey(const Key('vpn-permission-retry'))),
+        isA<FilledButton>(),
+      );
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
@@ -340,6 +436,12 @@ void main() {
       );
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('vpn-permission-app-settings')),
+        findsNothing,
+      );
+      await tester.tap(find.byKey(const Key('vpn-permission-more-help')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('vpn-permission-app-settings')));
       await tester.pumpAndSettle();
       expect(
@@ -350,6 +452,166 @@ void main() {
       );
       expect(find.textContaining('private diagnostic'), findsNothing);
       expect(tester.takeException(), isNull);
+    },
+  );
+
+  androidTestWidgets(
+    'connected notification reminder waits for foreground and is shown once',
+    (tester) async {
+      final bridge = PermissionBridge()
+        ..notificationWait = Completer<NotificationPermissionState>();
+      final state = await mountHome(tester, bridge);
+      final connected = VpnStatus(
+        phase: VpnPhase.connected,
+        processCrashProtection: false,
+        activeProfileId: state.app.selectedServer!.profile.id,
+        connectedAt: DateTime.fromMillisecondsSinceEpoch(1700000000000),
+      );
+      bridge.emit(connected);
+      await tester.pump();
+      expect(bridge.notificationReads, 1);
+      expect(
+        bridge.reads,
+        0,
+        reason: 'notification UI must not call VPN prepare',
+      );
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      bridge.notificationWait!.complete(bridge.setup.notifications);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('vpn-notification-hint')), findsNothing);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('vpn-notification-hint')), findsOneWidget);
+      expect(bridge.notificationSettings, 0);
+      final hint = find.byKey(const Key('vpn-notification-hint'));
+      await tester.tap(
+        find.descendant(of: hint, matching: find.text('Включить')),
+      );
+      await tester.pumpAndSettle();
+      expect(bridge.notificationSettings, 1);
+      final reads = bridge.notificationReads;
+      bridge.emit(connected);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('vpn-notification-hint')), findsNothing);
+      expect(bridge.notificationReads, reads);
+      expect(bridge.reads, 0);
+      expect(bridge.connects, 0);
+      expect(bridge.disconnects, 0);
+    },
+  );
+
+  androidTestWidgets(
+    'notification reminder is idle-only and leaves an active VPN untouched',
+    (tester) async {
+      final bridge = PermissionBridge();
+      final state = await mountHome(tester, bridge);
+      final connected = VpnStatus(
+        phase: VpnPhase.connected,
+        processCrashProtection: false,
+        activeProfileId: state.app.selectedServer!.profile.id,
+        connectedAt: DateTime.fromMillisecondsSinceEpoch(1700000000000),
+      );
+      state.vpn.protectionBusy = true;
+      bridge.emit(connected);
+      await tester.pump();
+      expect(bridge.reads, 0);
+      expect(bridge.notificationReads, 0);
+      expect(find.byKey(const Key('vpn-notification-hint')), findsNothing);
+      state.vpn.protectionBusy = false;
+      bridge.emit(connected);
+      await tester.pumpAndSettle();
+      expect(bridge.notificationReads, 1);
+      expect(
+        bridge.reads,
+        0,
+        reason: 'notification UI must not call VPN prepare',
+      );
+      expect(find.byKey(const Key('vpn-notification-hint')), findsOneWidget);
+      bridge.emit(connected);
+      await tester.pumpAndSettle();
+      expect(bridge.notificationReads, 1);
+      expect(bridge.reads, 0);
+      expect(state.vpn.status.phase, VpnPhase.connected);
+      expect(bridge.disconnects, 0);
+    },
+  );
+
+  for (final unavailable in [false, true]) {
+    androidTestWidgets(
+      'granted or unknown notification status is not presented as denied: unknown=$unavailable',
+      (tester) async {
+        final bridge = PermissionBridge()
+          ..setup = const VpnPermissionSetup(
+            vpn: VpnPermissionState.granted,
+            notifications: NotificationPermissionState.granted,
+            vendor: AndroidVendor.android,
+          )
+          ..notificationError = unavailable
+              ? StateError('private native diagnostic')
+              : null;
+        final state = await mountHome(tester, bridge);
+        bridge.emit(
+          VpnStatus(
+            phase: VpnPhase.connected,
+            processCrashProtection: false,
+            activeProfileId: state.app.selectedServer!.profile.id,
+            connectedAt: DateTime.fromMillisecondsSinceEpoch(1700000000000),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('vpn-notification-hint')), findsNothing);
+        expect(bridge.notificationSettings, 0);
+        expect(bridge.reads, 0);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  androidTestWidgets(
+    'Android settings retains notification action and refreshes after an explicit settings visit',
+    (tester) async {
+      final bridge = PermissionBridge();
+      final state = await mountHome(tester, bridge);
+      await tester.tap(find.byKey(const Key('settings-button')));
+      await tester.pumpAndSettle();
+      final row = find.byKey(const Key('settings-vpn-notification'));
+      await tester.ensureVisible(row);
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: row, matching: find.text('Отключено в Android')),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const Key('settings-enable-vpn-notification')),
+      );
+      await tester.pumpAndSettle();
+      expect(bridge.notificationSettings, 1);
+      expect(
+        bridge.reads,
+        0,
+        reason: 'opening settings must not call VPN prepare',
+      );
+      bridge.setup = const VpnPermissionSetup(
+        vpn: VpnPermissionState.required,
+        notifications: NotificationPermissionState.granted,
+        vendor: AndroidVendor.android,
+      );
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: row, matching: find.text('Включено')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('settings-enable-vpn-notification')),
+        findsNothing,
+      );
+      expect(state.vpn.status.phase, VpnPhase.disconnected);
+      expect(bridge.connects, 0);
+      expect(bridge.reads, 0);
     },
   );
 }

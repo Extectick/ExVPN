@@ -59,6 +59,12 @@ abstract interface class VpnPermissionSetupBridge {
   Future<void> openAppPermissionSettings();
 }
 
+/// Notification visibility is optional and never a VPN connection prerequisite.
+abstract interface class VpnNotificationSettingsBridge {
+  Future<NotificationPermissionState> getNotificationPermission();
+  Future<void> openNotificationSettings();
+}
+
 bool isVpnPermissionSetupError(String? code) => const {
   'permission_denied',
   'vpn_permission_unavailable',

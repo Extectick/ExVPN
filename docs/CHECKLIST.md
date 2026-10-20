@@ -22,6 +22,23 @@ full/staged OTA; исправления и 48 focused regressions вошли в 
 приёмкой нового APK или физического Redmi.
 Рабочее дерево; commit ожидается.
 
+Дополнение **EXVPN-E4-006/E4-001**, физический Redmi15/API36: на установленной
+0.1.12+34 найден другой Always-on в пространстве ExVPN. После его отключения
+пользователем появился системный запрос; grant, foreground service и owned VPN
+network наблюдены. Уведомление разрешено и содержит «Отключить». Свежий swipe
+только ExVPN сохранил службу/TUN, exit-info unchanged. Исторические OEM clean exits
+не объявляются исправленными. Новый UI9 даёт три шага настройки и notification
+settings, read notification не вызывает VPN prepare. Финальный APK35 ещё требует
+приёмки; Force stop/Task Manager Stop не обходятся. Общие E1/E4 остаются открытыми.
+[Контракт и точные границы](ANDROID_VPN_PERMISSION_SETUP.md).
+
+Итог UI9 после freeze всех агентов: **12/12 PASS, 104,54с, app482 tests**,
+fingerprint unchanged. [Full](evidence/fast-validation-android-guidance35-ui9.json).
+Отдельные15 focused tests подтверждают явный retry, три шага, одно напоминание,
+постоянную строку notification settings и отсутствие VPN prepare при notification
+read. [Промежуточный runtime и физические наблюдения](evidence/android-consent35-intermediate-runtime.json)
+точно отделяют опубликованный34, промежуточный35/UI8 и ожидаемый итоговый35/UI9.
+
 ## Обновление 0.1.12+34 с ручной приёмкой пользователя — 2026-10-20
 
 - [ ] **EXVPN-E6-019** — Проверять новые версии при открытии/возврате/разворачивании

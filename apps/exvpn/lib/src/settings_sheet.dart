@@ -11,6 +11,7 @@ import '../services/data_updates.dart';
 import '../services/safe_diagnostics.dart';
 import '../services/subscription_persistence.dart';
 import '../services/vpn_controller.dart';
+import '../services/vpn_permission_setup.dart';
 import 'app_strings.dart';
 import 'logs_sheet.dart';
 import 'appearance.dart';
@@ -47,13 +48,18 @@ class SettingsSheet extends StatefulWidget {
   State<SettingsSheet> createState() => _SettingsSheetState();
 }
 
-class _SettingsSheetState extends State<SettingsSheet> {
+class _SettingsSheetState extends State<SettingsSheet>
+    with WidgetsBindingObserver {
   late final AppearanceController _fallbackAppearance;
   ClientLogs? _fallbackLogs;
+  NotificationPermissionState? _notificationPermission;
+  bool _notificationReadPending = false;
+  bool _notificationSettingsOpening = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _fallbackAppearance = AppearanceController(persist: false)
       ..setChoice(switch (widget.themeMode) {
         ThemeMode.system => ThemeChoice.system,
@@ -62,6 +68,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
       });
     widget.vpn?.addListener(_vpnChanged);
     unawaited(widget.vpn?.refreshConnectionProtection());
+    unawaited(_refreshNotificationPermission());
   }
 
   void _vpnChanged() {
@@ -70,11 +77,72 @@ class _SettingsSheetState extends State<SettingsSheet> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.vpn?.removeListener(_vpnChanged);
     _fallbackLogs?.dispose();
     _fallbackAppearance.dispose();
     super.dispose();
   }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshNotificationPermission());
+    }
+  }
+
+  Future<void> _refreshNotificationPermission() async {
+    final vpn = widget.vpn;
+    if (vpn?.supportsNotificationSettings != true || _notificationReadPending) {
+      return;
+    }
+    _notificationReadPending = true;
+    final permission = await vpn!.getNotificationPermission();
+    if (!mounted) return;
+    setState(() {
+      _notificationPermission = permission;
+      _notificationReadPending = false;
+    });
+  }
+
+  Future<void> _openNotificationSettings() async {
+    if (_notificationSettingsOpening) return;
+    setState(() => _notificationSettingsOpening = true);
+    final opened = await widget.vpn?.openNotificationSettings();
+    if (!mounted) return;
+    setState(() => _notificationSettingsOpening = false);
+    if (opened != true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.tr('Откройте уведомления ExVPN в настройках телефона.'),
+          ),
+          showCloseIcon: true,
+        ),
+      );
+    }
+  }
+
+  Widget _notifications() => SettingsNavigationRow(
+    key: const Key('settings-vpn-notification'),
+    icon: Icons.notifications_none_outlined,
+    title: context.tr('Уведомление VPN'),
+    subtitle: context.tr(switch (_notificationPermission) {
+      NotificationPermissionState.granted => 'Включено',
+      NotificationPermissionState.required => 'Отключено в Android',
+      null => 'Настроить в Android',
+    }),
+    onTap: _notificationSettingsOpening ? null : _openNotificationSettings,
+    trailing: _notificationPermission == NotificationPermissionState.required
+        ? TextButton(
+            key: const Key('settings-enable-vpn-notification'),
+            onPressed: _notificationSettingsOpening
+                ? null
+                : _openNotificationSettings,
+            child: Text(context.tr('Включить')),
+          )
+        : null,
+  );
 
   void _info(String title, String content) => showDialog<void>(
     context: context,
@@ -318,6 +386,8 @@ class _SettingsSheetState extends State<SettingsSheet> {
                     ),
             ),
             _protection(),
+            if (widget.vpn?.supportsNotificationSettings == true)
+              _notifications(),
             SettingsNavigationRow(
               icon: Icons.system_update_alt,
               title: context.tr('Версии и обновления'),

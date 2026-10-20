@@ -2,7 +2,7 @@
 
 ## Android VPN permission setup, кандидат 0.1.13+35
 
-Read-only optional capability `getVpnPermissionSetup(null)` имеет закрытую schema1
+Recovery capability `getVpnPermissionSetup(null)` имеет закрытую schema1
 и публичную проверку `DISALLOW_CONFIG_VPN`. Unknown policy/DTO не даёт grant.
 Явный Connect сохраняет `VpnService.prepare()` и системный intent; служба не
 запускается вместо пользовательского согласия. POST_NOTIFICATIONS следует после
@@ -12,6 +12,16 @@ return/закрытие/смена профиля не запускают VPN. F
 только VPN или карточку собственного пакета. Manufacturer hint не читает другой
 Always-on пакет, не отменяет чужие ограничения и не меняет TUN/DNS/kill switch.
 [Подробности и официальные источники](ANDROID_VPN_PERMISSION_SETUP.md).
+
+Notification-only observer использует отдельный `getNotificationPermission(null)`:
+POST/app toggle/own channel, granted|required, без `VpnService.prepare()`. Простое
+наблюдение не должно менять текущий prepared VPN. Fixed own notification settings
+открываются только пользователем; неизвестный ответ не равен denied. UI9 содержит
+три шага Always-on, одно foreground/idle предложение включить уведомление и
+постоянную Android settings row. UI закрытие не вызывает service stop, явный
+stopWithTask=false сохраняет штатный default. Notification CATEGORY_SERVICE,
+IMMEDIATE/onlyAlertOnce/showWhen=false сохраняет прежний прямой STOP PendingIntent.
+Разделение процессов/Binder не вводится, OEM force-stop не обходится.
 
 Первое initialize/resume владельца обновлений всё равно сравнивает full offer,
 если общий Dart owner раньше прочёл staged patch. Последующие prepared/fullReady

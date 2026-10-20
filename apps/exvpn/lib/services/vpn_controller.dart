@@ -361,6 +361,33 @@ final class VpnController extends ChangeNotifier {
       defaultTargetPlatform == TargetPlatform.android &&
       bridge is VpnPermissionSetupBridge;
 
+  bool get supportsNotificationSettings =>
+      !kIsWeb &&
+      defaultTargetPlatform == TargetPlatform.android &&
+      bridge is VpnNotificationSettingsBridge;
+
+  Future<NotificationPermissionState?> getNotificationPermission() async {
+    if (!supportsNotificationSettings) return null;
+    try {
+      return await (bridge as VpnNotificationSettingsBridge)
+          .getNotificationPermission();
+    } catch (_) {
+      // Unknown visibility must not be presented as a confirmed denial.
+      return null;
+    }
+  }
+
+  Future<bool> openNotificationSettings() async {
+    if (!supportsNotificationSettings) return false;
+    try {
+      await (bridge as VpnNotificationSettingsBridge)
+          .openNotificationSettings();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<VpnPermissionSetup> getVpnPermissionSetup() async {
     final capability = bridge;
     if (!supportsPermissionSetup || capability is! VpnPermissionSetupBridge) {

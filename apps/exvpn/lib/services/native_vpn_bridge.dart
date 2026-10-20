@@ -110,7 +110,8 @@ final class NativeVpnBridge
         ApplicationRoutingBridge,
         ApplicationIconBridge,
         ConnectionProtectionBridge,
-        VpnPermissionSetupBridge {
+        VpnPermissionSetupBridge,
+        VpnNotificationSettingsBridge {
   NativeVpnBridge({
     MethodChannel? methods,
     EventChannel? stateEvents,
@@ -410,6 +411,19 @@ final class NativeVpnBridge
   @override
   Future<void> openAppPermissionSettings() async {
     await _invoke('openAppPermissionSettings');
+  }
+
+  @override
+  Future<NotificationPermissionState> getNotificationPermission() async =>
+      switch (await _invoke('getNotificationPermission')) {
+        'granted' => NotificationPermissionState.granted,
+        'required' => NotificationPermissionState.required,
+        _ => throw const VpnFailure('invalid_native_response'),
+      };
+
+  @override
+  Future<void> openNotificationSettings() async {
+    await _invoke('openNotificationSettings');
   }
 
   @override

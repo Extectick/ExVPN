@@ -2,6 +2,8 @@ package ru.exvpn.exvpn
 
 import android.Manifest
 import android.app.Activity
+import android.app.NotificationManager
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -29,14 +31,24 @@ internal class AndroidVpnPermissionSetup(private val activity: Activity) {
     fun wire(): Map<String, Any> = mapOf(
         "schema" to 1,
         "vpn" to vpnState(),
-        "notifications" to if (notificationsGranted()) "granted" else "required",
+        "notifications" to if (notificationsVisible()) "granted" else "required",
         "vendor" to if (Build.MANUFACTURER.trim().lowercase(Locale.ROOT) in
             setOf("xiaomi", "redmi", "poco")) "xiaomi" else "android",
     )
 
-    fun notificationsGranted(): Boolean = Build.VERSION.SDK_INT < 33 ||
+    fun notificationRuntimePermissionGranted(): Boolean = Build.VERSION.SDK_INT < 33 ||
         activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
+
+    /** A runtime grant alone does not make the ongoing VPN notification
+     * visible when the user disabled the app or its connection channel. */
+    internal fun notificationsVisible(): Boolean = try {
+        val manager = activity.getSystemService(NotificationManager::class.java)
+        notificationRuntimePermissionGranted() && manager != null &&
+            manager.areNotificationsEnabled() &&
+            manager.getNotificationChannel(ExVpnService.NOTIFICATION_CHANNEL)?.importance !=
+                NotificationManager.IMPORTANCE_NONE
+    } catch (_: Exception) { false }
 
     /** The only external destination is Android's settings for this app. No
      * package/component/URI supplied by Flutter or a subscription is accepted. */
@@ -45,6 +57,22 @@ internal class AndroidVpnPermissionSetup(private val activity: Activity) {
             Uri.fromParts("package", activity.packageName, null))
         check(intent.resolveActivity(activity.packageManager) != null)
         activity.startActivity(intent)
+    }
+
+    fun openNotificationSettings() {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
+        try {
+            if (intent.resolveActivity(activity.packageManager) != null) {
+                activity.startActivity(intent)
+                return
+            }
+        } catch (_: ActivityNotFoundException) {
+            // Some vendor settings expose a resolver but cannot open the page.
+        } catch (_: SecurityException) {
+            // Own app details remain the public, fixed fallback destination.
+        }
+        openAppSettings()
     }
 
     private fun vpnState(): String {

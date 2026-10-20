@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "date": "2026-10-20",
+  "candidate": "0.1.13+35",
+  "candidateSourceCommit": "f39b68110ade7c0c9b898e53777545b67ad8813f",
+  "candidateUiRevision": 8,
+  "candidateApkSha256": "65864825075354aa4c8b95194358ea7becb1c0b957371de4fa43addcc20c4398",
+  "published": false,
+  "supersededBy": "User-requested permission helper and notification improvements; final UI9 build pending",
+  "emulator": {
+    "os": "Android16/API36",
+    "otherAlwaysOnNoLockdownCausesSilentSystemCancel": true,
+    "recoveryShown": true,
+    "closeDoesNotLoop": true,
+    "settingsActionOpensSystemVpn": true,
+    "returnDoesNotConnect": true,
+    "explicitRetryShowsActualConsent": true,
+    "systemCancelDoesNotStartService": true,
+    "retryThenActualGrantStartsVpn": true,
+    "alreadyGrantedDoesNotReprompt": true,
+    "traffic": {
+      "uid": 10214,
+      "ip4": {
+        "bodySha256": "b6543e7c51fae6bc14b4a59097ff18eb9ba078d26e309f23fc9f730601d659a2",
+        "durationMs": 2501,
+        "httpStatus": 200,
+        "publicIpFamily": 4,
+        "responseBytes": 11,
+        "success": true,
+        "uid": 10215,
+        "uidRxBytes": 4138,
+        "uidTxBytes": 1446,
+        "vpnTransport": true
+      },
+      "dns": {
+        "durationMs": 124,
+        "ipv4Answers": 2,
+        "ipv6Answers": 2,
+        "success": true,
+        "uid": 10215,
+        "uidRxBytes": 0,
+        "uidTxBytes": 0,
+        "vpnTransport": true
+      },
+      "ownService": true,
+      "vpnRows": 1,
+      "ownerMatched": 1,
+      "ownTun0": 1,
+      "observer": "bounded Current Networks section; transport-set contains VPN; exact installed owner UID",
+      "differentDirectExit": true
+    },
+    "cleanup": {
+      "normalDisconnect": true,
+      "vpnServiceAbsent": true,
+      "alwaysOn": null,
+      "lockdown": false,
+      "fixtureRemoved": true
+    }
+  },
+  "physical": {
+    "model": "Redmi15",
+    "os": "Android16/API36",
+    "installedVersion": "0.1.12+34",
+    "installedBytesCompared": false,
+    "differentAndroidSpaceObservedAndResolvedByUser": true,
+    "otherAlwaysOnInExvpnSpace": true,
+    "otherAlwaysOnDisabledByUser": true,
+    "userConfirmedActualVpnPromptAndGrant": true,
+    "ownForegroundService": true,
+    "ownedVpnNetwork": true,
+    "runtimeNotificationGrantNow": true,
+    "ownStatusNotificationVisible": true,
+    "disconnectActionPresent": true,
+    "ownStatusConnected": null,
+    "swipeOnlyExvpnTest": {
+      "userPerformedGesture": true,
+      "serviceSurvives": true,
+      "ownedVpnNetworkSurvives": true,
+      "packageStopped": false,
+      "exitInfoUnchanged": true
+    },
+    "historicalOemExits": {
+      "swipeClean": 6,
+      "oneKeyClean": 2,
+      "notFreshReproduction": true
+    },
+    "newCandidateNotInstalled": true,
+    "forceStopBypass": false,
+    "independentHttpsThroughPhysicalVpnNotTested": true,
+    "notificationTextNotUsedAsTrafficProof": true
+  },
+  "limits": [
+    "Phone has not accepted final +35 APK",
+    "No promise of force-stop survival or permanent non-dismissible notification",
+    "Full E1 matrix remains open"
+  ]
+}
