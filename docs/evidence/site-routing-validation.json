@@ -57,5 +57,21 @@
     "nativePackagesRebuilt": false,
     "saveReturnsToHome": true,
     "browserConsoleErrors": 0
+  },
+  "integration": {
+    "workspace": "V:/GitProjects/ExVPN",
+    "previousMain": "d504ba2271fabe3fc40824bebfad6d43d266660c",
+    "publishedTag": "e5c9db2d4b2763650c87ab140e744b2f0d8cc197",
+    "previewHttpStatus": 200,
+    "validationCommit": "514b7be",
+    "publishedTagUnchanged": true,
+    "publishedVersion": "0.1.14+36",
+    "previewFixCommit": "c24a259",
+    "comparedSourceFiles": 47,
+    "installedAppsChanged": false,
+    "sourceMatchesValidatedBranch": true,
+    "featureIncludedInPublished36": false,
+    "featureCommit": "33e9166",
+    "nativePackagesRebuilt": false
   }
 }
