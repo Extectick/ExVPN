@@ -72,6 +72,14 @@ Focused Go/core/Windows/Android, Dart model, widget/controller/channel tests и
 standalone Kotlin policy/owner/recovery выполнены. Host typecheck25 production
 Kotlin файлов API36 выполнен с `R.drawable` stub; это не APK/JNI-проверка.
 Веб-дизайн использует синтетические данные и отдельный design bridge.
+Исходники `ed56b07` поверх protocol-кандидата `2d0d4a0`. Полный запуск дал
+11/12 PASS за121,08с с неизменными исходниками и491 app tests; scripts остановился
+на Git -C path limit в глубоком временном каталоге. Только этот fixture выполнен
+по короткому SUBST-пути к тем же файлам (61 PASS); оставшиеся12 script suites
+успешно завершены по исходному пути. Короткий alias удалён. Это составная проверка,
+не единый Full12/12; [отчёт](evidence/site-routing-validation.json) сохраняет и
+исходный отказ. Светлый/тёмный минимальный и Arabic RTL preview проверены без
+overflow/ошибок console. Настоящая VPN-сеть в этом цикле не менялась.
 
 Перед выпуском нужны Windows C++/native package и Android JNI/APK, реальное
 encrypted persistence/restore и TUN-матрица домен/IP/CIDR/IPv4/IPv6/DNS, ECH/unknown

@@ -1,5 +1,16 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+2026-10-21: локальные site/IP политики, source `ed56b07` поверх `2d0d4a0`.
+Full121,08с:11/12 lanes PASS,491 app tests, fingerprint unchanged. Scripts
+остановился на слишком длинном Git -C пути synthetic environment-workspace;
+единственный fixture выполнен через временный короткий SUBST alias к тому же
+checkout (61 PASS), остальные12 ранее не выполненных script suites завершены
+по реальному пути. Alias удалён, исходники не менялись. Это составная проверка,
+не единый Full12/12. Отдельно14 Dart site tests,9 widget/controller/channel,
+Kotlin policy/recovery и host typecheck25 production файлов с resource stub.
+Реальные TUN/native packages не проверялись и не выпускались.
+[Результат и исходный отказ](evidence/site-routing-validation.json).
+
 После runtime-отказа Windows внесено сохранение TUN/исключений на время
 cooldown (`ec0e865`, `12c2caa`). Итоговый кандидат `f98b75d`, включая
 параллельно завершённую единую страницу обновлений, прошёл новый Full:

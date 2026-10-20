@@ -6,7 +6,13 @@
   нормализация URL/domain/IP/CIDR, пресеты России и сохранение своего списка.
   Проверено 2026-10-21:9 widget/controller/channel tests,14 Dart contract tests,
   браузерный светлый/компактный preview. Правила не применяются от простого входа
-  в форму, ошибка native write сохраняет черновик. Рабочее дерево; commit ожидается.
+  в форму, ошибка native write сохраняет черновик. Исходники `ed56b07`.
+  Full:11/12 lanes PASS за121,08с,491 app tests; scripts завершён адресно без
+  изменения исходников после обхода ограничения длины временного пути Git.
+  Это составная поведенческая проверка, не единый Full12/12 и не native приёмка.
+  [Результат](evidence/site-routing-validation.json),
+  [светлый экран](evidence/site-routing-light.png),
+  [минимальный экран](evidence/site-routing-compact-dark.png).
 - [ ] **EXVPN-E1-013** — Принять сайты/IP через реальный TUN на обеих платформах.
   Реализованы strict schema1, bounded matcher, owner/DNS priority, UDP pinning,
   encrypted persistence и resume. Focused Go и Kotlin policy/recovery прошли,

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "sourceCommit": "ed56b07",
+  "baseCommit": "2d0d4a0",
+  "status": "behavioral-checks-passed-composed",
+  "singleFullPass": false,
+  "initialFull": {
+    "fingerprint": "cd183e28b8969cf9a2f7fe0325213880f5533ae2a64bba74bc61b8a20ac1e9e0",
+    "totalLanes": 12,
+    "passedLanes": 11,
+    "failure": "scripts: synthetic fixture exceeds Git -C path limit in deep isolated checkout",
+    "durationSeconds": 121.08,
+    "report": "site-routing-full-initial.json",
+    "sourceUnchanged": true
+  },
+  "targetedCompletion": {
+    "noGlobalNetworkChanges": true,
+    "shortPath": "temporary SUBST alias to same verified checkout, removed after use",
+    "allPassed": true,
+    "sourceChanges": false,
+    "remainingScriptSuites": 12,
+    "xrayPatchFixtures": 61,
+    "noNativePackageBuild": true
+  },
+  "appTests": 491,
+  "focusedSiteWidgetControllerChannelTests": 9,
+  "focusedSiteDomainTests": 14,
+  "androidStandaloneJvm": {
+    "resourceStub": true,
+    "policyOwner": 11,
+    "recoveryAndBoundary": 7,
+    "productionHostTypecheckFiles": 25
+  },
+  "browser": {
+    "lightMedium": true,
+    "darkMinimal": true,
+    "arabicRtlMinimal": true,
+    "consoleErrors": 0,
+    "syntheticOnly": true,
+    "overflowObserved": false
+  },
+  "notAccepted": [
+    "Windows C++/native package",
+    "Android JNI/APK",
+    "real encrypted persistence/restore",
+    "isolated site routing TUN IPv4/IPv6/DNS/ECH/owner/UDP matrix",
+    "physical Android",
+    "new Shorebird base and public release"
+  ]
+}
