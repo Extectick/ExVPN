@@ -1270,5 +1270,12 @@ IPv6 HTTPS не подтверждён, 23 принятых узла и шест
   не было. [Контракт](OTA_RESTART.md), [runtime](evidence/independent33-runtime.json),
   [автоматический цикл](evidence/independent33-auto-restart.json).
   Исходники: [c566866](https://github.com/Extectick/ExVPN/commit/c5668668da0dd48628cd060b0abd5795e44ddde4).
-  Публикация проверенных пакетов выполняется отдельно; физический Android/E1
-  этим пунктом не закрываются.
+  Публикация выполнена отдельным шагом без пересборки:
+  [0.1.11+33 Preview](https://github.com/Extectick/ExVPN/releases/tag/v0.1.11),
+  неизменяемый tag `v0.1.11` на `c566866`. Независимый
+  [аудит публичных файлов](evidence/independent33-public-download-audit.json)
+  подтвердил точные принятые APK/EXE, 20 assets/19 checksums, подписи Android и
+  обоих full-update feeds, каталог 8 и обе capsules. Проверочный патч №1 отозван.
+  Физический Android, Authenticode и E1 этим пунктом не закрываются. UI-меню
+  подписок и автопинг сохранены для отдельного следующего патча №2, не включены
+  в опубликованные APK/EXE.

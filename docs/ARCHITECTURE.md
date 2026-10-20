@@ -2,7 +2,7 @@
 
 ## Независимый Dart OTA, 2026-10-20
 
-База 0.1.10+32 компилируется с `EXVPN_OTA_PROVIDER=exvpn` и fingerprint защищённых
+Базы начиная с 0.1.10+32 компилируются с `EXVPN_OTA_PROVIDER=exvpn` и fingerprint защищённых
 native/assets/plugins/dependencies. Встроенный updater настроен на фиксированный
 loopback endpoint; auto_update=false, strict RSA4096. Dart-адаптер держит socket
 весь срок процесса, проверяет собственный Ed25519-каталог, срок/последовательность/
@@ -14,6 +14,30 @@ SDK calls и сохраняет владение портом. Занятый п
 Старые базы сохраняют прежнюю политику Shorebird Cloud; новый режим явный.
 Это собственный совместимый адаптер, не официальный self-host Shorebird.
 [Контракт и приёмка](INDEPENDENT_OTA_PLAN.md).
+
+### Автоматическое применение и откат, база 0.1.11+33
+
+После проверки и подготовки патча или подписанного отзыва Dart сохраняет данные
+и запрашивает native handoff. Передача откладывается до foreground и закрытия
+модального окна; Android дополнительно требует подтверждённого native disconnected.
+Возврат к подходящему состоянию повторяет отложенную передачу по событию,
+без фонового опроса и автоматического повтора уже отказавшего native handoff.
+
+Windows использует прежний отдельный helper: меняет только UI, сохраняя службу.
+Android UI и VpnService разделяют процесс, поэтому закрытый non-exported broker
+в `:ota_restart` принимает одноразовый native grant, ждёт смерти старой VM и
+запускает фиксированную MainActivity. Конкурирующий системный запуск VPN отменяет
+подготовку OTA; работающий туннель ради обновления не завершается. Успешный ответ
+и завершение своего PID выполняются в одном main-thread callback. Нет внешних
+PID, путей, URL запуска, нового разрешения или `Activity.recreate()`.
+
+Автоматические подписанные apply/withdrawal проверены в Sandbox и API30 emulator:
+UI 4→5→4, SDK current 0→1→0, новые процессы и сохранение данных. Native helper
+Windows не требовал изменения: прежний `handoff_failed` воспроизводился из-за
+некорректных default owner/DACL искусственного QA token до создания worker pipe.
+[Контракт](OTA_RESTART.md), [приёмка](evidence/independent33-auto-restart.json),
+[аудит опубликованных байтов](evidence/independent33-public-download-audit.json).
+Физический Android и общая матрица E1 остаются отдельными критериями.
 
 ## Настройка Kill Switch и ограниченный журнал, 2026-10-20
 

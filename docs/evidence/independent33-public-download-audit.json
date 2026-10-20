@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.11+33",
+  "publicUrl": "https://github.com/Extectick/ExVPN/releases/tag/v0.1.11",
+  "baseSourceCommit": "c5668668da0dd48628cd060b0abd5795e44ddde4",
+  "notesSourceCommit": "c66b1b6ef790835ea8eb8748ea6df2650958199b",
+  "releaseAssetCount": 20,
+  "checksumFilesVerified": 19,
+  "manifestAssetCount": 18,
+  "githubAssetDigestsVerified": true,
+  "sameAcceptedBaseBytes": true,
+  "androidPinnedSignerVerified": true,
+  "runtimeEvidenceBound": true,
+  "feeds": [
+    {
+      "platform": "windows-x64",
+      "signatureVerified": true,
+      "unexpired": true,
+      "version": "0.1.11+33",
+      "artifactSha256": "19744afaf8ddf99f76a011096ea730c542a1a1cae2d7cc7225600df1f04b311f"
+    },
+    {
+      "platform": "android",
+      "signatureVerified": true,
+      "unexpired": true,
+      "version": "0.1.11+33",
+      "artifactSha256": "78900fa64189bf25a2c436022397cfd4f63717517d4ed9ebbe364f9d4d1afd78"
+    }
+  ],
+  "independentCatalog": {
+    "signatureVerified": true,
+    "unexpired": true,
+    "revision": 8,
+    "sha256": "e4fddddaa6d76737b6da2d88a8b47f9cf118046325e25bdff8e679ee25d54f6b",
+    "activePatches": 0,
+    "revoked": [
+      1
+    ]
+  },
+  "capsules": [
+    {
+      "target": "Android",
+      "exactAcceptedBaseBytes": true,
+      "packageReceiptBound": true,
+      "aotArchitectures": 2,
+      "entries": 3
+    },
+    {
+      "target": "Windows",
+      "exactAcceptedBaseBytes": true,
+      "packageReceiptBound": true,
+      "aotArchitectures": 1,
+      "entries": 2
+    }
+  ],
+  "stableReady": false,
+  "passed": true
+}
