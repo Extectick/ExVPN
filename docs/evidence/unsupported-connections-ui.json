@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "date": "2026-10-20",
   "sourceCommit": "1798355df3c38f50cd701a752d5975f4ba38f9e0",
-  "status": "SOURCE_TARGETED_PASS_WEB_PENDING",
+  "status": "PASS_TARGETED_SOURCE_AND_WEB_PREVIEW",
   "behavior": {
     "unsupportedVisible": true,
     "overlay": "Не поддерживается",
@@ -25,8 +25,12 @@
     "targetedWidgetsPassed": true,
     "fullAccepted": false,
     "fullAttemptStatus": "source-changed-during-run",
-    "fullAttemptReport": "artifacts/qa/fast-20261020-082846-f997ff07/summary.json",
-    "fullAppFailure": "Parallel lifecycle edit had undefined FullUpdatesBackend.resume during analyzer. Owner subsequently fixed the intermediate source. Full not repeated for unrelated changes."
+    "fullAttemptReport": "docs/evidence/unsupported-connections-full-attempt.json",
+    "fullAppFailure": "Parallel lifecycle edit had undefined FullUpdatesBackend.resume during analyzer. Owner subsequently fixed the intermediate source. Full not repeated for unrelated changes.",
+    "browserDarkLarge": true,
+    "browserLightMedium": true,
+    "browserUnsupportedClickPreservesSelection": true,
+    "browserConsoleErrors": 0
   },
   "limitations": [
     "Display metadata of unsupported records is session-only to retain snapshot v3 rollback compatibility; restored records use Connection N until subscription refresh.",
@@ -36,5 +40,17 @@
   "nativeBuilds": 0,
   "nativeInstallations": 0,
   "published": false,
-  "screenshots": []
+  "screenshots": [
+    {
+      "path": "design/screenshots/unsupported-connections/dark-large.png",
+      "sha256": "9b561bbbd4da94f07ceb4b22d85339318541eb3ae9c9ed8b2df4e83a42a3c776"
+    },
+    {
+      "path": "design/screenshots/unsupported-connections/light-medium-top.png",
+      "sha256": "04b9736caaf8128a50ea13f1e09de041f15d0b75ee812df5aec3035901d0091a"
+    }
+  ],
+  "webBuilds": 1,
+  "webBuildSeconds": 124.2,
+  "previewDirectory": "artifacts/ui-next-preview"
 }
