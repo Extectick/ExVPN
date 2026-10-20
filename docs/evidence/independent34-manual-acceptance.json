@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "delivery": "independent",
+  "version": "0.1.12+34",
+  "baseSourceCommit": "ec1a443b200cd1d4dec548490076198febad1918",
+  "runtimeVerification": "deferred_to_user",
+  "automatedTests": "not_run_by_user_request",
+  "stableReady": false,
+  "baseReceipts": {
+    "Windows": "567f6f40c4debc5a29ca6ceac57d5bc58bbc85b45696a533555a6d5c3676dff2",
+    "Android": "52cd29dc7ae1282e3e79916844a45d6d580275e61e3c2c1bf84dbf1a76ab5ac8"
+  },
+  "platforms": [
+    {
+      "target": "Android",
+      "artifactSha256": "bd6731655498301543a6ec4903185ea053baf1bc1fc4f82609c8f389974ffed8",
+      "runtimeVerified": false
+    },
+    {
+      "target": "Windows",
+      "artifactSha256": "6a0cd305f4ddcd189e90da57db372c922ad3267efa4a0ee299e629fb28718d60",
+      "runtimeVerified": false
+    }
+  ]
+}

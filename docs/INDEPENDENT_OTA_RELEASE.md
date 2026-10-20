@@ -1,7 +1,10 @@
-# Быстрый выпуск UI после принятия базы 0.1.11+33
+# Быстрый выпуск UI для базы 0.1.12+34
 
-Это шаблоны для оператора. Проверочный патч 33/1 уже применён и отозван;
-следующий номер базы — **2**. Подставить
+Это шаблоны для оператора. База34 опубликована с ручной приёмкой пользователя:
+её runtime не проверялся по его прямому поручению. Следующий номер патча этой
+базы — **1**, текущая UI revision7, каталог9; следующую revision брать из
+актуального подписанного каталога. Для прежней принятой базы33 патч1 отозван,
+номер2 не публиковался. Подставить
 SHA принятой базы, очередной номер патча, следующую общую revision каталога и
 локальные пути. Ключи и значения secrets не выводить. Source должен быть clean
 и committed; SemVer/build, native/assets/plugins/dependencies/engine базы не менять.
@@ -9,15 +12,15 @@ SHA принятой базы, очередной номер патча, сле�
 ## GitHub Actions: собрать только AOT UI
 
 ```powershell
-$BaseSource = '<SHA принятой 33-базы>'
+$BaseSource = 'ec1a443b200cd1d4dec548490076198febad1918'
 $PatchNumber = '<следующий номер патча этой базы>'
 gh workflow run independent-ota.yml --repo Extectick/ExVPN --ref main `
-  -f operation=patch -f version=0.1.11+33 -f target=Both `
+  -f operation=patch -f version=0.1.12+34 -f target=Both `
   -f base_source_commit=$BaseSource -f patch_number=$PatchNumber
 ```
 
 `base_run_id` оставлен пустым намеренно: workflow берёт постоянные
-`ExVPN-0.1.11-33-{android,windows}-ota-inputs.zip` из неизменяемого `v0.1.11`,
+`ExVPN-0.1.12-34-{android,windows}-ota-inputs.zip` из неизменяемого `v0.1.12`,
 а не требует очередной native build или неистёкший Actions artifact.
 Он проверяет защищённые inputs и точные compiler pins, затем kernel/gen_snapshot,
 RSA подпись и diff. Shorebird API/account, Gradle/CMake/service/JNI не нужны.
@@ -48,7 +51,7 @@ CI загружает `independent-patch-{Android,Windows}-<UI source SHA>`; э�
 это отдельная от RSA подпись каталога. Ключ не передавать аргументом как текст.
 
 ```powershell
-$AssetTag = 'ota-0.1.11-33-p' + $PatchNumber
+$AssetTag = 'ota-0.1.12-34-p' + $PatchNumber
 python scripts/ota/catalog.py --base-receipt $WindowsBaseReceipt `
   --base-receipt $AndroidBaseReceipt --patch-receipt $WindowsPatchReceipt `
   --patch-receipt $AndroidPatchReceipt --asset-tag $AssetTag `
@@ -63,7 +66,7 @@ python scripts/ota/publish-catalog.py --catalog $NewCatalog `
 Publisher сначала сверяет RSA/хеши receipts, закрепляет immutable tag на UI source
 commit, загружает diff без clobber, проверяет GitHub digests и только затем обновляет
 маленький подписанный `ota-beta/dart-updates.json` с read-back. Существующие полные
-APK/EXE и `v0.1.11` остаются теми же. До продвижения нужны релевантный UI smoke и
+APK/EXE и `v0.1.12` остаются теми же. До продвижения нужны релевантный UI smoke и
 проверка применения; уже принятые неизменённые native/VPN матрицы не повторять.
 
 ## Отозвать патч и выполнить cold rollback

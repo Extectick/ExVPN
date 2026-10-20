@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.12+34",
+  "published": true,
+  "publicUrl": "https://github.com/Extectick/ExVPN/releases/tag/v0.1.12",
+  "baseSourceCommit": "ec1a443b200cd1d4dec548490076198febad1918",
+  "notesSourceCommit": "ec1a443b200cd1d4dec548490076198febad1918",
+  "uiRevision": 7,
+  "runtimeVerification": "deferred_to_user",
+  "automatedTests": "not_run_by_user_request",
+  "publicRedownloadPerformed": false,
+  "publicationByteBindings": "publisher local receipts, upload digests and signed feed read-back",
+  "stableReady": false,
+  "catalog": {
+    "sha256": "81b6a76ce470d9360a5551c2ada23cbea99f3f555143937b6dde00bc5d4d1350",
+    "cloudCalls": false,
+    "activePatches": 0,
+    "revision": 9
+  },
+  "fullBaseBuilds": {
+    "Windows": 1,
+    "Android": 1
+  },
+  "timings": {
+    "Windows": {
+      "target": "Windows",
+      "startedAt": "2026-10-20T08:39:11.1170481Z",
+      "completedAt": "2026-10-20T08:42:16.1468568Z",
+      "success": true,
+      "exitCode": 0
+    },
+    "Android": {
+      "target": "Android",
+      "startedAt": "2026-10-20T08:43:06.3043262Z",
+      "completedAt": "2026-10-20T08:46:45.4093567Z",
+      "success": true
+    }
+  },
+  "packages": [
+    {
+      "file": "ExVPN-0.1.12-34-android.apk",
+      "bytes": 140867019,
+      "sha256": "bd6731655498301543a6ec4903185ea053baf1bc1fc4f82609c8f389974ffed8"
+    },
+    {
+      "file": "ExVPN-0.1.12-34-windows-x64-development.exe",
+      "bytes": 50568010,
+      "sha256": "6a0cd305f4ddcd189e90da57db372c922ad3267efa4a0ee299e629fb28718d60"
+    }
+  ],
+  "manualEvidence": "independent34-manual-acceptance.json"
+}
