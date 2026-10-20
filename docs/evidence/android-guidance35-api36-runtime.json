@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-20",
+  "version": "0.1.13+35",
+  "uiRevision": 9,
+  "sourceCommit": "f243e92c9f7bba2ad22d2d79690f6a80a3487d39",
+  "artifact": {
+    "path": "artifacts/shorebird/0.1.13+35-android-612d59a2d3a0413183cad2afb6b55c2d/ExVPN-0.1.13-35-android.apk",
+    "sha256": "ab7aee19632e1b408105c4f8edffe5213125a9f30c619df6a3f8b2c4870b978a",
+    "packagedAuditAccepted": true,
+    "published": false,
+    "independentBaseRegistered": false
+  },
+  "automatedChecks": {
+    "full": "12/12 PASS",
+    "appTests": 482,
+    "durationSeconds": 104.54,
+    "sourceUnchanged": true,
+    "permissionFocusedTests": 15,
+    "earlierJvmTests": 66,
+    "finalJvmTestsRepeated": false,
+    "earlierJvmSource": "f39b681"
+  },
+  "emulator": {
+    "os": "Android16/API36",
+    "freshActualConsent": true,
+    "cancelShowsRecovery": true,
+    "helpLinkShowsThreeSteps": true,
+    "settingsOpensSystemVpn": true,
+    "returnNeedsExplicitRetry": true,
+    "retryRequestsActualConsent": true,
+    "actualSystemGrant": true,
+    "notificationReminderSeen": true,
+    "reminderOpensOwnNotificationSettings": true,
+    "enabledViaActualSystemSwitch": true,
+    "settingsRowUpdatesToEnabled": true,
+    "notificationReadDoesNotCallVpnPrepare": "covered by focused tests",
+    "background": {
+      "gesturesFromFreshXml": true,
+      "removedVisibleExvpnCards": 2,
+      "serviceSurvives": true,
+      "foreground": true,
+      "ip4": {
+        "bodySha256": "7b6e9cd54e1701d76dd9ea4425d71c4010b6eadb4f58c049347149638283043c",
+        "durationMs": 1682,
+        "httpStatus": 200,
+        "publicIpFamily": 4,
+        "responseBytes": 12,
+        "success": true,
+        "uid": 10215,
+        "uidRxBytes": 4243,
+        "uidTxBytes": 1498,
+        "vpnTransport": true
+      },
+      "dns": {
+        "durationMs": 115,
+        "ipv4Answers": 2,
+        "ipv6Answers": 2,
+        "success": true,
+        "uid": 10215,
+        "uidRxBytes": 0,
+        "uidTxBytes": 0,
+        "vpnTransport": true
+      }
+    },
+    "notification": {
+      "visibleTitle": "ExVPN",
+      "visibleStatus": "VPN подключён",
+      "action": "Отключить",
+      "screenshot": "android35-vpn-notification.png",
+      "stop": {
+        "actualNotificationAction": true,
+        "stoppedWithoutOpeningApp": true,
+        "vpnServiceAbsent": true,
+        "vpnNetworksAbsent": true,
+        "emulatorActionOnly": true
+      }
+    }
+  },
+  "physical": {
+    "model": "Redmi15",
+    "os": "Android16/API36",
+    "installedVersion": "0.1.12+34",
+    "installedBytesCompared": false,
+    "differentAndroidSpaceObservedAndResolvedByUser": true,
+    "otherAlwaysOnInExvpnSpace": true,
+    "otherAlwaysOnDisabledByUser": true,
+    "userConfirmedActualVpnPromptAndGrant": true,
+    "ownForegroundService": true,
+    "ownedVpnNetwork": true,
+    "runtimeNotificationGrantNow": true,
+    "ownStatusNotificationVisible": true,
+    "disconnectActionPresent": true,
+    "ownStatusConnected": null,
+    "swipeOnlyExvpnTest": {
+      "userPerformedGesture": true,
+      "serviceSurvives": true,
+      "ownedVpnNetworkSurvives": true,
+      "packageStopped": false,
+      "exitInfoUnchanged": true
+    },
+    "historicalOemExits": {
+      "swipeClean": 6,
+      "oneKeyClean": 2,
+      "notFreshReproduction": true
+    },
+    "newCandidateNotInstalled": true,
+    "forceStopBypass": false,
+    "independentHttpsThroughPhysicalVpnNotTested": true,
+    "notificationTextNotUsedAsTrafficProof": true
+  },
+  "limitations": [
+    "Final APK35/UI9 has not been installed on the physical phone; phone observations are installed34",
+    "Fresh HyperOS Clear all not tested; historical SwipeUpClean/OneKeyClean are not claimed fixed",
+    "Task Manager Stop and force-stop terminate the app; no bypass",
+    "Android14+ may permit manual notification dismissal",
+    "E1 stable release and full physical traffic/security matrix remain open",
+    "This is a local Android candidate; no new public release/feed is claimed"
+  ]
+}

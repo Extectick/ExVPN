@@ -12,15 +12,16 @@ analyze без замечаний. API36 на старой 0.1.12+34 подтв�
 скрытую отмену и точное старое сообщение об отсутствии разрешения.
 Добавлены recovery с крестиком, явный retry, фиксированные VPN/app settings,
 публичный admin restriction и последовательный необязательный notification prompt.
-Исправленный APK и Redmi15 пользователя ещё не приняты; общий критерий остаётся
-открытым. [Контракт](ANDROID_VPN_PERMISSION_SETUP.md).
+На этом этапе исправленный APK и Redmi15 пользователя ещё не были приняты;
+последующие наблюдения приведены ниже. Общий критерий остаётся открытым.
+[Контракт](ANDROID_VPN_PERMISSION_SETUP.md).
 Итоговый Full после freeze всех исходников: **12/12 PASS, 101,31с**, app476 tests,
 fingerprint unchanged. [Отчёт](evidence/fast-validation-android-consent35.json).
 Первый Full нашёл устаревшее ожидание сообщения и начальную арбитражную ошибку
 full/staged OTA; исправления и 48 focused regressions вошли в итоговый прогон.
 [API36 baseline](evidence/android-consent34-api36-baseline.json) не является
 приёмкой нового APK или физического Redmi.
-Рабочее дерево; commit ожидается.
+Исходники начального recovery `f39b681`.
 
 Дополнение **EXVPN-E4-006/E4-001**, физический Redmi15/API36: на установленной
 0.1.12+34 найден другой Always-on в пространстве ExVPN. После его отключения
@@ -28,8 +29,8 @@ full/staged OTA; исправления и 48 focused regressions вошли в 
 network наблюдены. Уведомление разрешено и содержит «Отключить». Свежий swipe
 только ExVPN сохранил службу/TUN, exit-info unchanged. Исторические OEM clean exits
 не объявляются исправленными. Новый UI9 даёт три шага настройки и notification
-settings, read notification не вызывает VPN prepare. Финальный APK35 ещё требует
-приёмки; Force stop/Task Manager Stop не обходятся. Общие E1/E4 остаются открытыми.
+settings, read notification не вызывает VPN prepare. Приёмка финального APK35
+приведена ниже; Force stop/Task Manager Stop не обходятся. Общие E1/E4 открыты.
 [Контракт и точные границы](ANDROID_VPN_PERMISSION_SETUP.md).
 
 Итог UI9 после freeze всех агентов: **12/12 PASS, 104,54с, app482 tests**,
@@ -37,7 +38,25 @@ fingerprint unchanged. [Full](evidence/fast-validation-android-guidance35-ui9.js
 Отдельные15 focused tests подтверждают явный retry, три шага, одно напоминание,
 постоянную строку notification settings и отсутствие VPN prepare при notification
 read. [Промежуточный runtime и физические наблюдения](evidence/android-consent35-intermediate-runtime.json)
-точно отделяют опубликованный34, промежуточный35/UI8 и ожидаемый итоговый35/UI9.
+точно отделяют опубликованный34 и промежуточный35/UI8 от итогового35/UI9.
+
+Проверенные подэтапы **EXVPN-E4-006/E4-001**, 2026-10-20, исходники `f243e92`,
+финальный подписанный Android APK35/UI9:
+
+- [x] API36: настоящая отмена, три шага помощи, VPN settings, возврат без
+  auto-connect, явный retry и настоящее системное разрешение.
+- [x] Напоминание открывает только уведомления ExVPN; после системного
+  переключателя строка в приложении обновляется до Enabled.
+- [x] После удаления двух карточек ExVPN служба остаётся foreground; отдельный
+  UID получает HTTPS200 через VPN с отличающимся внешним IPv4 и успешный DNS.
+- [x] Настоящая кнопка уведомления «Отключить» убирает службу и VPN-сеть,
+  не открывая Activity.
+- [ ] Физическая приёмка35, свежий HyperOS «Закрыть всё» и полная IPv6/DNS/security
+  матрица. На телефоне оставлена работающая34; общий E1 не закрыт.
+
+[Финальное доказательство](evidence/android-guidance35-api36-runtime.json),
+[уведомление](evidence/android35-vpn-notification.png). Кандидат локальный:
+публичного выпуска/feed и регистрации новой OTA-базы нет; Windows35 не собирался.
 
 ## Обновление 0.1.12+34 с ручной приёмкой пользователя — 2026-10-20
 
