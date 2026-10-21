@@ -19,10 +19,18 @@ import (
 )
 
 func main() {
-	mode := flag.String("mode", "numeric", "numeric, health, dns-tun or hold")
+	mode := flag.String("mode", "numeric", "Fixed independent HTTPS, DNS or synthetic ClientHello routing probe")
 	flag.Parse()
-	if (*mode != "health" && *mode != "numeric" && *mode != "numeric6" && *mode != "dns-tun" && *mode != "hold") || flag.NArg() != 0 {
+	if (*mode != "health" && *mode != "numeric" && *mode != "numeric6" && *mode != "alternate" && *mode != "dns-tun" && *mode != "dns-fresh-a" && *mode != "dns-fresh-aaaa" && *mode != "raw-plain" && *mode != "raw-ech-before" && *mode != "raw-ech-after" && *mode != "raw-no-sni" && *mode != "hold") || flag.NArg() != 0 {
 		fmt.Println(`{"error":"invalid_mode"}`)
+		return
+	}
+	if strings.HasPrefix(*mode, "raw-") {
+		runClientHelloProbe(*mode)
+		return
+	}
+	if strings.HasPrefix(*mode, "dns-fresh-") {
+		runFreshDNSProbe(*mode)
 		return
 	}
 	if *mode == "hold" {
@@ -50,6 +58,9 @@ func main() {
 	}
 	if *mode == "health" {
 		target = "https://www.gstatic.com/generate_204"
+	}
+	if *mode == "alternate" {
+		target = "https://one.one.one.one/cdn-cgi/trace"
 	}
 	started := time.Now()
 	transport := &http.Transport{TLSHandshakeTimeout: 8 * time.Second, ResponseHeaderTimeout: 8 * time.Second, DisableKeepAlives: true}

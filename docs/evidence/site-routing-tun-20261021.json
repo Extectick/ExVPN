@@ -1,0 +1,242 @@
+{
+  "schema": 1,
+  "date": "2026-10-21",
+  "task": "EXVPN-E1-014",
+  "productBase": "0.1.15+37",
+  "productSource": "0d8c001cd0f566104425c06ec8155d3eb57115c4",
+  "evidenceSource": "912cd325998b2c20a154d68258e1d900ff53a30d plus QA harness",
+  "computerUse": false,
+  "hostNetworkChanged": false,
+  "reusedExistingProductPackages": true,
+  "windows": {
+    "schema": 1,
+    "productBase": "0.1.15+37",
+    "xrayPin": "v1.260327.1-exvpn.5",
+    "realTun": true,
+    "computerUse": false,
+    "hostNetworkChanged": false,
+    "controllerHarness": true,
+    "installedServiceIpcTested": false,
+    "sitePolicyMemoryFixture": true,
+    "durableStoreTested": false,
+    "baselineNetworkAndServiceRestored": true,
+    "knownOwnerRoutingTested": true,
+    "unknownOwnerRuntimeTested": false,
+    "rows": [
+      {
+        "case": "exclude-domain",
+        "result": "passed",
+        "matchedProbe": "alternate",
+        "unmatchedProbe": "numeric",
+        "connected": "exclude-domain-connected.json",
+        "outage": "exclude-domain-outage.json"
+      },
+      {
+        "case": "include-domain",
+        "result": "passed",
+        "matchedProbe": "alternate",
+        "unmatchedProbe": "health",
+        "connected": "include-domain-connected.json",
+        "outage": "include-domain-outage.json"
+      },
+      {
+        "case": "exclude-ipv4",
+        "result": "passed",
+        "matchedProbe": "numeric",
+        "unmatchedProbe": "health",
+        "connected": "exclude-ipv4-connected.json",
+        "outage": "exclude-ipv4-outage.json"
+      },
+      {
+        "case": "include-ipv4-cidr",
+        "result": "passed",
+        "matchedProbe": "numeric",
+        "unmatchedProbe": "health",
+        "connected": "include-ipv4-cidr-connected.json",
+        "outage": "include-ipv4-cidr-outage.json"
+      },
+      {
+        "case": "include-ipv6-cidr",
+        "result": "passed",
+        "matchedProbe": "numeric6",
+        "unmatchedProbe": "numeric",
+        "connected": "include-ipv6-cidr-connected.json",
+        "outage": "include-ipv6-cidr-outage.json"
+      }
+    ],
+    "dns": {
+      "pcapPayloadCaptureConfirmed": false,
+      "outageNoResponse": true,
+      "method": "pktmon_physical_component_counters",
+      "physicalPort53And853PacketsConnected": 0,
+      "physicalPort53And853PacketsOutage": 0,
+      "physicalCapturePositiveControlPackets": 1,
+      "freshAAndAAAAProtected": true
+    },
+    "ipv6": {
+      "directBaselineAvailable": false,
+      "vpnLossBlocked": true,
+      "exclusionObserved": "network_unavailable_no_ipv6_underlay",
+      "positiveDirectAcceptance": false,
+      "vpnHttps": true
+    },
+    "ech": {
+      "result": "failed",
+      "rows": [
+        {
+          "mode": "raw-plain",
+          "physicalOutboundPackets": 5,
+          "physicalInboundPackets": 5,
+          "observedRoute": "direct"
+        },
+        {
+          "mode": "raw-ech-before",
+          "physicalOutboundPackets": 5,
+          "physicalInboundPackets": 5,
+          "observedRoute": "direct"
+        },
+        {
+          "mode": "raw-ech-after",
+          "physicalOutboundPackets": 5,
+          "physicalInboundPackets": 4,
+          "observedRoute": "direct"
+        },
+        {
+          "mode": "raw-no-sni",
+          "physicalOutboundPackets": 0,
+          "physicalInboundPackets": 0,
+          "observedRoute": "protected"
+        }
+      ],
+      "reason": "outer_sni_authorized_direct_with_ech_present",
+      "syntheticClientHello": true,
+      "cryptographicEchAcceptanceTested": false,
+      "payloadCaptureConfirmed": false,
+      "routeMethod": "pktmon_physical_component_same_target_filter_and_positive_control"
+    }
+  },
+  "android": {
+    "device": "Owned API36 emulator",
+    "physicalDeviceTested": false,
+    "apkSha256": "1ce917f8e929a66642b13be4b7e186f80f867112a261913815b3e2f32fb6af1c",
+    "realTun": true,
+    "probesUseIndependentUid": true,
+    "explicitlyBoundAroundVpn": false,
+    "cases": [
+      {
+        "passed": true,
+        "case": "exclude-ip",
+        "ownedTun": true
+      },
+      {
+        "passed": true,
+        "case": "include-ip",
+        "ownedTun": true
+      },
+      {
+        "passed": true,
+        "case": "exclude-domain6",
+        "ownedTun": true
+      },
+      {
+        "passed": true,
+        "case": "include-domain6",
+        "ownedTun": true
+      }
+    ],
+    "persistence": {
+      "savedPolicyAfterIdleProcessRestart": true,
+      "destructiveRecoveryTested": false
+    },
+    "dns": {
+      "result": "indeterminate",
+      "reason": "PCAP and host phase clock domains differ; original capture retained for calibrated analysis",
+      "originalAnalysisPreserved": true
+    },
+    "ech": "Routing probes completed; calibrated capture analysis pending",
+    "cleanup": "pending"
+  },
+  "fix": {
+    "xrayPin": "v1.260327.1-exvpn.6",
+    "upstreamCommit": "701af60772cda123492f86e383e1fdba066614a9",
+    "moduleSum": "h1:jT9jA12LglNSe2+qAmnZxRm1sukH6JyKkMkrweM6Gaw=",
+    "patchSha256": "0bed131451a7dc2ec0adaa2401724774f967588932730c27565f28d6300d4c4e",
+    "newDependencies": false,
+    "sharedTlsAndQuicParser": true,
+    "previousLifecyclePatchPreserved": true,
+    "newRegressionSubcases": 27,
+    "focusedTestSeconds": 4.1382462,
+    "focusedTestResult": "passed",
+    "realTunRegression": {
+      "schema": 1,
+      "xrayPin": "v1.260327.1-exvpn.6",
+      "reportedCoreVersion": "26.10.10-exvpn.6",
+      "realTun": true,
+      "computerUse": false,
+      "hostNetworkChanged": false,
+      "controllerHarness": true,
+      "installedServiceIpcTested": false,
+      "sitePolicyMemoryFixture": true,
+      "durableStoreTested": false,
+      "baselineNetworkAndServiceRestored": true,
+      "qaSystemSha256": "e9f7dfdc06b904762891c4833719c31b2faa70ed6288dfddfec7e2697a21d778",
+      "frozenProbeSha256": "9ddd36b90ffa92e08a22aea391177015b36dfb3b0d999bf92b01808d1ba3062e",
+      "cryptographicEchAcceptanceTested": false,
+      "pcapPayloadCaptureConfirmed": false,
+      "routeMethod": "pktmon_physical_component_same_target_filter_and_positive_control",
+      "result": "passed",
+      "rows": [
+        {
+          "mode": "raw-plain",
+          "physicalOutboundPackets": 5,
+          "physicalInboundPackets": 4,
+          "directObserved": true,
+          "expectedDirect": true,
+          "result": "passed",
+          "evidence": "include-ech-fixed6-raw-plain.json",
+          "capture": "capture-include-ech-fixed6-raw-plain.json"
+        },
+        {
+          "mode": "raw-ech-before",
+          "physicalOutboundPackets": 0,
+          "physicalInboundPackets": 1,
+          "directObserved": false,
+          "expectedDirect": false,
+          "result": "passed",
+          "evidence": "include-ech-fixed6-raw-ech-before.json",
+          "capture": "capture-include-ech-fixed6-raw-ech-before.json"
+        },
+        {
+          "mode": "raw-ech-after",
+          "physicalOutboundPackets": 0,
+          "physicalInboundPackets": 0,
+          "directObserved": false,
+          "expectedDirect": false,
+          "result": "passed",
+          "evidence": "include-ech-fixed6-raw-ech-after.json",
+          "capture": "capture-include-ech-fixed6-raw-ech-after.json"
+        },
+        {
+          "mode": "raw-no-sni",
+          "physicalOutboundPackets": 0,
+          "physicalInboundPackets": 0,
+          "directObserved": false,
+          "expectedDirect": false,
+          "result": "passed",
+          "evidence": "include-ech-fixed6-raw-no-sni.json",
+          "capture": "capture-include-ech-fixed6-raw-no-sni.json"
+        }
+      ]
+    },
+    "packageRelease": "not performed in this evidence"
+  },
+  "remaining": [
+    "Physical Android acceptance",
+    "Windows installed UI/SCM IPC and DPAPI runtime policy roundtrip",
+    "Windows direct IPv6 underlay unavailable on this stand",
+    "Unknown/shared-owner and app/site-conflict runtime matrix",
+    "UDP destination/owner reassociation runtime matrix",
+    "Destructive encrypted-storage recovery",
+    "Global E1 stable security acceptance"
+  ]
+}

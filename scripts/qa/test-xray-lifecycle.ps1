@@ -27,7 +27,7 @@ try {
     }
     Push-Location -LiteralPath $resolved.Dir
     try {
-        $packages = @('./transport/internet', './transport/internet/grpc', './transport/internet/splithttp', './app/proxyman/outbound', './proxy/tun')
+        $packages = @('./transport/internet', './transport/internet/grpc', './transport/internet/splithttp', './app/proxyman/outbound', './proxy/tun', './common/protocol/tls', './common/protocol/quic')
         $arguments = @('test', '-mod=readonly', '-p', "$TestConcurrency", '-parallel', "$TestConcurrency",
             '-count', "$Count", '-timeout', '3m', '-run', '^TestExVPN')
         if ($Race) { $arguments += '-race' }

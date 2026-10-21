@@ -1,6 +1,6 @@
 # Pinned Xray transport lifecycle patch
 
-ExVPN's modified Xray module is **`v1.260327.1-exvpn.5`**, based on upstream
+ExVPN's modified Xray module is **`v1.260327.1-exvpn.6`**, based on upstream
 `v1.260327.1-0.20261010092107-701af60772cd`, commit
 `701af60772cda123492f86e383e1fdba066614a9`. It is not an official Xray release.
 The upstream source and license are retained. Original and modified covered
@@ -33,6 +33,13 @@ retires it from the outbound handler's `Close`:
   drain timeout preserves native handles and returns a stable cleanup error.
   Synthetic session tests include retained packets, blocked operations,
   concurrent Read/Write/Close, and real cancellation events without a TUN.
+- TLS and QUIC sniffers publish a routing domain only after checking the complete
+  ClientHello extension list. An ECH extension, including GREASE and either
+  extension order, leaves the domain unknown. Malformed trailing extensions and
+  duplicate or empty SNI cannot authorize domain-based direct routing. The
+  original numeric destination and TLS validation are unchanged. Regression
+  fixtures cover ordinary TLS and encrypted QUIC Initial packets without a
+  network; they do not claim successful cryptographic ECH negotiation.
 
 The Windows lifetime defect was reproduced deterministically as a release after
 `End` on the previous source. This does not establish the cause of the separate

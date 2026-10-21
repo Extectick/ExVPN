@@ -177,7 +177,7 @@ class MainActivity : FlutterActivity() {
                     VpnRuntime.saveSiteRouting(this, sites)
                     result.success(VpnRuntime.siteRouting.wire())
                 }
-                "coreVersion" -> result.success("26.10.10-exvpn.5")
+                "coreVersion" -> result.success("26.10.10-exvpn.6")
                 "connect", "reconnect" -> {
                     if (AndroidOtaRestart.pending) { result.error("operation_in_progress", "Application restart pending", null); return@setMethodCallHandler }
                     if (consent.pending) { result.error("operation_in_progress", "VPN permission request pending", null); return@setMethodCallHandler }

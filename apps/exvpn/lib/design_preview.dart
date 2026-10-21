@@ -606,7 +606,7 @@ class _DesignOnlyBridge
   }
 
   @override
-  Future<String> coreVersion() async => '26.10.10-exvpn.5';
+  Future<String> coreVersion() async => '26.10.10-exvpn.6';
   bool _protectionEnabled = true;
   @override
   Future<ConnectionProtection> getConnectionProtection() async =>

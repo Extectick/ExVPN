@@ -33,6 +33,14 @@ routeOnly sniff не меняет исходный tuple. DNS и unknown-owner/d
 сохраняются. Native storage failure блокирует новый запуск; Android resume4 и
 Windows DPAPI initialized marker исключают silent reset. [SITE_ROUTING.md](SITE_ROUTING.md).
 
+Xray `.6` проверяет полный ClientHello до публикации routing domain в общем
+TLS/QUIC parser. ECH, включая GREASE и расширение после SNI, не делает outer SNI
+доверенным именем сайта. Повреждённый хвост/неоднозначный SNI также остаются unknown;
+доменный режим include сохраняет VPN вместо разрешения прямого маршрута.
+Существующие явные IP/app правила, проверка владельца, DNS priority и исходный
+numeric tuple не меняются. Регрессии используют обычный TLS и защищённый QUIC
+Initial; криптографический ECH handshake ими не принимается.
+
 ## Android VPN permission setup, кандидат 0.1.13+35
 
 Recovery capability `getVpnPermissionSetup(null)` имеет закрытую schema1

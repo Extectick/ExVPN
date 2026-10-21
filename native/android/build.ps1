@@ -78,7 +78,7 @@ try {
                 if ($after.key -ceq $identity.key) { Save-NativeCachedOutputs -CacheRoot $cache -Identity $identity -OutputDirectory $output -Names @('libexvpn.so','libexvpn.h') }
             } catch { Write-Warning 'Native inputs changed or cache unavailable; output was not cached.' }
         }
-        [ordered]@{abi=$target.abi;minimumApi=30;core='26.10.10-exvpn.5';go=$lock.go.version;ndk='27.1.12297006';sha256=(Get-FileHash -LiteralPath $library -Algorithm SHA256).Hash;bytes=(Get-Item -LiteralPath $library).Length;runtimeVerified=$false} |
+        [ordered]@{abi=$target.abi;minimumApi=30;core='26.10.10-exvpn.6';go=$lock.go.version;ndk='27.1.12297006';sha256=(Get-FileHash -LiteralPath $library -Algorithm SHA256).Hash;bytes=(Get-Item -LiteralPath $library).Length;runtimeVerified=$false} |
             ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'build-evidence.json') -Encoding utf8
         Write-Host "Android JNI $($target.abi): $(if ($reused) { 'reused exact source-bound output' } else { 'compiled' })"
     }

@@ -108,3 +108,44 @@ package feed предлагают37, OTA-каталог revision12. Это за�
 но не открытые runtime-критерии **EXVPN-E1-014**: TUN/IPv4/IPv6/DNS/owner/UDP,
 реальное encrypted restore и физический Android. Полный E1/stable не закрыт.
 [Квитанция выпуска](evidence/release-v0.1.15.json).
+
+## Реальный TUN — 2026-10-21
+
+Без Computer Use и повторной сборки базы37 выполнены отдельные Android/Windows
+матрицы. Android API36: сохранение политики через production UI, реальный TUN и
+отдельный UID сетевого probe; exclude/include домена и IPv4/CIDR, IPv6 через VPN
+и по прямому исключению, отказ сервера без direct fallback у защищённых запросов.
+Сохранённая encrypted policy восстановлена после idle process restart. Это
+положительный roundtrip, не destructive recovery или физический телефон.
+
+Windows Sandbox: production controller, WFP и TUN с memory policy fixture,
+independent default-network HTTPS и различающимся хешем remote exit. Прошли
+доменные и IPv4 правила обоих режимов, IPv6 CIDR include, fresh DNS A/AAAA и
+потеря сервера. Физические counters53/853 равны0 в connected/outage, отдельная
+калибровка положительна. Это counters, не payload capture. Прямого IPv6 у underlay
+нет; успешное прямое IPv6 исключение здесь не принято. Installed SCM IPC/DPAPI
+и runtime unknown/shared owner этим harness не проверяются. После тестов
+служба и хеши маршрутов/DNS восстановлены, TUN/guard/QA processes сняты.
+
+Матрица выявила ошибку pinned `.5`: TLS ClientHello с ECH до или после outer SNI
+в доменном include получал прямой маршрут. Положительный ordinary SNI control
+дал5 исходящих физических пакетов, оба ECH тоже5, missing-SNI control0.
+В закреплённом `.6` полный ClientHello разбирается до публикации домена; ECH,
+GREASE, duplicate SNI и malformed tail оставляют его unknown. Два новых тестовых
+файла проверяют TLS и защищённый QUIC Initial:27 подслучаев PASS за4,14с.
+Старый lifecycle patch сохранён побайтно, upstream/dependencies не менялись.
+Повторён только Windows ECH subset: ordinary SNI5 исходящих, ECH до/после0,
+missing-SNI0. В одном окне был1 запоздавший входящий пакет; нулевой считается
+именно исходящий target traffic. Криптографическая ECH negotiation не принята.
+
+Android DNS/ECH packet analysis пока INDETERMINATE: startup emulator PCAP не
+показал положительные DNS/TCP controls и использует другую часовую шкалу.
+Исходный capture/отказ сохранены приватно; требуется новый видимый capture.
+Не считать нулевые счётчики невидимого capture успешной защитой.
+
+Новый `.6` требует полной Shorebird-базы; пакеты/тег37 не перемещаются.
+Единственный следующий Full/JNI/package cycle передаётся согласованной release
+задаче после freeze. Общий E1, Android `.6` runtime, физические устройства,
+Windows SCM/DPAPI, app/site conflict и UDP reassociation остаются открытыми.
+Исходники: рабочее дерево; commit ожидается.
+[Обезличенный отчёт](evidence/site-routing-tun-20261021.json).

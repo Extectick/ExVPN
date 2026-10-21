@@ -42,6 +42,22 @@ bypass or successful tunnelling by themselves. Successful DNS resolution does no
 prove absence of DNS leaks; packet-level leak checks remain a separate gate.
 Removing the helper APKs after QA does not affect ExVPN data.
 
+## Opaque ClientHello routing
+
+The protected helper registers `ru.exvpn.netprobe.RawHelloProbe` for the fixed
+`control`, `ech-before`, `ech-after` and `no-sni` routing observations. It reads
+only `files/routing-clienthello.bin` from its own private data directory, bounded
+to 8 KiB and one TLS ClientHello record. Install a synthetic fixture with `run-as`
+before each invocation; keep captures and the private driver under `.private/`.
+The destination is fixed to a public numeric HTTPS endpoint; this explicit QA
+probe uses an ordinary default-network socket and never binds around the VPN.
+Only byte counts, bounded status codes and network state are returned.
+
+Neither a written ClientHello nor an alert/response proves cryptographic ECH
+acceptance. Compare calibrated physical-interface captures for the same target
+under the domain policy, including ordinary SNI and missing-SNI controls.
+These helpers are separate debug APKs; they do not modify the ExVPN package.
+
 ## Uncached DNS capture check
 
 `dnsNonce` issues one ordinary `InetAddress.getAllByName` lookup for a fixed

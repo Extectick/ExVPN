@@ -35,10 +35,27 @@
   [минимальный экран](evidence/site-routing-compact-dark.png).
 - [ ] **EXVPN-E1-014** — Принять сайты/IP через реальный TUN на обеих платформах.
   Реализованы strict schema1, bounded matcher, owner/DNS priority, UDP pinning,
-  encrypted persistence и resume. Focused Go и Kotlin policy/recovery прошли,
-  host Kotlin25 compiled. Открыты Windows C++/Android JNI package, durable storage
-  и isolated IPv4/IPv6/DNS/unknown owner/ECH/UDP/runtime/физический Android.
-  Нужна новая полная Shorebird-база; E1/stable не закрыты. [Контракт](SITE_ROUTING.md).
+  encrypted persistence и resume. Пакеты37 опубликованы; 2026-10-21 без Computer
+  Use выполнена новая TUN-матрица, а прежние suites/builds не повторялись.
+  - [x] Android API36: exclude/include для доменов и IPv4/CIDR, HTTPS IPv6 через
+    VPN и напрямую по исключению, блокировка защищённых запросов при отказе
+    сервера, сохранённая политика после idle process restart. Рабочее дерево;
+    commit ожидается. Физический телефон и destructive recovery не проверены.
+  - [x] Windows Sandbox: production controller/TUN, домены, IPv4/CIDR и IPv6
+    include, отличающийся remote exit и отказ сервера; fresh DNS A/AAAA,
+    physical53/853=0 с положительной калибровкой. Исходная сеть восстановлена.
+    Рабочее дерево; commit ожидается. Это memory store/controller harness,
+    не installed SCM IPC или DPAPI; прямого IPv6 underlay у стенда нет.
+  - [x] Выявлен ECH direct bypass `.5` и исправлен общим TLS/QUIC parser `.6`.
+    27 focused подслучаев и Windows actual TUN regression PASS; обычный SNI
+    сохраняет разрешённый direct, ECH до/после SNI остаётся VPN. Рабочее дерево;
+    commit ожидается. Synthetic routing proof не равен crypto ECH negotiation.
+  - [ ] Android DNS/ECH packet acceptance: raw capture сохранён, первоначальный
+    анализ INDETERMINATE из-за разных часов PCAP/host; нужна калибровка.
+  - [ ] Android runtime нового `.6`, Windows SCM/DPAPI и destructive encrypted
+    storage recovery, unknown/shared owner, app/site conflict, UDP reassociation
+    и физический Android. E1/stable не закрыты. Новому `.6` нужна полная база.
+  [Контракт](SITE_ROUTING.md), [TUN evidence](evidence/site-routing-tun-20261021.json).
 
 Начало проекта: **2026-10-16**. Источник требований: [PLAN.md](PLAN.md); границы компонентов: [ARCHITECTURE.md](ARCHITECTURE.md).
 

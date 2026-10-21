@@ -5213,3 +5213,375 @@ new file mode 100644
 +		s.mu.Unlock()
 +	}
 +}
+diff --git a/common/protocol/quic/sniff_exvpn_test.go b/common/protocol/quic/sniff_exvpn_test.go
+new file mode 100644
+index 0000000..9dfd9e8
+--- /dev/null
++++ b/common/protocol/quic/sniff_exvpn_test.go
+@@ -0,0 +1,124 @@
++package quic
++
++import (
++	"context"
++	"crypto"
++	"crypto/aes"
++	stdtls "crypto/tls"
++	"encoding/binary"
++	"testing"
++
++	"github.com/apernet/quic-go/quicvarint"
++	"golang.org/x/crypto/hkdf"
++)
++
++func exVPNQUICClientHello(t *testing.T) []byte {
++	t.Helper()
++	client := stdtls.QUICClient(&stdtls.QUICConfig{TLSConfig: &stdtls.Config{
++		ServerName: "public.example", MinVersion: stdtls.VersionTLS13,
++	}})
++	defer client.Close()
++	client.SetTransportParameters([]byte{})
++	if err := client.Start(context.Background()); err != nil {
++		t.Fatal(err)
++	}
++	for {
++		event := client.NextEvent()
++		if event.Kind == stdtls.QUICNoEvent {
++			t.Fatal("missing QUIC TLS Initial ClientHello")
++		}
++		if event.Kind == stdtls.QUICWriteData && event.Level == stdtls.QUICEncryptionLevelInitial {
++			return append([]byte(nil), event.Data...)
++		}
++	}
++}
++
++func exVPNQUICMutateHello(t *testing.T, hello []byte, mode string) []byte {
++	t.Helper()
++	position := 39 + int(hello[38])
++	position += 2 + int(binary.BigEndian.Uint16(hello[position:]))
++	position += 1 + int(hello[position])
++	extensions := append([]byte(nil), hello[position+2:]...)
++	// Opaque ECH/GREASE bytes suffice: without ECH decryption the public name
++	// is never a trusted destination. This is not a successful ECH handshake.
++	ech := []byte{0xfe, 0x0d, 0, 3, 0xa1, 0xb2, 0xc3}
++	switch mode {
++	case "ech_before_sni":
++		extensions = append(append([]byte(nil), ech...), extensions...)
++	case "ech_after_sni":
++		extensions = append(extensions, ech...)
++	case "malformed_after_sni":
++		extensions = append(extensions, 0, 17, 0, 5, 1)
++	case "duplicate_sni":
++		for remaining := extensions; len(remaining) >= 4; {
++			length := 4 + int(binary.BigEndian.Uint16(remaining[2:4]))
++			if length > len(remaining) {
++				t.Fatal("invalid generated extension")
++			}
++			if binary.BigEndian.Uint16(remaining[:2]) == 0 {
++				extensions = append(extensions, remaining[:length]...)
++				break
++			}
++			remaining = remaining[length:]
++		}
++	}
++	result := append([]byte(nil), hello[:position]...)
++	result = binary.BigEndian.AppendUint16(result, uint16(len(extensions)))
++	result = append(result, extensions...)
++	length := len(result) - 4
++	result[1], result[2], result[3] = byte(length>>16), byte(length>>8), byte(length)
++	return result
++}
++
++func exVPNQUICInitial(t *testing.T, hello []byte) []byte {
++	t.Helper()
++	dcid := []byte{0x83, 0x94, 0xc8, 0xf0, 0x3e, 0x51, 0x57, 0x08}
++	frames := quicvarint.Append([]byte{6, 0}, uint64(len(hello)))
++	frames = append(frames, hello...)
++	if len(frames) < 1200 {
++		frames = append(frames, make([]byte, 1200-len(frames))...)
++	}
++	header := binary.BigEndian.AppendUint32([]byte{0xc3}, quicV1.ver)
++	header = append(header, byte(len(dcid)))
++	header = append(header, dcid...)
++	header = append(header, 0, 0) // empty source CID and token
++	header = quicvarint.Append(header, uint64(4+len(frames)+16))
++	packetNumberOffset := len(header)
++	header = append(header, 0, 0, 0, 1)
++	initialSecret := hkdf.Extract(crypto.SHA256.New, dcid, quicV1.initialSalt)
++	secret := hkdfExpandLabel(initialSecret, "client in", crypto.SHA256.Size())
++	key := hkdfExpandLabel(secret, "quic key", 16)
++	iv := hkdfExpandLabel(secret, "quic iv", 12)
++	aead := AEADAESGCMTLS13(key, iv)
++	nonce := make([]byte, aead.NonceSize())
++	nonce[len(nonce)-1] = 1
++	packet := append(header, aead.Seal(nil, nonce, frames, header)...)
++	hp, err := aes.NewCipher(hkdfExpandLabel(secret, "quic hp", 16))
++	if err != nil {
++		t.Fatal(err)
++	}
++	mask := make([]byte, hp.BlockSize())
++	hp.Encrypt(mask, packet[packetNumberOffset+4:packetNumberOffset+4+len(mask)])
++	packet[0] ^= mask[0] & 0xf
++	for index := 0; index < 4; index++ {
++		packet[packetNumberOffset+index] ^= mask[index+1]
++	}
++	return packet
++}
++
++func TestExVPNQUICClientHelloTrustedDomain(t *testing.T) {
++	hello := exVPNQUICClientHello(t)
++	for _, mode := range []string{"ordinary_sni", "ech_before_sni", "ech_after_sni", "malformed_after_sni", "duplicate_sni"} {
++		t.Run(mode, func(t *testing.T) {
++			packet := exVPNQUICInitial(t, exVPNQUICMutateHello(t, hello, mode))
++			header, err := SniffQUIC(packet)
++			if mode == "ordinary_sni" {
++				if err != nil || header == nil || header.Domain() != "public.example" {
++					t.Fatalf("ordinary encrypted QUIC Initial: header=%v err=%v", header, err)
++				}
++			} else if err == nil || header != nil {
++				t.Fatalf("QUIC trusted ambiguous ClientHello: header=%v err=%v", header, err)
++			}
++		})
++	}
++}
+diff --git a/common/protocol/tls/sniff.go b/common/protocol/tls/sniff.go
+index 11660b9..4c1670e 100644
+--- a/common/protocol/tls/sniff.go
++++ b/common/protocol/tls/sniff.go
+@@ -32,9 +32,21 @@ func IsValidTLSVersion(major, minor byte) bool {
+ // ReadClientHello returns server name (if any) from TLS client hello message.
+ // https://github.com/golang/go/blob/master/src/crypto/tls/handshake_messages.go#L300
+ func ReadClientHello(data []byte, h *SniffHeader) error {
++	// Do not leave a previously sniffed domain visible after a failed parse.
++	h.domain = ""
+ 	if len(data) < 42 {
+ 		return common.ErrNoClue
+ 	}
++	if data[0] != 1 { // ClientHello
++		return errNotClientHello
++	}
++	helloLength := int(data[1])<<16 | int(data[2])<<8 | int(data[3])
++	if helloLength > len(data)-4 {
++		return protocol.ErrProtoNeedMoreData
++	}
++	if helloLength != len(data)-4 {
++		return errNotClientHello
++	}
+ 	sessionIDLen := int(data[38])
+ 	if sessionIDLen > 32 || len(data) < 39+sessionIDLen {
+ 		return common.ErrNoClue
+@@ -69,6 +81,8 @@ func ReadClientHello(data []byte, h *SniffHeader) error {
+ 		return errNotClientHello
+ 	}
+ 
++	var serverName string
++	var serverNameSeen, encryptedClientHello bool
+ 	for len(data) != 0 {
+ 		if len(data) < 4 {
+ 			return errNotClientHello
+@@ -80,14 +94,23 @@ func ReadClientHello(data []byte, h *SniffHeader) error {
+ 			return errNotClientHello
+ 		}
+ 
++		if extension == 0xfe0d { // encrypted_client_hello, including GREASE
++			// The outer SNI is not the destination authenticated by ECH.
++			// Its presence must never authorize domain-based direct routing.
++			encryptedClientHello = true
++		}
+ 		if extension == 0x00 { /* extensionServerName */
++			if serverNameSeen {
++				return errNotClientHello
++			}
++			serverNameSeen = true
+ 			d := data[:length]
+ 			if len(d) < 2 {
+ 				return errNotClientHello
+ 			}
+ 			namesLen := int(d[0])<<8 | int(d[1])
+ 			d = d[2:]
+-			if len(d) != namesLen {
++			if len(d) != namesLen || namesLen == 0 {
+ 				return errNotClientHello
+ 			}
+ 			for len(d) > 0 {
+@@ -97,10 +120,13 @@ func ReadClientHello(data []byte, h *SniffHeader) error {
+ 				nameType := d[0]
+ 				nameLen := int(d[1])<<8 | int(d[2])
+ 				d = d[3:]
+-				if len(d) < nameLen {
++				if nameLen == 0 || len(d) < nameLen {
+ 					return errNotClientHello
+ 				}
+ 				if nameType == 0 {
++					if serverName != "" {
++						return errNotClientHello
++					}
+ 					// QUIC separated across packets
+ 					// May cause the serverName to be incomplete
+ 					b := byte(0)
+@@ -115,9 +141,7 @@ func ReadClientHello(data []byte, h *SniffHeader) error {
+ 					if b == '.' {
+ 						return errNotClientHello
+ 					}
+-					serverName := string(d[:nameLen])
+-					h.domain = serverName
+-					return nil
++					serverName = string(d[:nameLen])
+ 				}
+ 				d = d[nameLen:]
+ 			}
+@@ -125,7 +149,13 @@ func ReadClientHello(data []byte, h *SniffHeader) error {
+ 		data = data[length:]
+ 	}
+ 
+-	return errNotTLS
++	// Publish SNI only after every extension has been fully bounded and parsed.
++	// A trailing malformed extension or ECH after SNI must remain unknown too.
++	if encryptedClientHello || serverName == "" {
++		return errNotTLS
++	}
++	h.domain = serverName
++	return nil
+ }
+ 
+ func SniffTLS(b []byte) (*SniffHeader, error) {
+diff --git a/common/protocol/tls/sniff_exvpn_test.go b/common/protocol/tls/sniff_exvpn_test.go
+new file mode 100644
+index 0000000..8bab366
+--- /dev/null
++++ b/common/protocol/tls/sniff_exvpn_test.go
+@@ -0,0 +1,135 @@
++package tls
++
++import (
++	"context"
++	stdtls "crypto/tls"
++	"encoding/binary"
++	"io"
++	"net"
++	"testing"
++	"time"
++)
++
++func exVPNExtension(kind uint16, body []byte) []byte {
++	result := binary.BigEndian.AppendUint16(nil, kind)
++	result = binary.BigEndian.AppendUint16(result, uint16(len(body)))
++	return append(result, body...)
++}
++
++func exVPNSNI(names ...string) []byte {
++	var list []byte
++	for _, name := range names {
++		list = append(list, 0)
++		list = binary.BigEndian.AppendUint16(list, uint16(len(name)))
++		list = append(list, name...)
++	}
++	body := binary.BigEndian.AppendUint16(nil, uint16(len(list)))
++	return exVPNExtension(0, append(body, list...))
++}
++
++func exVPNHello(extensions ...[]byte) []byte {
++	// A bounded TLS 1.2 ClientHello with a single cipher and null compression.
++	body := append([]byte{3, 3}, make([]byte, 32)...)
++	body = append(body, 0, 0, 2, 0xc0, 0x2f, 1, 0)
++	var all []byte
++	for _, extension := range extensions {
++		all = append(all, extension...)
++	}
++	body = binary.BigEndian.AppendUint16(body, uint16(len(all)))
++	body = append(body, all...)
++	hello := []byte{1, byte(len(body) >> 16), byte(len(body) >> 8), byte(len(body))}
++	return append(hello, body...)
++}
++
++func exVPNRecord(hello []byte) []byte {
++	record := []byte{0x16, 3, 3, byte(len(hello) >> 8), byte(len(hello))}
++	return append(record, hello...)
++}
++
++func TestExVPNClientHelloTrustedDomain(t *testing.T) {
++	sni := exVPNSNI("public.example")
++	ech := exVPNExtension(0xfe0d, []byte{0, 0, 1, 0, 1, 7, 0, 0, 0, 0})
++	malformedNames := []byte{0, 0, 14, 'p', 'u', 'b', 'l', 'i', 'c', '.', 'e', 'x', 'a', 'm', 'p', 'l', 'e', 1}
++	malformedSNI := exVPNExtension(0, append(binary.BigEndian.AppendUint16(nil, uint16(len(malformedNames))), malformedNames...))
++	wrongType := exVPNHello(sni)
++	wrongType[0] = 2
++	partialHello := exVPNHello(sni)
++	partialHello[3]++
++	extraHello := append(exVPNHello(sni), 0)
++	cases := []struct {
++		name    string
++		hello   []byte
++		trusted bool
++	}{
++		{"ordinary_sni", exVPNHello(sni), true},
++		{"ordinary_sni_with_trailing_extension", exVPNHello(sni, exVPNExtension(0x0017, nil)), true},
++		{"unrelated_grease_extension", exVPNHello(exVPNExtension(0x2a2a, nil), sni), true},
++		{"ech_before_sni", exVPNHello(ech, sni), false},
++		{"ech_after_sni", exVPNHello(sni, ech), false},
++		{"empty_ech_after_sni", exVPNHello(sni, exVPNExtension(0xfe0d, nil)), false},
++		{"grease_ech_before_sni", exVPNHello(exVPNExtension(0xfe0d, []byte{0xa1, 0xb2, 0xc3}), sni), false},
++		{"partial_trailing_extension_1", exVPNHello(sni, []byte{1}), false},
++		{"partial_trailing_extension_2", exVPNHello(sni, []byte{1, 2}), false},
++		{"partial_trailing_extension_3", exVPNHello(sni, []byte{1, 2, 3}), false},
++		{"truncated_trailing_extension_body", exVPNHello(sni, []byte{0, 17, 0, 5, 1, 2}), false},
++		{"duplicate_sni_extension", exVPNHello(sni, sni), false},
++		{"conflicting_sni_extensions", exVPNHello(sni, exVPNSNI("other.example")), false},
++		{"duplicate_sni_hostname", exVPNHello(exVPNSNI("public.example", "public.example")), false},
++		{"conflicting_sni_hostnames", exVPNHello(exVPNSNI("public.example", "other.example")), false},
++		{"partial_name_after_hostname", exVPNHello(malformedSNI), false},
++		{"empty_hostname", exVPNHello(exVPNSNI("")), false},
++		{"empty_sni_list", exVPNHello(exVPNSNI()), false},
++		{"missing_sni", exVPNHello(exVPNExtension(0x0017, nil)), false},
++		{"wrong_handshake_type", wrongType, false},
++		{"partial_handshake_body", partialHello, false},
++		{"bytes_after_declared_handshake", extraHello, false},
++	}
++	for _, test := range cases {
++		t.Run(test.name, func(t *testing.T) {
++			header := &SniffHeader{domain: "stale.example"}
++			err := ReadClientHello(test.hello, header)
++			if test.trusted {
++				if err != nil || header.Domain() != "public.example" {
++					t.Fatalf("shared parser: domain=%q err=%v", header.Domain(), err)
++				}
++			} else if err == nil || header.Domain() != "" {
++				t.Fatalf("shared parser trusted ambiguous input: domain=%q err=%v", header.Domain(), err)
++			}
++			sniffed, err := SniffTLS(exVPNRecord(test.hello))
++			if test.trusted {
++				if err != nil || sniffed == nil || sniffed.Domain() != "public.example" {
++					t.Fatalf("TLS sniff: header=%v err=%v", sniffed, err)
++				}
++			} else if err == nil || sniffed != nil {
++				t.Fatalf("TLS sniff trusted ambiguous input: header=%v err=%v", sniffed, err)
++			}
++		})
++	}
++}
++
++func TestExVPNClientHelloOrdinaryTLSControl(t *testing.T) {
++	client, server := net.Pipe()
++	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
++	defer cancel()
++	defer server.Close()
++	defer client.Close()
++	done := make(chan struct{})
++	go func() {
++		defer close(done)
++		_ = stdtls.Client(client, &stdtls.Config{ServerName: "public.example", MinVersion: stdtls.VersionTLS13}).HandshakeContext(ctx)
++		_ = client.Close()
++	}()
++	defer func() { _ = server.Close(); <-done }()
++	record := make([]byte, 5)
++	if _, err := io.ReadFull(server, record); err != nil {
++		t.Fatal(err)
++	}
++	body := make([]byte, int(binary.BigEndian.Uint16(record[3:5])))
++	if _, err := io.ReadFull(server, body); err != nil {
++		t.Fatal(err)
++	}
++	header, err := SniffTLS(append(record, body...))
++	if err != nil || header == nil || header.Domain() != "public.example" {
++		t.Fatalf("ordinary crypto/tls control: header=%v err=%v", header, err)
++	}
++}

@@ -64,12 +64,17 @@ func main() {
 	protocolProfile := flag.Bool("protocol-profile", false, "Exercise one validated profile from the fixed private guest input")
 	wireguardGateway := flag.Bool("wireguard-gateway", false, "Owned loopback WireGuard gateway for the disposable protocol test")
 	wireguardFixture := flag.Bool("wireguard-fixture", false, "Internal isolated WireGuard fixture child")
+	siteRouting := flag.Bool("site-routing", false, "Exercise fixed protected site policy in the disposable guest")
 	flag.Parse()
 	if !*confirm || flag.NArg() != 0 || !validRoutingMode(*routingMode) || validateGuest() != nil {
 		fmt.Println("disposable_system_guest_required")
 		os.Exit(2)
 	}
 	if *wireguardFixture && (!*fixtureProcess || *remoteRelay || *protocolProfile || *wireguardGateway || *automaticFailover || *inspect) {
+		fmt.Println("disposable_system_guest_required")
+		os.Exit(2)
+	}
+	if *siteRouting && (*fixtureProcess || *protocolProfile || *wireguardGateway || *wireguardFixture || *automaticFailover || *inspect) {
 		fmt.Println("disposable_system_guest_required")
 		os.Exit(2)
 	}
@@ -99,7 +104,9 @@ func main() {
 	}
 	_ = os.WriteFile(filepath.Join(outputRoot, "guard-error.json"), []byte(`{"operation":"none"}`), 0600)
 	var runError error
-	if *protocolProfile || *wireguardGateway {
+	if *siteRouting {
+		runError = runSiteRouting(*interfaceIndex, *remoteRelay)
+	} else if *protocolProfile || *wireguardGateway {
 		runError = runProtocolProfile(*interfaceIndex, *routingMode, *wireguardGateway)
 	} else if *automaticFailover {
 		runError = runAutomaticFailover(*interfaceIndex, *remoteRelay)
