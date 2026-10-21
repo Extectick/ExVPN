@@ -112,6 +112,7 @@ jobs:
         run: ./scripts/ota/test-source-driver.ps1
       - name: Prepare pinned binary diff tool
         run: |
+          . ./scripts/release/artifact-audit-lib.ps1
           . ./scripts/release/shorebird-pipeline-lib.ps1
           $policy=Get-ShorebirdPolicy
           if ($policy.engineRevision -cne '4b936a0c03e13389ddfb1ac48823f187964975c2') { throw 'ota_diff_engine_pin_mismatch' }
