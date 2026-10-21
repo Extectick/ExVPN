@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "sourceCommit": "a80e261055636424b01bd3b7c72cf1b7910f83d6",
+  "uiRevision": 13,
+  "nativeBase": "0.1.17+39",
+  "scope": "Android layout and orientation only; synthetic subscriptions; actual source hot-restarted on reused debug native shell",
+  "computerUse": false,
+  "emulator": "owned Android API36 phone AVD; display override for tablet",
+  "debugShellSha256": "3838986c6e04941e6a15ba3d9b62ead16b591e746df105a8c26c743db3990b76",
+  "newApkBuilds": 0,
+  "newExeBuilds": 0,
+  "phone": {
+    "bounds": [
+      {
+        "step": "phone-expanded",
+        "rotation": "0",
+        "nodes": [
+          {
+            "desc": "Settings",
+            "bounds": "[949,162][1038,251]"
+          },
+          {
+            "desc": "Connect VPN",
+            "bounds": "[238,444][842,1047]"
+          },
+          {
+            "desc": "Servers",
+            "bounds": "[42,1246][660,1328]"
+          },
+          {
+            "desc": "Основная подписка",
+            "bounds": "[42,1376][1038,1492]"
+          },
+          {
+            "desc": "Резервная подписка",
+            "bounds": "[42,2043][1038,2158]"
+          }
+        ]
+      },
+      {
+        "step": "phone-rotated",
+        "rotation": "0",
+        "nodes": [
+          {
+            "desc": "Settings",
+            "bounds": "[949,162][1038,251]"
+          },
+          {
+            "desc": "Connect VPN",
+            "bounds": "[238,444][842,1047]"
+          },
+          {
+            "desc": "Servers",
+            "bounds": "[42,1246][660,1328]"
+          },
+          {
+            "desc": "Основная подписка",
+            "bounds": "[42,1376][1038,1492]"
+          },
+          {
+            "desc": "Резервная подписка",
+            "bounds": "[42,2043][1038,2158]"
+          }
+        ]
+      },
+      {
+        "step": "phone-scrolled",
+        "rotation": "0",
+        "nodes": [
+          {
+            "desc": "Settings",
+            "bounds": "[949,162][1038,251]"
+          },
+          {
+            "desc": "Connect VPN",
+            "bounds": "[238,444][842,1047]"
+          },
+          {
+            "desc": "Servers",
+            "bounds": "[42,1246][660,1328]"
+          },
+          {
+            "desc": "Резервная подписка",
+            "bounds": "[42,1891][1038,2006]"
+          }
+        ]
+      }
+    ],
+    "actualRotation": 0,
+    "requestedRotation": 1,
+    "headerPowerAndToolbarFixed": true,
+    "listMoved": true,
+    "size": "1080x2400, 420dpi"
+  },
+  "tablet": {
+    "display": "1600x2560, 240dpi",
+    "portraitSplitView": true,
+    "landscapeRotation": 1,
+    "landscapeSplitView": true
+  },
+  "automated": {
+    "initialFull": {
+      "status": "failed",
+      "totalLanes": 12,
+      "sourceUnchanged": true,
+      "seconds": 112.47,
+      "passedLanes": 10,
+      "reasons": [
+        "app: one unnecessary import lint, fixed",
+        "core: existing MASQUE IPv6 HTTPS EOF and UDP deadline; isolated repeat also fails; native source unchanged"
+      ]
+    },
+    "app": {
+      "passed": 505,
+      "analyzer": "clean",
+      "effectiveAppTests": 506,
+      "failed": 1,
+      "lastFailure": "ambiguous blocked-state text finder now also matches tablet details; assertion narrowed to complete warning",
+      "affectedSuitesRerunPassed": 18,
+      "unifiedFinalFull": false
+    },
+    "newMobileTests": 6
+  },
+  "noVpnOrSecurityChanges": true,
+  "deviceCrashes": 0,
+  "limitations": [
+    "Physical Android phone/tablet not tested",
+    "Runtime used debug shell and hot restart, not signed OTA application",
+    "Native MASQUE two-test failure remains open; no downgrade of security or test thresholds",
+    "Full E1 and stable acceptance remain open"
+  ]
+}
