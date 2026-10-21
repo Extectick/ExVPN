@@ -120,7 +120,10 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('connection-notice')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Трафик заблокирован'), findsOneWidget);
+    expect(
+      find.text('Трафик заблокирован. Восстановите или отключите VPN.'),
+      findsOneWidget,
+    );
     expect(
       find.text('Не удалось открыть защищённые настройки VPN.'),
       findsOneWidget,

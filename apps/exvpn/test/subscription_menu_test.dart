@@ -295,7 +295,7 @@ void main() {
       expect(calls.length, lessThan(25));
       final count = calls.length;
       await tester.drag(
-        find.byKey(const PageStorageKey('home-scroll')),
+        find.byKey(const PageStorageKey('servers-medium')),
         const Offset(0, -600),
       );
       await tester.pumpAndSettle();

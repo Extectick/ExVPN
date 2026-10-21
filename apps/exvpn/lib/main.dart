@@ -22,6 +22,7 @@ import 'services/client_logs.dart';
 import 'src/app_update_strip.dart';
 import 'src/updates_sheet.dart';
 import 'src/tv_presentation.dart';
+import 'src/mobile_presentation.dart';
 import 'services/device_presentation.dart';
 
 Future<void> main() async {
@@ -396,9 +397,12 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
                   animation: widget.vpn ?? _appUpdates,
                   builder: (context, _) => AbsorbPointer(
                     absorbing: widget.vpn?.applicationRestartPending == true,
-                    child: TvAppPresentation(
-                      enabled: widget.television,
-                      child: child ?? const SizedBox.shrink(),
+                    child: AndroidMobilePresentation(
+                      television: widget.television,
+                      child: TvAppPresentation(
+                        enabled: widget.television,
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
                   ),
                 ),

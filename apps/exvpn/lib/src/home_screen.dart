@@ -13,6 +13,7 @@ import 'import_dialog.dart';
 import 'subscription_issues_dialog.dart';
 import 'settings_sheet.dart';
 import 'power_button.dart';
+import 'mobile_presentation.dart';
 import 'tv_presentation.dart';
 import 'adaptive_sheet.dart';
 import '../services/vpn_controller.dart';
@@ -850,7 +851,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ? _withToast(_tvView())
             : _desktop
             ? _desktopView()
-            : _withToast(_mobileView()),
+            : _withToast(
+                MobilePresentation.isTabletOf(context) &&
+                        MediaQuery.sizeOf(context).width >= 600
+                    ? _tabletView()
+                    : _mobileView(),
+              ),
       ),
     ),
   );
@@ -1023,22 +1029,36 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   );
 
   Widget _mobileView() => Column(
+    key: const Key('phone-home'),
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       if (widget.appUpdate case final update?)
         AppUpdateStrip(state: update, onPressed: widget.onAppUpdate ?? () {}),
       Expanded(
-        child: SingleChildScrollView(
-          key: const PageStorageKey('home-scroll'),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _header(desktop: false),
-              const SizedBox(height: 30),
-              Center(child: _connection(230)),
-              const SizedBox(height: 34),
-              _servers(),
+              const SizedBox(height: 12),
+              Expanded(
+                flex: 5,
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: _connection(230),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                flex: 6,
+                child: SizedBox(
+                  key: const Key('phone-server-panel'),
+                  child: _scrollingServers(),
+                ),
+              ),
             ],
           ),
         ),
@@ -1046,6 +1066,26 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     ],
   );
 
+  Widget _tabletView() => Column(
+    key: const Key('tablet-home'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (widget.appUpdate case final update?)
+        AppUpdateStrip(state: update, onPressed: widget.onAppUpdate ?? () {}),
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _header(desktop: false),
+              Expanded(child: _largeView(desktopControls: false)),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
   Widget _tvView() => Center(
     child: FittedBox(
       fit: BoxFit.contain,
@@ -1165,7 +1205,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     ],
   );
 
-  Widget _largeView() => Padding(
+  Widget _largeView({bool desktopControls = true}) => Padding(
     padding: const EdgeInsets.only(top: 22),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1178,7 +1218,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 12),
-                  child: Center(child: _powerControls(282)),
+                  child: Center(
+                    child: desktopControls
+                        ? _powerControls(282)
+                        : FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: _connection(282),
+                          ),
+                  ),
                 ),
               ),
               _connectionDetails(),
@@ -1670,15 +1717,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final server = _displayedServer;
     final vpn = widget.vpn;
     final phase = vpn?.status.phase ?? VpnPhase.disconnected;
-    final state = switch (phase) {
-      VpnPhase.disconnected => 'Не подключено',
-      VpnPhase.requestingPermission => 'Ожидание разрешения',
-      VpnPhase.connecting => 'Подключение',
-      VpnPhase.connected => 'Подключено',
-      VpnPhase.reconnecting => 'Восстановление',
-      VpnPhase.blocked => 'Трафик заблокирован',
-      VpnPhase.error => 'Ошибка подключения',
-    };
+    final state = vpn != null && !vpn.initialized
+        ? 'Проверка состояния VPN'
+        : switch (phase) {
+            VpnPhase.disconnected => 'Не подключено',
+            VpnPhase.requestingPermission => 'Ожидание разрешения',
+            VpnPhase.connecting => 'Подключение',
+            VpnPhase.connected => 'Подключено',
+            VpnPhase.reconnecting => 'Восстановление',
+            VpnPhase.blocked => 'Трафик заблокирован',
+            VpnPhase.error => 'Ошибка подключения',
+          };
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 18, 22, 12),
       child: Column(
@@ -1760,11 +1809,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           '{value} МБ',
           values: {'value': (bytes / 1048576).toStringAsFixed(1)},
         );
-
-  Widget _servers() => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [_serversHeader(), const SizedBox(height: 7), _serverGroups()],
-  );
 
   Widget _serverGroups({VoidCallback? onSelected}) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
