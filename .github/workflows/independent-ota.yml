@@ -106,9 +106,10 @@ jobs:
           ./scripts/ota/test-ui-patch.ps1
           ./scripts/ota/test-independent-publication.ps1
           ./scripts/ota/test-base-capsule.ps1
-          ./scripts/ota/test-source-driver.ps1
       - name: Prepare pinned SDK without an account
         run: ./scripts/release/prepare-shorebird.ps1 -Target $env:EXVPN_TARGET
+      - name: Validate source driver after the pinned SDK is available
+        run: ./scripts/ota/test-source-driver.ps1
       - name: Download exact independent base and AOT inputs
         if: inputs.operation == 'patch' && inputs.base_run_id != ''
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
