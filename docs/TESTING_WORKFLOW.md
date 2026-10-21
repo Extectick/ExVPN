@@ -1,5 +1,13 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+2026-10-21: TV Preview **0.1.17+39**, source `b6d449a`, UI12. Повторный Full
+не запускался: принят прежний TV Full12/12 за259,29с (500 app tests), затем
+проверены version identity и CI-only исправления (74+32+4 адресных checks).
+Actions39589586226 собрал по одному APK/EXE; Android release JVM77 PASS.
+Подписи, package/notices/SBOM и публичные feeds проверены отдельно; TUN/physical TV
+и новый OTA apply/rollback не повторялись. [Квитанция](evidence/release-v0.1.17.json),
+[публичные bytes/подписи](evidence/publication-audit-v0.1.17.json).
+
 2026-10-21, кандидат **0.1.16+38**, ECH fix `e553400` и два файла версии:
 один Full **12/12 PASS за204,96с**, source fingerprint unchanged.
 [Отчёт](evidence/fast-validation-v0.1.16.json). Прежняя site/IP TUN-матрица

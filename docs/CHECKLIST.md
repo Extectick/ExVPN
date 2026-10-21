@@ -5,10 +5,19 @@
 - [x] TV-код `728f6f6`: Full12/12,500 app tests (9 TV),77 JVM, эмулятор и
   снимки приняты ранее; повтор не требуется. Перед выпуском изменены только
   SemVer/build/UI revision:0.1.17+39/UI12; проверяется согласованность трёх констант.
-- [ ] По одной новой подписанной Android-базе и Windows-базе, неизменное ядро `.6`,
-  package/signature/notices/SBOM и точные source/bytes bindings.
-- [ ] Immutable `v0.1.17`, публичные пакеты и подписанные full-update feeds39,
-  регистрация базы в каталоге OTA с сохранением истории.
+- [x] CI39589586226 SUCCESS: по одному APK/EXE, source `b6d449a`, ядро `.6`,
+  package/signature/notices/SBOM и source/bytes bindings приняты. Android release
+  JVM77 PASS,0 skipped. Для чистого CI исправлены порядок SDK/source-driver и
+  загрузка diff-инструмента с двумя фиксированными хешами; адресные74+32+4 проверки
+  PASS. Прежние попытки остановились до сборки APK/EXE; Native service/JNI могли
+  собираться при подготовке. [CI](evidence/ci-v0.1.17.json).
+- [x] Immutable `v0.1.17` на `b6d449a`,20 assets и подписанные full-update feeds39
+  опубликованы, каталог revision14 сохраняет9 баз и прежние отзывы. Независимая
+  сверка хешей/размеров20 assets,19 checksum entries и подписей двух feeds PASS;
+  скачаны только4155байт JSON, APK/EXE повторно не скачивались и не устанавливались.
+  [Выпуск](https://github.com/Extectick/ExVPN/releases/tag/v0.1.17),
+  [квитанция](evidence/release-v0.1.17.json),
+  [аудит](evidence/publication-audit-v0.1.17.json).
 - [ ] Физический TV/пульт, API30 runtime, TV VPN/permission/lifecycle, новая
   OTA apply/rollback, E1 и Windows Authenticode; выпуск остаётся Preview.
 
@@ -26,8 +35,10 @@
     установленным; форма стартует на крестике без клавиатуры, Back возвращает
     фокус кнопке добавления. [Full](evidence/android-tv-validation.json),
     [runtime](evidence/android-tv-runtime.json).
-  - [ ] Физический TV/пульт и runtime API30, VPN/permission/lifecycle, новый
-    Android base/release. E1 и общая стабильность не закрываются.
+  - [x] TV-код включён в подписанный Android39 и опубликован как0.1.17 Preview,
+    source `b6d449a`. Runtime debug-проверка не выдается за приёмку точного APK39.
+  - [ ] Физический TV/пульт и runtime API30, VPN/permission/lifecycle.
+    E1 и общая стабильность не закрываются.
   [Контракт](ANDROID_TV.md); исходники
   `728f6f6cc9e75e6af41b1477dc96ee58c2cebbc9`,2026-10-21.
 
