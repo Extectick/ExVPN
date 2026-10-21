@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "version": "0.1.17+39",
+  "baseSourceCommit": "b6d449a0545024f3931976f1510ce734b0cc56dc",
+  "sourceCommit": "6a41f7f883c77ac2f3d42482da3fd68d255ff563",
+  "target": "Android",
+  "patchNumber": 1,
+  "flutterRevision": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+  "engineRevision": "4b936a0c03e13389ddfb1ac48823f187964975c2",
+  "protectedInputsSha256": "5b91763c47d2932a7ffe9eeb8a9fe1d0227352382c5fb15fa89ed80dc9f7c859",
+  "baseReceiptSha256": "b99b775eba6b37198a392f08d87f1fdfd128de82d12f023f5121eca6a4c77569",
+  "signingPublicKeySha256": "a9f5f027b7cbb0be337778d3950044bf780d21d6f4db5ec3056c2846fea15c87",
+  "artifacts": [
+    {
+      "arch": "aarch64",
+      "key": "android-arm64",
+      "baseSha256": "e7e73e0388c2bd985829668185882fc4815f6133305faecaa1cdee09f06e84e9",
+      "aotSha256": "54987ae3f3fc443549940729782456a9c4924393a93c6462a0184845b8dcffe2",
+      "aotSize": 7930760,
+      "hashSignature": "aP/f7mXXFkgcjwemgTG+rpBuLxUbDQzd3objJa78cT74Ay1g8Uc8NOeX2bv1CFigvjom9NE67XCa74daO+UE8Z2FE+/dmAjdxfX7YyDzVLEQ8tN30fHXjRzti8hTSp93aEPt9eySf/C90Pv7z3WsXSq7i/BRJUfq8pNuSRErk1LC+0a+4EDVfy2xu32Amp6L+bMl3u+qjtLeXhS2Z+AuSSkqgwcD0WR1qEvsH2/SvWfMrHkMGeF2tBkQbzVQNgYOZfZKEqtEjBQYOcuuZcd8LBOCP74EzuMvmhk5UBI9lZ/Oiebqt/4EwgW+A1A/NqKQlRvxA6JMUrOqco4/G5ABSX0YuPrjqsNo49YzyN6xGOcbezdvGbXe13v+aqwr4oi4hamB6cy27Tg0CFkXVddY/2qsWZtWxVjNFIEHtlkaqAksizb3NYkXIgHB9wIeM9/bST+yHqRMam44t+XGlxTbETTS8rHxdReTSBSKQEZf9vAnAPloPr4W1X1urby847hS6HqbovBpr8tAqAI9knkxrxKpfnFLXhjQQFmRfIZcNQoNWTjlFOSCCg5Qd4jmxV8YYWdEFio02+G1DS6Psqu0WDgKBnpePbLZ1S5TdMDZC1U+WmTkBRP0fHkeLDHc5EWc6laB4I/uXuLLFdMkmzOyeF6iGKDO1pZVScGQyjnU5+Q=",
+      "diffPath": "android-arm64/diff.patch",
+      "diffSha256": "6bbe70ab8fbb0c56128297fa7ffb955df2137ef6c794f8ccb898747e77d5b53f",
+      "diffSize": 1123587,
+      "aotPath": "android-arm64/app.so"
+    },
+    {
+      "arch": "x86_64",
+      "key": "android-x64",
+      "baseSha256": "75489dd1140cdb34098d8dece1ac643e399998518c185dce8c31ab2f4dec8913",
+      "aotSha256": "1269c35d4a929f3a13cca819d7a1da8f26fcc84e3169e60f7d2be6ab6273ff3a",
+      "aotSize": 8192904,
+      "hashSignature": "QyetF+l9cookU0oeHJ5eN6Cpqza0JMak/DZeuoSmqHJEkkX1a/LlH4vzEqpsAEul13unJEsGPXbF48Aw2N4gD3/TmyCSXlsvaaab3pzF2uT9o1k01V+0z1jUJLtGIKh27/KSLFhxKuq63Aca+E1sajDGk7zOFVotBr4THuhGDczq/WKjrDFX7M34sYaN9xeC9EOtL8LyFhr3jodHYuaprnommek7UhREeDCp/xgBHYnxzO4BrRmLue7qAJKHQs90/4Y3n1HeOmTPYGZHgTWt0FSnfMILOK7YTVFCFCzOBhdEvfgHYSikZTRvqC5M4F2Mhn7d1xHdIdiRsroxdlHsrRVY8ZEk71htn2gZ4AfTMP9vpZIAFbALerQwmdV3JCX/ms+JKM3tyz0YtjJ4Lxo+f19DCi87YduP/Kr7PhkwDx3Kl5wYPesgYpkDuiWzijU79Ml5INYLrn6IN/tIk+1U6d9Bs58cXiaLo0kPK5p3XV3qcCQzl5v/0nJVNyoPfiOHMZWXTHo92MOM9UJyhk5Xr7YgeGBaJuwsfekCsRugcTngseGMAEE0/HvPq9TFo+XpF7pqr9FO9M4f+Yh3vJQWzZZNJiA1iQuxItoqRTQP+KU9IjB8es5H7VV+4/x0DrxQkcI69+UwMGL6j0ffw/aLL+agtfh9P5qx7tl+qd/53zA=",
+      "diffPath": "android-x64/diff.patch",
+      "diffSha256": "d6366dfd27dd3cb880edf40cd8253d9d397b9f2890a99e60c4653736fbe48950",
+      "diffSize": 1138820,
+      "aotPath": "android-x64/app.so"
+    }
+  ],
+  "buildDriver": {
+    "kind": "verified-sdk-source",
+    "sdkCommit": "5bef02a16146a0effc07da4acccaafe90a2739ce",
+    "entrypointSha256": "554f38c4b048cd82e821a1ca296ec40cfc05f07f26cf1882d98b8a74af8b2a0b",
+    "dependencyLockSha256": "fa1786981448876ba5cdda3033749262e83d40d651d0e3399e48250cd6d9a854",
+    "packageConfigSha256": "7dae967ce11dfe3c6763ef52284657ec9c8dc6e7ce13ac65c6a432bb166c3f64"
+  },
+  "cloudCalls": false,
+  "nativeBuild": false,
+  "startedAt": "2026-10-21T11:33:09.2353333Z",
+  "completedAt": "2026-10-21T11:40:10.8829064Z",
+  "elapsedSeconds": 421.65
+}
