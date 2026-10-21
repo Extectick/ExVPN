@@ -39,17 +39,17 @@
   Use выполнена новая TUN-матрица, а прежние suites/builds не повторялись.
   - [x] Android API36: exclude/include для доменов и IPv4/CIDR, HTTPS IPv6 через
     VPN и напрямую по исключению, блокировка защищённых запросов при отказе
-    сервера, сохранённая политика после idle process restart. Рабочее дерево;
-    commit ожидается. Физический телефон и destructive recovery не проверены.
+    сервера, сохранённая политика после idle process restart. Commit `e553400`.
+    Физический телефон и destructive recovery не проверены.
   - [x] Windows Sandbox: production controller/TUN, домены, IPv4/CIDR и IPv6
     include, отличающийся remote exit и отказ сервера; fresh DNS A/AAAA,
     physical53/853=0 с положительной калибровкой. Исходная сеть восстановлена.
-    Рабочее дерево; commit ожидается. Это memory store/controller harness,
+    Commit `e553400`. Это memory store/controller harness,
     не installed SCM IPC или DPAPI; прямого IPv6 underlay у стенда нет.
   - [x] Выявлен ECH direct bypass `.5` и исправлен общим TLS/QUIC parser `.6`.
     27 focused подслучаев и Windows actual TUN regression PASS; обычный SNI
-    сохраняет разрешённый direct, ECH до/после SNI остаётся VPN. Рабочее дерево;
-    commit ожидается. Synthetic routing proof не равен crypto ECH negotiation.
+    сохраняет разрешённый direct, ECH до/после SNI остаётся VPN. Commit `e553400`.
+    Synthetic routing proof не равен crypto ECH negotiation.
   - [ ] Android DNS/ECH packet acceptance: raw capture сохранён, первоначальный
     анализ INDETERMINATE из-за разных часов PCAP/host; нужна калибровка.
   - [ ] Android runtime нового `.6`, Windows SCM/DPAPI и destructive encrypted

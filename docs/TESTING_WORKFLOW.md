@@ -1,5 +1,11 @@
 # Быстрый цикл разработки и проверки ExVPN
 
+2026-10-21, кандидат **0.1.16+38**, ECH fix `e553400` и два файла версии:
+один Full **12/12 PASS за204,96с**, source fingerprint unchanged.
+[Отчёт](evidence/fast-validation-v0.1.16.json). Прежняя site/IP TUN-матрица
+не повторяется; native `.6` TLS/QUIC regressions включены в xray lane.
+Сборки, точный Android APK TUN subset и публикация проверяются отдельно.
+
 2026-10-21: локальные site/IP политики, source `ed56b07` поверх `2d0d4a0`.
 Full121,08с:11/12 lanes PASS,491 app tests, fingerprint unchanged. Scripts
 остановился на слишком длинном Git -C пути synthetic environment-workspace;
