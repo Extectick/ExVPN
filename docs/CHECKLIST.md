@@ -1,5 +1,15 @@
 # ExVPN — проверяемый чеклист
 
+## Кандидат 0.1.15+37 — 2026-10-21
+
+- [x] Один итоговый Full **12/12 PASS за158,28с**, source fingerprint unchanged.
+  Ранее проверенные site-routing исходники интегрированы; UI11 и SemVer/build
+  согласованы. [Отчёт](evidence/fast-validation-v0.1.15.json). Рабочее дерево;
+  commit ожидается.
+- [ ] Подписанная упаковка и публикация Android/Windows37. JNI arm64/x64 и
+  Windows-служба собраны, но это не системная приёмка новой политики сайтов/IP.
+  **EXVPN-E1-014**, полный E1 и стабильный выпуск остаются открытыми.
+
 ## Сайты и IP — 2026-10-21
 
 - [x] **EXVPN-E2-025** — Отдельная форма сайтов/IP: три режима, закреплённый поиск,
@@ -16,7 +26,7 @@
   [Результат](evidence/site-routing-validation.json),
   [светлый экран](evidence/site-routing-light.png),
   [минимальный экран](evidence/site-routing-compact-dark.png).
-- [ ] **EXVPN-E1-013** — Принять сайты/IP через реальный TUN на обеих платформах.
+- [ ] **EXVPN-E1-014** — Принять сайты/IP через реальный TUN на обеих платформах.
   Реализованы strict schema1, bounded matcher, owner/DNS priority, UDP pinning,
   encrypted persistence и resume. Focused Go и Kotlin policy/recovery прошли,
   host Kotlin25 compiled. Открыты Windows C++/Android JNI package, durable storage
