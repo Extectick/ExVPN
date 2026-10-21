@@ -1,5 +1,25 @@
 # ExVPN — проверяемый чеклист
 
+## Публикация 0.1.16+38 Preview — 2026-10-21
+
+- [x] Один итоговый Full12/12 PASS за204,96с, source unchanged; исходники
+  `f7d7ce6`, ECH fix `e553400`. [Отчёт](evidence/fast-validation-v0.1.16.json).
+- [x] По одному APK/EXE из `f7d7ce6`, JNI двух ABI и Windows service `.6`;
+  Android JVM74 PASS, подпись APK/notices/SBOM и package audits приняты.
+- [x] Точный Android38 APK: installed SHA/native entry совпали с выпуском,
+  UID и политика37 сохранены; ECH до/после SNI и no-SNI остаются VPN,
+  обычный SNI сохраняет разрешённый direct, защищённый HTTPS до/после PASS.
+  Windows controller/TUN `.6` regression PASS; стенды восстановлены.
+- [x] Immutable tag `v0.1.16`, готовые пакеты и signed feeds38 опубликованы;
+  каталог revision13 сохраняет прежние базы/отзывы. Повторных сборок не было.
+  Независимая сверка20 assets и подписей двух feeds PASS; скачаны только3887байт
+  JSON, APK/EXE повторно не скачивались. [Аудит](evidence/publication-audit-v0.1.16.json).
+  [Выпуск](https://github.com/Extectick/ExVPN/releases/tag/v0.1.16),
+  [квитанция](evidence/release-v0.1.16.json).
+- [ ] Полный **EXVPN-E1-014/E1**, физический Android, Windows SCM/DPAPI,
+  startup/shutdown DNS, новая OTA apply/rollback и Windows Authenticode.
+  Preview не объявляется стабильным выпуском.
+
 ## Публикация 0.1.15+37 Preview — 2026-10-21
 
 - [x] Один итоговый Full **12/12 PASS за158,28с**, source fingerprint unchanged.
@@ -50,11 +70,15 @@
     27 focused подслучаев и Windows actual TUN regression PASS; обычный SNI
     сохраняет разрешённый direct, ECH до/после SNI остаётся VPN. Commit `e553400`.
     Synthetic routing proof не равен crypto ECH negotiation.
-  - [ ] Android DNS/ECH packet acceptance: raw capture сохранён, первоначальный
-    анализ INDETERMINATE из-за разных часов PCAP/host; нужна калибровка.
-  - [ ] Android runtime нового `.6`, Windows SCM/DPAPI и destructive encrypted
+  - [x] Android DNS37: наблюдаемый активный TUN-интервал39,678с без физических
+    запросов53 на eth0/wlan0, контрольные DNS до/после видны, часы откалиброваны.
+    Source `f7d7ce6`, дата2026-10-21. Расширенное окно содержит два ответа до старта;
+    startup/shutdown не принят. Ошибки прежних замеров сохранены как INDETERMINATE.
+  - [x] Android `.6` на точном опубликованном38 (`f7d7ce6`): ECH before/after,
+    no-SNI, protected HTTPS и сохранение UID/политики PASS; cleanup завершён.
+  - [ ] Windows SCM/DPAPI и destructive encrypted
     storage recovery, unknown/shared owner, app/site conflict, UDP reassociation
-    и физический Android. E1/stable не закрыты. Новому `.6` нужна полная база.
+    и физический Android, startup/shutdown DNS. E1/stable не закрыты.
   [Контракт](SITE_ROUTING.md), [TUN evidence](evidence/site-routing-tun-20261021.json).
 
 Начало проекта: **2026-10-16**. Источник требований: [PLAN.md](PLAN.md); границы компонентов: [ARCHITECTURE.md](ARCHITECTURE.md).

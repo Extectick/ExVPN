@@ -4,7 +4,19 @@
 один Full **12/12 PASS за204,96с**, source fingerprint unchanged.
 [Отчёт](evidence/fast-validation-v0.1.16.json). Прежняя site/IP TUN-матрица
 не повторяется; native `.6` TLS/QUIC regressions включены в xray lane.
-Сборки, точный Android APK TUN subset и публикация проверяются отдельно.
+Один APK и один EXE собраны из `f7d7ce6`, Android JVM74 PASS.
+Точный Android38 APK прошёл только affected ECH/HTTPS/persistence TUN subset;
+Windows `.6` controller/TUN проверен отдельно. Пакеты и signed feeds опубликованы;
+каталог revision13. [Квитанция](evidence/release-v0.1.16.json),
+[runtime и ограничения](evidence/site-routing-tun-20261021.json).
+
+Android packet QA: guest tcpdump одновременно на eth0 и wlan0, явный сигнал
+готовности до положительных прямых контролей, контроли до/после и измеренные
+границы смещения часов. Startup PCAP и отрицательные wlan0-only счётчики
+не доказывают отсутствие утечки: активный VPN underlay может быть eth0.
+Прежние непригодные замеры сохранены как INDETERMINATE. DNS37 принят только
+в наблюдаемом активном окне39,678с; в расширенном окне были два ответа до старта,
+поэтому startup/shutdown DNS и полный E1 остаются открытыми.
 
 2026-10-21: локальные site/IP политики, source `ed56b07` поверх `2d0d4a0`.
 Full121,08с:11/12 lanes PASS,491 app tests, fingerprint unchanged. Scripts

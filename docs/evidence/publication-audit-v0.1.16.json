@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "dateUtc": "2026-10-21T09:16:31.080131+00:00",
+  "status": "passed",
+  "version": "0.1.16+38",
+  "sourceCommit": "f7d7ce6192812097a99fb0cfbc2ef1ab1d807ba0",
+  "releaseId": 419355816,
+  "tag": "v0.1.16",
+  "tagPeeledToSource": true,
+  "publishedAt": "2026-10-21T09:11:36Z",
+  "draft": false,
+  "prerelease": true,
+  "stableReady": false,
+  "releaseMetadataAssetsCompared": 20,
+  "allAssetNamesSizesDigestsMatched": true,
+  "localChecksumEntriesMatched": 19,
+  "releaseManifestSha256": "d6b3b6c59244effd78393c179a9b0aa75779335b47f3c5f6bc0a9003c85dffc7",
+  "sha256SumsSha256": "bf2f24b2f6104483382a033fae3d2120461f0c90a4aed5fcac309dd612028ded",
+  "assets": {
+    "android-audit.json": {
+      "bytes": 29207,
+      "sha256": "2267c4881836491929c5a66694a70a4e394e9ae7125fc7b4cc1053fcc13b1d85"
+    },
+    "android-build.json": {
+      "bytes": 6889,
+      "sha256": "56f52758a9f3b43602c8d7e439e6ee90ac882b4aab09ca856bd3891c16cfa963"
+    },
+    "android-maven-notices.json": {
+      "bytes": 1359,
+      "sha256": "ccdb6e13a8df322d4c9d0770acc7fbe43d838106e9d481b8db1e540e3a76ba1d"
+    },
+    "android-maven-notices.zip": {
+      "bytes": 171999,
+      "sha256": "c161a89a209b42d086fefff32e5f6c442c05f9a5001cf3ba7610bcabd0d77204"
+    },
+    "android-notices.zip": {
+      "bytes": 2289710,
+      "sha256": "31c7bd30d3509e4c3516917dde2420477b8e99d434d7b202d07edd8c29ca38f0"
+    },
+    "android-sbom.cdx.json": {
+      "bytes": 607621,
+      "sha256": "6f3d23c92eaaf2e4537cd921a9692536e2ccda135bbbc0f895498cc2e48eb8c2"
+    },
+    "android-shorebird-base.json": {
+      "bytes": 102371,
+      "sha256": "8c9a09dc37285a0096c62f7a8c48613d47fe4230a814678a577b6ae984a41f74"
+    },
+    "ExVPN-0.1.16-38-android-ota-inputs.zip": {
+      "bytes": 6472782,
+      "sha256": "365b1f7c6a66f5ebe68788912b4e269df1eb376b5569ffb0b88ba03fe069370c"
+    },
+    "ExVPN-0.1.16-38-android.apk": {
+      "bytes": 141352668,
+      "sha256": "6ffaf29127918c8edf44979183f383e479aed009587115c58f51cccbcf7d33d1"
+    },
+    "ExVPN-0.1.16-38-windows-ota-inputs.zip": {
+      "bytes": 3442926,
+      "sha256": "c2042bca21e111a4de65bc6f976c88b5145a64a4f226dfabde7be5a0d2504bad"
+    },
+    "ExVPN-0.1.16-38-windows-x64-development.exe": {
+      "bytes": 50665637,
+      "sha256": "859b1e81d59909382ae09629a95a1e2b784b3577e0855299c3291168a74db658"
+    },
+    "release-manifest.json": {
+      "bytes": 3543,
+      "sha256": "d6b3b6c59244effd78393c179a9b0aa75779335b47f3c5f6bc0a9003c85dffc7"
+    },
+    "RELEASE.md": {
+      "bytes": 1378,
+      "sha256": "4107c2da6140ead17f33bdb9b953c7ffe96ef61eab149e5ca4ac76f18facc84a"
+    },
+    "SHA256SUMS.txt": {
+      "bytes": 1751,
+      "sha256": "bf2f24b2f6104483382a033fae3d2120461f0c90a4aed5fcac309dd612028ded"
+    },
+    "shorebird-runtime-qa.json": {
+      "bytes": 1045,
+      "sha256": "9863c128f33e79660d418c0334350065347c2e9f0afc73b6f4e03cf65f22baa2"
+    },
+    "windows-audit.json": {
+      "bytes": 19678,
+      "sha256": "848bbe1c1092c730949b38a2fd3d4ff3d53aeab3612757da04d05a9c31b3741c"
+    },
+    "windows-build.json": {
+      "bytes": 2543,
+      "sha256": "be1838d9f31528d629f7eba177729f6823527306eaf1e3215b9c4d488caff2c3"
+    },
+    "windows-notices.zip": {
+      "bytes": 2330816,
+      "sha256": "1afbd59eda7198c0c59194ef6232d9bce3e88219521dfd148299bb124aa2af4f"
+    },
+    "windows-sbom.cdx.json": {
+      "bytes": 580129,
+      "sha256": "b152afb02ea270c557d88c0188714639dfb8be54437b5dfe24c7fe0d49e6a8eb"
+    },
+    "windows-shorebird-base.json": {
+      "bytes": 51311,
+      "sha256": "ca4562d8d5582b58427bfd200c0617a99a03254db271c9350197e4233ddee085"
+    }
+  },
+  "fullUpdateFeeds": [
+    {
+      "platform": "windows-x64",
+      "version": "0.1.16",
+      "build": 38,
+      "channel": "beta",
+      "signatureVerified": true,
+      "notExpired": true,
+      "publicAssetDigestMatched": true,
+      "artifactMatchedRelease": true,
+      "sha256": "1a42bc4762f35bb4a4deeaa84b933e7ea9ed616dc919e3675ea38cef32c13de8"
+    },
+    {
+      "platform": "android",
+      "version": "0.1.16",
+      "build": 38,
+      "channel": "beta",
+      "signatureVerified": true,
+      "notExpired": true,
+      "publicAssetDigestMatched": true,
+      "artifactMatchedRelease": true,
+      "sha256": "0525f76d73e8288ce5c358f2466b26bd375272d7250143a9310ef8e2e55e1025"
+    }
+  ],
+  "dartCatalog": {
+    "revision": 13,
+    "channel": "beta",
+    "bases": 8,
+    "includesNewBase": true,
+    "activeTargets": 0,
+    "revokedNumbers": 3,
+    "signatureVerified": true,
+    "verificationCommand": "python scripts/ota/catalog.py --verify <public-json>",
+    "sha256": "a109ef03d56373432119d58a11ccc4f761453a5d9f833f81b912079c982704c2",
+    "expiresAt": "2026-11-04T09:10:11Z"
+  },
+  "fullFeedVerification": "Existing verified_previous function with pinned public keys; no seed access",
+  "downloadedOnlySmallJsonFeeds": true,
+  "downloadedBytes": 3887,
+  "apkExeRedownloaded": false,
+  "apkExeBytesRehashed": false,
+  "newTestsBuildsInstalls": false,
+  "trackedFilesChanged": false,
+  "publicationsChanged": false,
+  "scope": "Publication metadata and public signed feeds; no new device/runtime acceptance"
+}

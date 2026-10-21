@@ -116,13 +116,14 @@
     }
   },
   "android": {
-    "device": "Owned API36 emulator",
-    "physicalDeviceTested": false,
-    "apkSha256": "1ce917f8e929a66642b13be4b7e186f80f867112a261913815b3e2f32fb6af1c",
-    "realTun": true,
-    "probesUseIndependentUid": true,
-    "explicitlyBoundAroundVpn": false,
-    "cases": [
+    "schemaVersion": 1,
+    "artifact": "0.1.15+37",
+    "artifactSha256": "1ce917f8e929a66642b13be4b7e186f80f867112a261913815b3e2f32fb6af1c",
+    "target": "owned API36 emulator-5584",
+    "mainAppRebuilt": false,
+    "physicalPhoneTouched": false,
+    "mechanism": "ordinary default-network independent UID10215; real TUN owner10214; authenticated loopback WireGuard fault isolation",
+    "routingCases": [
       {
         "passed": true,
         "case": "exclude-ip",
@@ -145,16 +146,182 @@
       }
     ],
     "persistence": {
-      "savedPolicyAfterIdleProcessRestart": true,
-      "destructiveRecoveryTested": false
+      "expectedRulePresent": true,
+      "mode": "Exceptions"
     },
-    "dns": {
-      "result": "indeterminate",
-      "reason": "PCAP and host phase clock domains differ; original capture retained for calibrated analysis",
-      "originalAnalysisPreserved": true
+    "dnsStatus": "PASS scoped observed active-TUN interval only; startup/shutdown OPEN",
+    "echStatus": "FAIL outer SNI authorized direct for synthetic ECH before/after; noSNI stayed VPN",
+    "limitations": [
+      "same host public egress does not prove path by IP",
+      "physical device not covered",
+      "unknown/system/shared UID separate runtime adversarial case not claimed",
+      "ECH synthetic routing only; cryptographic ECH acceptance not tested"
+    ],
+    "rawEvidenceDirectory": ".private/sites37/android",
+    "cleanupStatus": "Completed after38 focused regression; see .private/sites38/android/cleanup.json",
+    "clockBefore": {
+      "hostStartUnixMs": 1792572176069,
+      "hostEndUnixMs": 1792572176171,
+      "guestUnixMs": 1792572176029,
+      "offsetLowerMs": -142,
+      "offsetUpperMs": -40
     },
-    "ech": "Routing probes completed; calibrated capture analysis pending",
-    "cleanup": "pending"
+    "clockAfter": {
+      "hostStartUnixMs": 1792573339887,
+      "hostEndUnixMs": 1792573339932,
+      "guestUnixMs": 1792573339770,
+      "offsetLowerMs": -162,
+      "offsetUpperMs": -117,
+      "sameEmulatorBoot": true
+    },
+    "echCryptographicAcceptanceTested": false,
+    "conservativeTwoPackets": {
+      "newQueries": 0,
+      "relativeNominalStartMs": -700,
+      "androidConnectivityDomain": true,
+      "family": 6,
+      "direction": "response"
+    },
+    "dnsNominalDurationMs": 39678,
+    "dnsEvidence": [
+      {
+        "pcapSha256": "08365a8c23a475b62511213dafd73a13d6e320bc4b12ccfc7437c6375fd0d56b",
+        "tcpdumpKernelDropsZero": true,
+        "directAfter": {
+          "queries": 0,
+          "responses": 0
+        },
+        "directBefore": {
+          "queries": 0,
+          "responses": 0
+        },
+        "parseStatus": "PARSED",
+        "interface": "eth0",
+        "nominal": {
+          "id": "vpn",
+          "startUnixMs": 1792572836206,
+          "endExclusiveUnixMs": 1792572875884,
+          "packetsInWindow": 155,
+          "udp53InWindow": 0,
+          "tcp53InWindow": 0,
+          "tcp53SynInWindow": 0,
+          "captureBoundsCoverInterval": true
+        },
+        "conservative": {
+          "id": "vpn_conservative",
+          "startUnixMs": 1792572835206,
+          "endExclusiveUnixMs": 1792572876884,
+          "packetsInWindow": 206,
+          "udp53InWindow": 0,
+          "tcp53InWindow": 0,
+          "tcp53SynInWindow": 0,
+          "captureBoundsCoverInterval": true
+        }
+      },
+      {
+        "pcapSha256": "8f241f37b6b118973090a629f8c635055e5a5449689ef03462a07a5400b64606",
+        "tcpdumpKernelDropsZero": true,
+        "directAfter": {
+          "queries": 2,
+          "responses": 2
+        },
+        "directBefore": {
+          "queries": 2,
+          "responses": 2
+        },
+        "parseStatus": "PARSED",
+        "interface": "wlan0",
+        "nominal": {
+          "id": "vpn",
+          "startUnixMs": 1792572836206,
+          "endExclusiveUnixMs": 1792572875884,
+          "packetsInWindow": 10,
+          "udp53InWindow": 0,
+          "tcp53InWindow": 0,
+          "tcp53SynInWindow": 0,
+          "captureBoundsCoverInterval": true
+        },
+        "conservative": {
+          "id": "vpn_conservative",
+          "startUnixMs": 1792572835206,
+          "endExclusiveUnixMs": 1792572876884,
+          "packetsInWindow": 66,
+          "udp53InWindow": 2,
+          "tcp53InWindow": 0,
+          "tcp53SynInWindow": 0,
+          "captureBoundsCoverInterval": true
+        }
+      }
+    ],
+    "dnsConservativeDurationMs": 41678,
+    "cleanup37": {
+      "gateway37ExpiredOrStopped": true,
+      "groupAndSitesFinalCleanup": "Off empty; QA37+QA38 removed; gateway/capture processes stopped; original subscription retained",
+      "vpnDisconnected": true,
+      "qa37GroupRemoved": true,
+      "ownedCaptureProcessesStopped": true,
+      "originalAvdFlagsRestored": true
+    },
+    "echEvidence": [
+      {
+        "boundsCoverBoth": true,
+        "wlan0TargetPackets": 5,
+        "case": "dual-ech-direct",
+        "wlan0ExactFixtureMatches": 1,
+        "eth0TargetPackets": 0,
+        "eth0ExactFixtureMatches": 0
+      },
+      {
+        "boundsCoverBoth": true,
+        "wlan0TargetPackets": 0,
+        "case": "dual-ech-vpn-control",
+        "wlan0ExactFixtureMatches": 0,
+        "eth0TargetPackets": 6,
+        "eth0ExactFixtureMatches": 1
+      },
+      {
+        "boundsCoverBoth": true,
+        "wlan0TargetPackets": 0,
+        "case": "dual-ech-vpn-ech-before",
+        "wlan0ExactFixtureMatches": 0,
+        "eth0TargetPackets": 6,
+        "eth0ExactFixtureMatches": 1
+      },
+      {
+        "boundsCoverBoth": true,
+        "wlan0TargetPackets": 0,
+        "case": "dual-ech-vpn-ech-after",
+        "wlan0ExactFixtureMatches": 0,
+        "eth0TargetPackets": 6,
+        "eth0ExactFixtureMatches": 1
+      },
+      {
+        "boundsCoverBoth": true,
+        "wlan0TargetPackets": 0,
+        "case": "dual-ech-vpn-no-sni",
+        "wlan0ExactFixtureMatches": 0,
+        "eth0TargetPackets": 0,
+        "eth0ExactFixtureMatches": 0
+      }
+    ],
+    "encryptedPeerVisibility": [
+      {
+        "interface": "eth0",
+        "privateGatewayUdpMatchedPackets": 145,
+        "wireGuardEncryptedDataMessages": 140
+      },
+      {
+        "interface": "wlan0",
+        "privateGatewayUdpMatchedPackets": 0,
+        "wireGuardEncryptedDataMessages": 0
+      }
+    ],
+    "measurementHistory": [
+      "startup emulator virtual Ethernet capture: wrong clock domain and no positive controls; INDETERMINATE preserved",
+      "wlan0-only guest capture: direct positive controls present but active path on eth0; incomplete scope preserved",
+      "first full wlan0 capture original strict parse INDETERMINATE due393us reorder and unrelated malformed frame after predefined DNS window; full raw immutable; lossless sorted and audited predefined DNS subcapture retained",
+      "first dual DNS capture before-control started before tcpdump readiness; baseline not accepted; measurement superseded by final explicit-ready dual capture"
+    ]
   },
   "fix": {
     "xrayPin": "v1.260327.1-exvpn.6",
@@ -228,7 +395,163 @@
         }
       ]
     },
-    "packageRelease": "not performed in this evidence"
+    "packageRelease": "0.1.16+38 published with unchanged accepted package bytes",
+    "androidTunRegression": {
+      "schemaVersion": 1,
+      "status": "PASS focused ECH regression",
+      "artifact": "0.1.16+38",
+      "artifactSha256": "6ffaf29127918c8edf44979183f383e479aed009587115c58f51cccbcf7d33d1",
+      "sourceCommit": "f7d7ce6192812097a99fb0cfbc2ef1ab1d807ba0",
+      "target": "owned API36 emulator-5584",
+      "nativeXrayPin": "v1.260327.1-exvpn.6",
+      "nativeBinding": {
+        "nativeEntrySha256": "afbd16b98db7e47d08f62ec4b87ed9afbfcb541d167247cac7238d310b5f2f65",
+        "matchesExpectedNative": true,
+        "nativeStoredUncompressed": true,
+        "nativeApkDataOffset": 68255744,
+        "exactNativeEntryMappedInProcess": true,
+        "mappedEntryPermissions": [
+          "r--p"
+        ]
+      },
+      "installation": {
+        "versionCode38": true,
+        "versionNameMatches": true,
+        "uidPreserved": true,
+        "installedApkMatches": true,
+        "extractNativeLibsFalse": true,
+        "primaryAbiX64": true
+      },
+      "policyPersistedFrom37": {
+        "rulesPreserved": true,
+        "exceptionsModePreserved": true
+      },
+      "policyUnderTest": "Only these; synthetic protected.example",
+      "independentProbeUid": 10215,
+      "actualTunOwnerUid": 10214,
+      "ownedTunObserved": true,
+      "rawSocketExplicitNetworkBinding": false,
+      "cryptographicEchAcceptanceTested": false,
+      "cases": [
+        {
+          "exactFixtureMatches": 1,
+          "encryptedGatewayDataPackets": 0,
+          "expected": "direct",
+          "passed": true,
+          "targetPhysicalPackets": 6,
+          "captureBoundsCoverBoth": true,
+          "case": "ech38-direct-control"
+        },
+        {
+          "exactFixtureMatches": 1,
+          "encryptedGatewayDataPackets": 22,
+          "expected": "direct",
+          "passed": true,
+          "targetPhysicalPackets": 6,
+          "captureBoundsCoverBoth": true,
+          "case": "ech38-vpn-control"
+        },
+        {
+          "exactFixtureMatches": 0,
+          "encryptedGatewayDataPackets": 11,
+          "expected": "VPN",
+          "passed": true,
+          "targetPhysicalPackets": 0,
+          "captureBoundsCoverBoth": true,
+          "case": "ech38-vpn-ech-before"
+        },
+        {
+          "exactFixtureMatches": 0,
+          "encryptedGatewayDataPackets": 11,
+          "expected": "VPN",
+          "passed": true,
+          "targetPhysicalPackets": 0,
+          "captureBoundsCoverBoth": true,
+          "case": "ech38-vpn-ech-after"
+        },
+        {
+          "exactFixtureMatches": 0,
+          "encryptedGatewayDataPackets": 18,
+          "expected": "VPN",
+          "passed": true,
+          "targetPhysicalPackets": 0,
+          "captureBoundsCoverBoth": true,
+          "case": "ech38-vpn-no-sni"
+        }
+      ],
+      "https": {
+        "expectedProtectedPath": "numeric HTTPS with no DNS/SNI under domain include",
+        "before": true,
+        "after": true,
+        "certificateVerification": "Android platform default; no trust override",
+        "directRestored": true
+      },
+      "capture": {
+        "wlan0Sha256": "d3700ab43d7cfc12e50c7a8c1394ae637ad8dbfa9530aa6a301df474f1652263",
+        "originalsImmutable": true,
+        "bothKernelDropCount": 0,
+        "bothFullParse": true,
+        "eth0Sort": {
+          "method": "stable_sort_complete_records_by_existing_timestamp",
+          "rawSha256": "9fa5fa268325e21b1c0f892a8836bdc1bd0f9f00197b7c90396beb9b45ef6c2b",
+          "derivedSha256": "9fa5fa268325e21b1c0f892a8836bdc1bd0f9f00197b7c90396beb9b45ef6c2b",
+          "rawBytes": 17628,
+          "derivedBytes": 17628,
+          "recordCount": 40,
+          "duplicatePreservingRecordMultisetEqual": true,
+          "recordsRemoved": 0,
+          "recordsAdded": 0,
+          "timestampsModified": false,
+          "packetBytesModified": false,
+          "outOfOrderRecords": 0,
+          "maximumBackwardTimestampMicroseconds": 0
+        },
+        "underlays": [
+          "eth0",
+          "wlan0"
+        ],
+        "wlan0Sort": {
+          "method": "stable_sort_complete_records_by_existing_timestamp",
+          "rawSha256": "d3700ab43d7cfc12e50c7a8c1394ae637ad8dbfa9530aa6a301df474f1652263",
+          "derivedSha256": "d3700ab43d7cfc12e50c7a8c1394ae637ad8dbfa9530aa6a301df474f1652263",
+          "rawBytes": 149480,
+          "derivedBytes": 149480,
+          "recordCount": 395,
+          "duplicatePreservingRecordMultisetEqual": true,
+          "recordsRemoved": 0,
+          "recordsAdded": 0,
+          "timestampsModified": false,
+          "packetBytesModified": false,
+          "outOfOrderRecords": 0,
+          "maximumBackwardTimestampMicroseconds": 0
+        },
+        "eth0Sha256": "9fa5fa268325e21b1c0f892a8836bdc1bd0f9f00197b7c90396beb9b45ef6c2b"
+      },
+      "cleanup": {
+        "vpnAbsent": true,
+        "qa37GroupRemoved": true,
+        "qa38GroupRemoved": true,
+        "originalSubscriptionPresent": true,
+        "effectiveSitePolicyRestored": "Off + empty custom list",
+        "languageAndThemeRetained": "English/dark",
+        "gateway37StoppedOrExpired": true,
+        "gateway38Stopped": true,
+        "ownedCaptureProcessesStopped": true,
+        "guestPrivateCaptureFilesRemoved": true,
+        "originalAvdFlagsRestored": true,
+        "physicalPhoneTouched": false
+      },
+      "limitations": [
+        "Synthetic routing envelope only; cryptographic ECH acceptance not tested",
+        "PCAP is not UID attributed; OS ownership and independent default-network UID observed separately",
+        "Only focused native ECH regression repeated on38; routing and bounded DNS results refer to37",
+        "Physical Android device and startup/shutdown DNS remain separate open gates"
+      ],
+      "noMainAppBuildByThisAgent": true,
+      "noComputerUse": true,
+      "noHostRoutesDnsFirewallChanged": true
+    },
+    "sourceCommit": "e5534000026378b93c232868901c8172ace11c98"
   },
   "remaining": [
     "Physical Android acceptance",
@@ -237,6 +560,21 @@
     "Unknown/shared-owner and app/site-conflict runtime matrix",
     "UDP destination/owner reassociation runtime matrix",
     "Destructive encrypted-storage recovery",
-    "Global E1 stable security acceptance"
-  ]
+    "Global E1 stable security acceptance",
+    "Android DNS startup/shutdown transitions and physical-device capture",
+    "Fresh base38 signed OTA patch apply and rollback on both platforms"
+  ],
+  "candidateRelease": {
+    "version": "0.1.16+38",
+    "sourceCommit": "f7d7ce6192812097a99fb0cfbc2ef1ab1d807ba0",
+    "published": true,
+    "publicUrl": "https://github.com/Extectick/ExVPN/releases/tag/v0.1.16",
+    "androidArtifactSha256": "6ffaf29127918c8edf44979183f383e479aed009587115c58f51cccbcf7d33d1",
+    "windowsArtifactSha256": "859b1e81d59909382ae09629a95a1e2b784b3577e0855299c3291168a74db658",
+    "windowsPackagedServiceSha256": "8d136cecb77890096501fc6fd9d765e32b3d5a840e6cdd794a88c045c2c50ef5",
+    "windowsInstalledScmAcceptance": false,
+    "nativePin": "v1.260327.1-exvpn.6",
+    "nativeModuleSum": "h1:jT9jA12LglNSe2+qAmnZxRm1sukH6JyKkMkrweM6Gaw=",
+    "stableReady": false
+  }
 }

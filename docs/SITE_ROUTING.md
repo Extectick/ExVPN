@@ -138,14 +138,26 @@ GREASE, duplicate SNI и malformed tail оставляют его unknown. Дв�
 missing-SNI0. В одном окне был1 запоздавший входящий пакет; нулевой считается
 именно исходящий target traffic. Криптографическая ECH negotiation не принята.
 
-Android DNS/ECH packet analysis пока INDETERMINATE: startup emulator PCAP не
-показал положительные DNS/TCP controls и использует другую часовую шкалу.
-Исходный capture/отказ сохранены приватно; требуется новый видимый capture.
-Не считать нулевые счётчики невидимого capture успешной защитой.
+Первый Android startup PCAP не показал положительные DNS/TCP controls; исходный
+capture и INDETERMINATE сохранены. Новый guest tcpdump захватывает одновременно
+eth0/wlan0, ждёт готовности, подтверждает прямые контроли до/после и границы часов.
+DNS37 принят только в наблюдаемом активном TUN-окне39,678с: физические запросы53=0,
+контрольные DNS видны на wlan0, VPN transport виден на eth0. В расширенном окне
+есть два ответа до старта; startup/shutdown DNS не принят. ECH bypass `.5`
+подтверждён на обеих платформах, а не только host parser tests.
 
-Новый `.6` требует полной Shorebird-базы; пакеты/тег37 не перемещаются.
-Единственный следующий Full/JNI/package cycle передаётся согласованной release
-задаче после freeze. Общий E1, Android `.6` runtime, физические устройства,
-Windows SCM/DPAPI, app/site conflict и UDP reassociation остаются открытыми.
-Исходники: рабочее дерево; commit ожидается.
+Опубликован ровно один новый APK и EXE **0.1.16+38**, source `f7d7ce6`, UI11;
+старые пакеты/тег37 не менялись. После freeze один Full12/12 PASS за204,96с,
+Android JVM74 PASS. Exact38 APK установлен-r: SHA/ZIP native entry совпали,
+UID и политика сохранились. Actual TUN ECH before/after/no-SNI дали0 физических
+target packets на обеих NIC; ordinary SNI сохранил direct с положительным exact
+fixture control. Numeric HTTPS через VPN до/после прошёл, стенд очищен.
+Это synthetic routing proof, не криптографическая ECH negotiation.
+
+Подписанные package feeds предлагают38, OTA-каталог revision13 сохраняет базы
+и отзывы. TUN-проверка не заменяет подписанный OTA apply/rollback roundtrip.
+Общий E1/EXVPN-E1-014, физические устройства, Windows SCM/DPAPI и direct IPv6,
+unknown/shared owner, app/site conflict, UDP reassociation и destructive recovery
+остаются открытыми. ECH fix: `e553400`; source base: `f7d7ce6`.
+[Квитанция выпуска](evidence/release-v0.1.16.json).
 [Обезличенный отчёт](evidence/site-routing-tun-20261021.json).

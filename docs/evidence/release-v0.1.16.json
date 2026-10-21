@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "version": "0.1.16+38",
+  "uiRevision": 11,
+  "published": true,
+  "publicUrl": "https://github.com/Extectick/ExVPN/releases/tag/v0.1.16",
+  "baseSourceCommit": "f7d7ce6192812097a99fb0cfbc2ef1ab1d807ba0",
+  "fixSourceCommit": "e5534000026378b93c232868901c8172ace11c98",
+  "notesSourceCommit": "b4b6a9fc947e32f13d910e6f26756dca8d711d88",
+  "stableReady": false,
+  "automatedTests": "passed",
+  "automatedEvidence": "fast-validation-v0.1.16.json",
+  "fullSeconds": 204.96,
+  "androidJvm": {
+    "task": ":app:testReleaseUnitTest",
+    "freshReports": true,
+    "tests": 74,
+    "suites": 12,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "newFullBuilds": {
+    "Windows": 1,
+    "Android": 1
+  },
+  "publicationByteBindings": "Exact base receipts, uploaded asset digests, signed feed read-back",
+  "publicRedownloadPerformed": false,
+  "targetedTunEvidence": "site-routing-tun-20261021.json",
+  "newDeviceRuntimePerformed": true,
+  "computerUse": false,
+  "hostNetworkChanged": false,
+  "catalog": {
+    "activePatches": 0,
+    "cloudCalls": false,
+    "sha256": "a109ef03d56373432119d58a11ccc4f761453a5d9f833f81b912079c982704c2",
+    "revision": 13
+  },
+  "feeds": {
+    "Windows": "0.1.16+38",
+    "Android": "0.1.16+38"
+  },
+  "packages": [
+    {
+      "file": "ExVPN-0.1.16-38-android.apk",
+      "sha256": "6ffaf29127918c8edf44979183f383e479aed009587115c58f51cccbcf7d33d1",
+      "bytes": 141352668
+    },
+    {
+      "file": "ExVPN-0.1.16-38-windows-x64-development.exe",
+      "sha256": "859b1e81d59909382ae09629a95a1e2b784b3577e0855299c3291168a74db658",
+      "bytes": 50665637
+    }
+  ],
+  "buildTimings": {
+    "androidBase": 404.13,
+    "jni": 46.23,
+    "windowsBase": 185.7,
+    "windowsService": 14.67
+  },
+  "independentPublicAudit": {
+    "path": "publication-audit-v0.1.16.json",
+    "sha256": "84ff176a4fe924ec8626706b26dad2133d340f561908f31a2a390179d36bef00",
+    "status": "passed",
+    "assetCount": 20,
+    "signedFeedsVerified": 2,
+    "catalogRevision": 13,
+    "downloadedOnlySmallJsonBytes": 3887,
+    "apkExeRedownloaded": false,
+    "newTestsBuildsInstalls": false
+  },
+  "limitations": [
+    "Preview; EXVPN-E1-014 and full E1 remain open",
+    "Routing baseline and bounded DNS refer to37; Android38 repeats only affected ECH/HTTPS/persistence subset",
+    "Windows TUN uses production controller harness with memory policy; installed SCM IPC and DPAPI not accepted",
+    "Physical Android, Windows direct IPv6, unknown/shared owner, app/site conflict, UDP reassociation and destructive storage recovery remain open",
+    "Android DNS observed active interval only; startup/shutdown not accepted",
+    "ECH synthetic routing proof is not cryptographic ECH negotiation",
+    "Fresh base OTA patch apply/rollback and Windows Authenticode remain open"
+  ],
+  "baseCapsuleReceipts": {
+    "Android": "538d73b9206023968b7f6ef694c51e783dd05489fdd24f5190be740c0288a483",
+    "Windows": "5d27234fe56c40caddbc938fbd22ed059721b2418ca32310b898b22c4c32991c"
+  },
+  "otaRoundtripVerified": false,
+  "otaRuntimeVerification": "deferred_to_user",
+  "releaseId": 419355816,
+  "publishedAt": "2026-10-21T09:11:36Z"
+}
