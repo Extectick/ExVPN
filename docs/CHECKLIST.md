@@ -1,6 +1,6 @@
 # ExVPN — проверяемый чеклист
 
-## Кандидат 0.1.15+37 — 2026-10-21
+## Публикация 0.1.15+37 Preview — 2026-10-21
 
 - [x] Один итоговый Full **12/12 PASS за158,28с**, source fingerprint unchanged.
   Ранее проверенные site-routing исходники интегрированы; UI11 и SemVer/build
@@ -9,7 +9,12 @@
 - [x] Android/Windows37 собраны по одному разу из `0d8c001`: JNI arm64/x64,
   Windows-служба/C++ UI, Android JVM и обязательные package/signature/notices/SBOM
   проверки прошли. Принятые пакеты не пересобираются.
-- [ ] Публикация Android/Windows37; это не системная приёмка новой политики сайтов/IP.
+- [x] Тег `v0.1.15` и точные пакеты Android/Windows37 опубликованы, оба подписанных
+  feed предлагают37; собственный OTA-каталог revision12 зарегистрировал новую базу.
+  Проверены хеши загруженных assets и feed read-back, без повторного скачивания
+  пакетов. [Выпуск](https://github.com/Extectick/ExVPN/releases/tag/v0.1.15),
+  [квитанция](evidence/release-v0.1.15.json). Android JVM:74 PASS,0 skipped.
+- [ ] Системная приёмка новой политики сайтов/IP и encrypted persistence runtime.
   **EXVPN-E1-014**, полный E1 и стабильный выпуск остаются открытыми.
 
 ## Сайты и IP — 2026-10-21

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "version": "0.1.15+37",
+  "uiRevision": 11,
+  "published": true,
+  "publicUrl": "https://github.com/Extectick/ExVPN/releases/tag/v0.1.15",
+  "baseSourceCommit": "0d8c001cd0f566104425c06ec8155d3eb57115c4",
+  "siteRoutingImplementation": "33e9166",
+  "previewNavigation": "c24a259",
+  "stableReady": false,
+  "automatedTests": "passed",
+  "automatedEvidence": "fast-validation-v0.1.15.json",
+  "fullSeconds": 158.28,
+  "androidJvm": {
+    "tests": 74,
+    "reports": 12,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "newFullBuilds": {
+    "Windows": 1,
+    "Android": 1
+  },
+  "publicationByteBindings": "Exact base receipts, uploaded asset digests, signed feed read-back",
+  "publicRedownloadPerformed": false,
+  "newDeviceRuntimePerformed": false,
+  "hostNetworkChanged": false,
+  "catalog": {
+    "cloudCalls": false,
+    "sha256": "899b14bd1e856c026d7cb7a9605ead315a561d6adad7d877145efb66e8fbf1e2",
+    "revision": 12,
+    "activePatches": 0
+  },
+  "feeds": {
+    "Windows": "0.1.15+37",
+    "Android": "0.1.15+37"
+  },
+  "packages": [
+    {
+      "file": "ExVPN-0.1.15-37-android.apk",
+      "sha256": "1ce917f8e929a66642b13be4b7e186f80f867112a261913815b3e2f32fb6af1c",
+      "bytes": 141344900
+    },
+    {
+      "file": "ExVPN-0.1.15-37-windows-x64-development.exe",
+      "sha256": "45293820730b5f782c8aadb31a4c7e06d077705704875b045926e2d5d08011c4",
+      "bytes": 50659031
+    }
+  ],
+  "buildTimings": {
+    "windowsBase": 174.98,
+    "androidBase": 399.43,
+    "jni": 32.88,
+    "windowsService": 14.55
+  },
+  "limitations": [
+    "Preview; site/IP TUN routing matrix and encrypted persistence runtime remain open under EXVPN-E1-014",
+    "Physical Android, new OTA apply/rollback, full E1 and Windows Authenticode remain open",
+    "Core protocol runtime evidence belongs to36 and is not relabelled as37 acceptance"
+  ]
+}
