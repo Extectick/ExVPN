@@ -4,10 +4,12 @@
 
 - [x] Один итоговый Full **12/12 PASS за158,28с**, source fingerprint unchanged.
   Ранее проверенные site-routing исходники интегрированы; UI11 и SemVer/build
-  согласованы. [Отчёт](evidence/fast-validation-v0.1.15.json). Рабочее дерево;
-  commit ожидается.
-- [ ] Подписанная упаковка и публикация Android/Windows37. JNI arm64/x64 и
-  Windows-служба собраны, но это не системная приёмка новой политики сайтов/IP.
+  согласованы. [Отчёт](evidence/fast-validation-v0.1.15.json). Точный кандидат
+  `0d8c001`.
+- [x] Android/Windows37 собраны по одному разу из `0d8c001`: JNI arm64/x64,
+  Windows-служба/C++ UI, Android JVM и обязательные package/signature/notices/SBOM
+  проверки прошли. Принятые пакеты не пересобираются.
+- [ ] Публикация Android/Windows37; это не системная приёмка новой политики сайтов/IP.
   **EXVPN-E1-014**, полный E1 и стабильный выпуск остаются открытыми.
 
 ## Сайты и IP — 2026-10-21
