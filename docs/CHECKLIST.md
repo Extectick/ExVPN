@@ -1,5 +1,17 @@
 # ExVPN — проверяемый чеклист
 
+## Выпуск 0.1.17+39 Preview — 2026-10-21
+
+- [x] TV-код `728f6f6`: Full12/12,500 app tests (9 TV),77 JVM, эмулятор и
+  снимки приняты ранее; повтор не требуется. Перед выпуском изменены только
+  SemVer/build/UI revision:0.1.17+39/UI12; проверяется согласованность трёх констант.
+- [ ] По одной новой подписанной Android-базе и Windows-базе, неизменное ядро `.6`,
+  package/signature/notices/SBOM и точные source/bytes bindings.
+- [ ] Immutable `v0.1.17`, публичные пакеты и подписанные full-update feeds39,
+  регистрация базы в каталоге OTA с сохранением истории.
+- [ ] Физический TV/пульт, API30 runtime, TV VPN/permission/lifecycle, новая
+  OTA apply/rollback, E1 и Windows Authenticode; выпуск остаётся Preview.
+
 ## Android TV / Google TV11+ — 2026-10-21
 
 - [ ] **EXVPN-E2-026** — Адаптация выбранного дизайна под TV и пульт.
