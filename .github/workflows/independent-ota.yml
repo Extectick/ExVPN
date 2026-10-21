@@ -110,6 +110,30 @@ jobs:
         run: ./scripts/release/prepare-shorebird.ps1 -Target $env:EXVPN_TARGET
       - name: Validate source driver after the pinned SDK is available
         run: ./scripts/ota/test-source-driver.ps1
+      - name: Prepare pinned binary diff tool
+        run: |
+          . ./scripts/release/shorebird-pipeline-lib.ps1
+          $policy=Get-ShorebirdPolicy
+          if ($policy.engineRevision -cne '4b936a0c03e13389ddfb1ac48823f187964975c2') { throw 'ota_diff_engine_pin_mismatch' }
+          $expected='32fba848388c6461b0a8b2cd3715fa106bba314202f1f8be5301cae9eb051746'
+          $tool=Join-Path (Get-Location).Path '.tools/shorebird-1.6.129/bin/cache/artifacts/patch/patch.exe'
+          if (Test-Path -LiteralPath $tool) {
+            if ((Get-FileHash -LiteralPath $tool -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expected) { throw 'ota_diff_cache_hash_mismatch' }
+          } else {
+            $private=New-ShorebirdPrivateDirectory (Get-Location).Path 'diff-prepare'
+            $archive=Join-Path $private 'patch.zip'
+            Invoke-WebRequest 'https://storage.googleapis.com/download.shorebird.dev/shorebird/4b936a0c03e13389ddfb1ac48823f187964975c2/patch-windows-x64.zip' -OutFile $archive
+            if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -cne '90c2ee059efe1f8cb3bb6f1c6fb961121e3d45f3793ee481b285d24caf44cbc2') { throw 'ota_diff_archive_hash_mismatch' }
+            $candidate=Join-Path $private 'patch.exe'
+            $zip=[IO.Compression.ZipFile]::OpenRead($archive)
+            try {
+              if ($zip.Entries.Count -ne 1 -or $zip.Entries[0].FullName -cne 'patch.exe' -or $zip.Entries[0].Length -ne 694272) { throw 'ota_diff_archive_entries_invalid' }
+              [IO.Compression.ZipFileExtensions]::ExtractToFile($zip.Entries[0],$candidate,$false)
+            } finally { $zip.Dispose() }
+            if ((Get-FileHash -LiteralPath $candidate -Algorithm SHA256).Hash.ToLowerInvariant() -cne $expected) { throw 'ota_diff_binary_hash_mismatch' }
+            New-Item -ItemType Directory -Path (Split-Path -Parent $tool) -Force | Out-Null
+            [IO.File]::Move($candidate,$tool,$false)
+          }
       - name: Download exact independent base and AOT inputs
         if: inputs.operation == 'patch' && inputs.base_run_id != ''
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
