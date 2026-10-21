@@ -13,6 +13,8 @@ import 'import_dialog.dart';
 import 'subscription_issues_dialog.dart';
 import 'settings_sheet.dart';
 import 'power_button.dart';
+import 'tv_presentation.dart';
+import 'adaptive_sheet.dart';
 import '../services/vpn_controller.dart';
 import '../services/vpn_permission_setup.dart';
 import '../services/subscription_persistence.dart';
@@ -817,6 +819,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool get _desktop => kIsWeb
       ? Uri.base.queryParameters['desktop'] == '1'
       : defaultTargetPlatform == TargetPlatform.windows;
+  bool get _tv => TvPresentation.of(context);
 
   ServerEntry? get _displayedServer {
     final activeId =
@@ -843,7 +846,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         return false;
       },
       child: SafeArea(
-        child: _desktop ? _desktopView() : _withToast(_mobileView()),
+        child: _tv
+            ? _withToast(_tvView())
+            : _desktop
+            ? _desktopView()
+            : _withToast(_mobileView()),
       ),
     ),
   );
@@ -1037,6 +1044,83 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
       ),
     ],
+  );
+
+  Widget _tvView() => Center(
+    child: FittedBox(
+      fit: BoxFit.contain,
+      child: SizedBox(
+        key: const Key('android-tv-home'),
+        width: 960,
+        height: 540,
+        child: Padding(
+          // Keep essential controls away from TV overscan edges.
+          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 26),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (widget.appUpdate case final update?)
+                AppUpdateStrip(
+                  state: update,
+                  onPressed: widget.onAppUpdate ?? () {},
+                ),
+              _header(desktop: false),
+              const SizedBox(height: 20),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(
+                      width: 276,
+                      child: Column(
+                        children: [
+                          Expanded(child: Center(child: _connection(218))),
+                          const SizedBox(height: 14),
+                          _currentConnection(),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 30),
+                    VerticalDivider(
+                      width: 1,
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                    const SizedBox(width: 30),
+                    Expanded(child: _scrollingServers()),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              ExcludeFocus(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.open_with_rounded, size: 15),
+                    const SizedBox(width: 8),
+                    Text(
+                      context.tr('Навигация'),
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    const SizedBox(width: 26),
+                    Text(
+                      'OK · ${context.tr('Выбрать')}',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    const SizedBox(width: 26),
+                    const Icon(Icons.keyboard_return_rounded, size: 15),
+                    const SizedBox(width: 8),
+                    Text(
+                      context.tr('Назад'),
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
   );
 
   Widget _minimalView() => Column(
@@ -1240,7 +1324,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               HeaderIconButton(
                 tooltip: context.tr('Настройки'),
                 key: const Key('settings-button'),
-                onPressed: () => showModalBottomSheet<void>(
+                onPressed: () => showAppSheet<void>(
                   context: context,
                   isScrollControlled: true,
                   showDragHandle:
@@ -1509,6 +1593,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       size: size,
       onPressed: _connect,
       enabled: !checking && (vpn == null || vpn.canChangeConnection),
+      autofocus: _tv,
       label: action,
       active: phase == VpnPhase.connected,
       connecting: vpn?.connecting ?? false,
@@ -1528,10 +1613,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return Material(
       color: scheme.onSurface.withValues(alpha: .035),
       borderRadius: BorderRadius.circular(13),
-      child: InkWell(
+      child: TvInkWell(
         key: const Key('current-connection'),
         borderRadius: BorderRadius.circular(13),
-        onTap: _showServerPicker,
+        onTap: _tv ? null : _showServerPicker,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           child: Row(
@@ -1568,11 +1653,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ],
                 ),
               ),
-              Icon(
-                CupertinoIcons.chevron_right,
-                size: 15,
-                color: scheme.onSurfaceVariant,
-              ),
+              if (!_tv)
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  size: 15,
+                  color: scheme.onSurfaceVariant,
+                ),
             ],
           ),
         ),
@@ -1811,7 +1897,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         expanded: group.expanded,
         child: Material(
           color: Colors.transparent,
-          child: InkWell(
+          child: TvInkWell(
             key: ValueKey('group-${group.id}'),
             borderRadius: BorderRadius.circular(8),
             onTap: () => widget.controller.toggleGroup(group.id),
@@ -1834,8 +1920,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       group.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: _tv ? 16 : 14,
                         fontWeight: FontWeight.w500,
                         letterSpacing: -.4,
                       ),
@@ -2231,7 +2317,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   )
                 : BorderSide.none,
           ),
-          child: InkWell(
+          child: TvInkWell(
             key: ValueKey('server-${group.id}-${server.id}'),
             borderRadius: BorderRadius.circular(11),
             onTap: _connectionBusy
@@ -2239,7 +2325,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 : () => _selectServer(group, server, onSelected: onSelected),
             child: ConstrainedBox(
               key: rowKey,
-              constraints: const BoxConstraints(minHeight: 48),
+              constraints: BoxConstraints(minHeight: _tv ? 58 : 48),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -2258,7 +2344,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: _tv ? 17 : 15,
                               height: 1.2,
                               fontWeight: FontWeight.w600,
                               letterSpacing: -0.45,

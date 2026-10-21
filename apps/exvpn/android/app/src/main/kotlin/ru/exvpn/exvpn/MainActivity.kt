@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -74,9 +75,17 @@ class MainActivity : FlutterActivity() {
     private val iconWorker = Executors.newSingleThreadExecutor()
     private val knownApplicationIcons = mutableSetOf<String>()
     private val pendingIcons = mutableSetOf<MethodChannel.Result>()
+    private fun televisionPresentation() = AndroidPresentation.isTelevision(resources.configuration.uiMode,
+        packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION),
+        packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK))
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
+        MethodChannel(messenger, "exvpn/presentation").setMethodCallHandler { call, result ->
+            if (call.method != "isTelevision") result.notImplemented()
+            else if (call.arguments != null) result.error("invalid_request", "No arguments expected", null)
+            else result.success(televisionPresentation())
+        }
         appUpdates = AndroidAppUpdates(this)
         appUpdatesChannel = MethodChannel(messenger, "exvpn/app_updates").also { channel ->
             channel.setMethodCallHandler { call, reply -> appUpdates?.handle(call.method, call.arguments, reply)
@@ -263,8 +272,11 @@ class MainActivity : FlutterActivity() {
                     VpnRuntime.saveApplicationRouting(this, routing); result.success(null)
                 }
                 "listApplications" -> {
-                    val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-                    val apps = packageManager.queryIntentActivities(launcher, 0).map { it.activityInfo.applicationInfo }
+                    val categories = if (televisionPresentation()) listOf(Intent.CATEGORY_LAUNCHER, Intent.CATEGORY_LEANBACK_LAUNCHER)
+                        else listOf(Intent.CATEGORY_LAUNCHER)
+                    val apps = categories.flatMap { category ->
+                        packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(category), 0)
+                    }.map { it.activityInfo.applicationInfo }
                         .distinctBy { it.packageName }.filter { it.packageName != packageName }.map { info ->
                             buildMap<String, Any> { put("id", info.packageName); put("displayName", packageManager.getApplicationLabel(info).toString())
                                 if ((packageManager.getPackagesForUid(info.uid)?.size ?: 0) > 1) put("sharedIdentityGroup", info.uid.toString()) }

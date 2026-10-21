@@ -297,7 +297,6 @@ void main() {
     await _open(tester, AppController.demo());
     final rows = find.byWidgetPredicate(
       (widget) =>
-          widget is InkWell &&
           widget.key is ValueKey<String> &&
           (widget.key! as ValueKey<String>).value.startsWith('server-'),
     );

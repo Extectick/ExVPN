@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import 'app_strings.dart';
 import 'appearance.dart';
+import 'tv_presentation.dart';
 
 class ThemeEditorSheet extends StatefulWidget {
   const ThemeEditorSheet({super.key, required this.appearance});
@@ -191,7 +192,7 @@ class _ThemeEditorSheetState extends State<ThemeEditorSheet> {
                           selected: field == _selected,
                           button: true,
                           label: _fieldLabel(context, field),
-                          child: InkWell(
+                          child: TvInkWell(
                             key: ValueKey('palette-field-${field.name}'),
                             borderRadius: BorderRadius.circular(10),
                             onTap: () => _selectField(field),

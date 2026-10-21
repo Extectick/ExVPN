@@ -23,6 +23,7 @@ import 'src/home_screen.dart';
 import 'src/appearance.dart';
 import 'src/app_strings.dart';
 import 'src/app_update_strip.dart';
+import 'src/tv_presentation.dart';
 
 void main() {
   if (!kIsWeb) {
@@ -38,6 +39,7 @@ class DesignPreviewApp extends StatefulWidget {
 }
 
 class _DesignPreviewAppState extends State<DesignPreviewApp> {
+  bool get _tvPreview => Uri.base.queryParameters['tv'] == '1';
   late final AppController _app = AppController.demo()
     ..updateSubscription(
       groupId: 'demo-main',
@@ -233,137 +235,170 @@ class _DesignPreviewAppState extends State<DesignPreviewApp> {
         supportedLocales: appSupportedLocales,
         localeListResolutionCallback: resolveAppLocale,
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        home: Scaffold(
-          backgroundColor: const Color(0xff0c0e0f),
-          body: SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.fromLTRB(24, 14, 24, 8),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Предпросмотр Windows',
-                        style: TextStyle(
-                          color: Color(0xffc4c6c8),
-                          fontSize: 12,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        'Макет $_previewVersion · сеть не меняется',
-                        style: const TextStyle(
-                          color: Color(0xff777c81),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
+        builder: (context, child) => TvAppPresentation(
+          enabled: _tvPreview,
+          child: child ?? const SizedBox.shrink(),
+        ),
+        home: _tvPreview
+            ? Scaffold(
+                body: _previewCanvas(
+                  const Size(960, 540),
+                  HomeScreen(
+                    key: ValueKey(_homeGeneration),
+                    controller: _app,
+                    vpn: _vpn,
+                    themeMode: _appearance.themeMode,
+                    onThemeChanged: (mode) => _appearance.setChoice(
+                      mode == ThemeMode.light
+                          ? ThemeChoice.light
+                          : ThemeChoice.dark,
+                    ),
+                    previewVersion: _previewVersion,
+                    previewBuild: appBuild,
+                    previewPowerAction: _togglePreviewPower,
+                    previewRefreshAction: _previewRefreshAll,
+                    previewDocumentLoader: _previewDocument,
+                    latencyProbe: _previewLatency,
+                    appUpdate: _appUpdate,
+                    onAppUpdate: _startAppUpdate,
                   ),
                 ),
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final canvas = _layout.canvasSize;
-                      final fit = math
-                          .min(
-                            (constraints.maxWidth - 48) / canvas.width,
-                            (constraints.maxHeight - 32) / canvas.height,
-                          )
-                          .clamp(0.1, 1.6);
-                      final scale = math.min(_zoom, fit);
-                      return Center(
-                        child: Container(
-                          width: canvas.width * scale,
-                          height: canvas.height * scale,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: const Color(0xff303438)),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x66000000),
-                                blurRadius: 36,
-                                offset: Offset(0, 14),
-                              ),
-                            ],
-                          ),
-                          child: AnimatedOpacity(
-                            opacity: _restartCurtain ? 0 : 1,
-                            duration: const Duration(milliseconds: 180),
-                            child: _previewCanvas(
-                              canvas,
-                              HomeScreen(
-                                key: ValueKey(_homeGeneration),
-                                initialDesktopLayout: _layout,
-                                previewVersion: _previewVersion,
-                                previewBuild: appBuild,
-                                controller: _app,
-                                vpn: _vpn,
-                                themeMode: _appearance.themeMode,
-                                onThemeChanged: (mode) => _appearance.setChoice(
-                                  mode == ThemeMode.light
-                                      ? ThemeChoice.light
-                                      : mode == ThemeMode.dark
-                                      ? ThemeChoice.dark
-                                      : ThemeChoice.system,
-                                ),
-                                previewPowerAction: _togglePreviewPower,
-                                previewRefreshAction: _previewRefreshAll,
-                                previewDocumentLoader: _previewDocument,
-                                latencyProbe: _previewLatency,
-                                appUpdate: _appUpdate,
-                                onAppUpdate: _startAppUpdate,
-                                onDesktopLayoutChanged: (mode) =>
-                                    setState(() => _layout = mode),
+              )
+            : Scaffold(
+                backgroundColor: const Color(0xff0c0e0f),
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(24, 14, 24, 8),
+                        child: Row(
+                          children: [
+                            const Text(
+                              'Предпросмотр Windows',
+                              style: TextStyle(
+                                color: Color(0xffc4c6c8),
+                                fontSize: 12,
                               ),
                             ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 4, 24, 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.zoom_out_rounded,
-                        size: 16,
-                        color: Color(0xff777c81),
-                      ),
-                      SizedBox(
-                        width: 140,
-                        child: Slider(
-                          min: .7,
-                          max: 1.4,
-                          value: _zoom,
-                          onChanged: (value) => setState(() => _zoom = value),
+                            const Spacer(),
+                            Text(
+                              'Макет $_previewVersion · сеть не меняется',
+                              style: const TextStyle(
+                                color: Color(0xff777c81),
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const Icon(
-                        Icons.zoom_in_rounded,
-                        size: 16,
-                        color: Color(0xff777c81),
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final canvas = _layout.canvasSize;
+                            final fit = math
+                                .min(
+                                  (constraints.maxWidth - 48) / canvas.width,
+                                  (constraints.maxHeight - 32) / canvas.height,
+                                )
+                                .clamp(0.1, 1.6);
+                            final scale = math.min(_zoom, fit);
+                            return Center(
+                              child: Container(
+                                width: canvas.width * scale,
+                                height: canvas.height * scale,
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: const Color(0xff303438),
+                                  ),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x66000000),
+                                      blurRadius: 36,
+                                      offset: Offset(0, 14),
+                                    ),
+                                  ],
+                                ),
+                                child: AnimatedOpacity(
+                                  opacity: _restartCurtain ? 0 : 1,
+                                  duration: const Duration(milliseconds: 180),
+                                  child: _previewCanvas(
+                                    canvas,
+                                    HomeScreen(
+                                      key: ValueKey(_homeGeneration),
+                                      initialDesktopLayout: _layout,
+                                      previewVersion: _previewVersion,
+                                      previewBuild: appBuild,
+                                      controller: _app,
+                                      vpn: _vpn,
+                                      themeMode: _appearance.themeMode,
+                                      onThemeChanged: (mode) =>
+                                          _appearance.setChoice(
+                                            mode == ThemeMode.light
+                                                ? ThemeChoice.light
+                                                : mode == ThemeMode.dark
+                                                ? ThemeChoice.dark
+                                                : ThemeChoice.system,
+                                          ),
+                                      previewPowerAction: _togglePreviewPower,
+                                      previewRefreshAction: _previewRefreshAll,
+                                      previewDocumentLoader: _previewDocument,
+                                      latencyProbe: _previewLatency,
+                                      appUpdate: _appUpdate,
+                                      onAppUpdate: _startAppUpdate,
+                                      onDesktopLayoutChanged: (mode) =>
+                                          setState(() => _layout = mode),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                      const SizedBox(width: 20),
-                      Flexible(
-                        child: Text(
-                          _previewVersion == '0.1.1'
-                              ? 'Макет обновлён до 0.1.1'
-                              : 'Нажмите верхнюю полоску, чтобы посмотреть обновление',
-                          style: const TextStyle(
-                            color: Color(0xff777c81),
-                            fontSize: 11,
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 4, 24, 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.zoom_out_rounded,
+                              size: 16,
+                              color: Color(0xff777c81),
+                            ),
+                            SizedBox(
+                              width: 140,
+                              child: Slider(
+                                min: .7,
+                                max: 1.4,
+                                value: _zoom,
+                                onChanged: (value) =>
+                                    setState(() => _zoom = value),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.zoom_in_rounded,
+                              size: 16,
+                              color: Color(0xff777c81),
+                            ),
+                            const SizedBox(width: 20),
+                            Flexible(
+                              child: Text(
+                                _previewVersion == '0.1.1'
+                                    ? 'Макет обновлён до 0.1.1'
+                                    : 'Нажмите верхнюю полоску, чтобы посмотреть обновление',
+                                style: const TextStyle(
+                                  color: Color(0xff777c81),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
     ),
   );

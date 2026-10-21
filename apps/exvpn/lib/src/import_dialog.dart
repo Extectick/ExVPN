@@ -14,6 +14,7 @@ import '../services/qr_sources.dart';
 import 'app_strings.dart';
 import 'subscription_issues_dialog.dart';
 import 'sliding_segments.dart';
+import 'tv_presentation.dart';
 
 class ImportDialog extends StatefulWidget {
   const ImportDialog({
@@ -443,6 +444,7 @@ class _ImportDialogState extends State<ImportDialog> {
                       ),
                     ),
                     IconButton(
+                      autofocus: TvPresentation.of(context),
                       tooltip: context.tr('Закрыть'),
                       onPressed: _loading ? null : () => Navigator.pop(context),
                       icon: const Icon(CupertinoIcons.xmark, size: 18),

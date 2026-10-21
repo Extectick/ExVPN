@@ -1,0 +1,14 @@
+<!-- SPDX-License-Identifier: Apache-2.0; uses the existing ExVPN icon and wordmark. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <size android:width="160dp" android:height="90dp" />
+            <solid android:color="#141617" />
+            <corners android:radius="6dp" />
+        </shape>
+    </item>
+    <item android:width="52dp" android:height="52dp" android:left="12dp" android:gravity="center_vertical|left">
+        <bitmap android:src="@mipmap/ic_launcher_foreground" android:gravity="fill" />
+    </item>
+    <item android:drawable="@drawable/tv_banner_wordmark" />
+</layer-list>

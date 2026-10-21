@@ -22,6 +22,8 @@ import 'theme_editor.dart';
 import 'updates_sheet.dart';
 import 'settings_navigation_row.dart';
 import 'modal_sheet_scroll_behavior.dart';
+import 'tv_presentation.dart';
+import 'adaptive_sheet.dart';
 
 class SettingsSheet extends StatefulWidget {
   const SettingsSheet({
@@ -171,21 +173,24 @@ class _SettingsSheetState extends State<SettingsSheet>
         ));
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => LogsSheet(
-          logs: logs,
-          diagnosticsBuilder: () => safeDiagnostics(
-            status: widget.vpn?.status,
-            platform: kIsWeb ? 'web' : defaultTargetPlatform.name,
-            coreVersion: widget.vpn?.core,
-            errorCode: widget.vpn?.lastErrorCode,
-            secureStorageAvailable: widget.persistence != null,
-            dataRevision: updates?.snapshot.revision,
-            dataChannel: updates?.channel,
-            dartUpdatesAvailable: dartUpdates?.snapshot?.available,
-            currentDartPatch: dartUpdates?.snapshot?.current,
-            nextDartPatch: dartUpdates?.snapshot?.next,
-            dartRestartRequired: dartUpdates?.restartRequired,
-            dartUpdateTrack: dartUpdates?.track,
+        builder: (context) => tvPageFrame(
+          context,
+          LogsSheet(
+            logs: logs,
+            diagnosticsBuilder: () => safeDiagnostics(
+              status: widget.vpn?.status,
+              platform: kIsWeb ? 'web' : defaultTargetPlatform.name,
+              coreVersion: widget.vpn?.core,
+              errorCode: widget.vpn?.lastErrorCode,
+              secureStorageAvailable: widget.persistence != null,
+              dataRevision: updates?.snapshot.revision,
+              dataChannel: updates?.channel,
+              dartUpdatesAvailable: dartUpdates?.snapshot?.available,
+              currentDartPatch: dartUpdates?.snapshot?.current,
+              nextDartPatch: dartUpdates?.snapshot?.next,
+              dartRestartRequired: dartUpdates?.restartRequired,
+              dartUpdateTrack: dartUpdates?.track,
+            ),
           ),
         ),
       ),
@@ -231,7 +236,7 @@ class _SettingsSheetState extends State<SettingsSheet>
 
   void _openThemeEditor(AppearanceController appearance) {
     appearance.setChoice(ThemeChoice.custom);
-    showModalBottomSheet<void>(
+    showAppSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -282,6 +287,7 @@ class _SettingsSheetState extends State<SettingsSheet>
                   ),
                 ),
                 IconButton(
+                  autofocus: TvPresentation.of(context),
                   tooltip: context.tr('Закрыть настройки'),
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.close),
@@ -378,7 +384,10 @@ class _SettingsSheetState extends State<SettingsSheet>
               onTap: widget.vpn != null
                   ? () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => ExclusionsSheet(vpn: widget.vpn!),
+                        builder: (context) => tvPageFrame(
+                          context,
+                          ExclusionsSheet(vpn: widget.vpn!),
+                        ),
                       ),
                     )
                   : () => _info(
@@ -394,7 +403,10 @@ class _SettingsSheetState extends State<SettingsSheet>
               onTap: widget.vpn != null
                   ? () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => SiteRoutingSheet(vpn: widget.vpn!),
+                        builder: (context) => tvPageFrame(
+                          context,
+                          SiteRoutingSheet(vpn: widget.vpn!),
+                        ),
                       ),
                     )
                   : () =>
@@ -423,10 +435,13 @@ class _SettingsSheetState extends State<SettingsSheet>
                       settings: const RouteSettings(
                         name: UpdatesSheet.routeName,
                       ),
-                      builder: (_) => UpdatesSheet(
-                        updates: updates,
-                        dartUpdates: dartUpdates,
-                        previewVersion: widget.previewVersion,
+                      builder: (context) => tvPageFrame(
+                        context,
+                        UpdatesSheet(
+                          updates: updates,
+                          dartUpdates: dartUpdates,
+                          previewVersion: widget.previewVersion,
+                        ),
                       ),
                     ),
                   );

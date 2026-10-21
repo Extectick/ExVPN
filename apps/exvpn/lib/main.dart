@@ -21,6 +21,8 @@ import 'services/app_updates.dart';
 import 'services/client_logs.dart';
 import 'src/app_update_strip.dart';
 import 'src/updates_sheet.dart';
+import 'src/tv_presentation.dart';
+import 'services/device_presentation.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +33,7 @@ Future<void> main() async {
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.windows);
+  final television = await isAndroidTelevision();
   var controller = demo ? AppController.demo() : AppController();
   SubscriptionStore? store;
   String? storageWarning;
@@ -55,6 +58,7 @@ Future<void> main() async {
       vpn: native ? VpnController(NativeVpnBridge()) : null,
       store: store,
       storageWarning: storageWarning,
+      television: television,
     ),
   );
 }
@@ -71,6 +75,7 @@ class ExVpnApp extends StatefulWidget {
     this.appUpdates,
     this.fullUpdatesBackend,
     this.appearanceController,
+    this.television = false,
   });
   final AppController controller;
   final VpnController? vpn;
@@ -83,6 +88,7 @@ class ExVpnApp extends StatefulWidget {
   /// Optional test/embedder backend; the app still owns the lifecycle barrier.
   final FullUpdatesBackend? fullUpdatesBackend;
   final AppearanceController? appearanceController;
+  final bool television;
   @override
   State<ExVpnApp> createState() => _ExVpnAppState();
 }
@@ -390,7 +396,10 @@ class _ExVpnAppState extends State<ExVpnApp> with WidgetsBindingObserver {
                   animation: widget.vpn ?? _appUpdates,
                   builder: (context, _) => AbsorbPointer(
                     absorbing: widget.vpn?.applicationRestartPending == true,
-                    child: child,
+                    child: TvAppPresentation(
+                      enabled: widget.television,
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   ),
                 ),
                 home: HomeScreen(

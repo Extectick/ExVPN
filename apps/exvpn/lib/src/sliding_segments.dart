@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'tv_presentation.dart';
+
 @immutable
 class SlidingSegment<T> {
   const SlidingSegment({
@@ -67,18 +69,20 @@ class SlidingSegments<T> extends StatelessWidget {
             (effectiveWidth - padding * 2 - gap * (items.length - 1)) /
             items.length;
         return CallbackShortcuts(
-          bindings: {
-            const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
-                _move(context, rtl ? 1 : -1),
-            const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
-                _move(context, rtl ? -1 : 1),
-            const SingleActivator(LogicalKeyboardKey.home): () {
-              if (onChanged != null) onChanged!(items.first.value);
-            },
-            const SingleActivator(LogicalKeyboardKey.end): () {
-              if (onChanged != null) onChanged!(items.last.value);
-            },
-          },
+          bindings: TvPresentation.of(context)
+              ? const {}
+              : {
+                  const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+                      _move(context, rtl ? 1 : -1),
+                  const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+                      _move(context, rtl ? -1 : 1),
+                  const SingleActivator(LogicalKeyboardKey.home): () {
+                    if (onChanged != null) onChanged!(items.first.value);
+                  },
+                  const SingleActivator(LogicalKeyboardKey.end): () {
+                    if (onChanged != null) onChanged!(items.last.value);
+                  },
+                },
           child: FocusTraversalGroup(
             child: SizedBox(
               width: effectiveWidth,
@@ -156,7 +160,7 @@ class SlidingSegments<T> extends StatelessWidget {
       child: ExcludeSemantics(
         child: Material(
           color: Colors.transparent,
-          child: InkWell(
+          child: TvInkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: onChanged == null ? null : () => onChanged!(item.value),
             child: Padding(

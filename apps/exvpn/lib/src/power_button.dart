@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import 'app_strings.dart';
 import 'theme.dart';
+import 'tv_presentation.dart';
 
 /// Accessible connection action with one shared centre for all artwork.
 /// The image's transparent margin is compensated without cropping its rim.
@@ -19,6 +20,7 @@ class PowerButton extends StatefulWidget {
     this.connecting = false,
     this.failed = false,
     this.enabled = true,
+    this.autofocus = false,
   }) : assert(size > 0);
 
   final double size;
@@ -32,6 +34,7 @@ class PowerButton extends StatefulWidget {
   /// disconnect action and distinguish it from a clean inactive button.
   final bool failed;
   final bool enabled;
+  final bool autofocus;
 
   @override
   State<PowerButton> createState() => _PowerButtonState();
@@ -50,7 +53,9 @@ class _PowerButtonState extends State<PowerButton>
       // shortcuts and accidentally run the action again.
       if (event is KeyRepeatEvent &&
           (event.logicalKey == LogicalKeyboardKey.enter ||
-              event.logicalKey == LogicalKeyboardKey.space)) {
+              event.logicalKey == LogicalKeyboardKey.space ||
+              event.logicalKey == LogicalKeyboardKey.select ||
+              event.logicalKey == LogicalKeyboardKey.gameButtonA)) {
         return KeyEventResult.handled;
       }
       return KeyEventResult.ignored;
@@ -72,6 +77,13 @@ class _PowerButtonState extends State<PowerButton>
   @override
   void didUpdateWidget(PowerButton oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.autofocus && widget.enabled && !oldWidget.enabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && FocusScope.of(context).focusedChild == null) {
+          _focusNode.requestFocus();
+        }
+      });
+    }
     if (oldWidget.connecting != widget.connecting ||
         oldWidget.active != widget.active ||
         oldWidget.failed != widget.failed) {
@@ -268,8 +280,10 @@ class _PowerButtonState extends State<PowerButton>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                width: 1.5,
-                color: symbolColor.withValues(alpha: _focused ? .65 : 0),
+                width: TvPresentation.of(context) ? 2.5 : 1.5,
+                color: TvPresentation.of(context)
+                    ? scheme.primary.withValues(alpha: _focused ? 1 : 0)
+                    : symbolColor.withValues(alpha: _focused ? .65 : 0),
               ),
             ),
           ),
@@ -325,6 +339,7 @@ class _PowerButtonState extends State<PowerButton>
           : widget.elapsedLabel,
       onTap: widget.enabled ? _activate : null,
       child: FocusableActionDetector(
+        autofocus: widget.autofocus,
         enabled: widget.enabled,
         focusNode: _focusNode,
         mouseCursor: SystemMouseCursors.basic,

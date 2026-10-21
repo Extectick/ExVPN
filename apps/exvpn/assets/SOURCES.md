@@ -13,3 +13,8 @@ Recorded 2026-10-16. No provider data or real subscription credentials are asset
 - QR import: file_selector 1.1.0 and zxing2 0.2.4 (BSD-3-Clause); installed package licenses preserved as `licenses/FileSelector.txt` and `licenses/ZXing2.txt`. Synthetic QR fixtures contain no provider credentials.
 
 All fonts, icons and flags are packaged locally; the UI does not contact font/image CDNs at runtime. The web verification build uses `--no-web-resources-cdn` to package the Flutter renderer locally as well.
+
+Android TV launcher banner: `android/app/src/main/res/drawable/tv_banner.xml`
+reuses the existing ExVPN launcher foreground. `tv_banner_wordmark.xml` contains
+vector outlines of the bundled OFL Inter font, generated reproducibly by
+`scripts/design/generate-tv-banner.ps1`; no new third-party asset or dependency.

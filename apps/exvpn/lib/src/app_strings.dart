@@ -72,6 +72,39 @@ class AppStrings {
 const _languages = ['en', 'kk', 'de', 'fr', 'es', 'pt', 'tr', 'zh', 'ar'];
 
 final Map<String, List<String>> _catalog = {
+  'Навигация': [
+    'Navigation',
+    'Шарлау',
+    'Navigation',
+    'Navigation',
+    'Navegación',
+    'Navegação',
+    'Gezinme',
+    '导航',
+    'التنقل',
+  ],
+  'Выбрать': [
+    'Select',
+    'Таңдау',
+    'Auswählen',
+    'Choisir',
+    'Seleccionar',
+    'Selecionar',
+    'Seç',
+    '选择',
+    'اختيار',
+  ],
+  'Назад': [
+    'Back',
+    'Артқа',
+    'Zurück',
+    'Retour',
+    'Atrás',
+    'Voltar',
+    'Geri',
+    '返回',
+    'رجوع',
+  ],
   ...siteRoutingTranslations,
   'Не поддерживается': [
     'Not supported',
