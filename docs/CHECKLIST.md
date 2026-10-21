@@ -36,6 +36,12 @@
   - [x] Android OTA patch1/UI13 к0.1.17+39: ARM64 иx64, RSA и hashes проверены,
     immutable `ota-0.1.17-39-p1`, каталог revision15 опубликован и прочитан обратно.
     421,65с AOT, новых APK/EXE для этого исправления нет; Windows остаётся UI12.
+  - [ ] Повторное применение OTA не подтверждено: установленный подписанный
+    Android39 на API36 вернул `patch_operation_failed` при проверке, до staging.
+    SDK доступен, current/next=null, остался UI12. Анонимный публичный каталог15
+    HTTP200/signature/hash PASS; причину отказа клиента не установили. На стенде
+    также был SystemUI ANR, закрытый через Wait; TLS/источники OTA не ослаблялись.
+    [Попытка](evidence/phone-tablet-20261021/ota-runtime-attempt.json).
   - [ ] Физический телефон/планшет; E1 и стабильная приёмка остаются открытыми.
   [Контракт и ограничения](ANDROID_MOBILE_LAYOUT.md),
   [runtime](evidence/phone-tablet-20261021/runtime.json),

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "version": "0.1.17+39",
+  "patchNumber": 1,
+  "uiRevisionExpected": 13,
+  "uiRevisionObserved": 12,
+  "scope": "Exact signed Android39 base on owned API36 x64 AVD; production update path",
+  "published": true,
+  "runtimeApplyVerified": false,
+  "runtimeRollbackPerformed": false,
+  "updaterAvailable": true,
+  "currentPatch": null,
+  "nextPatch": null,
+  "clientErrors": [
+    {
+      "elapsedMs": 1166,
+      "source": "dartUpdates",
+      "errorCode": "operationFailed"
+    },
+    {
+      "elapsedMs": 1166,
+      "source": "appUpdates",
+      "errorCode": "patch_operation_failed"
+    },
+    {
+      "elapsedMs": 57200,
+      "source": "dartUpdates",
+      "errorCode": "operationFailed"
+    },
+    {
+      "elapsedMs": 57200,
+      "source": "appUpdates",
+      "errorCode": "patch_operation_failed"
+    },
+    {
+      "elapsedMs": 134037,
+      "source": "dartUpdates",
+      "errorCode": "operationFailed"
+    },
+    {
+      "elapsedMs": 134037,
+      "source": "appUpdates",
+      "errorCode": "patch_operation_failed"
+    },
+    {
+      "elapsedMs": 188368,
+      "source": "dartUpdates",
+      "errorCode": "operationFailed"
+    },
+    {
+      "elapsedMs": 188368,
+      "source": "appUpdates",
+      "errorCode": "patch_operation_failed"
+    }
+  ],
+  "rootCause": "undetermined; failed in check before patch download/staging",
+  "anonymousPublicCatalog": {
+    "sha256": "44128bd00c12e3c95f998b4da344b25991ed423af9aafc718e6fef458d0817ab",
+    "matchesPublished": true,
+    "revision": 15,
+    "signatureVerified": true,
+    "bytes": 5567,
+    "httpStatus": 200
+  },
+  "stand": {
+    "hostNetworkChanged": false,
+    "systemUiAnrObserved": true,
+    "systemUiRecoveredByWait": true,
+    "computerUse": false,
+    "egressProxy": "temporary emulator TCP CONNECT proxy only",
+    "tlsVerificationBypassed": false
+  },
+  "nativeVpnChanged": false,
+  "physicalAndroidTested": false
+}
