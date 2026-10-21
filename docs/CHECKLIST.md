@@ -1,5 +1,24 @@
 # ExVPN — проверяемый чеклист
 
+## Android TV / Google TV11+ — 2026-10-21
+
+- [ ] **EXVPN-E2-026** — Адаптация выбранного дизайна под TV и пульт.
+  - [x] Явное native TV-определение, двухколоночный UI, крупный текст/фокус,
+    D-pad/OK/Back, центральные настройки, TV launcher/banner; phone/Windows
+    presentation сохраняется.77 Android JVM tests PASS, включая3 новых TV tests.
+  - [x] Android TV API36,1920×1080: запуск из launcher, выбор/раскрытие/прокрутка
+    подписок, темы, настройки, TV-приложения в исключениях, экранная клавиатура
+    и возврат проверены keyevents без мыши. Только синтетический demo, без VPN.
+  - [x] Финальный Full12/12 PASS за259,29с,500 app tests (9 TV), analyzer clean,
+    source fingerprint unchanged. Итоговый demo APK `3838986c…990b76` совпал с
+    установленным; форма стартует на крестике без клавиатуры, Back возвращает
+    фокус кнопке добавления. [Full](evidence/android-tv-validation.json),
+    [runtime](evidence/android-tv-runtime.json).
+  - [ ] Физический TV/пульт и runtime API30, VPN/permission/lifecycle, новый
+    Android base/release. E1 и общая стабильность не закрываются.
+  [Контракт](ANDROID_TV.md); исходники
+  `728f6f6cc9e75e6af41b1477dc96ee58c2cebbc9`,2026-10-21.
+
 ## Публикация 0.1.16+38 Preview — 2026-10-21
 
 - [x] Один итоговый Full12/12 PASS за204,96с, source unchanged; исходники

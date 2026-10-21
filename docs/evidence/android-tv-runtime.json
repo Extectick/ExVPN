@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-10-21T17:12:19.5107096+07:00",
+  "source": "728f6f6cc9e75e6af41b1477dc96ee58c2cebbc9",
+  "scope": "Android TV UI and remote navigation only; synthetic demo; no VPN traffic acceptance",
+  "device": {
+    "input": "adb keyevents only; no Computer Use, tap or swipe",
+    "api": 36,
+    "ownedAvd": "ExVPN_TV_API36",
+    "resolution": "1920x1080",
+    "densityDpi": 320,
+    "image": "system-images;android-36;android-tv;x86_64",
+    "serial": "emulator-5592",
+    "leanbackFeature": true,
+    "televisionFeature": true
+  },
+  "artifacts": {
+    "initialDemo": {
+      "jvmSkipped": 0,
+      "screenshots": [
+        "android-tv-home-dark.png",
+        "android-tv-selected-light.png",
+        "android-tv-settings-dark.png",
+        "android-tv-keyboard.png",
+        "android-tv-launcher.png"
+      ],
+      "jvmTests": 77,
+      "jvmFailures": 0,
+      "sha256": "7e2357bc5b002a30cf456e260f20262f93c08b1a28aa1c3bce4570b7587bbb44"
+    },
+    "finalDemo": {
+      "version": "0.1.16+38 development demo; not a release or OTA base",
+      "screenshots": [
+        "android-tv-import-light.png"
+      ],
+      "installedSha256Matches": true,
+      "dartOnlyDelta": "Import form close autofocus",
+      "sha256": "3838986c6e04941e6a15ba3d9b62ead16b591e746df105a8c26c743db3990b76"
+    }
+  },
+  "nativeInputs": [
+    {
+      "sha256": "ebe86b3fed8ff53df54431a9ba0a752a16a92723a5d33d6a4eec1a505673f770",
+      "path": "apps/exvpn/android/app/src/main/kotlin/ru/exvpn/exvpn/AndroidPresentation.kt"
+    },
+    {
+      "sha256": "74e5285d1b54b9ad5248eb921b01eb5f430f7938c0dbbfd6a89a463a785b54ef",
+      "path": "apps/exvpn/android/app/src/main/kotlin/ru/exvpn/exvpn/MainActivity.kt"
+    },
+    {
+      "sha256": "cb4ce0c610dcd94fd462da39547018c5938627377628b635bf96cf5c02b6f42c",
+      "path": "apps/exvpn/android/app/src/main/AndroidManifest.xml"
+    }
+  ],
+  "observations": {
+    "settingsCentered": true,
+    "importInitialCloseFocusOnFinalApk": true,
+    "systemBackRestoredAddFocusOnFinalApk": true,
+    "applicationCrashOrFlutterOverflowMarkers": 0,
+    "importKeyboardShownWithOk": true,
+    "inputMethodReportedInputShown": true,
+    "launchedViaRemoteFromLeanbackLauncher": true,
+    "serverSelectedViaOk": "synthetic backup node; selected card and check mark both updated",
+    "keyboardHiddenOnFinalImportOpen": true,
+    "launcherBannerVisible": true,
+    "automaticTvPresentation": true,
+    "listScrolledWithDpad": true,
+    "pinnedListActions": true,
+    "themeChangedWithArrowsThenOk": true,
+    "leanbackApplicationsListed": "Live TV visible with icon; shared-UID settings entry disabled",
+    "initialPowerFocus": true,
+    "draftDiscardedWithBack": true
+  },
+  "notVerified": [
+    "physical TV and hardware remote",
+    "Android TV API30 runtime",
+    "VPN permission, real TUN and lifecycle on TV",
+    "TV OTA acceptance",
+    "performance on consumer set-top boxes"
+  ],
+  "release": "No tag, published package or update feed changed",
+  "validation": {
+    "finalFull": "12/12 passed; source unchanged",
+    "appTests": 500,
+    "tvTests": 9,
+    "analyzer": "clean",
+    "durationSeconds": 259.29,
+    "initialFull": "11/12 lanes passed; 499 app tests passed, one stale InkWell-type finder failed",
+    "correction": "Public server key finder; original mobile 48-52px bounds retained",
+    "finalFullReport": "android-tv-validation.json",
+    "nativeTestsNotRepeated": "Native code unchanged after first JVM run; only Dart import-close autofocus changed",
+    "webPreview": "First debug web-server exhausted memory; owned TV emulator stopped after QA and preview restarted separately"
+  }
+}
