@@ -127,7 +127,8 @@ void main() {
         backend: DisabledDataUpdatesBackend(),
       );
       final backend = FakeDartUpdates()
-        ..saved = const DartPatchSnapshot(available: true, current: 4);
+        ..saved = const DartPatchSnapshot(available: true, current: 4)
+        ..nextStatus = DartUpdateStatus.restartRequired;
       final dart = DartUpdatesController(backend: backend);
       addTearDown(data.dispose);
       addTearDown(dart.dispose);

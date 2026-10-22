@@ -20,6 +20,7 @@ class FakeFullUpdates implements FullUpdatesBackend {
   int checks = 0, downloads = 0, handoffs = 0, restarts = 0, cancels = 0;
   bool disposed = false;
   FullUpdateHandoff handoffResult = FullUpdateHandoff.exitUi;
+  final downloadedVersions = <String>[];
   Completer<FullUpdateHandoff>? pendingHandoff;
   @override
   Future<FullUpdateOffer?> check() async {
@@ -34,6 +35,7 @@ class FakeFullUpdates implements FullUpdatesBackend {
     required FullUpdateProgressCallback onProgress,
   }) async {
     downloads++;
+    downloadedVersions.add(selected.version);
     progress = onProgress;
     if (downloadError != null) throw downloadError!;
     return pendingDownload == null ? selected : await pendingDownload!.future;
@@ -69,16 +71,34 @@ class FakeFullUpdates implements FullUpdatesBackend {
   void dispose() => disposed = true;
 }
 
+class ResumableFullUpdates extends FakeFullUpdates
+    implements FullUpdatesResumeBackend {
+  FullUpdateResumeState? restored;
+  final operations = <String>[];
+  @override
+  Future<FullUpdateOffer?> check() {
+    operations.add('check');
+    return super.check();
+  }
+
+  @override
+  Future<FullUpdateResumeState?> resume() async {
+    operations.add('resume');
+    return restored;
+  }
+}
+
 class FakePatchUpdates implements DartUpdatesBackend {
   @override
   String get track => 'beta';
   @override
   String? get disabledReason => null;
   DartPatchSnapshot saved = const DartPatchSnapshot(available: false);
-  DartUpdateStatus status = DartUpdateStatus.outdated;
+  DartUpdateStatus? status;
   Completer<DartPatchSnapshot>? pendingDownload;
   int reads = 0, checks = 0, downloads = 0;
   DartPatchSnapshot? checked;
+  DartUpdatesFailure? downloadError;
   @override
   Future<DartPatchSnapshot> read() async {
     reads++;
@@ -89,12 +109,19 @@ class FakePatchUpdates implements DartUpdatesBackend {
   Future<DartUpdateCheck> check() async {
     checks++;
     saved = checked ?? saved;
-    return DartUpdateCheck(status, saved);
+    return DartUpdateCheck(
+      status ??
+          (saved.restartRequired
+              ? DartUpdateStatus.restartRequired
+              : DartUpdateStatus.outdated),
+      saved,
+    );
   }
 
   @override
   Future<DartPatchSnapshot> download() async {
     downloads++;
+    if (downloadError != null) throw downloadError!;
     return pendingDownload == null ? saved : await pendingDownload!.future;
   }
 }
@@ -134,8 +161,210 @@ void main() {
         expect(updates.phase, AppUpdateStatePhase.restartReady);
         await updates.onResume();
         await updates.check();
-        expect(full.checks, 1);
+        expect(full.checks, 2);
         expect(full.handoffs, 0);
+      },
+    );
+
+    for (final ready in [true, false]) {
+      test(
+        'latest full release supersedes an older ${ready ? 'ready' : 'partial'} download',
+        () async {
+          updates.dispose();
+          const old = FullUpdateOffer(version: '0.1.2+24', sizeBytes: 90);
+          const latest = FullUpdateOffer(version: '0.1.17+39', sizeBytes: 120);
+          final backend = ResumableFullUpdates()
+            ..available = latest
+            ..restored = FullUpdateResumeState(offer: old, ready: ready);
+          updates = AppUpdatesController(
+            fullBackend: backend,
+            dartUpdates: dart,
+          );
+          await updates.initialize();
+          expect(backend.operations, ['check', 'resume']);
+          expect(updates.availableVersion, latest.version);
+          expect(updates.phase, AppUpdateStatePhase.available);
+          expect(backend.downloads, 0);
+          expect(backend.handoffs, 0);
+          await updates.download();
+          expect(backend.downloadedVersions, [latest.version]);
+          expect(updates.availableVersion, latest.version);
+        },
+      );
+    }
+
+    test('matching signed job is resumed after checking latest without installer handoff', () async {
+      updates.dispose();
+      final backend = ResumableFullUpdates()
+        ..restored = const FullUpdateResumeState(offer: offer, ready: true);
+      updates = AppUpdatesController(fullBackend: backend, dartUpdates: dart);
+      await updates.initialize();
+      expect(backend.operations, ['check', 'resume']);
+      expect(updates.phase, AppUpdateStatePhase.restartReady);
+      expect(backend.downloads, 0);
+      expect(backend.handoffs, 0);
+    });
+
+    test(
+      'a prepared package does not hide later releases on a genuine resume',
+      () async {
+        updates.dispose();
+        var clock = DateTime.utc(2026, 10, 22);
+        updates = AppUpdatesController(
+          fullBackend: full,
+          dartUpdates: dart,
+          now: () => clock,
+        );
+        await updates.initialize();
+        await updates.download();
+        full.available = const FullUpdateOffer(
+          version: '0.1.17+39',
+          sizeBytes: 120,
+        );
+        clock = clock.add(const Duration(minutes: 30));
+        await updates.onResume();
+        expect(updates.availableVersion, '0.1.17+39');
+        expect(updates.phase, AppUpdateStatePhase.available);
+        expect(full.handoffs, 0);
+        await updates.download();
+        expect(full.downloadedVersions, [offer.version, '0.1.17+39']);
+      },
+    );
+
+    test('a stale visible offer is refreshed before downloading', () async {
+      updates.dispose();
+      var clock = DateTime.utc(2026, 10, 22);
+      updates = AppUpdatesController(
+        fullBackend: full,
+        dartUpdates: dart,
+        now: () => clock,
+      );
+      await updates.initialize();
+      full.available = const FullUpdateOffer(
+        version: '0.1.17+39',
+        sizeBytes: 120,
+      );
+      clock = clock.add(const Duration(minutes: 30));
+      await updates.download();
+      expect(full.downloadedVersions, ['0.1.17+39']);
+      expect(full.handoffs, 0);
+    });
+
+    test('staged OTA is replaced by the latest patch without an intermediate restart', () async {
+      full.available = null;
+      patch.saved = const DartPatchSnapshot(
+        available: true,
+        current: 1,
+        next: 2,
+      );
+      patch.status = DartUpdateStatus.outdated;
+      await updates.initialize();
+      expect(patch.checks, 1);
+      expect(updates.phase, AppUpdateStatePhase.available);
+      expect(updates.kind, AppUpdateKind.patch);
+      expect(full.restarts, 0);
+      patch.saved = const DartPatchSnapshot(
+        available: true,
+        current: 1,
+        next: 9,
+      );
+      await updates.download();
+      expect(patch.downloads, 1);
+      expect(updates.phase, AppUpdateStatePhase.restartReady);
+      expect(updates.availableVersion, '9');
+      expect(full.restarts, 0);
+    });
+
+    test('failed latest full check cannot auto-install a cached intermediate patch', () async {
+      full.checkError = AppUpdatesFailure('network_failed');
+      patch.saved = const DartPatchSnapshot(
+        available: true,
+        current: 1,
+        next: 2,
+      );
+      await updates.initialize();
+      expect(updates.errorCode, 'network_failed');
+      expect(patch.checks, 0);
+      expect(full.restarts, 0);
+      expect(updates.canRestart, isFalse);
+    });
+
+    test(
+      'failed latest OTA download never restarts its cached intermediate',
+      () async {
+        full.available = null;
+        patch.saved = const DartPatchSnapshot(
+          available: true,
+          current: 1,
+          next: 2,
+        );
+        patch.status = DartUpdateStatus.outdated;
+        patch.downloadError = const DartUpdatesFailure(
+          DartUpdateError.downloadFailed,
+        );
+        await updates.initialize();
+        await updates.download();
+        expect(updates.phase, AppUpdateStatePhase.failed);
+        expect(updates.errorCode, 'patch_download_failed');
+        expect(updates.canRestart, isFalse);
+        expect(full.restarts, 0);
+        expect(dart.snapshot!.next, 2);
+      },
+    );
+
+    test('retrying an old prepared installer refreshes and installs the latest release', () async {
+      updates.dispose();
+      var clock = DateTime.utc(2026, 10, 22);
+      full.handoffError = AppUpdatesFailure('install_permission_required');
+      updates = AppUpdatesController(
+        fullBackend: full,
+        dartUpdates: dart,
+        now: () => clock,
+        beforeRestart: (_, handoff) async {
+          await handoff();
+          return true;
+        },
+      );
+      await updates.initialize();
+      await updates.download();
+      expect(updates.phase, AppUpdateStatePhase.failed);
+      full.available = const FullUpdateOffer(
+        version: '0.1.17+39',
+        sizeBytes: 120,
+      );
+      full.handoffError = null;
+      clock = clock.add(const Duration(hours: 12));
+      await updates.retry();
+      expect(full.downloadedVersions, [offer.version, '0.1.17+39']);
+      expect(full.handoffs, 2);
+    });
+
+    test(
+      'failed patch handoff stays suppressed after later fresh checks',
+      () async {
+        updates.dispose();
+        var clock = DateTime.utc(2026, 10, 22);
+        full.available = null;
+        full.restartError = AppUpdatesFailure('handoff_failed');
+        patch.saved = const DartPatchSnapshot(available: true, next: 2);
+        updates = AppUpdatesController(
+          fullBackend: full,
+          dartUpdates: dart,
+          now: () => clock,
+          beforeRestart: (_, handoff) async {
+            await handoff();
+            return true;
+          },
+        );
+        await updates.initialize();
+        expect(full.restarts, 1);
+        clock = clock.add(const Duration(hours: 1));
+        await updates.onResume();
+        clock = clock.add(const Duration(hours: 1));
+        await updates.onResume();
+        expect(patch.checks, 3);
+        expect(full.restarts, 1);
+        expect(updates.phase, AppUpdateStatePhase.restartReady);
       },
     );
 
@@ -144,7 +373,7 @@ void main() {
       () async {
         patch.saved = const DartPatchSnapshot(available: true, next: 2);
         await dart.initialize();
-        expect(updates.phase, AppUpdateStatePhase.restartReady);
+        expect(updates.canRestart, isFalse);
         await updates.onResume();
         expect(updates.phase, AppUpdateStatePhase.available);
         expect(updates.kind, AppUpdateKind.full);
@@ -496,10 +725,10 @@ void main() {
       expect(updates.canRestart, false);
     });
 
-    test('legacy manual patch check and download update strip without auto restart', () async {
+    test('legacy manual patch controls update the strip after full-feed arbitration', () async {
       full.available = null;
       patch.saved = const DartPatchSnapshot(available: true);
-      await dart.initialize();
+      await updates.initialize();
       await dart.check();
       expect(updates.phase, AppUpdateStatePhase.available);
       expect(updates.kind, AppUpdateKind.patch);

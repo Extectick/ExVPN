@@ -373,7 +373,8 @@ class AndroidFullUpdatesBackend
       _now = DateTime.now,
       _publicKey = null,
       _testContext = null {
-    _foreground = WidgetsBinding.instance.lifecycleState == null ||
+    _foreground =
+        WidgetsBinding.instance.lifecycleState == null ||
         WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     WidgetsBinding.instance.addObserver(this);
   }
@@ -429,6 +430,7 @@ class AndroidFullUpdatesBackend
     }
     _active();
   }
+
   Future<Object?> _native(
     String method, [
     Map<String, Object?>? arguments,
@@ -575,12 +577,25 @@ class AndroidFullUpdatesBackend
     if (raw == null) return null;
     if (raw is! Map ||
         raw.length != 4 ||
-        !raw.keys.toSet().containsAll({'state', 'received', 'total', 'error'})) {
+        !raw.keys.toSet().containsAll({
+          'state',
+          'received',
+          'total',
+          'error',
+        })) {
       _fail('invalid_response');
     }
-    final state = raw['state'], received = raw['received'], total = raw['total'];
+    final state = raw['state'],
+        received = raw['received'],
+        total = raw['total'];
     final error = raw['error'];
-    if (!{'queued', 'downloading', 'waiting', 'ready', 'failed'}.contains(state) ||
+    if (!{
+          'queued',
+          'downloading',
+          'waiting',
+          'ready',
+          'failed',
+        }.contains(state) ||
         received is! int ||
         received < 0 ||
         received > manifest.sizeBytes ||
@@ -600,7 +615,6 @@ class AndroidFullUpdatesBackend
   /// expiry are checked again; old bytes never make an expired offer installable.
   @override
   Future<FullUpdateResumeState?> resume() => _exclusive(() async {
-    if (_testContext != null) return null;
     final context = await _context();
     final receipt = File('${context.cacheDirectory.path}/offer.json');
     if (await FileSystemEntity.type(receipt.path, followLinks: false) !=
@@ -615,7 +629,9 @@ class AndroidFullUpdatesBackend
       if (failure.code == 'update_expired') return null;
       rethrow;
     }
-    if (!manifest.newerThan(context) || manifest.minSdk > context.sdk) return null;
+    if (!manifest.newerThan(context) || manifest.minSdk > context.sdk) {
+      return null;
+    }
     final status = _downloadStatus(
       await _native('downloadStatus', _downloadIdentity(manifest)),
       manifest,
@@ -681,11 +697,15 @@ class AndroidFullUpdatesBackend
         while (true) {
           _active();
           if (status == null) _fail('download_failed');
-          if (status.state == 'failed') _fail(status.error ?? 'download_failed');
-          onProgress(FullUpdateProgress(
-            received: status.received,
-            total: manifest.sizeBytes,
-          ));
+          if (status.state == 'failed') {
+            _fail(status.error ?? 'download_failed');
+          }
+          onProgress(
+            FullUpdateProgress(
+              received: status.received,
+              total: manifest.sizeBytes,
+            ),
+          );
           if (status.state == 'ready') {
             if (!await _validFile(file, manifest)) _fail('integrity_failed');
             return manifest.offer;

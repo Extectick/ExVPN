@@ -130,6 +130,43 @@ void main() {
     expect(config['keyId'], androidUpdateKeyId);
     expect(config['publicKey'], androidUpdatePublicKey);
   });
+
+  test(
+    'latest signed manifest supersedes a cached APK several versions behind',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(methods, (call) async {
+            calls.add(call);
+            if (call.method != 'downloadStatus') {
+              throw StateError('unexpected native operation');
+            }
+            final identity = call.arguments as Map;
+            return identity['build'] == 26
+                ? {
+                    'state': 'ready',
+                    'received': apk.length,
+                    'total': apk.length,
+                    'error': null,
+                  }
+                : null;
+          });
+      await backend.check();
+      expect((await backend.resume())!.offer.version, '0.1.5+26');
+      final latest = body()
+        ..['version'] = '0.1.17'
+        ..['build'] = 39;
+      latest['asset'] = {
+        ...latest['asset'] as Map,
+        'url': 'https://github.com/Extectick/ExVPN/releases/download/v0.1.17/ExVPN-0.1.17-39-android.apk',
+      };
+      transport.objects[Uri.parse(androidUpdateFeed)] = await envelope(latest);
+      final selected = await backend.check();
+      expect(selected!.version, '0.1.17+39');
+      expect(await backend.resume(), isNull);
+      expect((calls.last.arguments as Map)['build'], 39);
+      expect(calls.every((call) => call.method == 'downloadStatus'), isTrue);
+    },
+  );
   test(
     'cold restart uses only a parameterless native acknowledgement',
     () async {

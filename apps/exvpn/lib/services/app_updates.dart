@@ -45,9 +45,10 @@ class AppUpdatesController extends ChangeNotifier {
   bool _disposed = false;
   bool _busy = false;
   bool _initialized = false;
-  bool _fullCheckPerformed = false;
+  bool _patchSelectionVerified = false;
   bool _fullReady = false;
   bool _handoffAccepted = false;
+  bool _patchAutomaticRestartFailed = false;
   bool _patchAutoRestartPending = false;
   bool _cancelRequested = false;
   bool _foreground = true;
@@ -58,7 +59,7 @@ class AppUpdatesController extends ChangeNotifier {
   _Retry _retry = _Retry.check;
 
   bool get busy => _busy || _dart.busy;
-  bool get canCheck => !_disposed && !busy && !_prepared;
+  bool get canCheck => !_disposed && !busy && !_handoffAccepted;
   bool get canDownload =>
       !_disposed &&
       !busy &&
@@ -69,8 +70,20 @@ class AppUpdatesController extends ChangeNotifier {
       !busy &&
       _prepared &&
       !_handoffAccepted &&
-      phase != AppUpdateStatePhase.restarting;
-  bool get _prepared => _fullReady || (_offer == null && _dart.restartRequired);
+      (phase == AppUpdateStatePhase.restartReady ||
+          phase == AppUpdateStatePhase.blocked ||
+          _failedHandoff);
+  bool get _prepared =>
+      _fullReady ||
+      (_offer == null && _patchSelectionVerified && _dart.restartRequired);
+  bool get _failedHandoff =>
+      phase == AppUpdateStatePhase.failed && _retry == _Retry.restart;
+  bool get _checkDue {
+    final last = _lastCheck;
+    if (last == null) return true;
+    final elapsed = _now().difference(last);
+    return elapsed.isNegative || elapsed >= resumeCheckInterval;
+  }
 
   Future<void> initialize() async {
     if (_initialized || _disposed) return;
@@ -90,12 +103,9 @@ class AppUpdatesController extends ChangeNotifier {
     }
     _resumePending = false;
     if (!_initialized) return initialize();
-    if (_prepared) return onRestartOpportunity();
-    final last = _lastCheck;
-    final elapsed = last == null ? null : _now().difference(last);
-    if (elapsed != null &&
-        !elapsed.isNegative &&
-        elapsed < resumeCheckInterval) {
+    if (_handoffAccepted) return;
+    if (!_checkDue) {
+      if (_prepared) await onRestartOpportunity();
       return;
     }
     await check(userInitiated: false);
@@ -106,47 +116,59 @@ class AppUpdatesController extends ChangeNotifier {
   }
 
   /// A real lifecycle/safety transition may retry a deferred patch once. This
-  /// never polls, downloads again, reopens an APK installer, or retries a failed
-  /// native handoff. The caller must not generate an edge from our reservation.
+  /// refreshes stale feed metadata before restarting, never polls or reopens an
+  /// APK installer. The caller must not generate an edge from our reservation.
   Future<void> onRestartOpportunity() async {
     if (!_patchAutoRestartPending || !canRestart) return;
+    if (_checkDue) {
+      await check(userInitiated: false);
+      return;
+    }
     await restart();
   }
 
   Future<void> _preparePatch() async {
     _showPrepared();
     _patchAutoRestartPending =
-        autoRestartAfterDownload && beforeRestart != null;
+        autoRestartAfterDownload &&
+        beforeRestart != null &&
+        !_patchAutomaticRestartFailed;
     if (_patchAutoRestartPending) await _restartPrepared();
   }
 
-  Future<void> check({bool userInitiated = true}) => _exclusive(() async {
-    if (_prepared &&
-        phase == AppUpdateStatePhase.failed &&
-        _retry == _Retry.restart) {
-      return;
+  Future<void> check({bool userInitiated = true}) =>
+      _exclusive(() => _check(userInitiated: userInitiated));
+
+  Future<void> _check({required bool userInitiated}) async {
+    if (_handoffAccepted) return;
+    try {
+      await _checkLatest(userInitiated: userInitiated);
+    } finally {
+      _lastCheck = _now();
     }
-    if (_prepared && (_fullReady || _fullCheckPerformed || !_full.supported)) {
-      _showPrepared();
-      return;
-    }
-    _lastCheck = _now();
+  }
+
+  Future<void> _checkLatest({required bool userInitiated}) async {
+    final preparedOffer = _fullReady ? _offer : null;
     _retry = _Retry.check;
     _offer = null;
+    _fullReady = false;
+    _patchSelectionVerified = false;
+    _patchAutoRestartPending = false;
     _set(const AppUpdateState(phase: AppUpdateStatePhase.checking));
     String? fullFailure;
     if (_full.supported) {
-      // A shared Dart owner may already have read a staged patch before our
-      // first check. Still arbitrate a newer full release once; subsequent
-      // prepared resumes retain their existing no-network/no-handoff gate.
-      _fullCheckPerformed = true;
       try {
+        // The signed feed is authoritative. A persisted job/cache is only
+        // reusable after it matches today's offer, never the next upgrade hop.
+        final offer = await _full.check();
+        if (_disposed || _cancelRequested) return;
         final full = _full;
-        if (full is FullUpdatesResumeBackend) {
+        if (offer != null && full is FullUpdatesResumeBackend) {
           final restored = await (full as FullUpdatesResumeBackend).resume();
           if (_disposed || _cancelRequested) return;
-          if (restored != null) {
-            _offer = restored.offer;
+          if (restored != null && _sameOffer(restored.offer, offer)) {
+            _offer = offer;
             if (restored.ready) {
               _fullReady = true;
               _showPrepared();
@@ -162,10 +184,13 @@ class AppUpdatesController extends ChangeNotifier {
             return;
           }
         }
-        final offer = await _full.check();
-        if (_disposed || _cancelRequested) return;
         if (offer != null) {
           _offer = offer;
+          if (preparedOffer != null && _sameOffer(preparedOffer, offer)) {
+            _fullReady = true;
+            _showPrepared();
+            return;
+          }
           _set(
             AppUpdateState(
               phase: AppUpdateStatePhase.available,
@@ -182,26 +207,25 @@ class AppUpdatesController extends ChangeNotifier {
           _failed(fullFailure);
           return;
         }
+        if (fullFailure != 'not_configured') {
+          // An unreachable full feed does not prove this base's patch is the
+          // latest app. Retain cached bytes, but do not install an intermediate.
+          _failed(fullFailure, userInitiated: userInitiated);
+          return;
+        }
       }
     }
     if (_disposed || _cancelRequested) return;
     await _dart.initialize();
     if (_disposed || _cancelRequested) return;
-    if (_dart.restartRequired) {
-      await _preparePatch();
-      return;
-    }
     if (_dart.available) {
       await _dart.check();
       if (_disposed || _cancelRequested) return;
-      if (_dart.restartRequired) {
-        await _preparePatch();
-        return;
-      }
       if (_dart.error != null) {
         _failed(_patchCode(_dart.error!), userInitiated: userInitiated);
         return;
       }
+      _patchSelectionVerified = true;
       if (_dart.canDownload) {
         _set(
           const AppUpdateState(
@@ -209,6 +233,10 @@ class AppUpdatesController extends ChangeNotifier {
             kind: AppUpdateKind.patch,
           ),
         );
+        return;
+      }
+      if (_dart.restartRequired) {
+        await _preparePatch();
         return;
       }
     } else if (_dart.error != null) {
@@ -220,11 +248,28 @@ class AppUpdatesController extends ChangeNotifier {
     } else {
       _set(const AppUpdateState());
     }
-  });
+  }
+
+  bool _sameOffer(FullUpdateOffer left, FullUpdateOffer right) =>
+      left.version == right.version && left.sizeBytes == right.sizeBytes;
 
   Future<void> download() {
     if (!canDownload) return Future.value();
-    return _exclusive(() => _download(kind));
+    return _exclusive(() async {
+      // The strip may have been open for hours. Refresh before downloading,
+      // while keeping one owner and the short focus/resume coalescing window.
+      if (_checkDue || (kind == AppUpdateKind.patch && !_dart.canDownload)) {
+        await _check(userInitiated: true);
+      }
+      if (_disposed ||
+          _cancelRequested ||
+          (phase != AppUpdateStatePhase.available &&
+              !(phase == AppUpdateStatePhase.failed &&
+                  _retry == _Retry.download))) {
+        return;
+      }
+      await _download(kind);
+    });
   }
 
   Future<void> _download(
@@ -268,6 +313,9 @@ class AppUpdatesController extends ChangeNotifier {
       } else if (selectedKind == AppUpdateKind.patch) {
         await _dart.download();
         if (_disposed || _cancelRequested) return;
+        if (_dart.error != null) {
+          throw AppUpdatesFailure(_patchCode(_dart.error!));
+        }
         if (!_dart.restartRequired) {
           throw AppUpdatesFailure(
             _dart.error == null
@@ -295,7 +343,20 @@ class AppUpdatesController extends ChangeNotifier {
 
   Future<void> restart() {
     if (!canRestart) return Future.value();
-    return _exclusive(_restartPrepared);
+    return _exclusive(() async {
+      if (_checkDue) {
+        await _check(userInitiated: true);
+        if (phase == AppUpdateStatePhase.available) {
+          await _download(kind);
+          return;
+        }
+      }
+      if (phase == AppUpdateStatePhase.restartReady ||
+          phase == AppUpdateStatePhase.blocked ||
+          _failedHandoff) {
+        await _restartPrepared();
+      }
+    });
   }
 
   Future<void> _restartPrepared() async {
@@ -350,6 +411,10 @@ class AppUpdatesController extends ChangeNotifier {
       if (handedOff && outcome == FullUpdateHandoff.installerOpened) {
         _showPrepared();
       } else if (failure is AppUpdatesFailure && handoffStarted && !handedOff) {
+        if (selectedKind == AppUpdateKind.patch &&
+            failure.code != 'restart_blocked') {
+          _patchAutomaticRestartFailed = true;
+        }
         if (failure.code == 'restart_blocked') {
           _patchAutoRestartPending =
               selectedKind == AppUpdateKind.patch && autoRestartAfterDownload;
@@ -432,7 +497,16 @@ class AppUpdatesController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (_dart.restartRequired) {
+    if (_dart.error != null) {
+      _patchSelectionVerified = false;
+      if (kind == AppUpdateKind.patch) {
+        _failed(_patchCode(_dart.error!));
+      } else {
+        notifyListeners();
+      }
+      return;
+    }
+    if (_dart.restartRequired && _patchSelectionVerified) {
       _showPrepared();
     } else if (_dart.busy) {
       _set(
@@ -443,7 +517,7 @@ class AppUpdatesController extends ChangeNotifier {
           kind: AppUpdateKind.patch,
         ),
       );
-    } else if (_dart.canDownload) {
+    } else if (_dart.canDownload && _patchSelectionVerified) {
       _retry = _Retry.download;
       _set(
         const AppUpdateState(

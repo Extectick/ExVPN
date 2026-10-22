@@ -152,6 +152,29 @@ void main() {
       },
     );
 
+    test('latest downloadable patch wins over an older staged patch', () async {
+      backend.saved = const DartPatchSnapshot(
+        available: true,
+        current: 1,
+        next: 2,
+      );
+      await controller.initialize();
+      expect(controller.restartRequired, isTrue);
+      backend.nextStatus = DartUpdateStatus.outdated;
+      await controller.check();
+      expect(controller.restartRequired, isFalse);
+      expect(controller.canDownload, isTrue);
+      backend.saved = const DartPatchSnapshot(
+        available: true,
+        current: 1,
+        next: 9,
+      );
+      await controller.download();
+      expect(controller.snapshot!.next, 9);
+      expect(controller.restartRequired, isTrue);
+      expect(backend.downloads, 1);
+    });
+
     for (final target in <int?>[null, 2]) {
       test(
         'rollback from patch 4 to $target is pending until process restart',

@@ -36,8 +36,9 @@ class DartUpdatesController extends ChangeNotifier {
   bool get busy => operation != DartUpdateOperation.idle;
   bool get available => snapshot?.available == true;
   bool get restartRequired =>
-      snapshot?.restartRequired == true ||
-      status == DartUpdateStatus.restartRequired;
+      status != DartUpdateStatus.outdated &&
+      (snapshot?.restartRequired == true ||
+          status == DartUpdateStatus.restartRequired);
   bool get canCheck => !_disposed && available && !busy;
   bool get canDownload =>
       canCheck && !restartRequired && status == DartUpdateStatus.outdated;
