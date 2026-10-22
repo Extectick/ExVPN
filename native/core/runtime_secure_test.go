@@ -73,16 +73,19 @@ func TestLoopbackTLSProtocolsCarryVerifiedHTTPS(t *testing.T) {
 }
 
 func TestLoopbackVLESSRealityCarriesVerifiedHTTPS(t *testing.T) {
-	for _, flow := range []string{"", "xtls-rprx-vision"} {
-		name := flow
-		if name == "" {
-			name = "standard"
-		}
-		t.Run(name, func(t *testing.T) { loopbackRealityHTTPS(t, flow) })
+	for _, tc := range []struct{ name, flow, fingerprint, shortID string }{
+		{"standard", "", "", "0123456789abcdef"},
+		{"xtls-rprx-vision", "xtls-rprx-vision", "", "0123456789abcdef"},
+		{"edge-vision", "xtls-rprx-vision", "edge", "0123456789abcdef"},
+		{"edge-vision-empty-short-id", "xtls-rprx-vision", "edge", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			loopbackRealityHTTPS(t, tc.flow, tc.fingerprint, tc.shortID)
+		})
 	}
 }
 
-func loopbackRealityHTTPS(t *testing.T, flow string) {
+func loopbackRealityHTTPS(t *testing.T, flow, fingerprint, shortID string) {
 	t.Helper()
 	var hits atomic.Int32
 	target := localHTTPSTarget(t, &hits, true)
@@ -93,9 +96,9 @@ func loopbackRealityHTTPS(t *testing.T, flow string) {
 	p := fixture("vless")
 	p.Flow = flow
 	p.Server, p.Port = "127.0.0.1", freePort(t)
-	p.TLS = TLS{Enabled: true, ServerName: "example.com", Reality: &Reality{
+	p.TLS = TLS{Enabled: true, ServerName: "example.com", Fingerprint: fingerprint, Reality: &Reality{
 		PublicKey: base64.RawURLEncoding.EncodeToString(key.PublicKey().Bytes()),
-		ShortID:   "0123456789abcdef", SpiderX: "/",
+		ShortID:   shortID, SpiderX: "/",
 	}}
 	stream := object{"network": "tcp", "security": "reality", "realitySettings": object{
 		"target": strings.TrimPrefix(target.URL, "https://"), "serverNames": []string{p.TLS.ServerName},

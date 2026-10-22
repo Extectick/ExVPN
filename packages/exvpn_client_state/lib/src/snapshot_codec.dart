@@ -146,6 +146,7 @@ ConnectionProfile _profile(Object? value) {
     'tcpKeepAliveIdle',
     'tcpKeepAliveInterval',
     'wsEarlyDataHeaderName',
+    'quicParams',
   });
   final type = _text(t['type'], max: 16);
   final packetEncoding = _optional(p['packetEncoding'], max: 16);
@@ -161,7 +162,8 @@ ConnectionProfile _profile(Object? value) {
     _invalidSnapshot();
   }
   if ((p.containsKey('encryption') && p['encryption'] == null) ||
-      (t.containsKey('tcpSudoku') && t['tcpSudoku'] == null)) {
+      (t.containsKey('tcpSudoku') && t['tcpSudoku'] == null) ||
+      (t.containsKey('quicParams') && t['quicParams'] == null)) {
     _invalidSnapshot();
   }
   final encryption = p['encryption'] == null
@@ -178,6 +180,13 @@ ConnectionProfile _profile(Object? value) {
             'paddingMax',
           }),
         );
+  final quic = t['quicParams'] == null
+      ? null
+      : QuicOptions.fromJson(_object(t['quicParams'], QuicOptions.fields));
+  if (quic != null &&
+      (protocol != ProxyProtocol.hysteria2 || type != 'hysteria')) {
+    _invalidSnapshot();
+  }
   final tls = _object(p['tls'], {
     'enabled',
     'serverName',
@@ -300,6 +309,7 @@ ConnectionProfile _profile(Object? value) {
           ? null
           : _integer(t['tcpKeepAliveInterval'], 1, 86400),
       wsEarlyDataHeaderName: earlyDataHeader,
+      quicParams: quic,
     ),
     tls: TlsOptions(
       enabled: _boolean(tls['enabled']),

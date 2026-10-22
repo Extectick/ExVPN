@@ -39,15 +39,16 @@ type Profile struct {
 }
 
 type Transport struct {
-	Type                  string  `json:"type"`
-	Path                  string  `json:"path,omitempty"`
-	Host                  string  `json:"host,omitempty"`
-	ServiceName           string  `json:"serviceName,omitempty"`
-	Mode                  string  `json:"mode,omitempty"`
-	TCPSudoku             *Sudoku `json:"tcpSudoku,omitempty"`
-	TCPKeepAliveIdle      *int    `json:"tcpKeepAliveIdle,omitempty"`
-	TCPKeepAliveInterval  *int    `json:"tcpKeepAliveInterval,omitempty"`
-	WSEarlyDataHeaderName string  `json:"wsEarlyDataHeaderName,omitempty"`
+	Type                  string       `json:"type"`
+	Path                  string       `json:"path,omitempty"`
+	Host                  string       `json:"host,omitempty"`
+	ServiceName           string       `json:"serviceName,omitempty"`
+	Mode                  string       `json:"mode,omitempty"`
+	TCPSudoku             *Sudoku      `json:"tcpSudoku,omitempty"`
+	TCPKeepAliveIdle      *int         `json:"tcpKeepAliveIdle,omitempty"`
+	TCPKeepAliveInterval  *int         `json:"tcpKeepAliveInterval,omitempty"`
+	WSEarlyDataHeaderName string       `json:"wsEarlyDataHeaderName,omitempty"`
+	QuicParams            *QuicOptions `json:"quicParams,omitempty"`
 }
 
 type TLS struct {
@@ -94,7 +95,7 @@ func DecodeProfile(r io.Reader) (Profile, error) {
 		return Profile{}, CodeError("profile_invalid_schema")
 	}
 	var transportFields map[string]json.RawMessage
-	if json.Unmarshal(envelope["transport"], &transportFields) != nil || !onlyKeys(transportFields, "type", "path", "host", "serviceName", "mode", "tcpSudoku", "tcpKeepAliveIdle", "tcpKeepAliveInterval", "wsEarlyDataHeaderName") {
+	if json.Unmarshal(envelope["transport"], &transportFields) != nil || !onlyKeys(transportFields, "type", "path", "host", "serviceName", "mode", "tcpSudoku", "tcpKeepAliveIdle", "tcpKeepAliveInterval", "wsEarlyDataHeaderName", "quicParams") {
 		return Profile{}, CodeError("profile_invalid_schema")
 	}
 	if raw, ok := transportFields["tcpSudoku"]; ok {
@@ -248,6 +249,9 @@ func (p Profile) Validate() error {
 	}
 	if s := p.Transport.TCPSudoku; s != nil && (p.Protocol != "vless" || p.Transport.Type != "tcp" || (!p.TLS.Enabled && p.Encryption == "") || !s.valid()) {
 		return bad("invalid_sudoku")
+	}
+	if q := p.Transport.QuicParams; q != nil && (p.Protocol != "hysteria2" || p.Transport.Type != "hysteria" || !q.valid()) {
+		return bad("invalid_quic_parameters")
 	}
 	if p.UUID != "" && !oneOf(p.Protocol, "vless", "vmess") {
 		return bad("unexpected_uuid")

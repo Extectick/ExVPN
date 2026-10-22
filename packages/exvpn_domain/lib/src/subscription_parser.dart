@@ -267,10 +267,15 @@ final class SubscriptionParser {
       'mode',
       'encryption',
       'fm',
+      'headerType',
     };
     _checkKeys(q, allowed);
     if (protocol != ProxyProtocol.vless &&
-        ['flow', 'encryption', 'fm', 'pbk', 'sid', 'spx'].any(q.containsKey)) {
+        ['flow', 'encryption', 'pbk', 'sid', 'spx'].any(q.containsKey)) {
+      throw const _Rejected(ImportIssueCode.unsupportedFeature);
+    }
+    if (q.containsKey('fm') &&
+        !{ProxyProtocol.vless, ProxyProtocol.hysteria2}.contains(protocol)) {
       throw const _Rejected(ImportIssueCode.unsupportedFeature);
     }
     if (uri.queryParametersAll.values.any((values) => values.length > 1)) {
@@ -925,6 +930,12 @@ final class SubscriptionParser {
     if (!{'tcp', 'ws', 'grpc', 'xhttp', 'hysteria'}.contains(type)) {
       throw const _Rejected(ImportIssueCode.unsupportedFeature);
     }
+    // Explicit RAW/TCP default from common VLESS share-link exporters.
+    // A non-default camouflage header must never be discarded silently.
+    if (q.containsKey('headerType') &&
+        (type != 'tcp' || q['headerType'] != 'none')) {
+      throw const _Rejected(ImportIssueCode.unsupportedFeature);
+    }
     final path = _nonEmpty(q['path']);
     final host = _nonEmpty(q['host']);
     final service = _nonEmpty(q['serviceName']);
@@ -957,7 +968,12 @@ final class SubscriptionParser {
       host: host,
       serviceName: service,
       mode: mode,
-      tcpSudoku: q.containsKey('fm') ? _sudoku(q['fm']!) : null,
+      tcpSudoku: q.containsKey('fm') && type != 'hysteria'
+          ? _sudoku(q['fm']!)
+          : null,
+      quicParams: q.containsKey('fm') && type == 'hysteria'
+          ? _quic(q['fm']!)
+          : null,
       tcpKeepAliveIdle: socket['tcpKeepAliveIdle'] as int?,
       tcpKeepAliveInterval: socket['tcpKeepAliveInterval'] as int?,
       wsEarlyDataHeaderName: q['earlyDataHeaderName'],
@@ -966,6 +982,21 @@ final class SubscriptionParser {
 
   static VlessEncryption? _encryption(String? value) =>
       value == null || value == 'none' ? null : VlessEncryption.parse(value);
+
+  static QuicOptions _quic(String text) {
+    if (utf8.encode(text).length > 4096) {
+      throw const _Rejected(ImportIssueCode.invalidProfile);
+    }
+    final mask = _map(_decodeJson(text));
+    _checkKeys(mask, {'quicParams'});
+    final parameters = _map(mask['quicParams']);
+    _checkKeys(parameters, {...QuicOptions.fields, 'debug'});
+    if (parameters.containsKey('debug') && parameters['debug'] != false) {
+      throw const _Rejected(ImportIssueCode.unsupportedFeature);
+    }
+    parameters.remove('debug');
+    return QuicOptions.fromJson(parameters);
+  }
 
   static SudokuOptions _sudoku(String text) {
     if (utf8.encode(text).length > 16384) {
@@ -1009,6 +1040,10 @@ final class SubscriptionParser {
       password,
       wireguard,
     );
+    if (transport.quicParams != null &&
+        (protocol != ProxyProtocol.hysteria2 || transport.type != 'hysteria')) {
+      throw const _Rejected(ImportIssueCode.unsupportedFeature);
+    }
     if ((packetEncoding != null &&
             (packetEncoding != 'xudp' || protocol != ProxyProtocol.vless)) ||
         (transport.wsEarlyDataHeaderName != null &&

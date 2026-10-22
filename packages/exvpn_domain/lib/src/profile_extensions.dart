@@ -1,5 +1,62 @@
 import 'dart:convert';
 
+/// Bounded remote QUIC tuning, never arbitrary FinalMask configuration.
+final class QuicOptions {
+  QuicOptions._(Map<String, Object?> values)
+    : _values = Map.unmodifiable(values);
+  final Map<String, Object?> _values;
+  static const fields = {
+    'congestion',
+    'initStreamReceiveWindow',
+    'maxStreamReceiveWindow',
+    'initConnectionReceiveWindow',
+    'maxConnectionReceiveWindow',
+    'maxIdleTimeout',
+    'keepAlivePeriod',
+  };
+
+  factory QuicOptions.fromJson(Map<String, Object?> input) {
+    if (input.keys.any((key) => !fields.contains(key)) ||
+        input.values.any((value) => value == null)) {
+      _invalid();
+    }
+    final values = <String, Object?>{};
+    if (input.containsKey('congestion')) {
+      final congestion = input['congestion'];
+      if (!{'', 'bbr', 'reno'}.contains(congestion)) _invalid();
+      if (congestion != '') values['congestion'] = congestion;
+    }
+    for (final key in fields.where((key) => key != 'congestion')) {
+      if (!input.containsKey(key)) continue;
+      final value = input[key];
+      if (value is! int) _invalid();
+      final timer = key == 'maxIdleTimeout' || key == 'keepAlivePeriod';
+      final minimum = key == 'maxIdleTimeout'
+          ? 4
+          : key == 'keepAlivePeriod'
+          ? 2
+          : 16384;
+      final maximum = timer
+          ? (key == 'maxIdleTimeout' ? 120 : 60)
+          : (key.contains('Connection') ? 64 * 1024 * 1024 : 16 * 1024 * 1024);
+      if (value != 0 && (value < minimum || value > maximum)) _invalid();
+      if (value != 0) values[key] = value;
+    }
+    int resolved(String key, int fallback) => values[key] as int? ?? fallback;
+    final streamMax = resolved('maxStreamReceiveWindow', 8388608);
+    final connectionMax = resolved('maxConnectionReceiveWindow', 20971520);
+    if (resolved('initStreamReceiveWindow', 8388608) > streamMax ||
+        resolved('initConnectionReceiveWindow', 20971520) > connectionMax ||
+        streamMax > connectionMax ||
+        resolved('keepAlivePeriod', 0) >= resolved('maxIdleTimeout', 30)) {
+      _invalid();
+    }
+    return QuicOptions._(values);
+  }
+
+  Map<String, Object?> toJson() => Map.of(_values);
+}
+
 /// VLESS Encryption is a bounded key/padding grammar, never executable JSON.
 /// The value contains peer authentication material and must stay private.
 final class VlessEncryption {

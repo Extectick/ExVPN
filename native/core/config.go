@@ -169,6 +169,13 @@ func outbound(p Profile) object {
 		if fingerprint == "" {
 			fingerprint = "chrome"
 		}
+		// The pinned uTLS Edge_Auto is the obsolete Edge 85 hello and fails
+		// REALITY handshakes. Use the pinned modern Chromium hello for this
+		// browser alias only; peer keys, SNI and REALITY verification stay intact.
+		// This is deterministic compatibility, never a retry without protection.
+		if fingerprint == "edge" {
+			fingerprint = "chrome"
+		}
 		stream["realitySettings"] = object{"serverName": p.TLS.ServerName, "fingerprint": fingerprint, "publicKey": r.PublicKey, "shortId": r.ShortID, "spiderX": r.SpiderX}
 	}
 	switch p.Transport.Type {
@@ -192,6 +199,9 @@ func outbound(p Profile) object {
 	var settings object
 	if s := p.Transport.TCPSudoku; s != nil {
 		stream["finalmask"] = object{"tcp": []object{{"type": "sudoku", "settings": s}}}
+	}
+	if q := p.Transport.QuicParams; q != nil {
+		stream["finalmask"] = object{"quicParams": q}
 	}
 	protocol := p.Protocol
 	switch protocol {

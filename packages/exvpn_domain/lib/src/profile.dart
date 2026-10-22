@@ -85,6 +85,7 @@ final class Transport {
     this.tcpKeepAliveIdle,
     this.tcpKeepAliveInterval,
     this.wsEarlyDataHeaderName,
+    this.quicParams,
   });
   final String type;
   final String? path;
@@ -95,6 +96,7 @@ final class Transport {
   final int? tcpKeepAliveIdle;
   final int? tcpKeepAliveInterval;
   final String? wsEarlyDataHeaderName;
+  final QuicOptions? quicParams;
 
   Map<String, Object?> toJson() => {
     'type': type,
@@ -108,6 +110,7 @@ final class Transport {
     if (serviceName != null) 'serviceName': serviceName,
     if (mode != null) 'mode': mode,
     if (tcpSudoku != null) 'tcpSudoku': tcpSudoku!.toJson(),
+    if (quicParams != null) 'quicParams': quicParams!.toJson(),
   };
 }
 

@@ -2,11 +2,32 @@
 package exvpn
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"testing"
 
 	xrayTLS "github.com/xtls/xray-core/transport/internet/tls"
 )
+
+func TestRealityEdgeCompatibilityPreservesPeerAuthentication(t *testing.T) {
+	p := fixture("vless")
+	p.TLS.Fingerprint = "edge"
+	p.TLS.Reality = &Reality{
+		PublicKey: base64.RawURLEncoding.EncodeToString(append([]byte{1}, make([]byte, 31)...)),
+		ShortID:   "0123456789abcdef", SpiderX: "/",
+	}
+	settings := outbound(p)["streamSettings"].(object)["realitySettings"].(object)
+	if settings["fingerprint"] != "chrome" || settings["serverName"] != p.TLS.ServerName ||
+		settings["publicKey"] != p.TLS.Reality.PublicKey || settings["shortId"] != p.TLS.Reality.ShortID ||
+		settings["spiderX"] != p.TLS.Reality.SpiderX || p.TLS.Fingerprint != "edge" || len(settings) != 5 {
+		t.Fatal("Edge compatibility changed the profile or peer authentication")
+	}
+	p.TLS.Reality = nil
+	tls := outbound(p)["streamSettings"].(object)["tlsSettings"].(object)
+	if tls["fingerprint"] != "edge" || tls["allowInsecure"] != false {
+		t.Fatal("REALITY-specific compatibility changed ordinary TLS")
+	}
+}
 
 func TestQQFingerprintUsesPinnedCoreWithoutDisablingVerification(t *testing.T) {
 	p := fixture("vless")
