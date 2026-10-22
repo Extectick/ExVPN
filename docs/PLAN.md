@@ -1,5 +1,14 @@
 # ExVPN — план разработки
 
+## Параметры подписки — 2026-10-22
+
+`d07968c`, EXVPN-E3-016: строгая совместимость TCP `headerType=none`,
+Hysteria2 QUIC tuning и REALITY/Edge Chromium alias; импорт/Compile36/36,
+snapshot и локальный HTTPS PASS. Итоговый Full11/12: прежние MASQUE IPv6/UDP
+отказы открыты. Внешний VLESS не подтверждён, Hysteria2 нестабилен.
+Изменения требуют новой native-базы; APK/EXE/feeds не менялись, E1/stable не закрыт.
+[Контракт, результаты и границы](PROVIDER_TRANSPORT_COMPATIBILITY.md).
+
 ## Android TV: опубликованная база и OTA — 2026-10-22
 
 База0.1.17+39 Preview опубликована для Android/Windows. На точном подписанном

@@ -1,0 +1,817 @@
+{
+  "schemaVersion": 1,
+  "taskId": "EXVPN-E3-016",
+  "checkedAt": "2026-10-22T06:43:29.053836+00:00",
+  "sourceCommit": "d07968c98ed3e4ca95ac403d8ab379989ab14922",
+  "scope": "strict import, persistence, normalized native compile, synthetic HTTPS and external loopback SOCKS probes; no OS TUN or release acceptance",
+  "core": {
+    "module": "github.com/xtls/xray-core",
+    "version": "v1.260327.1-exvpn.6",
+    "unchangedPin": true,
+    "dependencyChanges": false
+  },
+  "input": {
+    "private": true,
+    "subscriptionHttpStatus": 200,
+    "bytes": 12724,
+    "records": 36,
+    "protocols": {
+      "vlessRealityVisionTcp": 34,
+      "hysteria2": 2
+    },
+    "before": {
+      "imported": 0,
+      "unsupported": 36
+    },
+    "after": {
+      "imported": 36,
+      "issues": 0
+    },
+    "vlessParameters": [
+      "headerType=none",
+      "fp=edge",
+      "security=reality",
+      "flow=xtls-rprx-vision"
+    ],
+    "hysteria2Parameters": [
+      "fm.quicParams"
+    ]
+  },
+  "normalizationParity": {
+    "records": 36,
+    "checks": {
+      "endpoint": 36,
+      "tls": 36,
+      "credentials": 36,
+      "transport": 34,
+      "flow": 34,
+      "fingerprint": 34,
+      "reality": 34,
+      "tuning": 2
+    },
+    "mismatches": {},
+    "allPreserved": true
+  },
+  "compatibility": {
+    "tcpNoneHeader": "neutral default canonicalized; non-none rejected",
+    "quic": "bounded typed fields; debug=false neutralized; debug=true and arbitrary masks rejected",
+    "realityEdge": "stored profile keeps edge; effective REALITY ClientHello uses pinned chrome because pinned Edge_Auto is obsolete Edge85; ordinary TLS edge unchanged",
+    "peerAuthenticationChanged": false
+  },
+  "behavioral": {
+    "finalFull": {
+      "status": "failed",
+      "durationSeconds": 171.3,
+      "sourceUnchanged": true,
+      "fingerprint": "c4699b95b79722ef6629fe61e2befad6b26ccb9c7d70dc8ca906d51215fb0a0d",
+      "passedLanes": [
+        "android",
+        "app",
+        "appupdater",
+        "ci",
+        "domain",
+        "installer",
+        "scripts",
+        "state",
+        "updates",
+        "windows",
+        "xray"
+      ],
+      "failedLanes": [
+        "core"
+      ]
+    },
+    "tests": {
+      "domain": 244,
+      "state": 94,
+      "app": 509,
+      "newDomain": 5,
+      "newState": 2,
+      "localHysteriaQuicForms": 2,
+      "localHysteriaGenerationsEach": 3,
+      "localRealityCases": 4
+    },
+    "initialFull": "initial test-only analyzer notices fixed; final Full rerun after native Edge compatibility changed",
+    "knownFailures": [
+      "TestMasqueCarriesVerifiedIPv4IPv6HTTPSAndStopsAcrossRuntimeGenerations: IPv6 HTTPS EOF",
+      "TestMasqueCarriesUDPAndTrustedDNSAcrossBothFamilies: UDP deadline exceeded"
+    ],
+    "unsafeInputsRejected": true,
+    "wrongTlsNameAndRealityKeyRejected": true
+  },
+  "external": {
+    "hostNetworkMutated": false,
+    "tcpReachability": {
+      "uniqueVlessEndpoints": 20,
+      "tcpReachable": 20,
+      "categories": {
+        "connected": 20
+      },
+      "scope": "TCP reachability only; does not prove authentication or VPN"
+    },
+    "initialDomainTargetMatrix": {
+      "records": 36,
+      "compiled": 36,
+      "httpsOK": 0,
+      "protocols": {
+        "hysteria2": {
+          "records": 2,
+          "httpsOK": 0
+        },
+        "vless": {
+          "records": 34,
+          "httpsOK": 0
+        }
+      },
+      "probeCodes": {
+        "probe_connection_failed": 36
+      },
+      "seconds": 89.29
+    },
+    "numericControlsBeforeEdgeFix": [
+      {
+        "index": 2,
+        "result": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 6,
+        "result": {
+          "ok": true,
+          "code": "probe_ok",
+          "coreVersion": "26.10.10-exvpn.6",
+          "httpStatus": 200,
+          "elapsedMs": 640
+        }
+      },
+      {
+        "index": 8,
+        "result": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 5005
+        }
+      }
+    ],
+    "numericFollowupBeforeEdgeFix": {
+      "vlessSample": [
+        {
+          "index": 3,
+          "result": {
+            "ok": false,
+            "code": "probe_connection_failed",
+            "coreVersion": "26.10.10-exvpn.6",
+            "elapsedMs": 10001
+          }
+        },
+        {
+          "index": 12,
+          "result": {
+            "ok": false,
+            "code": "probe_connection_failed",
+            "coreVersion": "26.10.10-exvpn.6",
+            "elapsedMs": 10001
+          }
+        },
+        {
+          "index": 21,
+          "result": {
+            "ok": false,
+            "code": "probe_connection_failed",
+            "coreVersion": "26.10.10-exvpn.6",
+            "elapsedMs": 10002
+          }
+        },
+        {
+          "index": 30,
+          "result": {
+            "ok": false,
+            "code": "probe_connection_failed",
+            "coreVersion": "26.10.10-exvpn.6",
+            "elapsedMs": 10001
+          }
+        },
+        {
+          "index": 36,
+          "result": {
+            "ok": false,
+            "code": "probe_connection_failed",
+            "coreVersion": "26.10.10-exvpn.6",
+            "elapsedMs": 10001
+          }
+        }
+      ],
+      "hysteria2Repeat": [
+        {
+          "index": 6,
+          "result": {
+            "ok": false,
+            "code": "probe_connection_failed",
+            "coreVersion": "26.10.10-exvpn.6",
+            "elapsedMs": 385
+          }
+        },
+        {
+          "index": 6,
+          "result": {
+            "ok": false,
+            "code": "probe_connection_failed",
+            "coreVersion": "26.10.10-exvpn.6",
+            "elapsedMs": 5005
+          }
+        },
+        {
+          "index": 6,
+          "result": {
+            "ok": true,
+            "code": "probe_ok",
+            "coreVersion": "26.10.10-exvpn.6",
+            "httpStatus": 200,
+            "elapsedMs": 985
+          }
+        }
+      ]
+    },
+    "finalNumericTargetMatrix": {
+      "records": 36,
+      "compiled": 36,
+      "protocols": {
+        "vless": {
+          "records": 34,
+          "httpsOK": 0
+        },
+        "hysteria2": {
+          "records": 2,
+          "httpsOK": 0
+        }
+      },
+      "seconds": 102.15,
+      "probeCodes": {
+        "probe_connection_failed": 36
+      }
+    },
+    "finalRecords": [
+      {
+        "index": 1,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 3593
+        }
+      },
+      {
+        "index": 2,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10002
+        }
+      },
+      {
+        "index": 3,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10004
+        }
+      },
+      {
+        "index": 4,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 5,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 6,
+        "protocol": "hysteria2",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 5008
+        }
+      },
+      {
+        "index": 7,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10003
+        }
+      },
+      {
+        "index": 8,
+        "protocol": "hysteria2",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 5007
+        }
+      },
+      {
+        "index": 9,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 10,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 11,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 12,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 13,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 3454
+        }
+      },
+      {
+        "index": 14,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 15,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10000
+        }
+      },
+      {
+        "index": 16,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 17,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10003
+        }
+      },
+      {
+        "index": 18,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10002
+        }
+      },
+      {
+        "index": 19,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 20,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10007
+        }
+      },
+      {
+        "index": 21,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10002
+        }
+      },
+      {
+        "index": 22,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10005
+        }
+      },
+      {
+        "index": 23,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10005
+        }
+      },
+      {
+        "index": 24,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10004
+        }
+      },
+      {
+        "index": 25,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10000
+        }
+      },
+      {
+        "index": 26,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10004
+        }
+      },
+      {
+        "index": 27,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 28,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 29,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 30,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10000
+        }
+      },
+      {
+        "index": 31,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10004
+        }
+      },
+      {
+        "index": 32,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      },
+      {
+        "index": 33,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10002
+        }
+      },
+      {
+        "index": 34,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10004
+        }
+      },
+      {
+        "index": 35,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10002
+        }
+      },
+      {
+        "index": 36,
+        "protocol": "vless",
+        "validation": {
+          "code": "config_valid",
+          "coreVersion": "26.10.10-exvpn.6",
+          "ok": true
+        },
+        "probe": {
+          "ok": false,
+          "code": "probe_connection_failed",
+          "coreVersion": "26.10.10-exvpn.6",
+          "elapsedMs": 10001
+        }
+      }
+    ],
+    "conclusion": "No remote VLESS success confirmed. Same Hysteria2 profile produced two verified HTTPS200 responses across four early numeric-target attempts, then failed in final matrix; remote stability not accepted. TCP reachability is not protocol/authentication proof."
+  },
+  "release": {
+    "apkBuilt": false,
+    "exeInstallerBuilt": false,
+    "installedAppChanged": false,
+    "published": false,
+    "newNativeBaseRequired": true,
+    "reason": "typed native QUIC schema and REALITY compiler changed; incompatible with Dart-only patch on old base39"
+  },
+  "open": [
+    "Remote VLESS diagnosis/comparison in same network",
+    "Stable remote Hysteria2 HTTPS",
+    "Android/Windows native package and real TUN/DNS/IPv6/device acceptance",
+    "Existing MASQUE native runtime failures",
+    "Full E1 and stable release gates"
+  ]
+}

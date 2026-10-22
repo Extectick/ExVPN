@@ -1,5 +1,17 @@
 # ExVPN — архитектура
 
+## QUIC tuning и REALITY Edge, 2026-10-22
+
+`QuicOptions` — закрытый, ограниченный по значениям remote transport DTO для
+Hysteria2; одинаковая проверка на URI/JSON → domain → snapshot → Go границах.
+Он не содержит debug, масок, routes, DNS, файлов или TLS overrides. Только
+нейтральный `debug=false` удаляется на импорте. Native compiler формирует
+`finalmask.quicParams` из typed fields. REALITY `edge` хранится в профиле,
+но компилируется в современный Chromium ClientHello закреплённого ядра;
+peer authentication не меняется. Обычный TLS edge не затрагивается.
+Новая native schema требует полного пакета; старую базу39 одним Dart OTA
+не обновить. [Контракт и незакрытые runtime gates](PROVIDER_TRANSPORT_COMPATIBILITY.md).
+
 ## Популярные форматы и MASQUE, кандидат 0.1.14+36
 
 WireGuard `wg://`/`wireguard://`, INI, Xray JSON и one-peer sing-box endpoints

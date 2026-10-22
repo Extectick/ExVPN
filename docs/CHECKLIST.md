@@ -1,5 +1,32 @@
 # ExVPN — проверяемый чеклист
 
+## Параметры приватной подписки — 2026-10-22
+
+- [ ] **EXVPN-E3-016** — Поддержать TCP `headerType=none`, Hysteria2
+  `fm.quicParams` и REALITY/Edge совместимость предоставленной подписки.
+  Критерий: строгий import/snapshot/native parity, отрицательные проверки,
+  настоящий HTTPS и стабильные переподключения на целевых платформах.
+  Исходники `d07968c98ed3e4ca95ac403d8ab379989ab14922`.
+- [x] Строгий импорт36/36, native Compile36/36 и сверка исходных credentials,
+  endpoint/TLS/REALITY/flow/QUIC без расхождений. Произвольный provider JSON,
+  debug/logging, routes/DNS и TLS bypass не допущены; данные сохранены приватно.
+- [x] Domain244/state94/app509, локальный verified HTTPS Hysteria2 с двумя
+  вариантами tuning и тремя поколениями каждого, standard/Vision/Edge REALITY,
+  отказ неверного SNI/ключа и восстановление snapshot. Проверено2026-10-22,
+  source `d07968c`; REALITY edge использует документированный Chromium alias.
+- [ ] Итоговый Full:11/12 PASS за171,30с, source unchanged. Два прежних native
+  MASQUE-теста остаются failed (IPv6 HTTPS EOF и UDP timeout); новый gate не закрыт.
+- [ ] Внешний VLESS HTTPS и стабильность провайдера: TCP20/20 доступен,
+  VLESS HTTPS не подтверждён; Hysteria2 дал два HTTPS200, но повторения и
+  итоговая36-профильная матрица отказали. Причина внешнего отказа не установлена.
+- [ ] Новая native-база, Android/Windows TUN/DNS/IPv6/device acceptance и
+  публикация. APK/EXE и установленный клиент не менялись; Dart-only OTA базы39
+  для новой native schema не подходит. E1/stable остаются открытыми.
+
+[Контракт и ограничения](PROVIDER_TRANSPORT_COMPATIBILITY.md),
+[результаты](evidence/provider-transport-20261022.json),
+[Full](evidence/provider-transport-final-full-20261022.json).
+
 ## Android TV: подписанный APK и OTA — 2026-10-22
 
 - [x] Точный APK0.1.17+39 на собственном TV API36: установленный SHA256

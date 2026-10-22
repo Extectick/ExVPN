@@ -66,6 +66,15 @@ validates both independently of Dart. Sudoku requires TLS/REALITY or VLESS
 Encryption; it is not peer authentication by itself. See
 [limits and verified HTTPS cases](../../docs/VLESS_ENCRYPTION.md).
 
+`transport.quicParams` admits bounded Hysteria2 congestion/window/liveness
+settings only; debug/logging, arbitrary masks, TLS overrides and policy fields
+are rejected. The REALITY-only `edge` browser alias compiles to pinned modern
+Chromium because the pinned legacy Edge85 hello fails the local handshake.
+Peer keys/SNI and stored profile fields are unchanged; ordinary TLS edge is
+unchanged. [Contract and current acceptance limits](../../docs/PROVIDER_TRANSPORT_COMPATIBILITY.md).
+The 2026-10-22 Full has two existing MASQUE runtime failures; it is not a clean
+native/stable release gate. New QUIC fields require a new native application base.
+
 `RoutingPolicy.Rules` is a policy compiler only. It gives DNS priority over
 exceptions, accepts exact Windows executable paths or already-resolved Android
 UIDs, and leaves unknown traffic on the proxy. It never enables a direct route
