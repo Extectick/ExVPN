@@ -1,5 +1,26 @@
 # ExVPN — проверяемый чеклист
 
+## Обновление сразу до последнего выпуска — 2026-10-22
+
+- [ ] **EXVPN-E6-021** — Пропуск промежуточных APK/EXE и OTA-патчей.
+  - [x] `284b401`: full feed имеет приоритет перед старым ready/partial cache;
+    переиспользуется только совпавший текущий offer. Долго открытая кнопка,
+    resume и поздний retry/restart освежают выбор без фонового polling.
+  - [x] Новый downloadable OTA заменяет старый staged next до перезапуска;
+    ошибка latest check/download не запускает старый кеш. Rollback и guards
+    повторного installer/patch handoff сохранены.12 новых регрессий,93 адресных
+    проверки PASS: full26→39 и staged2→9 — синтетические примеры пропуска версий.
+  - [x] Итоговый app lane521 tests/analyzer clean,115,71с/source unchanged.
+    Первоначальный Full10/12 за185,26с сохранил ошибку старой rollback-фикстуры
+    и прежние два MASQUE IPv6/UDP отказа. Фикстура теперь явно возвращает SDK
+    restartRequired; повторён только app lane. Это составная проверка, не Full12/12.
+    [App](evidence/update-selection-app-20261022.json),
+    [первый Full](evidence/update-selection-full-20261022.json),
+    [область](evidence/update-selection-20261022.json).
+  - [ ] Старый→последний в установленном Android/Windows и публикация доставки.
+    APK/EXE/feeds/каталог не менялись; native-изменение `d07968c` в общей ветке
+    отдельно требует новой базы. Полный E1/stable остаётся открытым.
+
 ## Параметры приватной подписки — 2026-10-22
 
 - [ ] **EXVPN-E3-016** — Поддержать TCP `headerType=none`, Hysteria2

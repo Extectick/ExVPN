@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "sourceCommit": "284b401",
+  "scope": "Latest signed full release and compatible OTA selection; synthetic tests only",
+  "targetedTests": 93,
+  "newRegressions": 12,
+  "appTests": 521,
+  "analyzer": "clean",
+  "fullRun": {
+    "passedLanes": 10,
+    "totalLanes": 12,
+    "appFailure": "Rollback UI fixture default said outdated despite intended restartRequired; corrected and entire app lane rerun",
+    "coreFailures": [
+      "TestMasqueCarriesVerifiedIPv4IPv6HTTPSAndStopsAcrossRuntimeGenerations",
+      "TestMasqueCarriesUDPAndTrustedDNSAcrossBothFamilies"
+    ],
+    "newFull12of12Claimed": false,
+    "sourceUnchanged": true
+  },
+  "examples": [
+    "Signed current full offer39 replaces cached ready/partial26 before download/install",
+    "Prepared OTA2 is superseded by downloadable patch9 without an intermediate restart",
+    "Failed latest check/download cannot activate an intermediate cached patch",
+    "Late retry refreshes offer; accepted handoff cannot replay"
+  ],
+  "nativeChanged": false,
+  "dependenciesChanged": false,
+  "hostNetworkChanged": false,
+  "newBuilds": false,
+  "published": false,
+  "runtimeOldToLatestVerified": false
+}

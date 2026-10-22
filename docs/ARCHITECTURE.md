@@ -76,18 +76,27 @@ stopWithTask=false сохраняет штатный default. Notification CATEG
 IMMEDIATE/onlyAlertOnce/showWhen=false сохраняет прежний прямой STOP PendingIntent.
 Разделение процессов/Binder не вводится, OEM force-stop не обходится.
 
-Первое initialize/resume владельца обновлений всё равно сравнивает full offer,
-если общий Dart owner раньше прочёл staged patch. Последующие prepared/fullReady
-и failed-handoff guards не повторяют сеть или handoff; проверка не отменяет уже
-принятый installer. Регрессии первого resume и отсутствия повторного handoff
-включены в принятый Full кандидата35.
+Владелец обновлений сначала читает свежий full offer, затем восстанавливает только
+совпавшую по identity/size native загрузку. Более старый кеш не является следующим
+шагом обновления. Prepared/fullReady допускают повторную проверку метаданных:
+resume, долго открытая кнопка и поздний restart используют coalescing5с от конца
+проверки, без polling. Принятый terminal handoff не переигрывается; неудачный patch
+handoff подавляет дальнейшие автоматические перезапуски до явного действия.
+
+При отсутствии новой полной базы проверяется актуальный OTA-каталог. SDK outdated
+означает доступный более новый патч даже при current!=next; сначала скачивается он,
+затем разрешается restart. RestartRequired/rollback без downloadable update
+сохраняют прежний смысл. Ошибка свежей проверки или загрузки не разрешает установку
+старого next. Общий Dart owner не может объявить кеш выбранным до full/patch
+арбитража. Ключи, fingerprint базы, RSA/Ed25519 и проверки кеша не меняются.
 
 ## Lifecycle обновлений и Android background download, 0.1.12+34
 
 Resume/focus и Windows hidden/minimized→shown передают событие одному
 `AppUpdatesController`: coalescing5с, без периодического polling feeds.
-Busy-событие сохраняется до окончания операции; готовый пакет/патч не заменяется
-новой проверкой. Восстановление native загрузки не открывает installer повторно.
+Busy-событие сохраняется до окончания операции; проверка метаданных сериализована
+с загрузкой и handoff. Готовый кеш повторно используется после свежего выбора
+выпуска. Восстановление native загрузки не открывает installer повторно.
 
 Android получает только version/build/SHA/size принятого подписанного offer;
 native сам выводит фиксированный immutable GitHub URL. Private JobService с
