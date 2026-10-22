@@ -1,5 +1,21 @@
 # ExVPN — план разработки
 
+## Android TV: опубликованная база и OTA — 2026-10-22
+
+База0.1.17+39 Preview опубликована для Android/Windows. На точном подписанном
+Android APK39 проверены автоматический TV-макет, управление настройками с пульта,
+применение подписанного Android patch1/UI13 и перезапуск. Один холодный запуск
+выбрал телефонный макет; повторный вернул TV при неизменных native TV-признаках.
+Точная скрытая ошибка не установлена. В `06c983c` добавлен ограниченный повтор
+нативного запроса при timeout/MissingPluginException; явный ответ false немедленный.
+509 app tests и analyzer PASS. Actions39731667194 собрал и подписал только AOT
+patch2/UI14; immutable `ota-0.1.17-39-p2`, каталог16 опубликован с сохранением истории.
+APK/EXE и Windows UI12 не менялись. Применение patch2 на TV пока не подтверждено:
+обычная сеть стенда не проверила feed, запуск с proxy отклонил approval review.
+Физический TV, API30, TV VPN/permission/lifecycle, rollback и E1 остаются открытыми.
+[Runtime](evidence/android-tv-release39-ota-runtime.json),
+[patch2](evidence/android-tv-patch2-publication.json).
+
 ## Выпуск 0.1.16+38 Preview — 2026-10-21
 
 Закреплённый Xray `.6` закрывает найденный TUN-сценарий ECH; UI11 и прежние

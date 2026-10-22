@@ -1,5 +1,30 @@
 # ExVPN — проверяемый чеклист
 
+## Android TV: подписанный APK и OTA — 2026-10-22
+
+- [x] Точный APK0.1.17+39 на собственном TV API36: установленный SHA256
+  `69f81d2a…923f9fd`, native TV-макет и настройки с D-pad/OK/Back.
+- [x] Подписанный Android patch1 применён обычной кнопкой обновления; движок
+  подтвердил RSA, автоматический перезапуск, диагностика current1/UI13.
+  Сон/возврат UI проверен без VPN. Второй холодный запуск загрузил подписанный
+  patch1; один предыдущий холодный запуск показал телефонный макет. Ошибка
+  сохранена, успешный повтор её не отменяет. [Runtime](evidence/android-tv-release39-ota-runtime.json).
+- [x] `06c983c`: ограниченный retry TV hint при timeout/позднем channel;
+  явный false немедленный. Три новых регрессии,509 app tests, analyzer clean,
+  Changed250,47с/source unchanged. [Проверка](evidence/android-tv-patch2-validation.json).
+- [x] Actions39731667194 SUCCESS: Android AOT patch2/UI14, ARM64+x64,
+  RSA/hashes и защищённые inputs проверены,130,508с. Immutable
+  `ota-0.1.17-39-p2`, signed catalog16/read-back PASS,9 баз и отзывы сохранены.
+  Новых APK/EXE нет, Windows остаётся UI12. [Публикация](evidence/android-tv-patch2-publication.json).
+- [ ] Применение patch2 и холодный запуск на TV: обычная сеть стенда не
+  проверила feed; запуск с HTTP proxy отклонила автоматическая approval review
+  без указанной причины. Иным API proxy не включался; TLS/signature не ослаблялись.
+- [ ] Итоговый Full нового source после freeze общей ветки: после адресного
+  Changed параллельно редактируются другие package/native исходники; старый
+  TV Full12/12 не объявляется новым Full этого изменения.
+- [ ] Rollback, физический TV/пульт, API30 и подключённый TV VPN lifecycle;
+  E1/stable остаются открытыми.
+
 ## Выпуск 0.1.17+39 Preview — 2026-10-21
 
 - [x] TV-код `728f6f6`: Full12/12,500 app tests (9 TV),77 JVM, эмулятор и
@@ -62,7 +87,8 @@
     фокус кнопке добавления. [Full](evidence/android-tv-validation.json),
     [runtime](evidence/android-tv-runtime.json).
   - [x] TV-код включён в подписанный Android39 и опубликован как0.1.17 Preview,
-    source `b6d449a`. Runtime debug-проверка не выдается за приёмку точного APK39.
+    source `b6d449a`. Точный APK39 и patch1 проверены отдельно22 октября выше;
+    debug-проверка не подменяет эти результаты.
   - [ ] Физический TV/пульт и runtime API30, VPN/permission/lifecycle.
     E1 и общая стабильность не закрываются.
   [Контракт](ANDROID_TV.md); исходники

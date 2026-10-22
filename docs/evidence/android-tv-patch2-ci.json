@@ -1,0 +1,27 @@
+{
+  "run": 39731667194,
+  "sourceCommit": "06c983c0ac1d00c94de1d1febc25b6f8331f86e3",
+  "status": "completed",
+  "conclusion": "success",
+  "url": "https://github.com/Extectick/ExVPN/actions/runs/39731667194",
+  "jobs": [
+    {
+      "name": "Independent patch Android",
+      "conclusion": "success"
+    },
+    {
+      "name": "publish",
+      "conclusion": "skipped"
+    }
+  ],
+  "nativeSteps": [
+    {
+      "name": "Reuse or build Android JNI for a new base only",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Reuse or build Windows service for a new base only",
+      "conclusion": "skipped"
+    }
+  ]
+}

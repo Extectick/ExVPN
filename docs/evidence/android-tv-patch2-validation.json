@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "mode": "Changed",
+  "scope": "behavioral checks only; excludes builds and real VPN/security/release acceptance",
+  "startedAt": "2026-10-22T12:58:15.8927977+07:00",
+  "endedAt": "2026-10-22T13:02:26.3712904+07:00",
+  "durationSeconds": 250.47,
+  "status": "passed",
+  "sourceFingerprintBefore": "bc7813e26d9721f80388177434e6331e6d3133ea2fe90bf366f244ea0beb68af",
+  "sourceFingerprintAfter": "bc7813e26d9721f80388177434e6331e6d3133ea2fe90bf366f244ea0beb68af",
+  "sourceUnchanged": true,
+  "toolchain": {
+    "flutter": "abaf9c523780a608bd46686fd5e53740a07077f8",
+    "dart": "3.13.5",
+    "go": "1.27.2"
+  },
+  "changedFileCount": 3,
+  "selectedLanes": [
+    "app"
+  ],
+  "executionOrder": [
+    "app"
+  ],
+  "selectionReasons": [],
+  "goResultCacheAllowed": true,
+  "maxParallel": 3,
+  "testConcurrency": 2,
+  "lanes": [
+    {
+      "lane": "app",
+      "status": "passed",
+      "exitCode": 0,
+      "durationSeconds": 194.4,
+      "cachedGoPackages": 0,
+      "log": "app.log"
+    }
+  ],
+  "failure": null,
+  "requiredNextGates": [
+    "Android JNI/APK and JVM tests",
+    "Windows native/UI build",
+    "isolated VPN/IPv4/IPv6/DNS/fault acceptance",
+    "signed release and upgrade acceptance"
+  ]
+}
