@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
+import 'dart:async';
+
 import 'package:exvpn_client_state/exvpn_client_state.dart';
 import 'package:exvpn/src/adaptive_sheet.dart';
 import 'package:exvpn/src/home_screen.dart';
@@ -27,6 +29,72 @@ void focusInk(WidgetTester tester, Finder parent) {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  group('cold Android presentation detection', () {
+    const channel = MethodChannel('exvpn/presentation');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.android);
+    tearDown(() {
+      debugDefaultTargetPlatformOverride = null;
+      messenger.setMockMethodCallHandler(channel, null);
+    });
+
+    test(
+      'recovers a slow native reply instead of locking TV to portrait',
+      () async {
+        final delayed = Completer<bool>();
+        var calls = 0;
+        messenger.setMockMethodCallHandler(channel, (_) async {
+          calls++;
+          return calls == 1 ? delayed.future : true;
+        });
+        try {
+          expect(
+            await isAndroidTelevision(
+              requestTimeout: const Duration(milliseconds: 10),
+            ),
+            isTrue,
+          );
+        } finally {
+          delayed.complete(true);
+        }
+        expect(calls, 2);
+      },
+    );
+
+    test(
+      'recovers a channel which is not registered on the first native frame',
+      () async {
+        var calls = 0;
+        messenger.setMockMethodCallHandler(channel, (_) async {
+          if (++calls == 1) throw MissingPluginException();
+          return true;
+        });
+        expect(await isAndroidTelevision(), isTrue);
+      },
+    );
+
+    test(
+      'explicit phone reply is immediate and unavailable channel is bounded',
+      () async {
+        var calls = 0;
+        messenger.setMockMethodCallHandler(channel, (_) async {
+          calls++;
+          return false;
+        });
+        expect(await isAndroidTelevision(), isFalse);
+        expect(calls, 1);
+        messenger.setMockMethodCallHandler(channel, (_) async {
+          calls++;
+          throw MissingPluginException();
+        });
+        expect(await isAndroidTelevision(), isFalse);
+        expect(calls, 4);
+      },
+    );
+  });
+
   testWidgets('TV is explicit, not inferred from a wide tablet viewport', (
     tester,
   ) async {
